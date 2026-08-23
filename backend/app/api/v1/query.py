@@ -134,7 +134,7 @@ def list_bindings(
 ) -> BindingListResponse | JSONResponse:
     try:
         return binding_service.list_bindings(
-            db, user.roles, limit=limit, offset=offset, data_source_id=data_source_id,
+            db, user.roles, is_root=user.is_root, limit=limit, offset=offset, data_source_id=data_source_id,
         )
     except QueryError as exc:
         return _error_response(exc)
@@ -150,7 +150,7 @@ def create_binding(
 ) -> BindingOut | JSONResponse:
     try:
         return binding_service.create_binding(
-            db, user.roles, payload, created_by=_parse_user_id(user),
+            db, user.roles, payload, created_by=_parse_user_id(user), is_root=user.is_root,
         )
     except QueryError as exc:
         return _error_response(exc)
@@ -165,7 +165,7 @@ def get_binding(
     db: Annotated[Session, Depends(_db)],
 ) -> BindingOut | JSONResponse:
     try:
-        return binding_service.get_binding(db, user.roles, binding_id)
+        return binding_service.get_binding(db, user.roles, binding_id, is_root=user.is_root)
     except QueryError as exc:
         return _error_response(exc)
 
@@ -178,7 +178,7 @@ def update_binding(
     db: Annotated[Session, Depends(_db)],
 ) -> BindingOut | JSONResponse:
     try:
-        return binding_service.update_binding(db, user.roles, binding_id, payload)
+        return binding_service.update_binding(db, user.roles, binding_id, payload, is_root=user.is_root)
     except QueryError as exc:
         return _error_response(exc)
     except VisibilityError as exc:
@@ -192,7 +192,7 @@ def delete_binding(
     db: Annotated[Session, Depends(_db)],
 ) -> Response:
     try:
-        binding_service.delete_binding(db, user.roles, binding_id)
+        binding_service.delete_binding(db, user.roles, binding_id, is_root=user.is_root)
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except QueryError as exc:
         return _error_response(exc)

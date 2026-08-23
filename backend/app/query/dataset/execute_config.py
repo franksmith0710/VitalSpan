@@ -55,7 +55,7 @@ def execute_dataset_from_config(
         )
 
     try:
-        assert_visible(session, user.roles, req.data_source_id)
+        assert_visible(session, user.roles, req.data_source_id, is_root=user.is_root)
     except Exception as exc:
         from app.auth.resources.service import VisibilityError
 
@@ -100,6 +100,17 @@ def execute_dataset_from_config(
         raise QueryError("RLS_CONFIG_INVALID", "Disabling RLS is only allowed in development", 400)
 
     rls_config = {"table_alias": req.rls.table_alias, "org_column": req.rls.org_column}
+    table_name = payload.tables[0].name if payload.tables else None
+    dataset_id = bound.dataset_id if bound is not None else None
+    from app.auth.rls.resolve_config import enrich_rls_config
+
+    rls_config = enrich_rls_config(
+        session,
+        rls_config,
+        datasource_id=req.data_source_id,
+        dataset_id=dataset_id,
+        table_name=table_name,
+    )
     result = _executor.execute_sql(
         session,
         user,

@@ -114,6 +114,7 @@ def submit_dashboard_export(
     if fmt not in {"pdf", "excel"}:
         raise dash_service.DashboardError("DASH_EXPORT_INVALID_FORMAT", "Invalid export format", 422)
     row = dash_service.get_dashboard(db, dashboard_id)
+    dash_service.assert_dashboard_access(db, actor, dashboard_id, row.created_by, slug=row.slug)
     layout = layout_to_dict(row.layout_json)
     settings = get_settings()
     if _count_widgets(layout) == 0 and not (fmt == "excel" or settings.rpt_export_fallback):
@@ -149,7 +150,7 @@ def get_dashboard_export_job(job_id: uuid.UUID, actor: UserContext) -> Dashboard
     meta = get_export_job_meta(job_id)
     if meta is None:
         raise dash_service.DashboardError("DASH_EXPORT_JOB_NOT_FOUND", "Export job not found", 404)
-    if meta.owner_id != actor.id and "admin" not in actor.roles:
+    if meta.owner_id != actor.id and not actor.is_root:
         raise dash_service.DashboardError("DASH_EXPORT_FORBIDDEN", "Forbidden", 403)
     return DashboardExportJobOut(
         jobId=meta.job_id,
@@ -163,7 +164,7 @@ def read_dashboard_export_bytes(job_id: uuid.UUID, actor: UserContext) -> tuple[
     meta = get_export_job_meta(job_id)
     if meta is None:
         raise dash_service.DashboardError("DASH_EXPORT_JOB_NOT_FOUND", "Export job not found", 404)
-    if meta.owner_id != actor.id and "admin" not in actor.roles:
+    if meta.owner_id != actor.id and not actor.is_root:
         raise dash_service.DashboardError("DASH_EXPORT_FORBIDDEN", "Forbidden", 403)
     data = read_export_job_bytes(job_id)
     if data is None or meta.status != "ready":

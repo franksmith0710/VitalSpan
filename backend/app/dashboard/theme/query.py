@@ -69,7 +69,7 @@ def execute_theme_drill(
 
     assert_theme_action(user, "read")
     try:
-        config = theme_service.get_theme_config(db, ref_type, ref_id)
+        config = theme_service.get_theme_config(db, ref_type, ref_id, user)
     except ThemeAnalysisError as exc:
         if exc.code == "CONFIG_NOT_FOUND":
             raise ThemeAnalysisError("CONFIG_NOT_FOUND", exc.message, 404) from exc

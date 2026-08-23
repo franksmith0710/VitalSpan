@@ -35,7 +35,7 @@ class NativeQueryExecutor:
     ) -> QueryResult:
         row = self._load_row(session, data_source_id)
         try:
-            assert_visible(session, user.roles, data_source_id)
+            assert_visible(session, user.roles, data_source_id, is_root=user.is_root)
         except VisibilityError as exc:
             raise QueryError(exc.code, exc.message, exc.status) from exc
 

@@ -57,6 +57,8 @@ import { mapApiError } from "@/lib/apiError";
 import { useListPagination } from "@/lib/list-pagination";
 import { queryKeys } from "@/lib/queryKeys";
 import { RlsRoleBindingPanel } from "./RlsRoleBindingPanel";
+import { RlsColumnBindingsPanel } from "./RlsColumnBindingsPanel";
+import { RlsDimensionValuesPanel } from "./RlsDimensionValuesPanel";
 import type { DimensionGroupOut, DimensionTypeOut } from "./rls-types";
 import { SystemAdminListHint } from "../SystemAdminListHint";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
@@ -67,6 +69,7 @@ export function RlsAdminPage() {
   const [dimOpen, setDimOpen] = useState(false);
   const [dimCode, setDimCode] = useState("");
   const [dimName, setDimName] = useState("");
+  const [dimValueType, setDimValueType] = useState("string");
   const [editDim, setEditDim] = useState<DimensionTypeOut | null>(null);
   const [editDimName, setEditDimName] = useState("");
   const [editDimDesc, setEditDimDesc] = useState("");
@@ -296,6 +299,7 @@ export function RlsAdminPage() {
               <TabsTrigger value="dimensions">维度类型</TabsTrigger>
               <TabsTrigger value="groups">维度分组</TabsTrigger>
               <TabsTrigger value="bindings">角色绑定</TabsTrigger>
+              <TabsTrigger value="columns">列映射</TabsTrigger>
             </TabsList>
             {tab === "dimensions" ? (
               <Button type="button" variant="primary" size="sm" onClick={() => setDimOpen(true)}>
@@ -516,11 +520,18 @@ export function RlsAdminPage() {
         </TabsContent>
 
         <TabsContent value="bindings" className="mt-0 flex min-h-0 flex-1 flex-col">
-          <ListPageTableFrame>
+          <ListPageTableFrame className="space-y-4">
             <RlsRoleBindingPanel
               groups={bindingGroups}
               groupsLoading={bindingsGroupsQuery.isLoading}
             />
+            <RlsDimensionValuesPanel dimensions={dimensions} />
+          </ListPageTableFrame>
+        </TabsContent>
+
+        <TabsContent value="columns" className="mt-0 flex min-h-0 flex-1 flex-col">
+          <ListPageTableFrame>
+            <RlsColumnBindingsPanel dimensions={dimensions} />
           </ListPageTableFrame>
         </TabsContent>
       </Tabs>
@@ -540,6 +551,20 @@ export function RlsAdminPage() {
               <Label htmlFor="dim-name">名称</Label>
               <Input id="dim-name" value={dimName} onChange={(e) => setDimName(e.target.value)} />
             </div>
+            <div className="grid gap-2">
+              <Label>值类型</Label>
+              <Select value={dimValueType} onValueChange={setDimValueType}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="string">字符串</SelectItem>
+                  <SelectItem value="number">数值</SelectItem>
+                  <SelectItem value="boolean">布尔</SelectItem>
+                  <SelectItem value="org_ref">组织引用</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setDimOpen(false)}>
@@ -553,7 +578,7 @@ export function RlsAdminPage() {
                 createDim.mutate({
                   code: dimCode.trim(),
                   name: dimName.trim(),
-                  value_type: "string",
+                  value_type: dimValueType,
                 })
               }
             >

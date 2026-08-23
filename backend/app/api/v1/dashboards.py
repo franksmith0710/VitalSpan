@@ -190,15 +190,15 @@ def get_entity_overview(
 @router.post("/theme-analysis/execute-plan", response_model=None)
 def execute_theme_plan(
     payload: dict,
-    _: Annotated[UserContext, Depends(require_permission(PERM_THEME_READ))] = None,
-    db: Annotated[Session, Depends(_db)] = None,
+    user: Annotated[UserContext, Depends(require_permission(PERM_THEME_READ))],
+    db: Annotated[Session, Depends(_db)],
 ):
     from app.dashboard.theme.execute import build_theme_execute_plan
 
     ref_type = payload.get("refType", "dashboard")
     ref_id = uuid.UUID(str(payload["refId"]))
     try:
-        return build_theme_execute_plan(db, ref_type, ref_id)
+        return build_theme_execute_plan(db, ref_type, ref_id, user)
     except ThemeAnalysisError as exc:
         return _theme_error(exc)
 
@@ -237,7 +237,7 @@ def get_theme_analysis(
 
     try:
         assert_theme_action(user, "read")
-        return theme_service.get_theme_config(db, ref_type, ref_id)
+        return theme_service.get_theme_config(db, ref_type, ref_id, user)
     except ThemeAnalysisError as exc:
         return _theme_error(exc)
 
@@ -246,11 +246,11 @@ def get_theme_analysis(
 def get_theme_chart_bindings(
     ref_type: str = Query(default="dashboard", alias="refType"),
     ref_id: uuid.UUID = Query(alias="refId"),
-    _: Annotated[UserContext, Depends(require_permission(PERM_THEME_READ))] = None,
+    user: Annotated[UserContext, Depends(require_permission(PERM_THEME_READ))] = None,
     db: Annotated[Session, Depends(_db)] = None,
 ):
     try:
-        return theme_service.get_chart_bindings(db, ref_type, ref_id)
+        return theme_service.get_chart_bindings(db, ref_type, ref_id, user)
     except ThemeAnalysisError as exc:
         return _theme_error(exc)
     except Exception as exc:
@@ -379,6 +379,16 @@ def delete_dashboard(
             db, user, dashboard_id, existing.created_by, slug=existing.slug,
         )
         dash_service.delete_dashboard(db, dashboard_id)
+        from app.auth.audit.write_hooks import record_domain_delete
+
+        record_domain_delete(
+            db,
+            actor_id=user.id,
+            actor_username=user.username,
+            target_type="dashboard",
+            target_id=dashboard_id,
+            detail={"name": existing.name},
+        )
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except dash_service.DashboardError as exc:
         return _error_response(exc)

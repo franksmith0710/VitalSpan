@@ -241,6 +241,92 @@ class AuthDimensionTypeRef(Base):
     ref_source: Mapped[str] = mapped_column(String(32), nullable=False, server_default="group")
 
 
+class AuthUserResourceGrant(Base):
+    __tablename__ = "auth_user_resource_grants"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id", "resource_type", "resource_id", name="uq_auth_user_resource_grants"
+        ),
+        CheckConstraint("effect IN ('add', 'deny')", name="ck_auth_user_resource_grants_effect"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("auth_users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    resource_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    resource_id: Mapped[uuid.UUID] = mapped_column(Uuid, nullable=False)
+    effect: Mapped[str] = mapped_column(String(8), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AuthUserDimensionOverride(Base):
+    __tablename__ = "auth_user_dimension_overrides"
+    __table_args__ = (
+        CheckConstraint(
+            "effect IN ('add', 'deny')", name="ck_auth_user_dimension_overrides_effect"
+        ),
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("auth_users.id", ondelete="CASCADE"), primary_key=True
+    )
+    dimension_type_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("auth_dimension_types.id", ondelete="RESTRICT"), primary_key=True
+    )
+    value: Mapped[str] = mapped_column(String(256), primary_key=True)
+    effect: Mapped[str] = mapped_column(String(8), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AuthColumnMask(Base):
+    __tablename__ = "auth_column_masks"
+    __table_args__ = (
+        UniqueConstraint(
+            "datasource_id",
+            "dataset_id",
+            "table_name",
+            "column_name",
+            name="uq_auth_column_masks_scope",
+        ),
+        CheckConstraint(
+            "mask_strategy IN ('hide', 'partial', 'hash')",
+            name="ck_auth_column_masks_strategy",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    datasource_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True, index=True)
+    dataset_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    table_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    column_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    mask_strategy: Mapped[str] = mapped_column(String(16), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AuthRlsColumnBinding(Base):
+    __tablename__ = "auth_rls_column_bindings"
+    __table_args__ = (
+        UniqueConstraint(
+            "datasource_id",
+            "dataset_id",
+            "table_name",
+            "dimension_type_id",
+            name="uq_auth_rls_column_bindings_scope",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+    datasource_id: Mapped[uuid.UUID | None] = mapped_column(Uuid, nullable=True, index=True)
+    dataset_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    table_name: Mapped[str] = mapped_column(String(128), nullable=False)
+    dimension_type_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("auth_dimension_types.id", ondelete="RESTRICT"), nullable=False
+    )
+    column_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 from app.auth.im_models import UserImBinding  # noqa: F401 — register metadata
 from app.core.db.meta import get_meta_engine, get_meta_session
 

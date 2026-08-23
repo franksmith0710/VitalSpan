@@ -101,6 +101,9 @@ redoc: /redoc
 | GET/PUT/DELETE | `/api/v1/rls/groups/{id}` | 分组详情/更新/删除 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/rls.py` |
 | GET/POST/PUT/DELETE | `/api/v1/rls/groups/{id}/values` | 分组成员值列表/添加/全量替换/删除集合 | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/rls.py` |
 | DELETE | `/api/v1/rls/groups/{id}/values/{value}` | 删除分组内单个成员值（204） | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/rls.py` |
+| GET/POST | `/api/v1/rls/column-bindings` | RLS 列映射列表/创建 | 内部 | 一期 | AUTH-007 | 已实现 | `backend/app/api/v1/rls.py` |
+| DELETE | `/api/v1/rls/column-bindings/{id}` | 删除列映射（204） | 内部 | 一期 | AUTH-007 | 已实现 | `backend/app/api/v1/rls.py` |
+| POST | `/api/v1/rls/preview` | RLS SQL 片段预览 | 内部 | 一期 | AUTH-007 | 已实现 | `backend/app/api/v1/rls.py` |
 | GET | `/api/v1/roles/{id}/dimension-values` | 角色直绑维度值（`?dimensionTypeId=`；`RoleDimensionValuesOut` 含 `version`） | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
 | PUT | `/api/v1/roles/{id}/dimension-values` | 角色直绑维度值全量替换（`expectedVersion` 乐观锁；`confirmEmpty`；成功 **200** + `RoleDimensionValuesOut`；冲突 409 `RLS_BINDING_VERSION_CONFLICT`；空绑定 422 `RLS_EMPTY_CONFIRM_REQUIRED`） | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |
 | GET | `/api/v1/roles/{id}/dimension-groups` | 角色分组绑定（`RoleDimensionGroupsOut` 含 `groupIds`/`version`） | 内部 | 一期 | AUTH-006 | 已实现 | `backend/app/api/v1/roles.py` |

@@ -2,6 +2,7 @@ import { NAV_MANIFEST } from "@/config/nav-manifest";
 import { ACCOUNT_NAV_SECTIONS } from "@/config/account-nav";
 import { SYSTEM_ADMIN_NAV_SECTIONS } from "@/config/system-admin-nav";
 import { matchesCapability, resolveEffectiveCapabilities } from "@/lib/capabilities";
+import { SYSTEM_ADMIN_NAV_CAPABILITIES } from "@/lib/permission-codes";
 import {
   isAccountManagementPath,
   isSystemAdminPath,
@@ -162,10 +163,18 @@ export function resolveSidebarSections(
   }
   if (isSystemAdminPath(pathname)) {
     const userCaps = options?.userCapabilities ?? resolveEffectiveCapabilities(user);
-    if (!matchesCapability(userCaps, "system:*")) {
-      return [];
+    const filtered: NavSection[] = [];
+    for (const section of SYSTEM_ADMIN_NAV_SECTIONS) {
+      const items = section.items.filter((item) => {
+        const required = SYSTEM_ADMIN_NAV_CAPABILITIES[item.path];
+        if (!required) return matchesCapability(userCaps, "system:*");
+        return matchesCapability(userCaps, required) || matchesCapability(userCaps, "system:*");
+      });
+      if (items.length > 0) {
+        filtered.push({ ...section, items });
+      }
     }
-    return SYSTEM_ADMIN_NAV_SECTIONS;
+    return filtered;
   }
   return resolveNavGroups(user, options);
 }

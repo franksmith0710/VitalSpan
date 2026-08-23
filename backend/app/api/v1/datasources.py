@@ -129,7 +129,7 @@ def get_data_source(
     db: Annotated[Session, Depends(_db)],
 ) -> DataSourceOut | JSONResponse:
     try:
-        return ds_service.get_data_source(db, data_source_id, role_codes=user.roles)
+        return ds_service.get_data_source(db, data_source_id, role_codes=user.roles, is_root=user.is_root)
     except ds_service.DataSourceError as exc:
         return _error_response(exc)
     except VisibilityError as exc:
@@ -144,7 +144,7 @@ def update_data_source(
     db: Annotated[Session, Depends(_db)],
 ) -> DataSourceOut | JSONResponse:
     try:
-        return ds_service.update_data_source(db, data_source_id, payload, role_codes=user.roles)
+        return ds_service.update_data_source(db, data_source_id, payload, role_codes=user.roles, is_root=user.is_root)
     except ds_service.DataSourceError as exc:
         return _error_response(exc)
     except VisibilityError as exc:
@@ -159,7 +159,7 @@ def patch_data_source(
     db: Annotated[Session, Depends(_db)],
 ) -> DataSourceOut | JSONResponse:
     try:
-        return ds_service.patch_data_source(db, data_source_id, payload, role_codes=user.roles)
+        return ds_service.patch_data_source(db, data_source_id, payload, role_codes=user.roles, is_root=user.is_root)
     except ds_service.DataSourceError as exc:
         return _error_response(exc)
     except VisibilityError as exc:
@@ -173,11 +173,20 @@ def delete_data_source(
     db: Annotated[Session, Depends(_db)],
 ) -> Response:
     try:
-        ds_service.delete_data_source(db, data_source_id, role_codes=user.roles)
+        ds_service.delete_data_source(db, data_source_id, role_codes=user.roles, is_root=user.is_root)
     except ds_service.DataSourceError as exc:
         return _error_response(exc)
     except VisibilityError as exc:
         return _visibility_response(exc)
+    from app.auth.audit.write_hooks import record_domain_delete
+
+    record_domain_delete(
+        db,
+        actor_id=user.id,
+        actor_username=user.username,
+        target_type="datasource",
+        target_id=data_source_id,
+    )
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -221,7 +230,7 @@ def test_connection_saved(
     db: Annotated[Session, Depends(_db)],
 ) -> TestConnectionOut | JSONResponse:
     try:
-        return ds_service.test_connection_by_id(db, data_source_id, role_codes=user.roles)
+        return ds_service.test_connection_by_id(db, data_source_id, role_codes=user.roles, is_root=user.is_root)
     except ds_service.DataSourceError as exc:
         return _error_response(exc)
     except VisibilityError as exc:
@@ -235,7 +244,7 @@ def get_schemas(
     db: Annotated[Session, Depends(_db)],
 ) -> SchemaListResponse | JSONResponse:
     try:
-        return metadata_service.list_schemas(db, user.roles, data_source_id)
+        return metadata_service.list_schemas(db, user.roles, data_source_id, is_root=user.is_root)
     except ds_service.DataSourceError as exc:
         return _error_response(exc)
     except VisibilityError as exc:
@@ -250,7 +259,7 @@ def get_tables(
     schema: str = "",
 ) -> TableListResponse | JSONResponse:
     try:
-        return metadata_service.list_tables(db, user.roles, data_source_id, schema)
+        return metadata_service.list_tables(db, user.roles, data_source_id, schema, is_root=user.is_root)
     except ds_service.DataSourceError as exc:
         return _error_response(exc)
     except VisibilityError as exc:
@@ -266,7 +275,7 @@ def get_columns(
     table: str = "",
 ) -> ColumnListResponse | JSONResponse:
     try:
-        return metadata_service.list_columns(db, user.roles, data_source_id, schema, table)
+        return metadata_service.list_columns(db, user.roles, data_source_id, schema, table, is_root=user.is_root)
     except ds_service.DataSourceError as exc:
         return _error_response(exc)
     except VisibilityError as exc:

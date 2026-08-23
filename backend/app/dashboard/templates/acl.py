@@ -19,7 +19,7 @@ def _actor_uuid(actor: UserContext) -> str | None:
 
 
 def can_manage_templates(actor: UserContext) -> bool:
-    if "admin" in actor.roles:
+    if actor.is_root:
         return True
     perms = set(getattr(actor, "permissions", ()) or ())
     return "dashboard:template.manage" in perms or "dashboard:*" in perms or "*" in perms

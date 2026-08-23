@@ -70,7 +70,8 @@ API 登记见 [`docs/api/README.md`](../../api/README.md) §认证（PRD 列 `�
   - [x] 对接 `GET/POST /api/v1/resource-grants`，列表展示角色×资源类型×资源 ID
   - [x] 表单校验与高危撤销确认；成功后列表刷新
   - [x] `grants.smoke.test.tsx` T-AUTH-004-FE-01~04 PASS
-- **代码锚点**：`backend/app/auth/resources/service.py` · `backend/app/auth/deps.py` · `backend/app/api/v1/resource_grants.py` · `tests/test_auth_rbac_l1.py` T-AUTH-G01~G12 · `fe/src/pages/admin/system/grants/GrantsPage.tsx` · `fe/src/pages/admin/system/grants/grants.smoke.test.tsx`
+  - [x] Phase A：root-only bypass（`auth/bypass.py`）；dashboard 子路由 `assert_dashboard_access`；report catalog grant 过滤；`tests/test_auth_resource_acl_matrix.py`
+- **代码锚点**：`backend/app/auth/resources/service.py` · `backend/app/auth/deps.py` · `backend/app/api/v1/resource_grants.py` · `backend/app/auth/bypass.py` · `backend/app/reports/catalog/grant_acl.py` · `tests/test_auth_rbac_l1.py` T-AUTH-G01~G12 · `tests/test_auth_resource_acl_matrix.py` · `fe/src/pages/admin/system/grants/GrantsPage.tsx` · `fe/src/pages/admin/system/grants/grants.smoke.test.tsx` · `fe/src/lib/permission-codes.ts`
 - **演化建议**：vitest 208/208（F-B grants smoke 4 用例）；M3 数据源 API 接入 `require_resource_visible` 过滤未授权资源列表；二期 Playwright E2E
 
 ### [AUTH-005] 权限维度类型定义
@@ -96,20 +97,22 @@ API 登记见 [`docs/api/README.md`](../../api/README.md) §认证（PRD 列 `�
   - [x] 维度分组可关联角色
   - [x] 用户继承角色权限（有效维度集 = 直绑 ∪ 分组展开）
   - [x] **M-DEPTH F-C**：RLS 维度分组配置 UI（接 `/rls/groups*` + 角色 `dimension-groups` 绑定；admin 可完成分组 CRUD 与角色关联）（完成于 2026-07-29 · `RlsAdminPage.tsx`）
+  - [x] **Phase B**：角色 `dimension-values` 直绑 UI（`RlsDimensionValuesPanel`）；`org_ref` 维度类型创建与组织选择器
 - **代码锚点**：`backend/app/auth/rls/groups/service.py` · `backend/app/auth/rls/bindings/service.py` · `backend/app/api/v1/rls.py` · `backend/app/api/v1/roles.py` · `tests/test_auth_rbac_l1.py` T-AUTH-GP01~GP15
 - **演化建议**：M-DEPTH F-C 闭合 Admin UI；生产维度值校验扩展
 - **里程碑对齐**：r21 · 已完成；**M-DEPTH F-C · 已闭合 · 2026-07-29**
 
 ### [AUTH-007] RLS 谓词生成与注入
 
-- **状态**：已实现（r21 quality push）
+- **状态**：已实现（Phase B 列映射扩展 · 2026-08-24）
 - **goal_ref**：goal.md §2.4（G4）
 - **期次**：一期
-- **描述**：RLS 谓词生成与注入（SRS 追溯项）。
+- **描述**：RLS 谓词生成与注入（SRS 追溯项）。Phase B 增加列映射表、预览 API 与查询执行时自动加载 `column_by_dimension_id`。
 - **验收标准**：
   - [x] 查询执行前合并 WHERE 谓词（`get_query_rls_fragment` hook）
   - [x] 越权 smoke test 通过
-- **代码锚点**：`backend/app/auth/rls/predicate.py` · `backend/app/auth/rls/hooks.py` · `backend/app/query/rls/guard.py` · `tests/test_auth_rbac_l1.py` T-AUTH-RLS01~RLS13
+  - [x] **Phase B**：`auth_rls_column_bindings` 列映射 CRUD + `POST /rls/preview`；dataset 保存可选同步绑定；`execute_config` 多维 RLS
+- **代码锚点**：`backend/app/auth/rls/predicate.py` · `backend/app/auth/rls/hooks.py` · `backend/app/auth/rls/column_bindings/service.py` · `backend/app/auth/rls/variables.py` · `backend/app/query/rls/guard.py` · `fe/src/pages/admin/system/rls/RlsColumnBindingsPanel.tsx` · `tests/test_auth_rls_column_bindings.py` T-RLS-COL-01~04
 - **演化建议**：M4 `query` 全方言 SQL 改写；生产 RLS 策略扩展
 - **里程碑对齐**：
 

@@ -165,7 +165,9 @@ def preview_query_design_execute(
         raise GovQueryDesignError(exc.code, exc.message, exc.status) from exc
     if data_source_id is not None:
         try:
-            datasource_acl.assert_visible(session, list(actor.roles), data_source_id)
+            datasource_acl.assert_visible(
+                session, list(actor.roles), data_source_id, is_root=actor.is_root,
+            )
         except VisibilityError as exc:
             raise GovQueryDesignError(
                 "GOV_QUERY_DESIGN_UNKNOWN_DATASOURCE",

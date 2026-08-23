@@ -95,6 +95,22 @@ def delete_dataset(
 ) -> Response | JSONResponse:
     try:
         dataset_service.delete_dataset(dataset_id, actor)
+        from app.auth.audit.write_hooks import record_domain_delete
+        from app.core.db.meta import get_meta_session
+
+        db = get_meta_session()
+        try:
+            record_domain_delete(
+                db,
+                actor_id=actor.id,
+                actor_username=actor.username,
+                target_type="dataset",
+                target_id=uuid.UUID(dataset_id) if _is_uuid(dataset_id) else uuid.uuid4(),
+                detail={"datasetId": dataset_id},
+            )
+            db.commit()
+        finally:
+            db.close()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except DatasetError as exc:
         return _dataset_error(exc)

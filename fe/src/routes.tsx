@@ -45,6 +45,15 @@ import { ReportSchedulesPage } from "@/pages/admin/reports/ReportSchedulesPage";
 import { ReportViewPage } from "@/pages/admin/reports/ReportViewPage";
 import { DataScreenViewRedirect } from "@/pages/admin/data-screens/DataScreenViewRedirect";
 import { ACCOUNT_LANDING_PATH } from "@/lib/workspace";
+import {
+  PERM_SYSTEM_AUDIT_READ,
+  PERM_SYSTEM_GRANT_READ,
+  PERM_SYSTEM_ORG_READ,
+  PERM_SYSTEM_PLATFORM_CONNECT_READ,
+  PERM_SYSTEM_RLS_READ,
+  PERM_SYSTEM_ROLE_READ,
+  PERM_SYSTEM_USER_READ,
+} from "@/lib/permission-codes";
 import { withRouteSuspense } from "@/lib/routeLazy";
 
 const DashboardListPage = lazy(() =>
@@ -257,15 +266,15 @@ export function AppRoutes() {
           <Route path="datasets/:id/edit" element={<RequireCapabilityName capability="dataset:*"><DatasetFormPage mode="edit" /></RequireCapabilityName>} />
           <Route path="me/views" element={<Navigate to={ACCOUNT_LANDING_PATH} replace />} />
           <Route path="themes/:dashboardId" element={<RequireCapabilityName capability="theme:*"><ThemeAnalysisPage /></RequireCapabilityName>} />
-          <Route path="system" element={<RequireCapabilityName capability="system:*"><SystemAdminHomePage /></RequireCapabilityName>} />
-          <Route path="system/roles" element={<RequireCapabilityName capability="system:*"><RoleListPage /></RequireCapabilityName>} />
-          <Route path="system/users" element={<RequireCapabilityName capability="system:*"><UserListPage /></RequireCapabilityName>} />
-          <Route path="system/orgs" element={<RequireCapabilityName capability="system:*"><OrgTreePage /></RequireCapabilityName>} />
-          <Route path="system/rls" element={<RequireCapabilityName capability="system:*"><RlsAdminPage /></RequireCapabilityName>} />
-          <Route path="system/audit" element={<RequireCapabilityName capability="system:*"><AuditLogPage /></RequireCapabilityName>} />
+          <Route path="system" element={<RequireCapabilityName capability={PERM_SYSTEM_ROLE_READ}><SystemAdminHomePage /></RequireCapabilityName>} />
+          <Route path="system/roles" element={<RequireCapabilityName capability={PERM_SYSTEM_ROLE_READ}><RoleListPage /></RequireCapabilityName>} />
+          <Route path="system/users" element={<RequireCapabilityName capability={PERM_SYSTEM_USER_READ}><UserListPage /></RequireCapabilityName>} />
+          <Route path="system/orgs" element={<RequireCapabilityName capability={PERM_SYSTEM_ORG_READ}><OrgTreePage /></RequireCapabilityName>} />
+          <Route path="system/rls" element={<RequireCapabilityName capability={PERM_SYSTEM_RLS_READ}><RlsAdminPage /></RequireCapabilityName>} />
+          <Route path="system/audit" element={<RequireCapabilityName capability={PERM_SYSTEM_AUDIT_READ}><AuditLogPage /></RequireCapabilityName>} />
           <Route path="system/grants"
             element={
-              <RequireCapabilityName capability="system:*">
+              <RequireCapabilityName capability={PERM_SYSTEM_GRANT_READ}>
                 <GrantsPage />
               </RequireCapabilityName>
             }
@@ -273,7 +282,7 @@ export function AppRoutes() {
           <Route
             path="system/platform-connect"
             element={
-              <RequireCapabilityName capability="system:*">
+              <RequireCapabilityName capability={PERM_SYSTEM_PLATFORM_CONNECT_READ}>
                 <PlatformConnectPage />
               </RequireCapabilityName>
             }

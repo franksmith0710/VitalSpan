@@ -52,12 +52,9 @@ def _has_schedule_manage(actor: UserContext, row: dict) -> bool:
 
 
 def assert_schedule_read(actor: UserContext, row: dict) -> None:
-    roles = set(actor.roles)
-    if roles.intersection({"admin", "viewer", "editor", "owner", "analyst"}):
-        if "admin" in roles or "viewer" in roles:
-            return
-        if "report:read" in actor.permissions or "report:manage" in actor.permissions:
-            return
+    if actor.is_root:
+        return
+    if "report:read" in actor.permissions or "report:manage" in actor.permissions:
         if _is_catalog_owner(actor, row.get("catalog_node_id")):
             return
         if row.get("owner_id") == actor.id:
@@ -66,13 +63,19 @@ def assert_schedule_read(actor: UserContext, row: dict) -> None:
         source_id = row.get("source_id") or row.get("catalog_node_id")
         if source_type in {"dashboard", "data_screen"} and _is_dashboard_owner(actor, source_id):
             return
-        if "editor" in roles:
-            return
+    if row.get("owner_id") == actor.id:
+        return
+    if _is_catalog_owner(actor, row.get("catalog_node_id")):
+        return
+    source_type = row.get("source_type", "template")
+    source_id = row.get("source_id") or row.get("catalog_node_id")
+    if source_type in {"dashboard", "data_screen"} and _is_dashboard_owner(actor, source_id):
+        return
     raise ScheduleError("RPT_SCHEDULE_FORBIDDEN", "Schedule read denied", 403)
 
 
 def assert_schedule_write(actor: UserContext, row: dict, action: str) -> None:
-    if "viewer" in actor.roles and "admin" not in actor.roles:
+    if "viewer" in actor.roles and not actor.is_root:
         raise ScheduleError("RPT_SCHEDULE_FORBIDDEN", f"Viewer cannot {action}", 403)
     if _has_schedule_manage(actor, row):
         return

@@ -39,7 +39,27 @@ def create_grant(
     actor_id: str,
     actor_username: str | None,
     trace_id: str,
+    actor_permissions: set[str] | None = None,
+    actor_is_root: bool = False,
 ) -> AuthResourceGrant:
+    from app.auth.org_scope import assert_role_in_org_scope, is_org_scoped_only
+
+    perms = actor_permissions or set()
+    if is_org_scoped_only(permissions=perms, is_root=actor_is_root):
+        try:
+            assert_role_in_org_scope(
+                session,
+                permissions=perms,
+                is_root=actor_is_root,
+                actor_user_id=actor_id,
+                role_id=payload.role_id,
+            )
+        except Exception as exc:
+            from app.auth.org_scope import OrgScopeError
+
+            if isinstance(exc, OrgScopeError):
+                raise GrantError(exc.code, exc.message, exc.status) from exc
+            raise
     role = session.get(AuthRole, payload.role_id)
     if role is None:
         raise GrantError("ROLE_NOT_FOUND", "Role not found", 404)

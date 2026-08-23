@@ -106,6 +106,19 @@ def validate_theme_config(payload: dict, db: Session | None = None) -> EntityThe
     return config
 
 
+def _assert_dashboard_theme_access(
+    db: Session,
+    actor: UserContext,
+    config: EntityThemeConfig,
+) -> None:
+    if config.ref_type != "dashboard":
+        return
+    dashboard = dash_service.get_dashboard(db, config.ref_id)
+    dash_service.assert_dashboard_access(
+        db, actor, config.ref_id, dashboard.created_by, slug=dashboard.slug,
+    )
+
+
 def _assert_ref_exists(db: Session, config: EntityThemeConfig) -> None:
     if config.ref_type == "dashboard":
         try:
@@ -120,6 +133,7 @@ def save_theme_config(db: Session, payload: dict, actor: UserContext) -> EntityT
     assert_theme_action(actor, "write")
     config = validate_theme_config(payload, db)
     _assert_ref_exists(db, config)
+    _assert_dashboard_theme_access(db, actor, config)
     _link_chart_views(db, config)
     owner_id: uuid.UUID | None = None
     try:
@@ -140,9 +154,12 @@ def save_theme_config(db: Session, payload: dict, actor: UserContext) -> EntityT
     return config
 
 
-def get_theme_config(db: Session, ref_type: str, ref_id: uuid.UUID) -> EntityThemeConfig:
+def get_theme_config(db: Session, ref_type: str, ref_id: uuid.UUID, actor: UserContext | None = None) -> EntityThemeConfig:
     record = config_store.get_config_by_ref(db, "entity_theme", ref_type, ref_id)
-    return validate_theme_config(record.payload, db)
+    config = validate_theme_config(record.payload, db)
+    if actor is not None:
+        _assert_dashboard_theme_access(db, actor, config)
+    return config
 
 
 def resolve_chart_bindings_for_execute(db: Session, ref_type: str, ref_id: uuid.UUID) -> list[dict]:
@@ -171,8 +188,13 @@ def resolve_chart_bindings_for_execute(db: Session, ref_type: str, ref_id: uuid.
     return resolved
 
 
-def get_chart_bindings(db: Session, ref_type: str, ref_id: uuid.UUID) -> dict:
-    config = get_theme_config(db, ref_type, ref_id)
+def get_chart_bindings(
+    db: Session,
+    ref_type: str,
+    ref_id: uuid.UUID,
+    actor: UserContext | None = None,
+) -> dict:
+    config = get_theme_config(db, ref_type, ref_id, actor)
     return {
         "bindings": [b.model_dump(mode="json", by_alias=True) for b in config.chart_view_bindings],
         "linkedWidgetCount": len(config.chart_view_bindings),

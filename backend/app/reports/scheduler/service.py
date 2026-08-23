@@ -126,7 +126,10 @@ def _assert_source_exists(payload: ScheduleCreate, actor: UserContext) -> None:
     if payload.source_type in {"dashboard", "data_screen"}:
         with Session(bind=get_meta_engine()) as db:
             try:
-                dash_service.get_dashboard(db, payload.source_id)
+                dash = dash_service.get_dashboard(db, payload.source_id)
+                dash_service.assert_dashboard_access(
+                    db, actor, payload.source_id, dash.created_by, slug=dash.slug,
+                )
             except dash_service.DashboardError as exc:
                 raise ScheduleError(
                     "RPT_SCHEDULE_SOURCE_NOT_FOUND",
@@ -213,8 +216,10 @@ def update_schedule(
     return _out(row)
 
 
-def get_schedule(schedule_id: uuid.UUID) -> ScheduleStatusOut:
-    return _out(_get_row(schedule_id))
+def get_schedule(schedule_id: uuid.UUID, actor: UserContext) -> ScheduleStatusOut:
+    row = _get_row(schedule_id)
+    schedule_acl.assert_schedule_read(actor, row)
+    return _out(row)
 
 
 def iter_scheduled_rows() -> list[dict]:

@@ -97,8 +97,14 @@ def _call_metadata(connector, method_name: str, conn, *args, row: DataSource):
     return method(conn, *args)
 
 
-def list_schemas(session: Session, role_codes: list[str], data_source_id: uuid.UUID) -> SchemaListResponse:
-    assert_visible(session, role_codes, data_source_id)
+def list_schemas(
+    session: Session,
+    role_codes: list[str],
+    data_source_id: uuid.UUID,
+    *,
+    is_root: bool = False,
+) -> SchemaListResponse:
+    assert_visible(session, role_codes, data_source_id, is_root=is_root)
     row = _load_row(session, data_source_id)
     connector, kwargs = _connector_and_kwargs(row)
     try:
@@ -111,10 +117,17 @@ def list_schemas(session: Session, role_codes: list[str], data_source_id: uuid.U
     return SchemaListResponse(items=[SchemaItemOut(name=i.name) for i in items])
 
 
-def list_tables(session: Session, role_codes: list[str], data_source_id: uuid.UUID, schema: str) -> TableListResponse:
+def list_tables(
+    session: Session,
+    role_codes: list[str],
+    data_source_id: uuid.UUID,
+    schema: str,
+    *,
+    is_root: bool = False,
+) -> TableListResponse:
     if not schema:
         raise DataSourceError("METADATA_INVALID_REQUEST", "schema query parameter is required", 400)
-    assert_visible(session, role_codes, data_source_id)
+    assert_visible(session, role_codes, data_source_id, is_root=is_root)
     row = _load_row(session, data_source_id)
     connector, kwargs = _connector_and_kwargs(row)
     try:
@@ -128,11 +141,17 @@ def list_tables(session: Session, role_codes: list[str], data_source_id: uuid.UU
 
 
 def list_columns(
-    session: Session, role_codes: list[str], data_source_id: uuid.UUID, schema: str, table: str,
+    session: Session,
+    role_codes: list[str],
+    data_source_id: uuid.UUID,
+    schema: str,
+    table: str,
+    *,
+    is_root: bool = False,
 ) -> ColumnListResponse:
     if not schema or not table:
         raise DataSourceError("METADATA_INVALID_REQUEST", "schema and table query parameters are required", 400)
-    assert_visible(session, role_codes, data_source_id)
+    assert_visible(session, role_codes, data_source_id, is_root=is_root)
     row = _load_row(session, data_source_id)
     connector, kwargs = _connector_and_kwargs(row)
     try:

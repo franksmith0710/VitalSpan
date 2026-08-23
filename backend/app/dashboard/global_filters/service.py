@@ -26,6 +26,24 @@ def set_user_filter_dashboard_scope(user_id: str, allowed_dashboard_ids: set[uui
     _USER_FILTER_DASHBOARD_SCOPE[user_id] = set(allowed_dashboard_ids)
 
 
+def _assert_dashboard_access(
+    session: Session,
+    actor: UserContext,
+    dashboard_id: uuid.UUID,
+    dashboard_created_by: uuid.UUID | None,
+    *,
+    slug: str | None = None,
+) -> None:
+    try:
+        dash_service.assert_dashboard_access(
+            session, actor, dashboard_id, dashboard_created_by, slug=slug,
+        )
+    except dash_service.DashboardError as exc:
+        if exc.code == "DASH_FORBIDDEN":
+            raise GlobalFilterError("DASH_FILTER_FORBIDDEN", exc.message, 403) from exc
+        raise
+
+
 def _assert_write_access(actor: UserContext) -> None:
     if set(actor.roles) <= {"viewer"}:
         raise GlobalFilterError("DASH_FILTER_FORBIDDEN", "viewer cannot modify global filter linkage", 403)
@@ -83,17 +101,6 @@ def _validate_linkage_rules(rules: list) -> None:
             422,
             [{"field": "parameterKey", "message": "duplicate"}],
         )
-
-
-def _assert_access(actor: UserContext, dashboard_created_by: uuid.UUID | None) -> None:
-    if "admin" in actor.roles:
-        return
-    try:
-        actor_uuid = uuid.UUID(actor.id)
-    except ValueError:
-        raise GlobalFilterError("DASH_FILTER_FORBIDDEN", "Access denied", 403) from None
-    if dashboard_created_by is None or dashboard_created_by != actor_uuid:
-        raise GlobalFilterError("DASH_FILTER_FORBIDDEN", "Access denied", 403)
 
 
 def _load_linkage_payload(session: Session, dashboard_id: uuid.UUID) -> GlobalFilterLinkageItem:
@@ -159,7 +166,7 @@ def save_linkage(
     _validate_linkage(session, item)
     dashboard = dash_service.get_dashboard(session, item.dashboard_id)
     _assert_enterprise_scope(actor, item.dashboard_id)
-    _assert_access(actor, dashboard.created_by)
+    _assert_dashboard_access(session, actor, item.dashboard_id, dashboard.created_by, slug=dashboard.slug)
     try:
         owner_id = uuid.UUID(actor.id)
     except ValueError:
@@ -185,7 +192,7 @@ def save_linkage(
 def get_linkage(session: Session, dashboard_id: uuid.UUID, actor: UserContext) -> GlobalFilterLinkageOut:
     dashboard = dash_service.get_dashboard(session, dashboard_id)
     _assert_enterprise_scope(actor, dashboard_id)
-    _assert_access(actor, dashboard.created_by)
+    _assert_dashboard_access(session, actor, dashboard_id, dashboard.created_by, slug=dashboard.slug)
     try:
         record = config_store.get_config_by_ref(session, _CONFIG_TYPE, _REF_TYPE, dashboard_id)
     except ConfigError as exc:

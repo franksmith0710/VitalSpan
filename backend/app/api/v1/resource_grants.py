@@ -62,7 +62,9 @@ def create_resource_grant(
     db: Annotated[Session, Depends(_db)],
 ) -> ResourceGrantOut | JSONResponse:
     try:
-        grant = grant_service.create_grant(db, payload, **_audit_context(actor))
+        grant = grant_service.create_grant(
+            db, payload, **_audit_context(actor), actor_permissions=set(actor.permissions), actor_is_root=actor.is_root
+        )
     except grant_service.GrantError as exc:
         return _grant_error_response(exc)
     return ResourceGrantOut.model_validate(grant)

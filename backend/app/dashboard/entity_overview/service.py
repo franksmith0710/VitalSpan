@@ -23,15 +23,22 @@ _REF_TYPE = "entity_overview"
 _ENTITY_TYPE_RE = re.compile(r"^[a-z][a-z0-9_]{1,63}$")
 
 
-def _assert_access(actor: UserContext, dashboard_created_by: uuid.UUID | None) -> None:
-    if "admin" in actor.roles:
-        return
+def _assert_dashboard_access(
+    session: Session,
+    actor: UserContext,
+    dashboard_id: uuid.UUID,
+    dashboard_created_by: uuid.UUID | None,
+    *,
+    slug: str | None = None,
+) -> None:
     try:
-        actor_uuid = uuid.UUID(actor.id)
-    except ValueError:
-        raise EntityOverviewError("DASH_OVERVIEW_FORBIDDEN", "Access denied", 403) from None
-    if dashboard_created_by is None or dashboard_created_by != actor_uuid:
-        raise EntityOverviewError("DASH_OVERVIEW_FORBIDDEN", "Access denied", 403)
+        dash_service.assert_dashboard_access(
+            session, actor, dashboard_id, dashboard_created_by, slug=slug,
+        )
+    except dash_service.DashboardError as exc:
+        if exc.code == "DASH_FORBIDDEN":
+            raise EntityOverviewError("DASH_OVERVIEW_FORBIDDEN", exc.message, 403) from exc
+        raise
 
 
 def _validate_item(session: Session, item: EntityOverviewItem) -> EntityOverviewItem:
@@ -113,7 +120,7 @@ def validate_overview(session: Session, item: EntityOverviewItem) -> EntityOverv
 def save_overview(session: Session, item: EntityOverviewItem, actor: UserContext) -> EntityOverviewOut:
     _validate_item(session, item)
     dashboard = dash_service.get_dashboard(session, item.dashboard_id)
-    _assert_access(actor, dashboard.created_by)
+    _assert_dashboard_access(session, actor, item.dashboard_id, dashboard.created_by, slug=dashboard.slug)
     try:
         owner_id = uuid.UUID(actor.id)
     except ValueError:
@@ -134,7 +141,7 @@ def save_overview(session: Session, item: EntityOverviewItem, actor: UserContext
 
 def get_overview(session: Session, dashboard_id: uuid.UUID, actor: UserContext) -> EntityOverviewOut:
     dashboard = dash_service.get_dashboard(session, dashboard_id)
-    _assert_access(actor, dashboard.created_by)
+    _assert_dashboard_access(session, actor, dashboard_id, dashboard.created_by, slug=dashboard.slug)
     try:
         record = config_store.get_config_by_ref(session, "entity_overview", _REF_TYPE, dashboard_id)
     except ConfigError as exc:

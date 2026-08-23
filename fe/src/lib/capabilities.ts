@@ -51,9 +51,16 @@ export function resolveEffectiveCapabilities(user: SessionUser): Set<string> {
   if (user.isRoot) {
     return new Set(["*"]);
   }
-  const caps = resolveUserCapabilities(user.roles);
-  for (const permission of user.permissions ?? []) {
-    caps.add(permission);
+  const caps = new Set<string>();
+  const perms = user.permissions ?? [];
+  if (perms.length > 0) {
+    for (const permission of perms) {
+      caps.add(permission);
+    }
+    return caps;
+  }
+  if (import.meta.env.DEV) {
+    return resolveUserCapabilities(user.roles);
   }
   return caps;
 }

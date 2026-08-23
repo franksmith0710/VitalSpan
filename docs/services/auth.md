@@ -72,3 +72,11 @@
 - RLS L1 仅 `org_dimension` 子树展开；无绑定时 `build_org_rls_fragment` 返回 `1=0`
 - Alembic `0006`：维度分组四表 + `ix_auth_audit_events_actor_created`
 - Alembic `0007`：`auth_roles.is_active` + `ix_auth_audit_events_created_at`
+
+## 资源 ACL bypass（Phase A）
+
+- **唯一 bypass 真理源**：`backend/app/auth/bypass.py` — `bypasses_resource_acl(actor)` / `bypasses_rls(user)` 仅当 `actor.is_root` 为真
+- **禁止**以 `"admin" in actor.roles` 绕过资源可见性；自定义 `admin` 角色码不再等同平台 root
+- **消费点**：`datasources/acl.py` · `dashboard/acl.py` · `query/rls/guard.py` · 各域 `assert_visible` / `assert_dashboard_access` 调用链须传 `is_root=user.is_root`
+- **报表目录**：`reports/catalog/grant_acl.py` 按 `resource_type=report` grant 过滤 `list_nodes` / `get_node`
+- **测试**：`tests/test_auth_resource_acl_matrix.py`（dashboard 子路由 IDOR · report grant · scheduler 读保护）

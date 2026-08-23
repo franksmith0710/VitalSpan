@@ -23,6 +23,13 @@ class DatasetComputedField(BaseModel):
     expression: str = Field(min_length=1, max_length=4096)
 
 
+class DatasetRlsColumnBinding(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+    table_name: str = Field(alias="tableName", min_length=1, max_length=128)
+    dimension_type_id: uuid.UUID = Field(alias="dimensionTypeId")
+    column_name: str = Field(alias="columnName", min_length=1, max_length=64)
+
+
 class DatasetItemIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     dataset_id: str = Field(alias="datasetId")
@@ -31,6 +38,9 @@ class DatasetItemIn(BaseModel):
     computed_fields: list[DatasetComputedField] = Field(default_factory=list, alias="computedFields", max_length=64)
     allowed_roles: list[str] = Field(default_factory=lambda: ["analyst"], alias="allowedRoles")
     table_source_datasource_id: uuid.UUID | None = Field(default=None, alias="tableSourceDataSourceId")
+    rls_column_bindings: list[DatasetRlsColumnBinding] = Field(
+        default_factory=list, alias="rlsColumnBindings", max_length=32
+    )
 
     @field_validator("dataset_id")
     @classmethod

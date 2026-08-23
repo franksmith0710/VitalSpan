@@ -22,3 +22,13 @@ export type RoleOut = {
   description: string | null;
   isActive: boolean;
 };
+
+export type ColumnBindingOut = {
+  id: string;
+  datasourceId: string | null;
+  datasetId: string | null;
+  tableName: string;
+  dimensionTypeId: string;
+  columnName: string;
+  createdAt: string;
+};

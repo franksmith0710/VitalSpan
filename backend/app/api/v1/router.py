@@ -1,6 +1,8 @@
 from fastapi import APIRouter
 
 from app.api.v1.auth import router as auth_router
+from app.api.v1.auth_integration import router as auth_integration_router
+from app.api.v1.column_masks import router as column_masks_router
 from app.api.v1.audit import router as audit_router
 from app.api.v1.datasources import router as datasources_router
 from app.api.v1.charts import router as charts_router
@@ -38,6 +40,8 @@ from app.api.v1.tile_services import router as tile_services_router
 api_v1_router = APIRouter()
 api_v1_router.include_router(me_router)
 api_v1_router.include_router(auth_router)
+api_v1_router.include_router(auth_integration_router)
+api_v1_router.include_router(column_masks_router)
 api_v1_router.include_router(ingestion_router)
 api_v1_router.include_router(datasources_router)
 api_v1_router.include_router(query_router)

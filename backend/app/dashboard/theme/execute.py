@@ -6,6 +6,7 @@ from datetime import date, timedelta
 
 from sqlalchemy.orm import Session
 
+from app.auth.deps import UserContext
 from app.dashboard.theme.errors import ThemeAnalysisError
 from app.dashboard.theme.schemas import (
     CompareWindow,
@@ -42,11 +43,17 @@ def _granularity_window(config: EntityThemeConfig) -> tuple[ThemePlanStep, Compa
     raise ThemeAnalysisError("DASH_THEME_INVALID_GRANULARITY", "Invalid time granularity", 422)
 
 
-def build_theme_execute_plan(db: Session, ref_type: str, ref_id: uuid.UUID) -> ThemeExecutePlanOut:
+def build_theme_execute_plan(
+    db: Session,
+    ref_type: str,
+    ref_id: uuid.UUID,
+    actor: UserContext,
+) -> ThemeExecutePlanOut:
     steps: list[ThemePlanStep] = []
     try:
         record = config_store.get_config_by_ref(db, "entity_theme", ref_type, ref_id)
         config = theme_service.validate_theme_config(record.payload)
+        theme_service.get_theme_config(db, ref_type, ref_id, actor)
         steps.append(ThemePlanStep(step="config_load", status="pass", detail="entity_theme loaded"))
     except ConfigError as exc:
         if exc.code == "CONFIG_NOT_FOUND":
@@ -72,7 +79,12 @@ def build_theme_execute_plan(db: Session, ref_type: str, ref_id: uuid.UUID) -> T
     )
 
 
-def probe_theme_execute_plan_budget_ms(db: Session, ref_type: str, ref_id: uuid.UUID) -> float:
+def probe_theme_execute_plan_budget_ms(
+    db: Session,
+    ref_type: str,
+    ref_id: uuid.UUID,
+    actor: UserContext,
+) -> float:
     start = time.perf_counter()
-    build_theme_execute_plan(db, ref_type, ref_id)
+    build_theme_execute_plan(db, ref_type, ref_id, actor)
     return (time.perf_counter() - start) * 1000.0

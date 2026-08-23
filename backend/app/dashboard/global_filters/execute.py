@@ -35,6 +35,9 @@ def execute_widget_with_filters(
     actor: UserContext,
 ) -> ExecuteResponse:
     dashboard = dash_service.get_dashboard(session, dashboard_id)
+    dash_service.assert_dashboard_access(
+        session, actor, dashboard_id, dashboard.created_by, slug=dashboard.slug,
+    )
     widget = _find_widget(dashboard.layout_json, widget_id)
     chart = widget.get("chartConfig") or {}
     dataset_id = chart.get("datasetId")

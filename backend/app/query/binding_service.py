@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.resources.service import VisibilityError
 from app.core.config import get_settings
-from app.datasources.acl import assert_visible, list_visible_ids
+from app.datasources.acl import assert_visible, list_visible_ids_for_roles
 from app.query.models import ChartQueryBinding
 from app.query.rls.guard import validate_identifier
 from app.query.readonly import assert_readonly_sql
@@ -46,8 +46,9 @@ def _validate_binding_payload(payload: BindingCreate) -> None:
 
 def create_binding(
     session: Session, role_codes: list[str], payload: BindingCreate, created_by: uuid.UUID | None,
+    is_root: bool = False,
 ) -> BindingOut:
-    assert_visible(session, role_codes, payload.data_source_id)
+    assert_visible(session, role_codes, payload.data_source_id, is_root=is_root)
     _validate_binding_payload(payload)
     _assert_chart_id_available(session, payload.chart_id)
     row = ChartQueryBinding(
@@ -67,8 +68,8 @@ def create_binding(
     return BindingOut.model_validate(row)
 
 
-def _visible_binding_stmt(session: Session, role_codes: list[str]):
-    visible = list_visible_ids(session, role_codes)
+def _visible_binding_stmt(session: Session, role_codes: list[str], *, is_root: bool = False):
+    visible = list_visible_ids_for_roles(session, role_codes, is_root=is_root)
     stmt = select(ChartQueryBinding)
     if visible is not None:
         if not visible:
@@ -78,40 +79,56 @@ def _visible_binding_stmt(session: Session, role_codes: list[str]):
 
 
 def list_bindings(
-    session: Session, role_codes: list[str], *, limit: int = 50, offset: int = 0,
+    session: Session,
+    role_codes: list[str],
+    *,
+    is_root: bool = False,
+    limit: int = 50,
+    offset: int = 0,
     data_source_id: uuid.UUID | None = None,
 ) -> BindingListResponse:
-    stmt = _visible_binding_stmt(session, role_codes)
+    stmt = _visible_binding_stmt(session, role_codes, is_root=is_root)
     if data_source_id is not None:
-        assert_visible(session, role_codes, data_source_id)
+        assert_visible(session, role_codes, data_source_id, is_root=is_root)
         stmt = stmt.where(ChartQueryBinding.data_source_id == data_source_id)
     total = session.scalar(select(func.count()).select_from(stmt.subquery())) or 0
     rows = session.scalars(stmt.order_by(ChartQueryBinding.created_at.desc()).limit(limit).offset(offset)).all()
     return BindingListResponse(items=[BindingOut.model_validate(r) for r in rows], total=total)
 
 
-def get_binding(session: Session, role_codes: list[str], binding_id: uuid.UUID) -> BindingOut:
+def get_binding(
+    session: Session,
+    role_codes: list[str],
+    binding_id: uuid.UUID,
+    *,
+    is_root: bool = False,
+) -> BindingOut:
     row = session.get(ChartQueryBinding, binding_id)
     if row is None:
         raise QueryError("BINDING_NOT_FOUND", "Binding not found", 404)
     try:
-        assert_visible(session, role_codes, row.data_source_id)
+        assert_visible(session, role_codes, row.data_source_id, is_root=is_root)
     except VisibilityError:
         raise QueryError("BINDING_NOT_FOUND", "Binding not found", 404) from None
     return BindingOut.model_validate(row)
 
 
 def update_binding(
-    session: Session, role_codes: list[str], binding_id: uuid.UUID, payload: BindingUpdate,
+    session: Session,
+    role_codes: list[str],
+    binding_id: uuid.UUID,
+    payload: BindingUpdate,
+    *,
+    is_root: bool = False,
 ) -> BindingOut:
     row = session.get(ChartQueryBinding, binding_id)
     if row is None:
         raise QueryError("BINDING_NOT_FOUND", "Binding not found", 404)
     try:
-        assert_visible(session, role_codes, row.data_source_id)
+        assert_visible(session, role_codes, row.data_source_id, is_root=is_root)
     except VisibilityError:
         raise QueryError("BINDING_NOT_FOUND", "Binding not found", 404) from None
-    assert_visible(session, role_codes, payload.data_source_id)
+    assert_visible(session, role_codes, payload.data_source_id, is_root=is_root)
     _validate_binding_payload(payload)
     _assert_chart_id_available(session, payload.chart_id, exclude_id=binding_id)
     row.name = payload.name
@@ -127,24 +144,36 @@ def update_binding(
     return BindingOut.model_validate(row)
 
 
-def delete_binding(session: Session, role_codes: list[str], binding_id: uuid.UUID) -> None:
+def delete_binding(
+    session: Session,
+    role_codes: list[str],
+    binding_id: uuid.UUID,
+    *,
+    is_root: bool = False,
+) -> None:
     row = session.get(ChartQueryBinding, binding_id)
     if row is None:
         raise QueryError("BINDING_NOT_FOUND", "Binding not found", 404)
     try:
-        assert_visible(session, role_codes, row.data_source_id)
+        assert_visible(session, role_codes, row.data_source_id, is_root=is_root)
     except VisibilityError:
         raise QueryError("BINDING_NOT_FOUND", "Binding not found", 404) from None
     session.delete(row)
     session.commit()
 
 
-def resolve_binding_execute(session: Session, role_codes: list[str], binding_id: uuid.UUID) -> dict:
+def resolve_binding_execute(
+    session: Session,
+    role_codes: list[str],
+    binding_id: uuid.UUID,
+    *,
+    is_root: bool = False,
+) -> dict:
     row = session.get(ChartQueryBinding, binding_id)
     if row is None:
         raise QueryError("BINDING_NOT_FOUND", "Binding not found", 404)
     try:
-        assert_visible(session, role_codes, row.data_source_id)
+        assert_visible(session, role_codes, row.data_source_id, is_root=is_root)
     except VisibilityError:
         raise QueryError("BINDING_NOT_FOUND", "Binding not found", 404) from None
     return {

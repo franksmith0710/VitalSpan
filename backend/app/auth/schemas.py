@@ -343,3 +343,47 @@ class RoleDimensionGroupsReplace(BaseModel):
 class EffectiveDimensionsResponse(BaseModel):
     dimension_type_id: uuid.UUID
     values: list[str]
+
+
+class RlsColumnBindingCreate(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    datasource_id: uuid.UUID | None = Field(default=None, alias="datasourceId")
+    dataset_id: str | None = Field(default=None, alias="datasetId")
+    table_name: str = Field(alias="tableName", min_length=1, max_length=128)
+    dimension_type_id: uuid.UUID = Field(alias="dimensionTypeId")
+    column_name: str = Field(alias="columnName", min_length=1, max_length=64)
+
+
+class RlsColumnBindingOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True, serialize_by_alias=True)
+
+    id: uuid.UUID
+    datasource_id: uuid.UUID | None = Field(alias="datasourceId")
+    dataset_id: str | None = Field(alias="datasetId")
+    table_name: str = Field(alias="tableName")
+    dimension_type_id: uuid.UUID = Field(alias="dimensionTypeId")
+    column_name: str = Field(alias="columnName")
+    created_at: datetime = Field(alias="createdAt")
+
+
+class RlsColumnBindingListResponse(BaseModel):
+    items: list[RlsColumnBindingOut]
+    total: int
+
+
+class RlsPreviewRequest(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    datasource_id: uuid.UUID | None = Field(default=None, alias="datasourceId")
+    dataset_id: str | None = Field(default=None, alias="datasetId")
+    table_name: str = Field(alias="tableName", min_length=1, max_length=128)
+    table_alias: str = Field(default="t", alias="tableAlias")
+    org_column: str = Field(default="org_node_id", alias="orgColumn")
+
+
+class RlsPreviewResponse(BaseModel):
+    model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
+
+    fragment: str
+    table_alias: str = Field(alias="tableAlias")

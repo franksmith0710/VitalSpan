@@ -14,6 +14,7 @@ from app.auth.bootstrap_root import (
     assert_root_admin_survives,
 )
 from app.auth.models import AuthOrgNode, AuthRole, AuthUser, AuthUserRole
+from app.auth.org_scope import OrgScopeError, assert_org_assignable, assert_user_manageable
 from app.auth.password.service import (
     generate_temporary_password,
     hash_password,
@@ -29,6 +30,19 @@ class UserError(Exception):
         self.message = message
         self.status = status
         super().__init__(message)
+
+
+def _scope_from_actor(
+    *,
+    actor_id: str,
+    actor_permissions: set[str] | None,
+    actor_is_root: bool,
+) -> tuple[set[str], bool, str]:
+    return actor_permissions or set(), actor_is_root, actor_id
+
+
+def _guard_scope(exc: OrgScopeError) -> None:
+    raise UserError(exc.code, exc.message, exc.status) from exc
 
 
 def _user_has_enabled_root_binding(session: Session, user_id: uuid.UUID) -> bool:
@@ -97,8 +111,23 @@ def create_user(
     actor_id: str,
     actor_username: str | None,
     trace_id: str,
+    actor_permissions: set[str] | None = None,
+    actor_is_root: bool = False,
 ) -> AuthUser:
     """创建用户：保存初始密码 hash、可选组织与角色绑定，同事务写审计。"""
+    perms, is_root, actor = _scope_from_actor(
+        actor_id=actor_id, actor_permissions=actor_permissions, actor_is_root=actor_is_root
+    )
+    try:
+        assert_org_assignable(
+            session,
+            permissions=perms,
+            is_root=is_root,
+            actor_user_id=actor,
+            target_org_id=payload.org_id,
+        )
+    except OrgScopeError as exc:
+        _guard_scope(exc)
     validate_password_policy(payload.initial_password)
     if payload.org_id is not None and session.get(AuthOrgNode, payload.org_id) is None:
         raise UserError("ORG_NOT_FOUND", "Org node not found", 404)
@@ -141,8 +170,23 @@ def update_user(
     actor_id: str,
     actor_username: str | None,
     trace_id: str,
+    actor_permissions: set[str] | None = None,
+    actor_is_root: bool = False,
 ) -> AuthUser:
     """更新用户资料/组织/角色；替换角色时保护根管理员不变量。"""
+    perms, is_root, actor = _scope_from_actor(
+        actor_id=actor_id, actor_permissions=actor_permissions, actor_is_root=actor_is_root
+    )
+    try:
+        assert_user_manageable(
+            session,
+            permissions=perms,
+            is_root=is_root,
+            actor_user_id=actor,
+            target_user_id=user_id,
+        )
+    except OrgScopeError as exc:
+        _guard_scope(exc)
     user = get_user(session, user_id)
     changes: dict[str, object] = {}
     if payload.display_name is not None:
@@ -152,6 +196,16 @@ def update_user(
         user.email = payload.email
         changes["email"] = user.email
     if payload.org_id is not None:
+        try:
+            assert_org_assignable(
+                session,
+                permissions=perms,
+                is_root=is_root,
+                actor_user_id=actor,
+                target_org_id=payload.org_id,
+            )
+        except OrgScopeError as exc:
+            _guard_scope(exc)
         if session.get(AuthOrgNode, payload.org_id) is None:
             raise UserError("ORG_NOT_FOUND", "Org node not found", 404)
         user.org_node_id = payload.org_id
@@ -259,10 +313,16 @@ def list_users(
     q: str | None = None,
     limit: int = 100,
     offset: int = 0,
+    org_node_ids: list[uuid.UUID] | None = None,
 ) -> tuple[list[AuthUser], int]:
     capped = min(max(limit, 1), 500)
     base = select(AuthUser).order_by(AuthUser.username)
     count_stmt = select(func.count()).select_from(AuthUser)
+    if org_node_ids is not None:
+        if not org_node_ids:
+            return [], 0
+        base = base.where(AuthUser.org_node_id.in_(org_node_ids))
+        count_stmt = count_stmt.where(AuthUser.org_node_id.in_(org_node_ids))
     if q:
         pattern = f"%{q}%"
         base = base.where(ilike(AuthUser.username, pattern))

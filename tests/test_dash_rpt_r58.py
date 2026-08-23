@@ -290,6 +290,7 @@ def test_dash_r58_resolved_widgets_chart_type(client):
 
 def test_dash_r58_probe_execute_plan_under_budget(client):
     """D58-006-05: probe_theme_execute_plan ≤40ms。"""
+    from app.auth.deps import UserContext
     from app.dashboard.theme.execute import probe_theme_execute_plan_budget_ms
     from app.datasources.models import get_meta_session
 
@@ -298,7 +299,9 @@ def test_dash_r58_probe_execute_plan_under_budget(client):
     _save_theme_config(client, dash_id, widget_id=wid)
     db = get_meta_session()
     try:
-        elapsed = probe_theme_execute_plan_budget_ms(db, "dashboard", uuid.UUID(dash_id))
+        elapsed = probe_theme_execute_plan_budget_ms(
+            db, "dashboard", uuid.UUID(dash_id), UserContext(id="dev", username="dev", roles=["admin"], is_root=True),
+        )
     finally:
         db.close()
     assert elapsed <= 40.0

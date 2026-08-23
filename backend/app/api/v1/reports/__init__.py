@@ -231,10 +231,10 @@ def create_catalog_node(
 @router.get("/catalog/nodes/{node_id}", response_model=None)
 def get_catalog_node(
     node_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
-        return catalog_service.get_node(node_id)
+        return catalog_service.get_node(node_id, user)
     except ReportCatalogError as exc:
         return _catalog_error(exc)
 
@@ -367,10 +367,10 @@ def dismiss_all_recent_schedule_failures(
 @router.get("/schedules/{schedule_id}", response_model=None)
 def get_schedule(
     schedule_id: uuid.UUID,
-    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
 ):
     try:
-        return scheduler_service.get_schedule(schedule_id)
+        return scheduler_service.get_schedule(schedule_id, user)
     except ScheduleError as exc:
         return _schedule_error(exc)
 

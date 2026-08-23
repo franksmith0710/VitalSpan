@@ -39,7 +39,7 @@ def execute_query(session: Session, user: UserContext, payload: ExecuteRequest) 
     from app.query.binding_service import resolve_binding_execute
 
     if payload.binding_id is not None:
-        resolved = resolve_binding_execute(session, user.roles, payload.binding_id)
+        resolved = resolve_binding_execute(session, user.roles, payload.binding_id, is_root=user.is_root)
         data_source_id = resolved["data_source_id"]
         mode = resolved["mode"]
         sql = resolved.get("sql")
@@ -61,7 +61,7 @@ def execute_query(session: Session, user: UserContext, payload: ExecuteRequest) 
             )
 
     try:
-        assert_visible(session, user.roles, data_source_id)
+        assert_visible(session, user.roles, data_source_id, is_root=user.is_root)
     except VisibilityError as exc:
         raise QueryError(exc.code, exc.message, exc.status) from exc
 
@@ -71,6 +71,16 @@ def execute_query(session: Session, user: UserContext, payload: ExecuteRequest) 
         "org_column": payload.rls.org_column,
         "region_column": payload.rls.region_column,
     }
+    table_name_for_rls = table if mode == "table" else None
+    from app.auth.rls.resolve_config import enrich_rls_config
+
+    rls_config = enrich_rls_config(
+        session,
+        rls_config,
+        datasource_id=data_source_id,
+        dataset_id=None,
+        table_name=table_name_for_rls,
+    )
     try:
         if mode == "sql":
             result = _executor.execute_sql(
@@ -103,9 +113,20 @@ def execute_query(session: Session, user: UserContext, payload: ExecuteRequest) 
 
     result = apply_pandas_to_query_result(result)
 
-    return ExecuteResponse(
+    from app.auth.masking.service import apply_masks_to_result
+
+    table_name = table if mode == "table" else None
+    masked_cols, masked_rows = apply_masks_to_result(
+        session,
         columns=result.columns,
         rows=result.rows,
+        datasource_id=data_source_id,
+        table_name=table_name,
+    )
+
+    return ExecuteResponse(
+        columns=masked_cols,
+        rows=masked_rows,
         row_count=result.row_count,
         truncated=result.truncated,
         trace_id=trace_id_var.get() or "",

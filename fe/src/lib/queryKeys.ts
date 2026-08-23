@@ -19,6 +19,8 @@ export const queryKeys = {
     list: (params?: { codePrefix?: string; limit?: number; offset?: number }) =>
       ["roles", "list", params] as const,
     dimensionGroups: (roleId: string) => ["roles", roleId, "dimension-groups"] as const,
+    dimensionValues: (roleId: string, dimensionTypeId: string) =>
+      ["roles", roleId, "dimension-values", dimensionTypeId] as const,
   },
   permissions: {
     catalog: ["permissions", "catalog"] as const,
@@ -130,6 +132,8 @@ export const queryKeys = {
       limit?: number;
       offset?: number;
     }) => ["rls", "groups", params ?? {}] as const,
+    columnBindings: (params?: { datasetId?: string; datasourceId?: string }) =>
+      ["rls", "column-bindings", params ?? {}] as const,
   },
   audit: {
     events: (params?: Record<string, string | number | undefined>) =>

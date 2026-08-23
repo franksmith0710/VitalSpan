@@ -169,6 +169,28 @@ def _dump_computed(payload: DatasetItemIn) -> list[dict]:
     return [c.model_dump(by_alias=True) for c in payload.computed_fields]
 
 
+def _sync_rls_bindings(session: Session, payload: DatasetItemIn) -> None:
+    if not payload.rls_column_bindings:
+        return
+    from app.auth.rls.column_bindings.service import replace_dataset_bindings
+
+    bindings = [
+        {
+            "table_name": b.table_name,
+            "dimension_type_id": b.dimension_type_id,
+            "column_name": b.column_name,
+        }
+        for b in payload.rls_column_bindings
+    ]
+    replace_dataset_bindings(
+        session,
+        payload.dataset_id,
+        datasource_id=payload.table_source_datasource_id,
+        bindings=bindings,
+        commit=False,
+    )
+
+
 def create_dataset(payload: DatasetItemIn, user: UserContext) -> DatasetItemOut:
     _assert_dataset_write_access(user, payload.dataset_id)
     _validate_body(payload)
@@ -188,6 +210,7 @@ def create_dataset(payload: DatasetItemIn, user: UserContext) -> DatasetItemOut:
         )
         session.add(row)
         session.flush()
+        _sync_rls_bindings(session, payload)
         return _row_to_out(row)
 
     return _with_session(_op)
@@ -316,6 +339,7 @@ def update_dataset(dataset_id: str, payload: DatasetItemIn, user: UserContext) -
         row.allowed_roles = list(payload.allowed_roles)
         row.table_source_datasource_id = payload.table_source_datasource_id
         session.flush()
+        _sync_rls_bindings(session, payload)
         return _row_to_out(
             row,
             bound_config_revision=_bound_config_revision(session, row.bound_config_id),

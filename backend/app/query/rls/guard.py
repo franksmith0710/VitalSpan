@@ -54,6 +54,9 @@ def apply_rls_to_sql(
             column_by_dimension_id=column_by_dimension_id,
             table_alias=table_alias,
             org_column=org_column,
+            datasource_id=cfg.get("datasource_id"),
+            dataset_id=cfg.get("dataset_id"),
+            table_name=cfg.get("table_name"),
         )
     except RlsConfigError:
         raise

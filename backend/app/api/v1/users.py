@@ -8,7 +8,8 @@ from fastapi import APIRouter, Depends, Query, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
-from app.auth.deps import UserContext, require_permission
+from app.auth.deps import UserContext, require_any_permission, require_permission
+from app.auth.org_scope import list_filter_org_ids
 from app.auth.models import get_meta_session
 from app.auth.password.service import PasswordPolicyError
 from app.auth.schemas import (
@@ -24,6 +25,15 @@ from app.auth.schemas import (
     UserRolesResponse,
     UserUpdate,
 )
+from app.auth.schemas_phase_c import (
+    UserDimensionOverrideListResponse,
+    UserDimensionOverrideOut,
+    UserDimensionOverrideUpsert,
+    UserResourceGrantListResponse,
+    UserResourceGrantOut,
+    UserResourceGrantUpsert,
+)
+from app.auth.user_overrides import service as override_service
 from app.auth.users import im_bindings
 from app.auth.users import service as user_service
 from app.auth.roles import service as role_service
@@ -31,6 +41,7 @@ from app.core.logging import trace_id_var
 
 PERM_USER_READ = "system:user.read"
 PERM_USER_MANAGE = "system:user.manage"
+PERM_ORG_SCOPED_MANAGE = "system:org_scoped.manage"
 PERM_USER_PASSWORD_RESET = "system:user.password.reset"
 
 router = APIRouter(prefix="/users", tags=["auth"])
@@ -82,15 +93,45 @@ def _audit_context(actor: UserContext) -> dict[str, str | None]:
     }
 
 
+def _actor_scope(actor: UserContext) -> dict[str, object]:
+    return {
+        "actor_permissions": set(actor.permissions),
+        "actor_is_root": actor.is_root,
+    }
+
+
+def _override_error(exc: override_service.OverrideError) -> JSONResponse:
+    return JSONResponse(
+        status_code=exc.status,
+        content={"code": exc.code, "message": exc.message, "detail": None},
+    )
+
+
 @router.get("", response_model=UserListResponse)
 def list_users(
-    _: Annotated[UserContext, Depends(require_permission(PERM_USER_READ))],
+    actor: Annotated[
+        UserContext,
+        Depends(require_any_permission(PERM_USER_READ, PERM_ORG_SCOPED_MANAGE)),
+    ],
     db: Annotated[Session, Depends(_db)],
     q: str | None = None,
+    org_id: uuid.UUID | None = Query(default=None, alias="orgId"),
     limit: int = Query(default=100, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
 ) -> UserListResponse:
-    items, total = user_service.list_users(db, q, limit, offset)
+    org_filter = list_filter_org_ids(
+        db,
+        permissions=set(actor.permissions),
+        is_root=actor.is_root,
+        actor_user_id=actor.id,
+    )
+    if org_filter is not None:
+        if org_id is not None and org_id not in org_filter:
+            return UserListResponse(items=[], total=0)
+        effective_orgs = [org_id] if org_id is not None else org_filter
+    else:
+        effective_orgs = [org_id] if org_id is not None else None
+    items, total = user_service.list_users(db, q, limit, offset, org_node_ids=effective_orgs)
     role_map = user_service.list_users_role_map(db, [u.id for u in items])
     out_items = [
         UserListItemOut(
@@ -105,11 +146,16 @@ def list_users(
 @router.post("", response_model=UserOut, status_code=status.HTTP_201_CREATED)
 def create_user(
     payload: UserCreate,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_USER_MANAGE))],
+    actor: Annotated[
+        UserContext,
+        Depends(require_any_permission(PERM_USER_MANAGE, PERM_ORG_SCOPED_MANAGE)),
+    ],
     db: Annotated[Session, Depends(_db)],
 ) -> UserOut | JSONResponse:
     try:
-        user = user_service.create_user(db, payload, **_audit_context(actor))
+        user = user_service.create_user(
+            db, payload, **_audit_context(actor), **_actor_scope(actor)
+        )
     except PasswordPolicyError as exc:
         return JSONResponse(
             status_code=exc.status,
@@ -124,11 +170,16 @@ def create_user(
 def update_user(
     user_id: uuid.UUID,
     payload: UserUpdate,
-    actor: Annotated[UserContext, Depends(require_permission(PERM_USER_MANAGE))],
+    actor: Annotated[
+        UserContext,
+        Depends(require_any_permission(PERM_USER_MANAGE, PERM_ORG_SCOPED_MANAGE)),
+    ],
     db: Annotated[Session, Depends(_db)],
 ) -> UserOut | JSONResponse:
     try:
-        user = user_service.update_user(db, user_id, payload, **_audit_context(actor))
+        user = user_service.update_user(
+            db, user_id, payload, **_audit_context(actor), **_actor_scope(actor)
+        )
     except user_service.UserError as exc:
         return _user_error_response(exc)
     except role_service.RoleError as exc:
@@ -320,4 +371,157 @@ def clear_user_org_route(
         user_service.clear_user_org(db, user_id, **ctx)
     except user_service.UserError as exc:
         return _user_error_response(exc)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/{user_id}/resource-grants", response_model=UserResourceGrantListResponse)
+def list_user_resource_grants(
+    user_id: uuid.UUID,
+    actor: Annotated[
+        UserContext,
+        Depends(require_any_permission(PERM_USER_READ, PERM_ORG_SCOPED_MANAGE)),
+    ],
+    db: Annotated[Session, Depends(_db)],
+) -> UserResourceGrantListResponse | JSONResponse:
+    try:
+        user_service.get_user(db, user_id)
+        items = [
+            UserResourceGrantOut.model_validate(row)
+            for row in override_service.list_user_resource_grants(db, user_id)
+        ]
+    except user_service.UserError as exc:
+        return _user_error_response(exc)
+    return UserResourceGrantListResponse(items=items)
+
+
+@router.put("/{user_id}/resource-grants", response_model=UserResourceGrantOut)
+def upsert_user_resource_grant(
+    user_id: uuid.UUID,
+    payload: UserResourceGrantUpsert,
+    actor: Annotated[
+        UserContext,
+        Depends(require_any_permission(PERM_USER_MANAGE, PERM_ORG_SCOPED_MANAGE)),
+    ],
+    db: Annotated[Session, Depends(_db)],
+) -> UserResourceGrantOut | JSONResponse:
+    try:
+        row = override_service.upsert_user_resource_grant(
+            db,
+            user_id=user_id,
+            resource_type=payload.resource_type,
+            resource_id=payload.resource_id,
+            effect=payload.effect,
+            actor_id=actor.id,
+            actor_username=actor.username,
+            actor_permissions=set(actor.permissions),
+            actor_is_root=actor.is_root,
+            trace_id=trace_id_var.get() or uuid_mod.uuid4().hex,
+        )
+    except override_service.OverrideError as exc:
+        return _override_error(exc)
+    return UserResourceGrantOut.model_validate(row)
+
+
+@router.delete("/{user_id}/resource-grants/{grant_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_user_resource_grant_route(
+    user_id: uuid.UUID,
+    grant_id: uuid.UUID,
+    actor: Annotated[
+        UserContext,
+        Depends(require_any_permission(PERM_USER_MANAGE, PERM_ORG_SCOPED_MANAGE)),
+    ],
+    db: Annotated[Session, Depends(_db)],
+) -> Response | JSONResponse:
+    _ = user_id
+    try:
+        override_service.delete_user_resource_grant(
+            db,
+            grant_id,
+            actor_id=actor.id,
+            actor_username=actor.username,
+            actor_permissions=set(actor.permissions),
+            actor_is_root=actor.is_root,
+            trace_id=trace_id_var.get() or uuid_mod.uuid4().hex,
+        )
+    except override_service.OverrideError as exc:
+        return _override_error(exc)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/{user_id}/dimension-overrides", response_model=UserDimensionOverrideListResponse)
+def list_user_dimension_overrides(
+    user_id: uuid.UUID,
+    actor: Annotated[
+        UserContext,
+        Depends(require_any_permission(PERM_USER_READ, PERM_ORG_SCOPED_MANAGE)),
+    ],
+    db: Annotated[Session, Depends(_db)],
+) -> UserDimensionOverrideListResponse | JSONResponse:
+    try:
+        user_service.get_user(db, user_id)
+        items = [
+            UserDimensionOverrideOut.model_validate(row)
+            for row in override_service.list_user_dimension_overrides(db, user_id)
+        ]
+    except user_service.UserError as exc:
+        return _user_error_response(exc)
+    return UserDimensionOverrideListResponse(items=items)
+
+
+@router.put("/{user_id}/dimension-overrides", response_model=UserDimensionOverrideOut)
+def upsert_user_dimension_override(
+    user_id: uuid.UUID,
+    payload: UserDimensionOverrideUpsert,
+    actor: Annotated[
+        UserContext,
+        Depends(require_any_permission(PERM_USER_MANAGE, PERM_ORG_SCOPED_MANAGE)),
+    ],
+    db: Annotated[Session, Depends(_db)],
+) -> UserDimensionOverrideOut | JSONResponse:
+    try:
+        row = override_service.upsert_user_dimension_override(
+            db,
+            user_id=user_id,
+            dimension_type_id=payload.dimension_type_id,
+            value=payload.value,
+            effect=payload.effect,
+            actor_id=actor.id,
+            actor_username=actor.username,
+            actor_permissions=set(actor.permissions),
+            actor_is_root=actor.is_root,
+            trace_id=trace_id_var.get() or uuid_mod.uuid4().hex,
+        )
+    except override_service.OverrideError as exc:
+        return _override_error(exc)
+    return UserDimensionOverrideOut.model_validate(row)
+
+
+@router.delete(
+    "/{user_id}/dimension-overrides/{dimension_type_id}/{value}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_user_dimension_override_route(
+    user_id: uuid.UUID,
+    dimension_type_id: uuid.UUID,
+    value: str,
+    actor: Annotated[
+        UserContext,
+        Depends(require_any_permission(PERM_USER_MANAGE, PERM_ORG_SCOPED_MANAGE)),
+    ],
+    db: Annotated[Session, Depends(_db)],
+) -> Response | JSONResponse:
+    try:
+        override_service.delete_user_dimension_override(
+            db,
+            user_id=user_id,
+            dimension_type_id=dimension_type_id,
+            value=value,
+            actor_id=actor.id,
+            actor_username=actor.username,
+            actor_permissions=set(actor.permissions),
+            actor_is_root=actor.is_root,
+            trace_id=trace_id_var.get() or uuid_mod.uuid4().hex,
+        )
+    except override_service.OverrideError as exc:
+        return _override_error(exc)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
