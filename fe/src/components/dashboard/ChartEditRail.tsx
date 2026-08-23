@@ -64,7 +64,7 @@ function ChartEditRailInner({
         <ChartEditorColumn
           onDelete={onDelete}
           onDataRefresh={onDataRefresh}
-          className="border-r border-gray-200 dark:border-gray-800"
+          className="min-w-0"
         />
       }
       right={

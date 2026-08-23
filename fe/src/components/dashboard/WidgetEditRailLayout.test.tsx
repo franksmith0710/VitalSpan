@@ -43,8 +43,24 @@ describe("WidgetEditRailLayout", () => {
       />,
     );
 
-    const rail = container.firstElementChild as HTMLElement;
+    const rail = container.querySelector('[data-testid="widget-edit-rail-layout"]') as HTMLElement;
     expect(rail).toHaveClass("w-full");
     expect(rail).not.toHaveClass("ml-auto");
+  });
+
+  it("exposes a vertical resize handle between config and dataset columns", () => {
+    renderRail(
+      <WidgetEditRailLayout
+        leftLabel="GIS 地图"
+        rightLabel="数据集"
+        left={<div>配置</div>}
+        right={<div>字段库</div>}
+      />,
+    );
+
+    expect(screen.getByTestId("widget-edit-rail-resize-handle")).toHaveAttribute(
+      "aria-orientation",
+      "vertical",
+    );
   });
 });

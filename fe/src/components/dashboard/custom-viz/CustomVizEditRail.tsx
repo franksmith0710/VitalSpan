@@ -91,7 +91,7 @@ export function CustomVizEditRail({
           dashboardStyle={dashboardStyle}
           assignField={inspector.assignField}
           fieldAssignError={inspector.fieldAssignError}
-          className="border-r border-gray-200 dark:border-gray-800"
+          className="min-w-0"
         />
       }
       right={
