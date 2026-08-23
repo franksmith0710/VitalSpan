@@ -22,7 +22,7 @@ import { StandardAnalysisCompareControls } from "./StandardAnalysisCompareContro
 import { StandardAnalysisCompareMatrixView } from "./StandardAnalysisCompareMatrixView";
 import { StandardAnalysisCompareView } from "./StandardAnalysisCompareView";
 import type { CompareLayout } from "../standardAnalysisComparePrefs";
-import { themeAggregationHint } from "./standardAnalysisCompareUi";
+import { compareVolumeHint, themeAggregationHint } from "./standardAnalysisCompareUi";
 import { StandardAnalysisMetaRow, THEME_META } from "./standardAnalysisUi";
 import { StandardAnalysisLiveView } from "./StandardAnalysisLiveView";
 import { StandardAnalysisSnapshotStrip } from "./StandardAnalysisSnapshotStrip";
@@ -103,6 +103,8 @@ export function StandardAnalysisResultPanel({
 }: Props) {
   const activeQuery = viewMode === "live" ? runQuery : compareLayout === "matrix" ? matrixQuery : compareQuery;
   const themeLabel = THEME_META[activeTheme]?.label ?? activeTheme;
+  const compareVolumeNote =
+    viewMode === "compare" ? compareVolumeHint(pack, activeTheme) : null;
 
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col">
@@ -234,7 +236,7 @@ export function StandardAnalysisResultPanel({
             isLoading={runQuery.isLoading}
           />
         ) : (
-          <>
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <StandardAnalysisCompareControls
               layout={compareLayout}
               onLayoutChange={onCompareLayoutChange}
@@ -248,6 +250,11 @@ export function StandardAnalysisResultPanel({
               onBaselinePeriodChange={onBaselinePeriodChange}
               onMatrixPeriodKeysChange={onMatrixPeriodKeysChange}
             />
+            {compareVolumeNote ? (
+              <p className="shrink-0 border-b border-amber-200/80 bg-amber-50/80 px-5 py-2 text-theme-xs text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
+                {compareVolumeNote}
+              </p>
+            ) : null}
             {compareLayout === "matrix" ? (
               <StandardAnalysisCompareMatrixView
                 matrixData={matrixQuery.data}
@@ -265,7 +272,7 @@ export function StandardAnalysisResultPanel({
                 onCapturePreviousBaseline={onCapturePreviousBaseline}
               />
             )}
-          </>
+          </div>
         )}
       </Tabs>
     </section>

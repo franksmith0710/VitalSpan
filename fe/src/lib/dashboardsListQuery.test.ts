@@ -13,4 +13,10 @@ describe("buildDashboardsListUrl", () => {
       "/api/v1/dashboards?limit=50&offset=10",
     );
   });
+
+  it("appends q when provided", () => {
+    expect(
+      buildDashboardsListUrl({ limit: 20, offset: 0, surfaceKind: "dashboard", q: "销售" }),
+    ).toBe("/api/v1/dashboards?limit=20&offset=0&surfaceKind=dashboard&q=%E9%94%80%E5%94%AE");
+  });
 });

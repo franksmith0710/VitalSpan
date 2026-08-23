@@ -18,6 +18,24 @@ export function themeAggregationHint(pack: AnalysisPack, theme: AnalysisTheme): 
   return THEME_META[theme]?.label ?? theme;
 }
 
+const POINT_CAP_BY_PRESET: Record<AnalysisPack["snapshotCronPreset"], number> = {
+  daily: 90,
+  weekly: 52,
+  monthly: 24,
+};
+
+/** 周期对比模式下的数据量说明（快照并集 + 单期点数上限） */
+export function compareVolumeHint(pack: AnalysisPack, theme: AnalysisTheme): string | null {
+  if (theme === "lifecycle" || theme === "distribution") {
+    return "对比展示各期快照保存时的维度并集；区域/生命周期主题可能有 Top N 合并。";
+  }
+  if (theme === "activity" || theme === "trend") {
+    const cap = POINT_CAP_BY_PRESET[pack.snapshotCronPreset];
+    return `对比展示各期快照维度并集；单期最多保留最近 ${cap} 个时间点（${snapshotPresetLabel(pack.snapshotCronPreset)}）。`;
+  }
+  return null;
+}
+
 export function latestSnapshotForTheme(
   snapshots: SnapshotRecord[] | undefined,
   theme: AnalysisTheme,

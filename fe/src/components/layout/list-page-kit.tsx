@@ -209,6 +209,8 @@ export type DataTableProps = {
   lastColumnAlign?: "left" | "right";
   loadingRows?: number;
   size?: TableSize;
+  /** 表体区域最大高度，超出后纵向滚动；表头 sticky */
+  maxBodyHeight?: string;
 };
 
 export function DataTable({
@@ -220,6 +222,7 @@ export function DataTable({
   lastColumnAlign = "left",
   loadingRows = 4,
   size = "comfortable",
+  maxBodyHeight,
 }: DataTableProps) {
   const lastIndex = headers.length - 1;
 
@@ -239,8 +242,15 @@ export function DataTable({
   }
 
   return (
-    <div className="overflow-x-only">
-      <Table size={size} wrapperClassName="min-w-[640px] border-0 shadow-none">
+    <div
+      className={cn("overflow-x-only", maxBodyHeight && "overflow-y-auto")}
+      style={maxBodyHeight ? { maxHeight: maxBodyHeight } : undefined}
+    >
+      <Table
+        size={size}
+        stickyHeader={Boolean(maxBodyHeight)}
+        wrapperClassName="min-w-[640px] border-0 shadow-none"
+      >
       <TableHeader className="bg-gray-50/80 dark:bg-white/[0.02]">
         <TableRow className="hover:bg-transparent">
           {headers.map((header, index) => (

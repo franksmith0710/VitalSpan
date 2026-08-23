@@ -288,6 +288,7 @@ def list_dashboards(
         Literal["dashboard", "data-screen"] | None,
         Query(alias="surfaceKind"),
     ] = None,
+    q: str | None = Query(default=None, max_length=128),
 ):
     return dash_service.list_dashboards(
         db,
@@ -295,6 +296,7 @@ def list_dashboards(
         offset=offset,
         actor=user,
         surface_kind=surface_kind,
+        q=q,
     )
 
 

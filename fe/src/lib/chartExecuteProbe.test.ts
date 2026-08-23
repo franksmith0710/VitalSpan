@@ -286,6 +286,63 @@ describe("chartExecuteProbe shared execute", () => {
     );
   });
 
+  it("treats official demo dataset binding without configId as execute-ready", () => {
+    const config = {
+      ...defaultChartConfig("line"),
+      mode: "dataset" as const,
+      dataSourceId: TEMPLATE_DEMO_DATASOURCE_REF,
+      datasetId: "demo-sales-wide",
+      configId: undefined,
+      sql: undefined,
+      axes: {
+        xAxis: [{ field: "sale_date" }],
+        yAxis: [{ field: "amount" }],
+      },
+    };
+    expect(isChartExecuteReady(config)).toBe(true);
+  });
+
+  it("hydrates boundConfigId for demo dataset before execute", async () => {
+    apiFetchMock.mockImplementation(async (url: string) => {
+      if (url.includes("/api/v1/datasets")) {
+        return {
+          items: [
+            {
+              datasetId: "demo-sales-wide",
+              boundConfigId: "cfg-demo-wide",
+            },
+          ],
+        };
+      }
+      if (url === "/api/v1/datasources") {
+        return {
+          items: [{ id: "demo-ds-uuid", name: "示例数据", code: "demo", database: "sample_db" }],
+        };
+      }
+      return { columns: ["sale_date", "amount"], rows: [["2025-01-01", 1]] };
+    });
+
+    const config = {
+      ...defaultChartConfig("line"),
+      mode: "dataset" as const,
+      dataSourceId: TEMPLATE_DEMO_DATASOURCE_REF,
+      datasetId: "demo-sales-wide",
+      axes: {
+        xAxis: [{ field: "sale_date" }],
+        yAxis: [{ field: "amount" }],
+      },
+    };
+
+    await fetchChartExecuteResult(config);
+
+    const executeCall = apiFetchMock.mock.calls.find((call) =>
+      String(call[0]).includes("dataset/execute"),
+    );
+    const body = JSON.parse(String(executeCall?.[1]?.body));
+    expect(body.configId).toBe("cfg-demo-wide");
+    expect(body.dataSourceId).toBe("demo-ds-uuid");
+  });
+
   it("resolves template demo datasource ref before dataset execute", async () => {
     apiFetchMock.mockImplementation(async (url: string) => {
       if (url === "/api/v1/datasources") {

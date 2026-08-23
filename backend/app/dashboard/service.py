@@ -10,6 +10,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
+from app.core.db.sql_compat import ilike
 from app.dashboard.models import Dashboard
 from app.dashboard.surface_kind import SurfaceKindFilter
 from app.dashboard.preview_summary import extract_preview_summary, sync_surface_kind_column
@@ -184,6 +185,20 @@ def _official_demo_slugs() -> set[str]:
     return set(DEMO_INSTANCE_SLUGS) | set(LEGACY_DEMO_INSTANCE_SLUGS.keys())
 
 
+def _apply_dashboard_list_search(base, q: str | None):
+    needle = (q or "").strip()
+    if not needle:
+        return base
+    pattern = f"%{needle}%"
+    return base.where(
+        or_(
+            ilike(Dashboard.name, pattern),
+            ilike(Dashboard.slug, pattern),
+            ilike(Dashboard.description, pattern),
+        ),
+    )
+
+
 def list_dashboards(
     db: Session,
     *,
@@ -191,6 +206,7 @@ def list_dashboards(
     offset: int = 0,
     actor: UserContext | None = None,
     surface_kind: SurfaceKindFilter | None = None,
+    q: str | None = None,
 ) -> DashboardListResponse:
     base = select(Dashboard).where(Dashboard.deleted_at.is_(None))
     if actor is not None and "admin" not in actor.roles:
@@ -213,6 +229,7 @@ def list_dashboards(
         base = base.where(Dashboard.surface_kind == "data-screen")
     elif surface_kind == "dashboard":
         base = base.where(Dashboard.surface_kind != "data-screen")
+    base = _apply_dashboard_list_search(base, q)
 
     count_stmt = select(func.count()).select_from(base.subquery())
     total = int(db.scalar(count_stmt) or 0)

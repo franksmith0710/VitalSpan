@@ -13,6 +13,10 @@ import {
   formatCompareDeltaPct,
   hasPreviousSnapshot,
 } from "./standardAnalysisCompareUi";
+import {
+  STANDARD_COMPARE_TABLE_MAX_HEIGHT,
+  standardCompareTableScrollHint,
+} from "./standardAnalysisTableUi";
 
 type Props = {
   pack: AnalysisPack;
@@ -99,9 +103,11 @@ export function StandardAnalysisCompareView({
   onCapturePreviousBaseline,
 }: Props) {
   const ready = compareData && hasPreviousSnapshot(compareData);
+  const deltaRows = compareData?.deltas ?? [];
+  const scrollHint = standardCompareTableScrollHint(deltaRows.length);
 
   return (
-    <ListPageTableFrame className="flex min-h-0 flex-1 flex-col">
+    <ListPageTableFrame className="flex min-h-0 flex-1 flex-col px-5 pb-5 pt-0">
       {compareData && !isLoading ? (
         <div className="px-5 pt-4">
           <CompareSemanticsBanner activeTheme={activeTheme} compareData={compareData} />
@@ -121,10 +127,11 @@ export function StandardAnalysisCompareView({
       ) : (
         <DataTable
           loading={isLoading}
-          empty={!isLoading && ready && (compareData?.deltas.length ?? 0) === 0}
+          empty={!isLoading && ready && deltaRows.length === 0}
           headers={["维度", "本期", "对比期", "增减"]}
           lastColumnAlign="right"
-          rows={(compareData?.deltas ?? []).map((delta) => [
+          maxBodyHeight={deltaRows.length > 0 ? STANDARD_COMPARE_TABLE_MAX_HEIGHT : undefined}
+          rows={deltaRows.map((delta) => [
             <span key={`${delta.key}-dim`} className="font-medium text-gray-800 dark:text-white/90">
               {delta.key}
             </span>,
@@ -159,6 +166,8 @@ export function StandardAnalysisCompareView({
           <p className="text-theme-xs text-gray-500 dark:text-gray-400">
             本期 {compareData.currentPeriodKey}
             {compareData.previousPeriodKey ? ` · 对比期 ${compareData.previousPeriodKey}` : " · 对比期快照缺失"}
+            {scrollHint ? ` · ${scrollHint}` : ""}
+            {deltaRows.length > 0 ? ` · 共 ${deltaRows.length} 个维度` : ""}
           </p>
         </ListPageFooter>
       ) : null}

@@ -39,6 +39,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button, IconButton } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { SearchField } from "@/components/ui/search-field";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,6 +72,7 @@ import { isDemoPackageDashboard } from "@/lib/demoPackage";
 import {
   DashboardSurfaceViewModeToggle,
   formatDashboardListUpdatedAt,
+  useDashboardSurfaceListSearch,
   type DashboardSurfaceViewMode,
 } from "@/pages/admin/dashboard/dashboardListUi";
 import { DESTRUCTIVE_ALERT_ACTION_CLASS } from "@/components/layout/list-batch-delete";
@@ -113,13 +116,15 @@ export function DataScreenListPage() {
   const [batchDeleting, setBatchDeleting] = useState(false);
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
-  const pagination = useListPagination();
+  const { search, setSearch, debouncedQ, hasFilters } = useDashboardSurfaceListSearch();
+  const pagination = useListPagination(20, [debouncedQ]);
 
   const listQuery = useQuery({
     queryKey: queryKeys.dashboards.list({
       limit: pagination.pageSize,
       offset: pagination.offset,
       surfaceKind: "data-screen",
+      q: debouncedQ || undefined,
     }),
     queryFn: () =>
       apiFetch<DashboardListResponse>(
@@ -127,6 +132,7 @@ export function DataScreenListPage() {
           limit: pagination.pageSize,
           offset: pagination.offset,
           surfaceKind: "data-screen",
+          q: debouncedQ || undefined,
         }),
       ),
   });
@@ -340,9 +346,20 @@ export function DataScreenListPage() {
       }
     >
       <ListPageSection>
-        {canEdit ? (
-          <ListPageToolbar
-            actions={
+        <ListPageToolbar
+          filters={
+            <div className="grid w-full gap-2 sm:max-w-xs">
+              <Label className="sr-only">搜索大屏</Label>
+              <SearchField
+                value={search}
+                onChange={setSearch}
+                placeholder="搜索名称、标识或描述…"
+                aria-label="搜索大屏"
+              />
+            </div>
+          }
+          actions={
+            canEdit ? (
               <ListPageBatchActions
                 batchMode={batch.batchMode}
                 onToggleBatchMode={batch.toggleBatchMode}
@@ -351,9 +368,9 @@ export function DataScreenListPage() {
                 onClear={selection.clear}
                 onDelete={() => setBatchDeleteOpen(true)}
               />
-            }
-          />
-        ) : null}
+            ) : null
+          }
+        />
         {listQuery.isError ? (
           <ListPageBody>
             <PageErrorBanner
@@ -374,9 +391,13 @@ export function DataScreenListPage() {
           ) : listQuery.isError ? null : sortedItems.length === 0 ? (
             <ListPageCardGridEmptyState
               icon={<Monitor className="size-7" aria-hidden />}
-              title="暂无数据大屏"
-              description="创建 1920×1080 深色画布，拖拽图表与 KPI 组件，用于指挥大厅与监控墙展示。"
-              action={createButton}
+              title={hasFilters ? "未找到匹配的大屏" : "暂无数据大屏"}
+              description={
+                hasFilters
+                  ? "尝试调整搜索关键词。"
+                  : "创建 1920×1080 深色画布，拖拽图表与 KPI 组件，用于指挥大厅与监控墙展示。"
+              }
+              action={hasFilters ? undefined : createButton}
               headingId="data-screen-empty-title"
               layout="data-screen"
             />
@@ -434,9 +455,11 @@ export function DataScreenListPage() {
               lastColumnAlign="right"
               emptyState={{
                 icon: <Monitor className="size-7" aria-hidden />,
-                title: "暂无数据大屏",
-                description: "创建 1920×1080 深色画布，拖拽图表与 KPI 组件，用于指挥大厅与监控墙展示。",
-                action: createButton,
+                title: hasFilters ? "未找到匹配的大屏" : "暂无数据大屏",
+                description: hasFilters
+                  ? "尝试调整搜索关键词。"
+                  : "创建 1920×1080 深色画布，拖拽图表与 KPI 组件，用于指挥大厅与监控墙展示。",
+                action: hasFilters ? undefined : createButton,
                 layout: "data-screen",
               }}
               rows={sortedItems.map((row) => {

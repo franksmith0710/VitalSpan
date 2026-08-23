@@ -19,6 +19,15 @@ from app.reports.standard.volume_policy import (
     resolve_time_step,
 )
 
+# 聚合前丢弃无效/哨兵日期，避免 1970-01-01 等脏值进入活跃度维度
+_MIN_VALID_DATE = pd.Timestamp("1990-01-01")
+
+
+def _drop_invalid_time_rows(df: pd.DataFrame, col: str) -> pd.DataFrame:
+    parsed = pd.to_datetime(df[col], errors="coerce")
+    valid = parsed.notna() & (parsed >= _MIN_VALID_DATE)
+    return df.loc[valid].copy()
+
 
 def aggregate_pack_theme(
     theme: ThemeType,
@@ -65,6 +74,15 @@ def aggregate_pack_theme(
         col = mapping.created_at
         if not col or col not in df.columns:
             raise StandardAnalysisError(RPT_STD_FIELD_MAPPING, "createdAt mapping required", 422)
+        df = _drop_invalid_time_rows(df, col)
+        if df.empty:
+            meta = build_render_meta(
+                source_row_count=source_row_count,
+                aggregated_point_count=0,
+                query_limit=query_limit,
+                time_step=time_step,
+            )
+            return columns, [], meta
         buckets = bucket_time_series(df[col], time_step)
         out = df.assign(_d=buckets).groupby("_d", dropna=False).size().reset_index(name="cnt")
         out.columns = ["d", "cnt"]

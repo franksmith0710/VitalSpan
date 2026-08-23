@@ -232,7 +232,7 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET/POST | `/api/v1/dashboards` | Dashboard 列表/创建；列表返回 `layoutJson`+`previewSummary`+`widgetCount`+`surfaceKind`+`thumbnailUrl`；可选 `surfaceKind` 过滤；SQL 分页 | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
+| GET/POST | `/api/v1/dashboards` | Dashboard 列表/创建；列表返回 `layoutJson`+`previewSummary`+`widgetCount`+`surfaceKind`+`thumbnailUrl`；可选 `surfaceKind` 过滤；可选 `q` 按名称/标识/描述模糊搜索；SQL 分页 | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT/GET | `/api/v1/dashboards/{id}/thumbnail` | 列表缩略图上传/读取（保存时客户端截图 webp/png） | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | GET/PUT/DELETE | `/api/v1/dashboards/{id}` | Dashboard CRUD | 内部 | 一期 | DASH-001 | 已实现 | `backend/app/api/v1/dashboards.py` |
 | PUT | `/api/v1/dashboards/{id}/layout` | 双版本布局：v1 `colSpan/rowSpan/gridX/gridY`；v2 `canvas` + `x/y/width/height`（仪表板默认 `1440×≥900`；`styleConfig.surfaceKind=data-screen` 时默认 **`1920×1080`**）；`styleConfig.surfaceKind` 写入 layout 区分仪表板/数据大屏；`styleConfig.canvasBackgroundImageFit` / `canvasBackgroundImagePosition` 与 FE `WidgetBackgroundImageFit` 对齐持久化；禁止跨版本字段混用；422 码：`VIEW_LAYOUT_BOUNDS` / `DASH_INVALID_LAYOUT` / `DASH_DUPLICATE_WIDGET` / `DASH_MISSING_CHART_CONFIG` / `DASH_CHART_ID_MISMATCH` | 内部 | 一期 | DASH-002 | 已实现 | `backend/app/api/v1/dashboards.py` |

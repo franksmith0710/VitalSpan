@@ -1,8 +1,26 @@
+import { useEffect, useState } from "react";
 import { LayoutGrid, LayoutList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { DashboardSurfaceViewMode } from "@/lib/dashboardSurfaceListPrefs";
 
 export type { DashboardSurfaceViewMode };
+
+export function useDashboardSurfaceListSearch() {
+  const [search, setSearch] = useState("");
+  const [debouncedQ, setDebouncedQ] = useState("");
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedQ(search.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+
+  return {
+    search,
+    setSearch,
+    debouncedQ,
+    hasFilters: Boolean(debouncedQ),
+  };
+}
 
 export function formatDashboardListUpdatedAt(value: string): string {
   const date = new Date(value);

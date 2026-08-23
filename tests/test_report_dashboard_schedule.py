@@ -87,6 +87,13 @@ def mock_playwright(monkeypatch):
     _install_playwright_mock(monkeypatch)
 
 
+@contextmanager
+def _mock_smtp_send():
+    """Patch connect_smtp (delivery_adapter uses it, not smtplib.SMTP directly)."""
+    with patch("app.reports.scheduler.delivery_adapter.connect_smtp") as smtp_cls:
+        yield smtp_cls.return_value.__enter__.return_value
+
+
 @pytest.fixture(scope="module", autouse=True)
 def _sqlite():
     prev = os.environ.get("DATABASE_URL")
@@ -352,15 +359,14 @@ def test_dashboard_execute_smtp_attaches_pdf(client: TestClient, mock_playwright
         headers=AUTH,
         json={"action": "schedule"},
     )
-    with patch("app.reports.scheduler.delivery_adapter.smtplib.SMTP") as smtp_cls:
-        smtp_instance = smtp_cls.return_value.__enter__.return_value
+    with _mock_smtp_send() as smtp_instance:
         exec_resp = client.post(
             f"/api/v1/reports/schedules/{schedule_id}/execute",
             headers={**AUTH, "Idempotency-Key": "smtp-attach-1", "X-Rpt-Semi-Real": "1"},
         )
         assert exec_resp.status_code == 200, exec_resp.text
         body = exec_resp.json()
-        assert body.get("status") == "semi_real_succeeded"
+        assert body.get("status") == "semi_real_succeeded", body
         assert body.get("deliverySteps")[0]["status"] == "delivered"
         smtp_instance.send_message.assert_called_once()
         msg = smtp_instance.send_message.call_args[0][0]
@@ -548,19 +554,17 @@ def test_template_schedule_smtp_pdf_attachment(client: TestClient):
         headers=AUTH,
         json={"action": "schedule"},
     )
-    with patch("app.reports.engine.execute.execute_query") as mock_q, patch(
-        "app.reports.scheduler.delivery_adapter.smtplib.SMTP",
-    ) as smtp_cls:
+    with patch("app.reports.engine.execute.execute_query") as mock_q:
         from app.query.schemas import ExecuteResponse
 
         mock_q.return_value = ExecuteResponse(
             columns=["m1"], rows=[[1]], rowCount=1, truncated=False, traceId="t",
         )
-        smtp_instance = smtp_cls.return_value.__enter__.return_value
-        exec_resp = client.post(
-            f"/api/v1/reports/schedules/{schedule_id}/execute",
-            headers={**AUTH, "Idempotency-Key": "tpl-smtp-1", "X-Rpt-Semi-Real": "1"},
-        )
+        with _mock_smtp_send() as smtp_instance:
+            exec_resp = client.post(
+                f"/api/v1/reports/schedules/{schedule_id}/execute",
+                headers={**AUTH, "Idempotency-Key": "tpl-smtp-1", "X-Rpt-Semi-Real": "1"},
+            )
         assert exec_resp.status_code == 200, exec_resp.text
         body = exec_resp.json()
         assert body.get("status") == "semi_real_succeeded"
@@ -595,7 +599,7 @@ def test_schedule_persists_with_db_store(client: TestClient, monkeypatch):
     assert fetched.json()["name"] == "Persisted Schedule"
 
 
-def test_recent_failures_omit_superseded_by_later_success(client: TestClient):
+def test_recent_failures_omit_superseded_by_later_success(client: TestClient, mock_playwright):
     dash_id = _create_dashboard_with_widget(client, name="Fail Hide Dash", description="recent-failures")
     sched = client.post(
         "/api/v1/reports/schedules",
@@ -628,10 +632,11 @@ def test_recent_failures_omit_superseded_by_later_success(client: TestClient):
     assert before.status_code == 200
     assert any(item["executionId"] == parent_id for item in before.json()["items"])
 
-    retry = client.post(
-        f"/api/v1/reports/schedules/executions/{parent_id}/retry",
-        headers={**AUTH, "Idempotency-Key": "recent-fail-retry-1"},
-    )
+    with _mock_smtp_send():
+        retry = client.post(
+            f"/api/v1/reports/schedules/executions/{parent_id}/retry",
+            headers={**AUTH, "Idempotency-Key": "recent-fail-retry-1"},
+        )
     assert retry.status_code == 200, retry.text
     assert retry.json()["status"] == "semi_real_succeeded"
 

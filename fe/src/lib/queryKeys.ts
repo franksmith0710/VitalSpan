@@ -31,7 +31,7 @@ export const queryKeys = {
   },
   dashboards: {
     all: ["dashboards"] as const,
-    list: (params?: { limit?: number; offset?: number; surfaceKind?: string }) =>
+    list: (params?: { limit?: number; offset?: number; surfaceKind?: string; q?: string }) =>
       ["dashboards", "list", params] as const,
     globalFilters: (id: string) => ["dashboards", id, "globalFilters"] as const,
   },

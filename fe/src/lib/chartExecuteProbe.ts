@@ -1,6 +1,6 @@
 import { apiFetch, isEmbedShareContext, resolveDatasetExecutePath } from "@/lib/api";
 import { createConcurrencyLimiter } from "@/lib/asyncConcurrencyLimiter";
-import type { ChartFilterRef, ChartTimeRangeRef, ChartViewConfig, ChartType } from "@/lib/chartViewConfig";
+import type { ChartFieldRef, ChartFilterRef, ChartTimeRangeRef, ChartViewConfig, ChartType } from "@/lib/chartViewConfig";
 import { isGisMapChartType } from "@/lib/chartViewConfig";
 import type { SampleDatasourceItem } from "@/lib/mapChartSalesGeo";
 import {
@@ -8,9 +8,14 @@ import {
   resolveTemplateDemoDatasourceId,
   TEMPLATE_DEMO_DATASOURCE_REF,
 } from "@/lib/templateDemoData";
-import { migrateChartConfigToDeAxes, resolveChartEncoding } from "@/lib/resolveChartEncoding";
+import { migrateChartConfigToDeAxes, resolveChartEncoding, deAxisRenderReady } from "@/lib/resolveChartEncoding";
 import { groupDatasetFields } from "@/components/dashboard/datasetFieldClassification";
 import { nativeBodyHasLegacySqlBinding } from "@/lib/chartNativeBodyUi";
+import { isDemoPackageDataset } from "@/lib/demoPackage";
+
+function activeFieldRefs(refs: ChartFieldRef[] | undefined): ChartFieldRef[] {
+  return (refs ?? []).filter((r) => Boolean(r.field?.trim()));
+}
 
 export type ChartExecuteEncoding = {
   chartType: string;
@@ -153,14 +158,32 @@ export function chartExecuteNotReadyMessage(config: ChartViewConfig): string {
     return "请绑定数据集后再出图";
   }
   if (!config.dataSourceId) return "请绑定数据集";
-  if (!config.configId) return "请绑定数据集";
+  if (!config.configId && !isDemoDatasetBindingPendingHydration(config)) return "请绑定数据集";
   return "请绑定数据集";
+}
+
+function hasDatasetFieldBinding(config: ChartViewConfig): boolean {
+  if (activeFieldRefs(config.dimensions).length > 0 || activeFieldRefs(config.metrics).length > 0) {
+    return true;
+  }
+  return deAxisRenderReady(config);
+}
+
+function isDemoDatasetBindingPendingHydration(config: ChartViewConfig): boolean {
+  return (
+    config.mode === "dataset" &&
+    Boolean(config.datasetId && isDemoPackageDataset(config.datasetId)) &&
+    Boolean(config.dataSourceId) &&
+    !config.configId &&
+    hasDatasetFieldBinding(config)
+  );
 }
 
 export function isChartExecuteReady(config: ChartViewConfig): boolean {
   if (config.bindingId || config.sql?.trim() || config.table) return false;
   if (nativeBodyHasLegacySqlBinding(config.nativeBody)) return false;
-  return Boolean(config.dataSourceId && config.configId);
+  if (config.dataSourceId && config.configId) return true;
+  return isDemoDatasetBindingPendingHydration(config);
 }
 
 /** 仅序列化会影响 execute 请求的绑定字段（不含 deStyle/deDisplay 等展示配置） */
@@ -194,10 +217,12 @@ const executeResultCache = new Map<string, ChartExecuteResult>();
 const executeConcurrencyLimiter = createConcurrencyLimiter(CHART_EXECUTE_MAX_CONCURRENCY);
 
 let cachedDemoDatasourceId: string | null | undefined;
+let cachedDatasetBoundConfigIds: Map<string, string> | null = null;
 
 /** 测试用：清空演示数据源缓存 */
 export function resetDemoDatasourceExecuteCache(): void {
   cachedDemoDatasourceId = undefined;
+  cachedDatasetBoundConfigIds = null;
 }
 
 async function resolveDemoDatasourceRef(dataSourceId: string | undefined): Promise<string | undefined> {
@@ -220,12 +245,38 @@ async function resolveDemoDatasourceRef(dataSourceId: string | undefined): Promi
   return cachedDemoDatasourceId ?? dataSourceId;
 }
 
+async function resolveDatasetBoundConfigId(datasetId: string): Promise<string | null> {
+  if (!cachedDatasetBoundConfigIds) {
+    try {
+      const res = await apiFetch<{
+        items: Array<{ datasetId: string; boundConfigId?: string | null }>;
+      }>("/api/v1/datasets?limit=200&offset=0");
+      cachedDatasetBoundConfigIds = new Map();
+      for (const item of res.items ?? []) {
+        if (item.boundConfigId) {
+          cachedDatasetBoundConfigIds.set(item.datasetId, item.boundConfigId);
+        }
+      }
+    } catch {
+      cachedDatasetBoundConfigIds = new Map();
+    }
+  }
+  return cachedDatasetBoundConfigIds.get(datasetId) ?? null;
+}
+
 async function configForExecute(config: ChartViewConfig): Promise<ChartViewConfig> {
   const dataSourceId = await resolveDemoDatasourceRef(config.dataSourceId);
-  return bindChartConfigDemoDatasource(
+  let next = bindChartConfigDemoDatasource(
     dataSourceId === config.dataSourceId ? config : { ...config, dataSourceId },
     dataSourceId !== config.dataSourceId ? dataSourceId : null,
   );
+  if (next.mode === "dataset" && next.datasetId && !next.configId) {
+    const boundId = await resolveDatasetBoundConfigId(next.datasetId);
+    if (boundId) {
+      next = { ...next, configId: boundId };
+    }
+  }
+  return next;
 }
 
 /** 读取最近一次成功的 execute 结果（用于 remount 时避免 loading 闪屏） */

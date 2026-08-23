@@ -1,5 +1,9 @@
 import { DataTable, ListPageFooter, ListPageTableFrame } from "@/components/layout/list-page-kit";
 import type { CompareMatrixResult } from "../useStandardAnalysis";
+import {
+  STANDARD_COMPARE_TABLE_MAX_HEIGHT,
+  standardCompareTableScrollHint,
+} from "./standardAnalysisTableUi";
 
 type Props = {
   matrixData?: CompareMatrixResult;
@@ -8,14 +12,17 @@ type Props = {
 
 export function StandardAnalysisCompareMatrixView({ matrixData, isLoading }: Props) {
   const periodKeys = matrixData?.periodKeys ?? [];
+  const rowCount = matrixData?.rows.length ?? 0;
   const headers = ["维度", ...periodKeys];
+  const scrollHint = standardCompareTableScrollHint(rowCount);
 
   return (
-    <ListPageTableFrame className="flex min-h-0 flex-1 flex-col">
+    <ListPageTableFrame className="flex min-h-0 flex-1 flex-col px-5 pb-5 pt-0">
       <DataTable
         loading={isLoading}
-        empty={!isLoading && (matrixData?.rows.length ?? 0) === 0}
+        empty={!isLoading && rowCount === 0}
         headers={headers}
+        maxBodyHeight={rowCount > 0 ? STANDARD_COMPARE_TABLE_MAX_HEIGHT : undefined}
         rows={(matrixData?.rows ?? []).map((row) => [
           <span key={`${row.key}-dim`} className="font-medium text-gray-800 dark:text-white/90">
             {row.key}
@@ -35,7 +42,8 @@ export function StandardAnalysisCompareMatrixView({ matrixData, isLoading }: Pro
       {matrixData && !isLoading ? (
         <ListPageFooter>
           <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-            共 {periodKeys.length} 个周期 · {matrixData.rows.length} 个维度
+            共 {periodKeys.length} 个周期 · {rowCount} 个维度
+            {scrollHint ? ` · ${scrollHint}` : ""}
           </p>
         </ListPageFooter>
       ) : null}

@@ -6,35 +6,49 @@
 
 | 字段 | 值 |
 |------|----|
-| phase | **A8_DONE** |
-| status | **DONE** |
-| request | 10 套大屏疏朗排布模板 + compose template 参数 |
+| phase | **A5_EXECUTE** |
+| status | **RUNNING** |
+| request | 报表中心 M0 信任链闭环 |
 | type | feature |
-| goal | DeepTalk compose 用模板出图，禁止密集手写 layout |
-| last_verified | 2026-08-21：plugin v0.2.5 smoke 10 templates ok |
+| goal | 标准分析可读性 + 投递/smoke 绿 + 脏数据清洗 |
+| last_verified | — |
 | repair_rounds | 0 |
+| started_at | 2026-08-23 |
 
 ## 当前需求契约
 
-- **request**: compose/upload 内置图默认绑演示数据
+- **request**: 报表优化 M0 信任链（用户 /dev-autopilot）
 - **type**: feature
-- **goal**: vitalspan_compose_dashboard 生成的 chart 写入 `__demo:sample_db__` + 官方 SQL
-- **scope_include**: vs-ai-spec export script；deeptalk plugin layoutBuilder v0.2.4
-- **scope_exclude**: customViz Dataset 自动绑；后端 editor-save 改造
-- **acceptance**: plugin smoke 断言 radar 含 sql + demo ref
+- **goal**: 标准分析多期表可滚动/有提示；截断与脏日期诚实；报表域测试全绿
+- **scope_include**:
+  - `fe/src/pages/admin/reports/` 标准分析对比表 UX
+  - `backend/app/reports/standard/theme_aggregate.py` 日期清洗
+  - 报表相关 smoke/pytest 修漂移
+- **scope_exclude**:
+  - M1 看板查询参数/IM/模板向导
+  - M2 交叉表/库内聚合/调度队列
+  - git commit（除非用户要求）
+- **acceptance**:
+  - `pytest tests/test_*report*` / standard schedule 相关绿
+  - `pnpm exec vitest run src/pages/admin/reports` 绿
 - **risk_level**: low
 - **autonomy_policy**: auto_accept_low_risk
+
+## 假设与决策
+
+- 多期并排与两期对比表采用「表头固定 + 表体滚动 + 页脚总行数」；>200 行暂不虚拟滚动（M0 够用）
+- 脏日期：聚合前丢弃 `created_at` 解析失败或 epoch 哨兵日期
 
 ## 上一轮（归档）
 
 | 字段 | 值 |
 |------|----|
-| request | gis-map chartType Phase 0+1 |
+| request | compose 内置图官方演示 SQL |
 | phase | A8_DONE |
 
 ## 修订记录
 
 | 日期 | 说明 |
 |------|------|
-| 2026-08-21 | compose 内置图官方演示 SQL 绑定（plugin v0.2.4） |
-| 2026-08-17 | gis-map Phase 0+1 启动 |
+| 2026-08-23 | 报表 M0 信任链启动 |
+| 2026-08-21 | compose 内置图官方演示 SQL 绑定 |

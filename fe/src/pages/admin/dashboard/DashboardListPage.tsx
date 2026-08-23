@@ -55,9 +55,12 @@ import { createFromTemplate, type DashboardTemplateListItem } from "@/lib/dashbo
 import { isDemoPackageDashboard } from "@/lib/demoPackage";
 import { SCHEDULE_CREATE_INTENT } from "@/lib/scheduleSourceMeta";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Label } from "@/components/ui/label";
+import { SearchField } from "@/components/ui/search-field";
 import {
   DashboardSurfaceViewModeToggle,
   formatDashboardListUpdatedAt,
+  useDashboardSurfaceListSearch,
   type DashboardSurfaceViewMode,
 } from "./dashboardListUi";
 import { DESTRUCTIVE_ALERT_ACTION_CLASS } from "@/components/layout/list-batch-delete";
@@ -104,13 +107,15 @@ export function DashboardListPage() {
   const [batchDeleting, setBatchDeleting] = useState(false);
   const [quickCreateOpen, setQuickCreateOpen] = useState(false);
   const [templatePickerOpen, setTemplatePickerOpen] = useState(false);
-  const pagination = useListPagination();
+  const { search, setSearch, debouncedQ, hasFilters } = useDashboardSurfaceListSearch();
+  const pagination = useListPagination(20, [debouncedQ]);
 
   const listQuery = useQuery({
     queryKey: queryKeys.dashboards.list({
       limit: pagination.pageSize,
       offset: pagination.offset,
       surfaceKind: "dashboard",
+      q: debouncedQ || undefined,
     }),
     queryFn: () =>
       apiFetch<DashboardListResponse>(
@@ -118,6 +123,7 @@ export function DashboardListPage() {
           limit: pagination.pageSize,
           offset: pagination.offset,
           surfaceKind: "dashboard",
+          q: debouncedQ || undefined,
         }),
       ),
   });
@@ -242,9 +248,20 @@ export function DashboardListPage() {
             </AlertDescription>
           </Alert>
         ) : null}
-        {canEdit ? (
-          <ListPageToolbar
-            actions={
+        <ListPageToolbar
+          filters={
+            <div className="grid w-full gap-2 sm:max-w-xs">
+              <Label className="sr-only">搜索看板</Label>
+              <SearchField
+                value={search}
+                onChange={setSearch}
+                placeholder="搜索名称、标识或描述…"
+                aria-label="搜索看板"
+              />
+            </div>
+          }
+          actions={
+            canEdit ? (
               <ListPageBatchActions
                 batchMode={batch.batchMode}
                 onToggleBatchMode={batch.toggleBatchMode}
@@ -253,9 +270,9 @@ export function DashboardListPage() {
                 onClear={selection.clear}
                 onDelete={() => setBatchDeleteOpen(true)}
               />
-            }
-          />
-        ) : null}
+            ) : null
+          }
+        />
         {listQuery.isError ? (
           <ListPageBody>
             <PageErrorBanner
@@ -276,9 +293,13 @@ export function DashboardListPage() {
             ) : listQuery.isError ? null : sortedItems.length === 0 ? (
               <ListPageCardGridEmptyState
                 icon={<DashboardListEmptyIcon />}
-                title="暂无仪表板"
-                description="创建第一个看板，拖拽图表组件并绑定数据源后即可发布。"
-                action={createButton}
+                title={hasFilters ? "未找到匹配的看板" : "暂无仪表板"}
+                description={
+                  hasFilters
+                    ? "尝试调整搜索关键词。"
+                    : "创建第一个看板，拖拽图表组件并绑定数据源后即可发布。"
+                }
+                action={hasFilters ? undefined : createButton}
                 headingId="dashboard-empty-title"
                 layout="cards"
               />
@@ -335,9 +356,11 @@ export function DashboardListPage() {
             lastColumnAlign="right"
             emptyState={{
               icon: <DashboardListEmptyIcon />,
-              title: "暂无仪表板",
-              description: "创建第一个看板，拖拽图表组件并绑定数据源后即可发布。",
-              action: createButton,
+              title: hasFilters ? "未找到匹配的看板" : "暂无仪表板",
+              description: hasFilters
+                ? "尝试调整搜索关键词。"
+                : "创建第一个看板，拖拽图表组件并绑定数据源后即可发布。",
+              action: hasFilters ? undefined : createButton,
               layout: "cards",
             }}
             rows={sortedItems.map((row) => {

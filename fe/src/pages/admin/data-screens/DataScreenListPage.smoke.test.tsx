@@ -86,6 +86,7 @@ describe("DataScreenListPage smoke", () => {
     });
     renderPage();
     expect(await screen.findByRole("button", { name: "批量操作" })).toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: "搜索大屏" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "卡片" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "列表" })).toBeInTheDocument();
   });
