@@ -1,4 +1,4 @@
-"""Artifact storage port: filesystem (default) with optional S3 stub."""
+"""Artifact storage port: filesystem (default) or in-memory (tests)."""
 
 from __future__ import annotations
 

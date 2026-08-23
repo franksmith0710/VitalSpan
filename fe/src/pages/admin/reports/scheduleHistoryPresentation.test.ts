@@ -18,6 +18,7 @@ describe("executionErrorHeadline", () => {
 
 describe("executionStatusColor", () => {
   it("maps degraded delivery to warning", () => {
+    expect(executionStatusColor("delivery_degraded")).toBe("warning");
     expect(executionStatusColor("semi_real_delivery_degraded")).toBe("warning");
   });
 });

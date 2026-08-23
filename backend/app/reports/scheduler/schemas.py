@@ -129,6 +129,11 @@ class ScheduleExecuteOut(BaseModel):
     execution_id: uuid.UUID = Field(alias="executionId")
     schedule_id: uuid.UUID = Field(alias="scheduleId")
     status: Literal[
+        "succeeded",
+        "failed",
+        "delivery_degraded",
+        "skipped",
+        "pending",
         "mock_succeeded",
         "mock_skipped",
         "semi_real_succeeded",

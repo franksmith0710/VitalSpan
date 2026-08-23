@@ -21,7 +21,11 @@ DASHBOARD_OK_RE = re.compile(
     r"ok\s+dashboardId=([0-9a-fA-F-]{36})",
     re.IGNORECASE,
 )
+LAYOUT_WIDGETS_RE = re.compile(r"layout widgets:\s*(\d+)", re.IGNORECASE)
 VALIDATE_OK_RE = re.compile(r"validate\s+ok|dry-run ok|preflight ok", re.IGNORECASE)
+TIER_FULL_RE = re.compile(r"styleComplianceTier=full", re.IGNORECASE)
+TIER_BAD_RE = re.compile(r"styleComplianceTier=(partial|visual-only)", re.IGNORECASE)
+WARNINGS_RE = re.compile(r"warnings?\s*[=:]\s*([1-9]\d*)", re.IGNORECASE)
 
 FORBIDDEN_PHRASES = (
     "保存到 output",
@@ -32,6 +36,12 @@ FORBIDDEN_PHRASES = (
     "写到磁盘即交付",
     "可在工作区直接使用",
     "可在扩展中直接使用",
+)
+
+DEPRECATED_STYLE_PATTERNS = (
+    "vs-cv-style-update",
+    "getStyle()",
+    ".vs-cv-style",
 )
 
 
@@ -51,6 +61,33 @@ class GateResult:
             "dashboardId": self.dashboard_id,
             "reasons": self.reasons,
         }
+
+
+def validate_workflow3_stdout(tool_stdout: str) -> list[str]:
+    reasons: list[str] = []
+    if not tool_stdout.strip():
+        reasons.append(
+            "workflow 3 requires tool_stdout from vitalspan_compose_dashboard or vitalspan_upload_dashboard",
+        )
+        return reasons
+    if not DASHBOARD_OK_RE.search(tool_stdout):
+        reasons.append("tool_stdout must contain ok dashboardId=<uuid> from compose or upload")
+    if "next: vitalspan_upload_dashboard" in tool_stdout:
+        reasons.append(
+            "tool_stdout from create_dashboard is not workflow 3 completion — compose or upload required",
+        )
+    if "patch style only" in tool_stdout:
+        reasons.append(
+            "tool_stdout from get_dashboard_layout is not completion — upload after style patch",
+        )
+    if re.search(r"\nfile \S+", tool_stdout):
+        reasons.append(
+            "tool_stdout looks like get_dashboard_layout export — use compose or upload stdout",
+        )
+    widget_match = LAYOUT_WIDGETS_RE.search(tool_stdout)
+    if not widget_match or int(widget_match.group(1)) < 1:
+        reasons.append("tool_stdout must include layout widgets: N with N>=1 from compose or upload")
+    return reasons
 
 
 def check_completion(workflow: str, agent_summary: str, tool_stdout: str = "") -> GateResult:
@@ -80,13 +117,25 @@ def check_completion(workflow: str, agent_summary: str, tool_stdout: str = "") -
     if wf == "2":
         if not artifact_id:
             reasons.append("workflow 2 requires artifactId=<uuid> in summary or tool output")
+        if tool_stdout.strip():
+            if TIER_BAD_RE.search(tool_stdout):
+                reasons.append(
+                    "publish returned partial/visual-only tier — fix customViz style checklist before ending",
+                )
+            elif not TIER_FULL_RE.search(tool_stdout):
+                reasons.append(
+                    "publish stdout missing styleComplianceTier=full — re-publish and pass tool_stdout to gate",
+                )
+            warn_match = WARNINGS_RE.search(tool_stdout)
+            if warn_match:
+                reasons.append(f"publish has {warn_match.group(1)} warning(s) — fix bundle before ending")
+            for pat in DEPRECATED_STYLE_PATTERNS:
+                if pat in tool_stdout or pat in agent_summary:
+                    reasons.append(
+                        f"deprecated style integration: {pat} — use host.vsCv.mount + p.style",
+                    )
     elif wf == "3":
-        if not tool_stdout.strip():
-            reasons.append(
-                "workflow 3 requires tool_stdout from vitalspan_compose_dashboard or vitalspan_upload_dashboard",
-            )
-        elif not DASHBOARD_OK_RE.search(tool_stdout):
-            reasons.append("tool_stdout must contain ok dashboardId=<uuid> from compose or upload")
+        reasons.extend(validate_workflow3_stdout(tool_stdout))
         if not dashboard_id:
             reasons.append("workflow 3 requires dashboardId=<uuid> in summary or tool output")
         stdout_match = DASHBOARD_OK_RE.search(tool_stdout)

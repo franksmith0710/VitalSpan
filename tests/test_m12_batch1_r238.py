@@ -192,7 +192,7 @@ def test_rpt_r238_005_retry_parent_execution(client):
     )
     assert ex.status_code == 200
     parent_id = ex.json()["executionId"]
-    assert ex.json()["status"] == "semi_real_failed"
+    assert ex.json()["status"] == "failed"
     retry_key = f"retry-{uuid.uuid4().hex}"
     retry = client.post(
         f"/api/v1/reports/schedules/executions/{parent_id}/retry",

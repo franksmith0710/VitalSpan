@@ -210,6 +210,8 @@ export const EXECUTION_STATUS_LABELS: Record<string, string> = {
   pending: "进行中",
   succeeded: "成功",
   failed: "失败",
+  delivery_degraded: "已生成未投递",
+  skipped: "已跳过",
   semi_real_succeeded: "成功",
   semi_real_failed: "失败",
   semi_real_delivery_degraded: "已生成未投递",

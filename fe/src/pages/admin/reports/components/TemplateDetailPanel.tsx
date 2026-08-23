@@ -185,6 +185,7 @@ export function TemplateDetailPanel({
                 >
                   {node.templateKey && node.templateKind ? (
                     <TemplateBlockEditor
+                      nodeId={node.id}
                       templateKey={node.templateKey}
                       format={node.templateKind}
                       displayName={node.name}

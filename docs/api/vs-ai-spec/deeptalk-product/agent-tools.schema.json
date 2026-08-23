@@ -186,7 +186,7 @@
     {
       "name": "vitalspan_completion_gate",
       "runtime": "plugin|cli",
-      "description": "Reject task completion without artifactId (wf2) or ok dashboardId= in tool_stdout (wf3); reject output/ delivery phrases",
+      "description": "Reject completion without artifactId+tier=full (wf2) or compose/upload stdout with layout widgets (wf3)",
       "cli": "python executor/cli.py vitalspan_completion_gate --workflow {workflow} --agent-summary {agent_summary} --tool-stdout {tool_stdout}",
       "parameters": {
         "type": "object",

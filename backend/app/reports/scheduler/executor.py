@@ -22,6 +22,7 @@ from app.reports.scheduler.schemas import ScheduleExecuteOut, ScheduleRecipientI
 from app.reports.scheduler import service as scheduler_service
 from app.core.config import get_settings
 from app.reports.scheduler.store import MemoryScheduleStore, get_schedule_store
+from app.reports.scheduler.status_public import normalize_execute_out, to_public_execution_status
 from app.reports.scheduler.user_errors import user_visible_export_error
 
 logger = logging.getLogger(__name__)
@@ -41,19 +42,21 @@ def _memory_store() -> MemoryScheduleStore | None:
 
 
 def _execution_row_to_out(row: dict) -> ScheduleExecuteOut:
-    return ScheduleExecuteOut(
-        executionId=row["executionId"],
-        scheduleId=row["scheduleId"],
-        status=row["status"],
-        artifactRef=row["artifactRef"],
-        artifactKind=row.get("artifactKind"),
-        idempotencyKey=row.get("idempotencyKey") or "",
-        executedAt=row.get("executedAt") or datetime.now(UTC).isoformat(),
-        deliverySteps=row.get("deliverySteps") or [],
-        revisionSnapshot=row.get("revisionSnapshot"),
-        errorMessage=row.get("errorMessage"),
-        parentExecutionId=row.get("parentExecutionId"),
-        secondaryArtifacts=row.get("secondaryArtifacts") or [],
+    return normalize_execute_out(
+        ScheduleExecuteOut(
+            executionId=row["executionId"],
+            scheduleId=row["scheduleId"],
+            status=row["status"],
+            artifactRef=row["artifactRef"],
+            artifactKind=row.get("artifactKind"),
+            idempotencyKey=row.get("idempotencyKey") or "",
+            executedAt=row.get("executedAt") or datetime.now(UTC).isoformat(),
+            deliverySteps=row.get("deliverySteps") or [],
+            revisionSnapshot=row.get("revisionSnapshot"),
+            errorMessage=row.get("errorMessage"),
+            parentExecutionId=row.get("parentExecutionId"),
+            secondaryArtifacts=row.get("secondaryArtifacts") or [],
+        ),
     )
 
 
@@ -161,7 +164,10 @@ def list_recent_failed_executions(limit: int = 20) -> dict:
             continue
         failed_rows.append(entry)
     failed_rows.sort(key=lambda r: r.get("executedAt", ""), reverse=True)
-    return {"items": failed_rows[:limit], "total": len(failed_rows)}
+    return {
+        "items": [_public_history_row(row) for row in failed_rows[:limit]],
+        "total": len(failed_rows),
+    }
 
 
 def list_executions(schedule_id: uuid.UUID, limit: int = 50, offset: int = 0) -> dict:
@@ -170,7 +176,14 @@ def list_executions(schedule_id: uuid.UUID, limit: int = 50, offset: int = 0) ->
         rows = sorted(mem.list_executions(schedule_id), key=lambda r: r["executedAt"], reverse=True)
     else:
         rows = get_schedule_store().list_executions(schedule_id)
-    return {"items": rows[offset : offset + limit], "total": len(rows)}
+    page = [_public_history_row(row) for row in rows[offset : offset + limit]]
+    return {"items": page, "total": len(rows)}
+
+
+def _public_history_row(row: dict) -> dict:
+    item = dict(row)
+    item["status"] = to_public_execution_status(str(item.get("status") or ""))
+    return item
 
 
 def mock_execute_schedule(
@@ -198,7 +211,7 @@ def mock_execute_schedule(
     )
     _remember_execution(out)
     _append_history(schedule_id, out)
-    return out
+    return normalize_execute_out(out)
 
 
 def _persist_execution_artifact(
@@ -383,7 +396,7 @@ def semi_real_execute_schedule(
         )
         _remember_execution(out)
         _append_history(schedule_id, out, error_message=export_error)
-        return out
+        return normalize_execute_out(out)
     recipient_emails: list[str] | None = None
     im_targets: dict[str, list[tuple[str, str]]] = {}
     im_missing: dict[str, list[str]] = {}
@@ -426,7 +439,7 @@ def semi_real_execute_schedule(
         )
         _remember_execution(out)
         _append_history(schedule_id, out, error_message=error_message)
-        return out
+        return normalize_execute_out(out)
     att_bytes = attachments[0][0] if attachments else None
     att_mime = attachments[0][1] if attachments else None
     att_name = attachments[0][2] if attachments else None
@@ -477,7 +490,7 @@ def semi_real_execute_schedule(
     _append_history(schedule_id, out, error_message=error_message)
     _record_delivery_attempts(execution_id, delivery["deliverySteps"])
     register_artifact_owner(artifact_ref, actor.id)
-    return out
+    return normalize_execute_out(out)
 
 
 def retry_execution(

@@ -118,37 +118,31 @@ export function ColumnMasksPanel() {
         <Skeleton className="h-40 w-full" />
       ) : (
         <DataTable
-          columns={[
-            { key: "table", header: "表", cell: (row: ColumnMaskOut) => row.tableName },
-            { key: "column", header: "列", cell: (row: ColumnMaskOut) => row.columnName },
-            {
-              key: "dataset",
-              header: "数据集",
-              cell: (row: ColumnMaskOut) => row.datasetId ?? "—",
-            },
-            {
-              key: "strategy",
-              header: "策略",
-              cell: (row: ColumnMaskOut) => STRATEGY_LABEL[row.maskStrategy],
-            },
-            {
-              key: "actions",
-              header: "",
-              cell: (row: ColumnMaskOut) => (
-                <IconButton
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  aria-label="删除"
-                  onClick={() => removeMask.mutate(row.id)}
-                >
-                  <Trash2 className="size-4" />
-                </IconButton>
-              ),
-            },
-          ]}
-          rows={items}
-          emptyMessage="暂无列脱敏规则"
+          loading={false}
+          empty={items.length === 0}
+          headers={["表", "列", "数据集", "策略", ""]}
+          lastColumnAlign="right"
+          rows={items.map((row) => [
+            <code key="t" className="font-mono text-theme-xs">
+              {row.tableName}
+            </code>,
+            <code key="c" className="font-mono text-theme-xs">
+              {row.columnName}
+            </code>,
+            row.datasetId ?? "—",
+            STRATEGY_LABEL[row.maskStrategy],
+            <IconButton
+              key="a"
+              type="button"
+              variant="ghost"
+              size="sm"
+              aria-label="删除脱敏规则"
+              className="text-error-600"
+              onClick={() => removeMask.mutate(row.id)}
+            >
+              <Trash2 className="size-4" />
+            </IconButton>,
+          ])}
         />
       )}
       <Dialog open={open} onOpenChange={setOpen}>

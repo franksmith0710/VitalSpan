@@ -42,8 +42,13 @@ def apply_crosstab_blocks(sections: list[dict[str, Any]], template_key: str | No
                     value_field=str(block.get("valueField") or block.get("value_field") or ""),
                     agg=str(block.get("agg") or "sum"),  # type: ignore[arg-type]
                 )
-            except ValueError:
-                out.append(section)
+            except ValueError as exc:
+                out.append({
+                    "kind": "error",
+                    "metricKey": key,
+                    "title": block.get("title") or section.get("title") or key,
+                    "errorMessage": f"交叉表透视失败：{exc}",
+                })
                 continue
             pivoted["metricKey"] = key
             pivoted["title"] = block.get("title") or section.get("title") or key

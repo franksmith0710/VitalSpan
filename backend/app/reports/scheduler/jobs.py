@@ -24,6 +24,7 @@ def get_report_scheduler() -> BackgroundScheduler:
 
 
 def _tick_execute(schedule_id: str) -> None:
+    # M1 单机：每进程内 APScheduler 注册 cron；多副本部署前须集中调度或 leader 选举，避免重复触发。
     settings = get_settings()
     if not settings.rpt_scheduler_enabled:
         return

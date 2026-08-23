@@ -9,8 +9,8 @@ import {
 import { useListRowSelection } from "@/hooks/useListRowSelection";
 import { useFormDirtyState } from "@/hooks/use-form-dirty-state";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -23,9 +23,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { UnsavedLeaveDialog } from "@/components/ui/unsaved-leave-dialog";
 import { mapApiError } from "@/lib/apiError";
 import { CrosstabBlockFields } from "./CrosstabBlockFields";
-import { type TemplateBlock, useReportTemplates } from "../useReportTemplates";
+import { MetricRefSelect } from "./MetricRefSelect";
+import { type TemplateBlock, useCatalogExtension, useReportTemplates } from "../useReportTemplates";
 
 type Props = {
+  nodeId: string;
   templateKey: string;
   format: "excel" | "pdf";
   displayName: string;
@@ -33,15 +35,30 @@ type Props = {
 };
 
 function emptyBlock(): TemplateBlock {
-  return { blockType: "sql", queryRef: "SELECT 1" };
+  return { blockType: "table", tableRef: "" };
 }
 
 function serializeBlocks(blocks: TemplateBlock[]): string {
   return JSON.stringify(blocks);
 }
 
-export function TemplateBlockEditor({ templateKey, format, displayName, readOnly = false }: Props) {
+export function TemplateBlockEditor({
+  nodeId,
+  templateKey,
+  format,
+  displayName,
+  readOnly = false,
+}: Props) {
   const { templateQuery, saveTemplate } = useReportTemplates(null, templateKey);
+  const extensionQuery = useCatalogExtension(nodeId);
+  const metricKeys = useMemo(
+    () =>
+      (extensionQuery.data?.metrics ?? [])
+        .filter((metric) => metric.visible !== false)
+        .map((metric) => metric.key)
+        .filter(Boolean),
+    [extensionQuery.data?.metrics],
+  );
   const [blocks, setBlocks] = useState<TemplateBlock[]>([]);
   const rowIds = useMemo(() => blocks.map((_, index) => String(index)), [blocks]);
   const selection = useListRowSelection(rowIds);
@@ -171,12 +188,12 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
               onValueChange={(v) =>
                 patchBlock(index, {
                   blockType: v as TemplateBlock["blockType"],
-                  queryRef: v === "sql" ? block.queryRef ?? "SELECT 1" : undefined,
-                  tableRef: v === "table" || v === "crosstab" ? block.tableRef ?? "fact_table" : undefined,
+                  queryRef: v === "sql" ? block.queryRef ?? "" : undefined,
+                  tableRef: v === "table" || v === "crosstab" ? block.tableRef ?? "" : undefined,
                   chartType: v === "chart" ? block.chartType ?? "bar" : undefined,
-                  rowField: v === "crosstab" ? block.rowField ?? "region" : undefined,
-                  colField: v === "crosstab" ? block.colField ?? "month" : undefined,
-                  valueField: v === "crosstab" ? block.valueField ?? "amount" : undefined,
+                  rowField: v === "crosstab" ? block.rowField ?? "" : undefined,
+                  colField: v === "crosstab" ? block.colField ?? "" : undefined,
+                  valueField: v === "crosstab" ? block.valueField ?? "" : undefined,
                   agg: v === "crosstab" ? block.agg ?? "sum" : undefined,
                 })
               }
@@ -208,29 +225,38 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
           </div>
           {block.blockType === "sql" ? (
             <div className="grid gap-2">
-              <Label>SQL 文本</Label>
+              <Alert severity="info">
+                <AlertTitle>版式说明块</AlertTitle>
+                <AlertDescription>
+                  查数请优先在「扩展配置」绑定数据集指标。SQL 块仅作版式备注，不会自动执行查询。
+                </AlertDescription>
+              </Alert>
+              <Label>说明文本（可选 SQL 样式）</Label>
               <Textarea
                 value={block.queryRef ?? ""}
                 onChange={(e) => patchBlock(index, { queryRef: e.target.value })}
                 rows={4}
                 className="font-mono text-theme-xs"
                 disabled={readOnly}
+                placeholder="可填写口径说明或备注"
               />
             </div>
           ) : null}
           {block.blockType === "table" ? (
-            <div className="grid gap-2">
-              <Label>表引用</Label>
-              <Input
-                value={block.tableRef ?? ""}
-                onChange={(e) => patchBlock(index, { tableRef: e.target.value })}
-                disabled={readOnly}
-              />
-            </div>
+            <MetricRefSelect
+              id={`table-ref-${index}`}
+              label="关联指标"
+              hint="与扩展配置中的指标键一致，用于拉取表格数据。"
+              value={block.tableRef ?? ""}
+              metricKeys={metricKeys}
+              readOnly={readOnly}
+              onChange={(tableRef) => patchBlock(index, { tableRef })}
+            />
           ) : null}
           {block.blockType === "crosstab" ? (
             <CrosstabBlockFields
               block={block}
+              metricKeys={metricKeys}
               readOnly={readOnly}
               onPatch={(patch) => patchBlock(index, patch)}
             />

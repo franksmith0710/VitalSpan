@@ -165,7 +165,7 @@ def test_standard_schedule_e2e_honest_failure_without_smtp(admin: UserContext) -
         )
 
     assert out.status != "mock_succeeded"
-    assert out.status in {"semi_real_failed", "semi_real_delivery_degraded"}
+    assert out.status in {"failed", "delivery_degraded", "semi_real_failed", "semi_real_delivery_degraded"}
     assert out.error_message
     history = scheduler_executor.list_executions(created.id)
     assert history["total"] >= 1
@@ -231,7 +231,7 @@ def test_standard_schedule_smtp_unconfigured_real_delivery_adapter(admin: UserCo
             admin,
         )
 
-    assert out.status == "semi_real_failed"
+    assert out.status == "failed"
     assert out.error_message
     assert out.delivery_steps
     assert out.delivery_steps[0]["channel"] == "email"

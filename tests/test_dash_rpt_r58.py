@@ -541,7 +541,7 @@ def test_rpt_r58_semi_real_execute_succeeded(client):
     """D58-005-01: explicit X-Rpt-Delivery-Mock:success → semi_real_succeeded."""
     node_id = _create_template_node(client)
     body = _schedule_and_execute(client, node_id, delivery_mock="success")
-    assert body["status"] == "semi_real_succeeded"
+    assert body["status"] == "succeeded"
     assert len(body.get("deliverySteps", [])) >= 1
 
 
@@ -549,7 +549,7 @@ def test_rpt_r58_semi_real_delivery_unconfigured_without_header(client):
     """D58-005-01b: no delivery mock header + mock mode → semi_real_failed/unconfigured."""
     node_id = _create_template_node(client)
     body = _schedule_and_execute(client, node_id, delivery_mock=None)
-    assert body["status"] == "semi_real_failed"
+    assert body["status"] == "failed"
     assert body.get("errorMessage")
     steps = body.get("deliverySteps", [])
     assert steps and steps[0].get("status") == "unconfigured"
@@ -559,7 +559,7 @@ def test_rpt_r58_semi_real_delivery_fail(client):
     """D58-005-02: X-Rpt-Delivery-Mock: fail → semi_real_failed (RPT-005 r238 契约)."""
     node_id = _create_template_node(client)
     body = _schedule_and_execute(client, node_id, delivery_mock="fail")
-    assert body["status"] == "semi_real_failed"
+    assert body["status"] == "failed"
     assert body.get("errorMessage")
 
 
@@ -734,7 +734,7 @@ def test_dash_r58_theme_schedule_link_semi_real(client):
     _save_theme_config(client, dash_id, widget_id=wid)
     node_id = _create_template_node(client, name="ThemeLink")
     body = _schedule_and_execute(client, node_id)
-    assert body["status"] in {"semi_real_succeeded", "semi_real_delivery_degraded"}
+    assert body["status"] in {"succeeded", "delivery_degraded", "semi_real_succeeded", "semi_real_delivery_degraded"}
     assert body.get("deliverySteps")
 
 

@@ -153,7 +153,7 @@ export function BatchImportPanel({ readOnly }: { readOnly: boolean }) {
       <TemplatePanelSection
         title="批量导入报表"
         description={`步骤 ${step === "upload" ? "1" : step === "preview" ? "2" : "3"}/3：${
-          step === "upload" ? "上传 JSON" : step === "preview" ? "预检并确认" : "导入结果"
+          step === "upload" ? "下载样例并上传 JSON" : step === "preview" ? "预检并确认" : "导入结果"
         }`}
         icon={Upload}
         footer={
@@ -197,6 +197,13 @@ export function BatchImportPanel({ readOnly }: { readOnly: boolean }) {
           </div>
         }
       >
+        <Alert severity="info">
+          <AlertTitle>推荐流程</AlertTitle>
+          <AlertDescription>
+            请先下载 JSON 样例，按字段填写后上传；上传后将自动预检冲突与无效行。高级用户也可直接编辑样例文件。
+          </AlertDescription>
+        </Alert>
+
         <TemplateField
           id="batch-json-file"
           label="选择 JSON 文件"

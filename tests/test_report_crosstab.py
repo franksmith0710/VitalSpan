@@ -46,6 +46,31 @@ def test_pivot_missing_field_raises() -> None:
         pivot_table(["a"], [["1"]], row_field="missing", col_field="a", value_field="a")
 
 
+def test_apply_crosstab_blocks_reports_error_on_invalid_field(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "app.reports.engine.crosstab_apply.template_repo.get_template",
+        lambda _key: {
+            "blocks": [{
+                "blockType": "crosstab",
+                "tableRef": "sales",
+                "rowField": "missing",
+                "colField": "month",
+                "valueField": "amount",
+            }],
+        },
+    )
+    sections = [{
+        "kind": "table",
+        "metricKey": "sales",
+        "columns": ["region", "month", "amount"],
+        "rows": [["华东", "1月", 10]],
+    }]
+    out = apply_crosstab_blocks(sections, "demo")
+    assert len(out) == 1
+    assert out[0]["kind"] == "error"
+    assert "交叉表透视失败" in out[0]["errorMessage"]
+
+
 def test_apply_crosstab_blocks_replaces_metric_table(monkeypatch) -> None:
     monkeypatch.setattr(
         "app.reports.engine.crosstab_apply.template_repo.get_template",

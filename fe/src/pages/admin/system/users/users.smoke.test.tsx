@@ -30,6 +30,7 @@ import { UserListPage } from "./UserListPage";
 const ROLE_A = "00000000-0000-4000-8000-000000000001";
 const USER_A = "00000000-0000-4000-8000-000000000010";
 const ORG_A = "00000000-0000-4000-8000-000000000020";
+const DASHBOARD_GRANT_ID = "00000000-0000-4000-8000-000000000030";
 
 function renderUsers() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -363,6 +364,55 @@ describe("UserListPage smoke", () => {
         (c) => (c[1] as RequestInit)?.method === "DELETE" && String(c[0]).startsWith("/api/v1/users/"),
       );
       expect(deletes.length).toBe(2);
+    });
+  });
+
+  it("T-AUTH-C2-01: override grants tab PUT resource-grants", async () => {
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path === `/api/v1/users/${USER_A}/resource-grants` && init?.method === "PUT") {
+        return {
+          id: "grant-1",
+          userId: USER_A,
+          resourceType: "dashboard",
+          resourceId: DASHBOARD_GRANT_ID,
+          effect: "add",
+        };
+      }
+      if (path === `/api/v1/users/${USER_A}/resource-grants`) {
+        return { items: [] };
+      }
+      if (path === `/api/v1/users/${USER_A}/roles`) {
+        return { items: [] };
+      }
+      if (path === `/api/v1/users/${USER_A}/org`) {
+        throw new ApiRequestError("User has no org assignment", "USER_ORG_NOT_SET", 404);
+      }
+      if (path.startsWith("/api/v1/orgs")) {
+        return { items: [] };
+      }
+      if (path.startsWith("/api/v1/users")) {
+        return listUsersResponse();
+      }
+      return { items: [] };
+    });
+    renderUsers();
+    await userEvent.click(await screen.findByRole("button", { name: /管理/ }));
+    await userEvent.click(await screen.findByRole("tab", { name: "例外授权" }));
+    await userEvent.type(await screen.findByLabelText("资源 ID"), DASHBOARD_GRANT_ID);
+    await userEvent.click(screen.getByRole("button", { name: "添加例外授权" }));
+    await waitFor(() => {
+      const putCall = mockApiFetch.mock.calls.find(
+        (c) =>
+          c[0] === `/api/v1/users/${USER_A}/resource-grants` &&
+          (c[1] as RequestInit)?.method === "PUT",
+      );
+      expect(putCall).toBeTruthy();
+      const body = JSON.parse(String((putCall![1] as RequestInit).body));
+      expect(body.resource_type).toBe("dashboard");
+      expect(body.resource_id).toBe(DASHBOARD_GRANT_ID);
+      expect(body.effect).toBe("add");
     });
   });
 });

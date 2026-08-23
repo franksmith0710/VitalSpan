@@ -10,8 +10,10 @@ from sqlalchemy import text
 
 from app.auth.deps import UserContext
 from app.auth.models import (
+    AuthDimensionType,
     AuthResourceGrant,
     AuthRole,
+    AuthRoleDimensionValue,
     AuthUser,
     AuthUserRole,
     Base,
@@ -19,6 +21,7 @@ from app.auth.models import (
     get_meta_session,
 )
 from app.auth.resources.service import ensure_resource_visible, list_visible_resource_ids
+from app.auth.rls.predicate import build_multi_dimension_rls_fragment
 from app.auth.user_overrides import service as override_service
 from app.dashboard import acl as dashboard_acl
 
@@ -51,6 +54,9 @@ def clean_tables():
     engine = get_meta_engine()
     with engine.begin() as conn:
         for table in (
+            "auth_user_dimension_overrides",
+            "auth_role_dimension_values",
+            "auth_dimension_types",
             "auth_user_resource_grants",
             "auth_resource_grants",
             "auth_user_roles",
@@ -155,5 +161,90 @@ def test_user_override_deny_blocks_acl_chain():
         assert not dashboard_acl.can_access(
             session, actor, denied_id, created_by=None, official_slugs=set()
         )
+    finally:
+        session.close()
+
+
+def test_dimension_override_deny_yields_rls_deny_fragment():
+    session = get_meta_session()
+    try:
+        user, role = _seed_viewer(session)
+        dim = AuthDimensionType(
+            code="region",
+            name="Region",
+            value_type="string",
+            org_dimension=False,
+        )
+        session.add(dim)
+        session.flush()
+        session.add(
+            AuthRoleDimensionValue(
+                role_id=role.id,
+                dimension_type_id=dim.id,
+                value="east",
+            )
+        )
+        session.commit()
+        override_service.upsert_user_dimension_override(
+            session,
+            user_id=user.id,
+            dimension_type_id=dim.id,
+            value="east",
+            effect="deny",
+            actor_id="root",
+            actor_username="root",
+            actor_permissions={"system:user.manage"},
+            actor_is_root=True,
+            trace_id="t",
+        )
+        fragment = build_multi_dimension_rls_fragment(
+            session,
+            user.id,
+            column_by_dimension_id={dim.id: "region_code"},
+        )
+        assert fragment == "1=0"
+    finally:
+        session.close()
+
+
+def test_dimension_override_deny_filters_rls_values():
+    session = get_meta_session()
+    try:
+        user, role = _seed_viewer(session)
+        dim = AuthDimensionType(
+            code="region",
+            name="Region",
+            value_type="string",
+            org_dimension=False,
+        )
+        session.add(dim)
+        session.flush()
+        for value in ("east", "west"):
+            session.add(
+                AuthRoleDimensionValue(
+                    role_id=role.id,
+                    dimension_type_id=dim.id,
+                    value=value,
+                )
+            )
+        session.commit()
+        override_service.upsert_user_dimension_override(
+            session,
+            user_id=user.id,
+            dimension_type_id=dim.id,
+            value="east",
+            effect="deny",
+            actor_id="root",
+            actor_username="root",
+            actor_permissions={"system:user.manage"},
+            actor_is_root=True,
+            trace_id="t",
+        )
+        fragment = build_multi_dimension_rls_fragment(
+            session,
+            user.id,
+            column_by_dimension_id={dim.id: "region_code"},
+        )
+        assert "t.region_code IN ('west')" == fragment
     finally:
         session.close()

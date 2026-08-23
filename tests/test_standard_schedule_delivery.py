@@ -252,7 +252,7 @@ def test_standard_schedule_execute_no_fake_deliver_without_delivery_mock(mock_se
     assert executed.status_code == 200, executed.text
     body = executed.json()
     assert body["status"] != "semi_real_succeeded"
-    assert body["status"] in {"semi_real_failed", "semi_real_delivery_degraded"}
+    assert body["status"] in {"failed", "delivery_degraded", "semi_real_failed", "semi_real_delivery_degraded"}
     assert body.get("errorMessage")
     steps = body.get("deliverySteps", [])
     assert steps

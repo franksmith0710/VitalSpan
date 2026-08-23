@@ -14,7 +14,7 @@ import {
 import { apiFetch } from "@/lib/api";
 import { fetchAuthenticatedBlob } from "@/lib/apiUpload";
 import { mapApiError } from "@/lib/apiError";
-import { exportMagicMatches } from "@/lib/reportExportUtils";
+import { isExportBlobValid, readBlobBytes } from "@/lib/reportExportUtils";
 import { cn } from "@/lib/utils";
 
 type ExportOut = {
@@ -29,8 +29,6 @@ const EXPORT_STATUS_LABELS: Record<string, string> = {
   failed: "失败",
   ready: "就绪",
 };
-
-const MIN_EXPORT_BYTES = 512;
 
 function localizeExportStatus(status: string): string {
   return EXPORT_STATUS_LABELS[status] ?? status;
@@ -50,11 +48,6 @@ async function triggerBlobDownload(blob: Blob, fileName: string): Promise<void> 
   link.click();
   link.remove();
   URL.revokeObjectURL(objectUrl);
-}
-
-function isExportBlobValid(data: Uint8Array, format: string): boolean {
-  if (data.length < MIN_EXPORT_BYTES) return false;
-  return exportMagicMatches(data, format);
 }
 
 export function ReportExportCard({
@@ -97,15 +90,15 @@ export function ReportExportCard({
   const verifyExportBlob = async (path: string): Promise<boolean> => {
     try {
       const blob = await fetchAuthenticatedBlob(path);
-      const buffer = await blob.arrayBuffer();
-      const data = new Uint8Array(buffer);
+      const data = await readBlobBytes(blob);
       if (!isExportBlobValid(data, format)) {
         toast.error("导出文件无效或过小，请检查模板配置后重试");
         return false;
       }
       return true;
-    } catch {
-      return true;
+    } catch (err) {
+      toast.error(mapApiError(err));
+      return false;
     }
   };
 
@@ -163,8 +156,7 @@ export function ReportExportCard({
     setDownloading(true);
     try {
       const blob = await fetchAuthenticatedBlob(downloadPath);
-      const buffer = await blob.arrayBuffer();
-      const data = new Uint8Array(buffer);
+      const data = await readBlobBytes(blob);
       if (!isExportBlobValid(data, format)) {
         toast.error("导出文件无效或过小，请检查模板配置后重试");
         return;

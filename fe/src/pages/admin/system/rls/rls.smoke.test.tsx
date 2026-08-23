@@ -172,4 +172,94 @@ describe("RlsAdminPage smoke", () => {
       ).toBe(true);
     });
   });
+
+  it("T-RLS-04: column bindings tab lists and creates binding", async () => {
+    mockApiFetch.mockImplementation(async (path: unknown, init?: RequestInit) => {
+      const p = String(path);
+      if (p === "/api/v1/rls/column-bindings" && init?.method === "POST") {
+        return {
+          id: "bind-1",
+          datasetId: "ds-1",
+          tableName: "orders",
+          columnName: "org_node_id",
+          dimensionTypeId: "dim-1",
+        };
+      }
+      if (p.startsWith("/api/v1/rls/column-bindings")) {
+        return { items: [], total: 0 };
+      }
+      if (p.startsWith("/api/v1/rls/dimensions")) {
+        return {
+          items: [
+            {
+              id: "dim-1",
+              code: "region",
+              name: "区域",
+              value_type: "string",
+              org_dimension: false,
+              description: null,
+            },
+          ],
+          total: 1,
+        };
+      }
+      return { items: [], total: 0 };
+    });
+    const user = userEvent.setup();
+    renderRls();
+    await screen.findByText("区域");
+    await user.click(screen.getByRole("tab", { name: "列映射" }));
+    expect(await screen.findByRole("button", { name: "新建列映射" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "新建列映射" }));
+    await user.type(screen.getByLabelText("物理表名"), "orders");
+    await user.type(screen.getByLabelText("列名"), "org_node_id");
+    await user.click(screen.getByRole("combobox"));
+    await user.click(await screen.findByRole("option", { name: "区域" }));
+    await user.click(screen.getByRole("button", { name: "创建" }));
+    await waitFor(() => {
+      const postCall = mockApiFetch.mock.calls.find(
+        (c) => c[0] === "/api/v1/rls/column-bindings" && (c[1] as RequestInit)?.method === "POST",
+      );
+      expect(postCall).toBeTruthy();
+    });
+  });
+
+  it("T-RLS-05: column masks tab creates mask rule", async () => {
+    mockApiFetch.mockImplementation(async (path: unknown, init?: RequestInit) => {
+      const p = String(path);
+      if (p === "/api/v1/column-masks" && init?.method === "POST") {
+        return {
+          id: "mask-1",
+          tableName: "customers",
+          columnName: "phone",
+          maskStrategy: "partial",
+        };
+      }
+      if (p.startsWith("/api/v1/column-masks")) {
+        return { items: [] };
+      }
+      if (p.startsWith("/api/v1/rls/dimensions")) {
+        return { items: [], total: 0 };
+      }
+      return { items: [], total: 0 };
+    });
+    const user = userEvent.setup();
+    renderRls();
+    await screen.findByRole("heading", { name: "行级权限（高级）" });
+    await user.click(screen.getByRole("tab", { name: "列脱敏" }));
+    expect(await screen.findByRole("button", { name: "新建脱敏规则" })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "新建脱敏规则" }));
+    await user.type(screen.getByLabelText("表名 *"), "customers");
+    await user.type(screen.getByLabelText("列名 *"), "phone");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+    await waitFor(() => {
+      const postCall = mockApiFetch.mock.calls.find(
+        (c) => c[0] === "/api/v1/column-masks" && (c[1] as RequestInit)?.method === "POST",
+      );
+      expect(postCall).toBeTruthy();
+      const body = JSON.parse(String((postCall![1] as RequestInit).body));
+      expect(body.tableName).toBe("customers");
+      expect(body.columnName).toBe("phone");
+    });
+  });
 });

@@ -56,7 +56,7 @@
   - [x] PDF/Word 真实排版引擎与 WYSIWYG 设计器（companion r-e95d：`TemplateBlockEditor` 块列表/SQL/重排；非全量 WYSIWYG）
   - [x] **M-RPT F-A**：`report-templates.smoke.test.tsx` 选择器/label 与 `ReportTemplatesPage` 实现一致，vitest 全绿无假绿（E 可运维）（完成于 2026-08-20）
   - [x] **M-RPT F-C**：首进模板页展示示例模板种子 + 空态引导 + 「运行/导出」CTA；新用户 60 秒内可完成首次导出（完成于 2026-08-20 · `POST /center/seed-demo` · `ReportTemplatesPage`）
-  - [ ] **M-RPT F-D**〔可选〕：交叉表 MVP（单维行×列 + 指标聚合；RenderSpec 扩展 + PDF/Excel 导出）
+  - [x] **M-RPT F-D**〔可选〕：交叉表 MVP（单维行×列 + 指标聚合；RenderSpec 扩展 + PDF/Excel/Web 预览）（完成于 2026-08-24 · `crosstab.py` · `CrosstabBlockFields`）
 - **代码锚点**：`backend/app/reports/templates/service.py` · `backend/app/reports/engine/service.py` · `fe/src/pages/admin/reports/ReportTemplatesPage.tsx` · `fe/src/pages/admin/reports/components/TemplateBlockEditor.tsx` · `fe/src/pages/admin/reports/useReportTemplates.ts` · `fe/src/pages/admin/reports/report-templates.smoke.test.tsx` · `tests/test_ff_rpt_companion_e95d.py` · `tests/test_m10_report_templates_r234.py` T-RPT-R234-003-01~09
 - **演化建议**：M-RPT F-A smoke 修漂移；F-C 首进体验；交叉表留 F-D 可选；块模板 ≠ WYSIWYG 设计器（对标积木分期自研）
 - **里程碑对齐**：M10 · 已完成 · 2026-07-07；**M-RPT F-A · 已闭合 · 2026-08-20**；**M-RPT F-C · 已闭合 · 2026-08-20**

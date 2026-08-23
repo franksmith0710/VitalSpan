@@ -124,6 +124,7 @@ export function RlsColumnBindingsPanel({ dimensions }: Props) {
         <Skeleton className="h-32 w-full" />
       ) : (
         <DataTable
+          loading={false}
           empty={items.length === 0}
           lastColumnAlign="right"
           headers={["表名", "列名", "维度类型", "数据集", "操作"]}
@@ -171,17 +172,25 @@ export function RlsColumnBindingsPanel({ dimensions }: Props) {
               <Input value={datasetId} onChange={(e) => setDatasetId(e.target.value)} />
             </div>
             <div className="grid gap-2">
-              <Label>物理表名</Label>
-              <Input value={tableName} onChange={(e) => setTableName(e.target.value)} />
+              <Label htmlFor="binding-table">物理表名</Label>
+              <Input
+                id="binding-table"
+                value={tableName}
+                onChange={(e) => setTableName(e.target.value)}
+              />
             </div>
             <div className="grid gap-2">
-              <Label>列名</Label>
-              <Input value={columnName} onChange={(e) => setColumnName(e.target.value)} />
+              <Label htmlFor="binding-column">列名</Label>
+              <Input
+                id="binding-column"
+                value={columnName}
+                onChange={(e) => setColumnName(e.target.value)}
+              />
             </div>
             <div className="grid gap-2">
-              <Label>维度类型</Label>
+              <Label htmlFor="binding-dimension">维度类型</Label>
               <Select value={dimId} onValueChange={setDimId}>
-                <SelectTrigger>
+                <SelectTrigger id="binding-dimension">
                   <SelectValue placeholder="选择维度" />
                 </SelectTrigger>
                 <SelectContent>

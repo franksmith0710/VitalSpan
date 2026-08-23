@@ -8,22 +8,27 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { TemplateBlock } from "../useReportTemplates";
+import { MetricRefSelect } from "./MetricRefSelect";
 
 type Props = {
   block: TemplateBlock;
+  metricKeys?: string[];
   readOnly?: boolean;
   onPatch: (patch: Partial<TemplateBlock>) => void;
 };
 
-export function CrosstabBlockFields({ block, readOnly = false, onPatch }: Props) {
+export function CrosstabBlockFields({ block, metricKeys = [], readOnly = false, onPatch }: Props) {
   return (
     <div className="grid gap-3 sm:grid-cols-2">
-      <div className="grid gap-2 sm:col-span-2">
-        <Label>指标引用（tableRef）</Label>
-        <Input
+      <div className="sm:col-span-2">
+        <MetricRefSelect
+          id={`crosstab-metric-${block.tableRef ?? "ref"}`}
+          label="关联指标"
+          hint="须与「扩展配置」中的指标键一致，用于匹配查数结果。"
           value={block.tableRef ?? ""}
-          onChange={(e) => onPatch({ tableRef: e.target.value })}
-          disabled={readOnly}
+          metricKeys={metricKeys}
+          readOnly={readOnly}
+          onChange={(tableRef) => onPatch({ tableRef })}
         />
       </div>
       <div className="grid gap-2">
@@ -32,6 +37,7 @@ export function CrosstabBlockFields({ block, readOnly = false, onPatch }: Props)
           value={block.rowField ?? ""}
           onChange={(e) => onPatch({ rowField: e.target.value })}
           disabled={readOnly}
+          placeholder="结果集中的列名"
         />
       </div>
       <div className="grid gap-2">
@@ -40,6 +46,7 @@ export function CrosstabBlockFields({ block, readOnly = false, onPatch }: Props)
           value={block.colField ?? ""}
           onChange={(e) => onPatch({ colField: e.target.value })}
           disabled={readOnly}
+          placeholder="结果集中的列名"
         />
       </div>
       <div className="grid gap-2">
@@ -48,6 +55,7 @@ export function CrosstabBlockFields({ block, readOnly = false, onPatch }: Props)
           value={block.valueField ?? ""}
           onChange={(e) => onPatch({ valueField: e.target.value })}
           disabled={readOnly}
+          placeholder="用于聚合的数值列"
         />
       </div>
       <div className="grid gap-2">

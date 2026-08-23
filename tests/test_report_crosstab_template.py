@@ -129,5 +129,9 @@ def test_template_crosstab_run_and_export_pdf(client: TestClient) -> None:
         from app.auth.deps import UserContext
         from app.reports.engine.service import export_template_bytes
 
-        pdf = export_template_bytes(uuid.UUID(node_id), "pdf", UserContext(id="admin", username="admin", roles=["admin"]))
+        pdf = export_template_bytes(
+            uuid.UUID(node_id),
+            "pdf",
+            UserContext(id="admin", username="admin", roles=["editor"]),
+        )
     assert pdf.startswith(b"%PDF")

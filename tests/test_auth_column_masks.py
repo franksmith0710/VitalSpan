@@ -2,12 +2,18 @@ from __future__ import annotations
 
 import os
 import uuid
+from unittest.mock import patch
 
 import pytest
 from sqlalchemy import text
 
+from app.auth.deps import UserContext
 from app.auth.masking import service as mask_service
 from app.auth.models import Base, get_meta_engine, get_meta_session
+from app.core.config import get_settings
+from app.query import service as query_service
+from app.query.executor import QueryResult
+from app.query.schemas import ExecuteRequest, RlsOptions
 
 _MASK_SQLITE = "sqlite+pysqlite:///file:auth_column_masks_test?mode=memory&cache=shared&uri=true"
 
@@ -104,3 +110,50 @@ def test_mask_strategy_hash_is_stable():
         assert len(str(rows[0][0])) == 13
     finally:
         session.close()
+
+
+@patch("app.query.service._executor.execute_sql")
+def test_execute_query_applies_column_masks(mock_execute_sql, monkeypatch):
+    monkeypatch.setenv("VITALSPAN_ENV", "development")
+    get_settings.cache_clear()
+    mock_execute_sql.return_value = QueryResult(
+        columns=["phone", "name"],
+        rows=[["13800138000", "Alice"]],
+        row_count=1,
+        truncated=False,
+    )
+    session = get_meta_session()
+    try:
+        ds_id = uuid.uuid4()
+        mask_service.create_mask(
+            session,
+            datasource_id=ds_id,
+            dataset_id=None,
+            table_name="customers",
+            column_name="phone",
+            mask_strategy="partial",
+            actor_id="admin",
+            actor_username="admin",
+            trace_id="t",
+        )
+        user = UserContext(
+            id="root",
+            username="root",
+            roles=[],
+            permissions=set(),
+            is_root=True,
+        )
+        payload = ExecuteRequest(
+            data_source_id=ds_id,
+            mode="sql",
+            sql="SELECT phone, name FROM customers",
+            limit=10,
+            rls=RlsOptions(enabled=False),
+        )
+        result = query_service.execute_query(session, user, payload)
+        assert result.columns == ["phone", "name"]
+        assert result.rows[0][0] == "1***0"
+        assert result.rows[0][1] == "Alice"
+    finally:
+        session.close()
+        get_settings.cache_clear()
