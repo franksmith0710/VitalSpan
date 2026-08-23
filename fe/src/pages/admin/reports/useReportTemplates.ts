@@ -22,10 +22,14 @@ export type CatalogNode = {
 };
 
 export type TemplateBlock = {
-  blockType: "sql" | "table" | "chart";
+  blockType: "sql" | "table" | "chart" | "crosstab";
   queryRef?: string;
   tableRef?: string;
   chartType?: "line" | "bar" | "pie";
+  rowField?: string;
+  colField?: string;
+  valueField?: string;
+  agg?: "sum" | "count" | "max" | "min";
 };
 
 export type TemplateDefinition = {

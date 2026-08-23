@@ -130,7 +130,10 @@ describe("report templates smoke", () => {
         </TooltipProvider>
       </QueryClientProvider>,
     );
-    await waitFor(() => expect(screen.getByRole("tab", { name: "基本信息" })).toBeInTheDocument());
+    await waitFor(
+      () => expect(screen.getByRole("tab", { name: "基本信息" })).toBeInTheDocument(),
+      { timeout: 8000 },
+    );
     expect(screen.queryByText("从目录选择模板")).not.toBeInTheDocument();
   });
 

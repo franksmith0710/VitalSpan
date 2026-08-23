@@ -22,6 +22,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { UnsavedLeaveDialog } from "@/components/ui/unsaved-leave-dialog";
 import { mapApiError } from "@/lib/apiError";
+import { CrosstabBlockFields } from "./CrosstabBlockFields";
 import { type TemplateBlock, useReportTemplates } from "../useReportTemplates";
 
 type Props = {
@@ -171,8 +172,12 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
                 patchBlock(index, {
                   blockType: v as TemplateBlock["blockType"],
                   queryRef: v === "sql" ? block.queryRef ?? "SELECT 1" : undefined,
-                  tableRef: v === "table" ? block.tableRef ?? "fact_table" : undefined,
+                  tableRef: v === "table" || v === "crosstab" ? block.tableRef ?? "fact_table" : undefined,
                   chartType: v === "chart" ? block.chartType ?? "bar" : undefined,
+                  rowField: v === "crosstab" ? block.rowField ?? "region" : undefined,
+                  colField: v === "crosstab" ? block.colField ?? "month" : undefined,
+                  valueField: v === "crosstab" ? block.valueField ?? "amount" : undefined,
+                  agg: v === "crosstab" ? block.agg ?? "sum" : undefined,
                 })
               }
               disabled={readOnly}
@@ -183,6 +188,7 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
               <SelectContent>
                 <SelectItem value="sql">SQL</SelectItem>
                 <SelectItem value="table">表格</SelectItem>
+                <SelectItem value="crosstab">交叉表</SelectItem>
                 <SelectItem value="chart">图表</SelectItem>
               </SelectContent>
             </Select>
@@ -221,6 +227,13 @@ export function TemplateBlockEditor({ templateKey, format, displayName, readOnly
                 disabled={readOnly}
               />
             </div>
+          ) : null}
+          {block.blockType === "crosstab" ? (
+            <CrosstabBlockFields
+              block={block}
+              readOnly={readOnly}
+              onPatch={(patch) => patchBlock(index, patch)}
+            />
           ) : null}
           {block.blockType === "chart" ? (
             <div className="grid gap-2">
