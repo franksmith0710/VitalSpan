@@ -80,3 +80,14 @@
 - **消费点**：`datasources/acl.py` · `dashboard/acl.py` · `query/rls/guard.py` · 各域 `assert_visible` / `assert_dashboard_access` 调用链须传 `is_root=user.is_root`
 - **报表目录**：`reports/catalog/grant_acl.py` 按 `resource_type=report` grant 过滤 `list_nodes` / `get_node`
 - **测试**：`tests/test_auth_resource_acl_matrix.py`（dashboard 子路由 IDOR · report grant · scheduler 读保护）
+
+## Phase C（组织范围管理 · 用户例外 · 列脱敏 · 认证集成骨架）
+
+| 能力 | 锚点 |
+|------|------|
+| 组织范围管理员 | `system:org_scoped.manage` · `org_scope.py` · `users/service.py` 子树过滤 |
+| 用户资源/维度例外 | `user_overrides/merge.py` 接入 `resources/service.py` · dashboard/datasource/report ACL · RLS `predicate.py`；有效集 = 角色 ∪ add − deny |
+| 列脱敏 | `masking/service.py` · `dataset:mask.manage` · 查询 API 后处理 · `RlsAdminPage`「列脱敏」Tab |
+| 域删除/发布审计 | `audit/write_hooks.py` `record_domain_delete/publish` · datasource/dashboard/dataset/report |
+| LDAP/OIDC 规格门禁 | `docs/specs/auth-ldap-oidc-integration.md` · `login/oidc.py` 占位 |
+| 测试 | `test_auth_user_override_enforcement.py` · `test_auth_security_e2e.py` · `test_auth_org_scoped_admin.py` · `test_auth_user_overrides.py` · `test_auth_column_masks.py` |

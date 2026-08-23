@@ -42,7 +42,7 @@ def create_grant(
     actor_permissions: set[str] | None = None,
     actor_is_root: bool = False,
 ) -> AuthResourceGrant:
-    from app.auth.org_scope import assert_role_in_org_scope, is_org_scoped_only
+    from app.auth.org_scope import OrgScopeError, assert_role_in_org_scope, is_org_scoped_only
 
     perms = actor_permissions or set()
     if is_org_scoped_only(permissions=perms, is_root=actor_is_root):
@@ -54,12 +54,8 @@ def create_grant(
                 actor_user_id=actor_id,
                 role_id=payload.role_id,
             )
-        except Exception as exc:
-            from app.auth.org_scope import OrgScopeError
-
-            if isinstance(exc, OrgScopeError):
-                raise GrantError(exc.code, exc.message, exc.status) from exc
-            raise
+        except OrgScopeError as exc:
+            raise GrantError(exc.code, exc.message, exc.status) from exc
     role = session.get(AuthRole, payload.role_id)
     if role is None:
         raise GrantError("ROLE_NOT_FOUND", "Role not found", 404)
@@ -139,12 +135,34 @@ def delete_grants_batch(session: Session, grant_ids: list[uuid.UUID]) -> int:
     return deleted
 
 
+def _user_uuid(user_id: str | uuid.UUID | None) -> uuid.UUID | None:
+    if user_id is None:
+        return None
+    try:
+        return user_id if isinstance(user_id, uuid.UUID) else uuid.UUID(str(user_id))
+    except ValueError:
+        return None
+
+
 def check_resource_access(
     session: Session,
     role_codes: list[str],
     resource_type: str,
     resource_id: uuid.UUID,
+    *,
+    user_id: str | uuid.UUID | None = None,
 ) -> bool:
+    uid = _user_uuid(user_id)
+    if uid is not None:
+        from app.auth.user_overrides.merge import user_has_resource_access
+
+        return user_has_resource_access(
+            session,
+            user_id=uid,
+            role_codes=role_codes,
+            resource_type=resource_type,
+            resource_id=resource_id,
+        )
     if not role_codes:
         return False
     stmt = (
@@ -184,8 +202,22 @@ def list_visible_resource_ids(
     session: Session,
     role_codes: list[str],
     resource_type: str,
+    *,
+    user_id: str | uuid.UUID | None = None,
 ) -> list[uuid.UUID]:
     _validate_resource_type(resource_type)
+    uid = _user_uuid(user_id)
+    if uid is not None:
+        from app.auth.user_overrides.merge import effective_resource_ids
+
+        return sorted(
+            effective_resource_ids(
+                session,
+                user_id=uid,
+                role_codes=role_codes,
+                resource_type=resource_type,
+            )
+        )
     if not role_codes:
         return []
     stmt = (
@@ -212,9 +244,17 @@ def ensure_resource_visible(
     role_codes: list[str],
     resource_type: str,
     resource_id: uuid.UUID,
+    *,
+    user_id: str | uuid.UUID | None = None,
 ) -> None:
     _validate_resource_type(resource_type)
-    if not role_codes or not check_resource_access(session, role_codes, resource_type, resource_id):
+    if not check_resource_access(
+        session,
+        role_codes,
+        resource_type,
+        resource_id,
+        user_id=user_id,
+    ):
         raise VisibilityError("RESOURCE_FORBIDDEN", "Resource not visible for current roles", 403)
 
 
@@ -223,8 +263,12 @@ def filter_visible_resources(
     role_codes: list[str],
     resource_type: str,
     candidate_ids: list[uuid.UUID],
+    *,
+    user_id: str | uuid.UUID | None = None,
 ) -> list[uuid.UUID]:
     if not candidate_ids:
         return []
-    visible = set(list_visible_resource_ids(session, role_codes, resource_type))
+    visible = set(
+        list_visible_resource_ids(session, role_codes, resource_type, user_id=user_id)
+    )
     return [cid for cid in candidate_ids if cid in visible]

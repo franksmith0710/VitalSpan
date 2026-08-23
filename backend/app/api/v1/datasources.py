@@ -187,6 +187,7 @@ def delete_data_source(
         target_type="datasource",
         target_id=data_source_id,
     )
+    db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

@@ -15,7 +15,7 @@ def set_user_engine_scope(user_id: str, allowed_template_ids: set[uuid.UUID]) ->
 
 def assert_engine_run_access(actor: UserContext, template_id: uuid.UUID) -> None:
     roles = set(actor.roles)
-    if "admin" in roles:
+    if actor.is_root:
         return
     if "enterprise" in roles:
         allowed = _USER_ENGINE_SCOPE.get(actor.id, set())

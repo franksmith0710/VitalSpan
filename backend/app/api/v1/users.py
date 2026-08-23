@@ -422,7 +422,7 @@ def upsert_user_resource_grant(
     return UserResourceGrantOut.model_validate(row)
 
 
-@router.delete("/{user_id}/resource-grants/{grant_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{user_id}/resource-grants/{grant_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def delete_user_resource_grant_route(
     user_id: uuid.UUID,
     grant_id: uuid.UUID,
@@ -499,6 +499,7 @@ def upsert_user_dimension_override(
 @router.delete(
     "/{user_id}/dimension-overrides/{dimension_type_id}/{value}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_model=None,
 )
 def delete_user_dimension_override_route(
     user_id: uuid.UUID,

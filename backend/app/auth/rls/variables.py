@@ -11,6 +11,7 @@ from app.auth.models import AuthOrgNode, AuthUser
 SYSTEM_VARIABLES: dict[str, str] = {
     "current_user.id": "Authenticated user UUID",
     "current_user.org_id": "User's primary org node UUID (nullable)",
+    "current_user.org_subtree": "Expanded org node UUID set under user's org bindings",
 }
 
 

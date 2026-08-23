@@ -52,11 +52,11 @@ class QueryServiceExecuteOut(BaseModel):
 
 
 def _assert_service_invoke(actor: UserContext) -> None:
-    if "admin" in actor.roles or "integration" in actor.roles:
+    if actor.is_root or "integration" in actor.roles:
         return
     raise IntegrationError(
         "SERVICE_EXECUTE_FORBIDDEN",
-        "Service invoke requires integration or admin role",
+        "Service invoke requires integration role or root",
         403,
     )
 

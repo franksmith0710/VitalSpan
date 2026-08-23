@@ -42,7 +42,7 @@ def assert_query_design_action(
     owner_id: uuid.UUID | None,
     status: str,
 ) -> None:
-    if "admin" in actor.roles:
+    if actor.is_root:
         if status == "pending_publish":
             _assert_rls_binding(session, actor)
         return
@@ -76,14 +76,14 @@ def assert_query_design_execute(
     *,
     data_source_id: uuid.UUID | None,
 ) -> str:
-    if "admin" not in actor.roles and "designer" not in actor.roles:
-        raise GovAclError("GOV_ACL_FORBIDDEN", "execute requires designer or admin", 403)
-    if "admin" in actor.roles:
+    if actor.is_root:
         logger.info(
             "gov_acl_bypass",
             extra={"actor_id": actor.id, "action": "execute", "data_source_id": str(data_source_id)},
         )
         return get_query_rls_fragment(session, actor)
+    if "designer" not in actor.roles:
+        raise GovAclError("GOV_ACL_FORBIDDEN", "execute requires designer or root", 403)
     actor_uuid = _actor_uuid(actor.id)
     if actor_uuid is None:
         raise GovAclError("GOV_RLS_BINDING_REQUIRED", "User has no organization binding", 403)
@@ -102,7 +102,7 @@ def assert_workflow_transition(actor: UserContext, action: str, actor_role: str)
         "publish": "publisher",
     }
     required = role_map.get(action)
-    if "admin" in actor.roles:
+    if actor.is_root:
         return
     if required and actor_role != required and required not in actor.roles:
         raise GovAclError("GOV_WORKFLOW_FORBIDDEN", f"Role cannot {action}", 403)
@@ -114,7 +114,7 @@ def assert_publish_action(
     action: Literal["submit", "approve", "reject"],
     entry_id: uuid.UUID,
 ) -> None:
-    if "admin" in actor.roles:
+    if actor.is_root:
         return
     role_req = {"submit": "designer", "approve": "publisher", "reject": "publisher"}
     needed = role_req[action]
@@ -122,18 +122,24 @@ def assert_publish_action(
         raise GovAclError("GOV_ACL_FORBIDDEN", f"{action} requires {needed} or admin", 403)
     if action == "approve" and "publisher" in actor.roles:
         submitter_id = gov_repo.get_publish_submitter(session, entry_id)
-        if submitter_id and submitter_id == actor.id and "admin" not in actor.roles:
+        if submitter_id and submitter_id == actor.id and not actor.is_root:
             raise GovAclError(
                 "GOV_ACL_SELF_APPROVE_FORBIDDEN",
                 "Publisher cannot approve own submission without admin",
                 403,
             )
-        if not check_resource_access(session, actor.roles, "gov_catalog_entry", entry_id):
+        if not check_resource_access(
+            session,
+            actor.roles,
+            "gov_catalog_entry",
+            entry_id,
+            user_id=actor.id,
+        ):
             raise GovAclError("GOV_RESOURCE_FORBIDDEN", "Missing gov_catalog_entry grant", 403)
 
 
 def assert_bus_register(session: Session, actor: UserContext, entry_path: str) -> None:
     _ = (session, entry_path)
-    if "admin" in actor.roles or "integration" in actor.roles:
+    if actor.is_root or "integration" in actor.roles:
         return
     raise GovAclError("GOV_AUTO_BUS_FORBIDDEN", "Bus register requires integration or admin", 403)

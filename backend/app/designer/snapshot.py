@@ -65,7 +65,7 @@ def get_snapshot(session: Session, snapshot_id: uuid.UUID) -> dict:
 
 
 def assert_snapshot_readable(session: Session, snapshot_id: uuid.UUID, actor: UserContext) -> None:
-    if "admin" in actor.roles:
+    if actor.is_root:
         return
     record = config_store.get_config_by_ref(session, _CONFIG_TYPE, _REF_TYPE, snapshot_id)
     if record.owner_id is None:

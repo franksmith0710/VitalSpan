@@ -112,10 +112,11 @@ export const queryKeys = {
   },
   users: {
     all: ["users"] as const,
-    list: (params?: { q?: string; limit?: number; offset?: number }) =>
+    list: (params?: { q?: string; orgId?: string; limit?: number; offset?: number }) =>
       ["users", "list", params] as const,
     roles: (userId: string) => ["users", userId, "roles"] as const,
     org: (userId: string) => ["users", userId, "org"] as const,
+    resourceGrants: (userId: string) => ["users", userId, "resource-grants"] as const,
     views: ["users", "me", "views"] as const,
   },
   orgs: {
@@ -134,6 +135,8 @@ export const queryKeys = {
     }) => ["rls", "groups", params ?? {}] as const,
     columnBindings: (params?: { datasetId?: string; datasourceId?: string }) =>
       ["rls", "column-bindings", params ?? {}] as const,
+    columnMasks: (params?: { datasetId?: string }) =>
+      ["rls", "column-masks", params ?? {}] as const,
   },
   audit: {
     events: (params?: Record<string, string | number | undefined>) =>

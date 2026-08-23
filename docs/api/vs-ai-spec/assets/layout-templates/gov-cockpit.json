@@ -28,7 +28,7 @@
     },
     "titleStyle": {
       "color": "#e2e8f0",
-      "fontSize": 14,
+      "fontSize": 13,
       "fontWeight": 600
     },
     "chartLabelStyle": {
@@ -42,7 +42,7 @@
       "x": 48,
       "y": 56,
       "width": 438,
-      "height": 120,
+      "height": 136,
       "defaultChartType": "kpi"
     },
     {
@@ -51,7 +51,7 @@
       "x": 510,
       "y": 56,
       "width": 438,
-      "height": 120,
+      "height": 136,
       "defaultChartType": "kpi"
     },
     {
@@ -60,7 +60,7 @@
       "x": 972,
       "y": 56,
       "width": 438,
-      "height": 120,
+      "height": 136,
       "defaultChartType": "kpi"
     },
     {
@@ -69,7 +69,7 @@
       "x": 1434,
       "y": 56,
       "width": 438,
-      "height": 120,
+      "height": 136,
       "defaultChartType": "kpi"
     },
     {
@@ -108,9 +108,9 @@
       "type": "customViz",
       "title": "AI 洞察",
       "x": 48,
-      "y": 912,
+      "y": 888,
       "width": 1824,
-      "height": 120
+      "height": 144
     }
   ]
 }

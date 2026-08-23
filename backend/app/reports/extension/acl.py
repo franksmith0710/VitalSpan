@@ -10,7 +10,7 @@ def assert_extension_action(actor: UserContext, action: Literal["read", "write",
     roles = set(actor.roles)
     if action == "read":
         return
-    if "admin" in roles:
+    if actor.is_root:
         return
     if action == "delete":
         if "owner" in roles:

@@ -1,17 +1,48 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "DeepTalk VitalSpan Agent Tools",
-  "description": "Register these tools in DeepTalk Agent; invoke via integrations/vitalspan/executor/cli.py",
+  "description": "Register in DeepTalk Agent. Plugin tools run in vitalspan plugin; legacy tools via integrations/vitalspan/executor/cli.py",
   "tools": [
     {
       "name": "vitalspan_health_check",
+      "runtime": "plugin|cli",
       "description": "GET /health before workflow 2 or 3",
       "cli": "python executor/cli.py vitalspan_health_check",
-      "parameters": {}
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "vitalspan_scaffold_artifact",
+      "runtime": "plugin",
+      "description": "Workflow 2: scaffold customViz bundle under examples/",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "description": "Bundle id slug" },
+          "name": { "type": "string", "description": "Chinese display name" },
+          "runtime": { "type": "string", "enum": ["html", "d3"], "default": "html" }
+        },
+        "required": ["id", "name"]
+      }
+    },
+    {
+      "name": "vitalspan_validate_artifact",
+      "runtime": "plugin",
+      "description": "Workflow 2: preflight bundle + record validate stamp (required before publish)",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "file": { "type": "string", "description": "Path under workspace, e.g. examples/my-widget.json" }
+        },
+        "required": ["file"]
+      }
     },
     {
       "name": "vitalspan_publish_artifact",
-      "description": "Validate + POST/PUT customViz bundle to platform library. Completion requires artifactId in stdout.",
+      "runtime": "plugin|cli",
+      "description": "Validate + POST/PUT customViz bundle to platform library. Completion requires ok artifactId= and styleComplianceTier=full in stdout.",
       "cli": "python executor/cli.py vitalspan_publish_artifact --file {file}",
       "parameters": {
         "type": "object",
@@ -30,6 +61,7 @@
     },
     {
       "name": "vitalspan_list_artifacts",
+      "runtime": "plugin|cli",
       "description": "List current user's ai_viz artifacts",
       "cli": "python executor/cli.py vitalspan_list_artifacts",
       "parameters": {
@@ -42,6 +74,7 @@
     },
     {
       "name": "vitalspan_delete_artifact",
+      "runtime": "plugin|cli",
       "description": "DELETE artifact by id (owner only)",
       "cli": "python executor/cli.py vitalspan_delete_artifact --artifact-id {artifact_id}",
       "parameters": {
@@ -53,22 +86,108 @@
       }
     },
     {
-      "name": "vitalspan_upload_dashboard",
-      "description": "Workflow 3: PUT dashboard editor-save layout",
-      "cli": "python executor/cli.py vitalspan_upload_dashboard --dashboard-id {dashboard_id} --file {file}",
+      "name": "vitalspan_list_layout_templates",
+      "runtime": "plugin",
+      "description": "Workflow 3: list 20 layout templates (gov-cockpit, kpi-flow-banner, ...)",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "surface_kind": {
+            "type": "string",
+            "enum": ["dashboard", "data-screen"],
+            "description": "Optional filter"
+          }
+        }
+      }
+    },
+    {
+      "name": "vitalspan_list_chart_types",
+      "runtime": "plugin",
+      "description": "Workflow 1/3: list built-in chartType ids",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "vitalspan_compose_dashboard",
+      "runtime": "plugin",
+      "description": "Workflow 3: create surface + save layout from template/chart_types/artifact_ids. Stdout must include ok dashboardId=.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "surface_kind": {
+            "type": "string",
+            "enum": ["dashboard", "data-screen"],
+            "description": "Required when creating new"
+          },
+          "dashboard_id": { "type": "string", "description": "Existing uuid to update" },
+          "name": { "type": "string" },
+          "template": { "type": "string", "description": "Layout template id from list_layout_templates" },
+          "chart_types": { "type": "string", "description": "Comma-separated built-in types" },
+          "artifact_ids": { "type": "string", "description": "Comma-separated customViz uuids" }
+        }
+      }
+    },
+    {
+      "name": "vitalspan_get_dashboard_layout",
+      "runtime": "plugin",
+      "description": "Workflow 3: GET dashboard + write editor-save JSON for style-only patch",
       "parameters": {
         "type": "object",
         "properties": {
           "dashboard_id": { "type": "string" },
-          "file": { "type": "string" }
+          "file": { "type": "string", "description": "Output path under workspace examples/" }
         },
         "required": ["dashboard_id", "file"]
       }
     },
     {
+      "name": "vitalspan_create_dashboard",
+      "runtime": "plugin",
+      "description": "Create empty dashboard or data-screen (prefer compose_dashboard for workflow 3)",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "surface_kind": { "type": "string", "enum": ["dashboard", "data-screen"] },
+          "name": { "type": "string" }
+        },
+        "required": ["surface_kind"]
+      }
+    },
+    {
+      "name": "vitalspan_list_dashboards",
+      "runtime": "plugin",
+      "description": "List dashboards and data-screens",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "surface_kind": { "type": "string", "enum": ["dashboard", "data-screen"] },
+          "limit": { "type": "integer", "default": 50 }
+        }
+      }
+    },
+    {
+      "name": "vitalspan_upload_dashboard",
+      "runtime": "plugin|cli",
+      "description": "Workflow 3: PUT dashboard editor-save layout from file or inline chart_types",
+      "cli": "python executor/cli.py vitalspan_upload_dashboard --dashboard-id {dashboard_id} --file {file}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "dashboard_id": { "type": "string" },
+          "file": { "type": "string" },
+          "chart_types": { "type": "string" },
+          "artifact_ids": { "type": "string" }
+        },
+        "required": ["dashboard_id"]
+      }
+    },
+    {
       "name": "vitalspan_completion_gate",
-      "description": "Reject task completion without artifactId or dashboardId; reject output/ delivery phrases",
-      "cli": "python executor/cli.py vitalspan_completion_gate --workflow {workflow} --agent-summary {agent_summary}",
+      "runtime": "plugin|cli",
+      "description": "Reject task completion without artifactId (wf2) or ok dashboardId= in tool_stdout (wf3); reject output/ delivery phrases",
+      "cli": "python executor/cli.py vitalspan_completion_gate --workflow {workflow} --agent-summary {agent_summary} --tool-stdout {tool_stdout}",
       "parameters": {
         "type": "object",
         "properties": {
@@ -80,6 +199,10 @@
           "agent_summary": {
             "type": "string",
             "description": "Agent final message to validate"
+          },
+          "tool_stdout": {
+            "type": "string",
+            "description": "Required for workflow 2 (publish) and 3 (compose/upload) raw tool output"
           }
         },
         "required": ["workflow", "agent_summary"]

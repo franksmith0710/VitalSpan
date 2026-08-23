@@ -22,7 +22,9 @@ def list_readable_node_ids(session: Session, actor: UserContext) -> set[uuid.UUI
     """None means all nodes visible (root)."""
     if actor.is_root:
         return None
-    visible = set(list_visible_resource_ids(session, actor.roles, RESOURCE_TYPE))
+    visible = set(
+        list_visible_resource_ids(session, actor.roles, RESOURCE_TYPE, user_id=actor.id)
+    )
     for node_id in catalog_repo.all_nodes():
         if catalog_repo.get_owner(node_id) == actor.id:
             visible.add(node_id)
@@ -36,7 +38,9 @@ def assert_node_readable(session: Session, actor: UserContext, node_id: uuid.UUI
     if owner is not None and owner == actor.id:
         return
     try:
-        ensure_resource_visible(session, actor.roles, RESOURCE_TYPE, node_id)
+        ensure_resource_visible(
+            session, actor.roles, RESOURCE_TYPE, node_id, user_id=actor.id
+        )
     except VisibilityError as exc:
         raise ReportCatalogError("RPT_CATALOG_FORBIDDEN", "Catalog node access denied", 403) from exc
 

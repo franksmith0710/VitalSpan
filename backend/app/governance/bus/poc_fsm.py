@@ -37,7 +37,7 @@ def get_semi_auto_fsm(db: Session, entry_id: uuid.UUID) -> SemiAutoFsmState:
 
 def assert_bus_register_path_scope(actor: UserContext, entry_path: str) -> None:
     roles = set(actor.roles)
-    if "admin" in roles:
+    if actor.is_root:
         return
     if "enterprise" in roles:
         prefix = _USER_BUS_REGISTER_SCOPE.get(actor.id, "/api/v1/")

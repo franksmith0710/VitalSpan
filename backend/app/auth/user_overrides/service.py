@@ -7,14 +7,18 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.audit.write_hooks import record_platform_event
-from app.auth.models import (
-    AuthResourceGrant,
-    AuthRoleDimensionValue,
-    AuthUserDimensionOverride,
-    AuthUserResourceGrant,
-)
+from app.auth.models import AuthUserDimensionOverride, AuthUserResourceGrant
 from app.auth.org_scope import assert_user_manageable
 from app.auth.resources.service import VALID_RESOURCE_TYPES
+from app.auth.user_overrides.merge import (
+    effective_dimension_values,
+    effective_resource_ids,
+    user_has_resource_access,
+)
+from app.auth.user_overrides.store import (
+    list_user_dimension_overrides,
+    list_user_resource_grants,
+)
 
 OverrideEffect = str  # "add" | "deny"
 
@@ -25,26 +29,6 @@ class OverrideError(Exception):
         self.message = message
         self.status = status
         super().__init__(message)
-
-
-def list_user_resource_grants(session: Session, user_id: uuid.UUID) -> list[AuthUserResourceGrant]:
-    return list(
-        session.scalars(
-            select(AuthUserResourceGrant)
-            .where(AuthUserResourceGrant.user_id == user_id)
-            .order_by(AuthUserResourceGrant.created_at)
-        )
-    )
-
-
-def list_user_dimension_overrides(
-    session: Session, user_id: uuid.UUID
-) -> list[AuthUserDimensionOverride]:
-    return list(
-        session.scalars(
-            select(AuthUserDimensionOverride).where(AuthUserDimensionOverride.user_id == user_id)
-        )
-    )
 
 
 def upsert_user_resource_grant(
@@ -235,81 +219,15 @@ def delete_user_dimension_override(
     session.commit()
 
 
-def effective_resource_ids(
-    session: Session,
-    *,
-    user_id: uuid.UUID,
-    role_codes: list[str],
-    resource_type: str,
-) -> set[uuid.UUID]:
-    from app.auth.models import AuthRole, AuthUserRole
-
-    role_uuids = list(
-        session.scalars(
-            select(AuthRole.id)
-            .join(AuthUserRole, AuthUserRole.role_id == AuthRole.id)
-            .where(AuthUserRole.user_id == user_id, AuthRole.code.in_(role_codes))
-        ).all()
-    )
-    base: set[uuid.UUID] = set()
-    if role_uuids:
-        base = set(
-            session.scalars(
-                select(AuthResourceGrant.resource_id).where(
-                    AuthResourceGrant.role_id.in_(role_uuids),
-                    AuthResourceGrant.resource_type == resource_type,
-                )
-            ).all()
-        )
-    adds: set[uuid.UUID] = set()
-    denies: set[uuid.UUID] = set()
-    for row in list_user_resource_grants(session, user_id):
-        if row.resource_type != resource_type:
-            continue
-        if row.effect == "add":
-            adds.add(row.resource_id)
-        else:
-            denies.add(row.resource_id)
-    return (base | adds) - denies
-
-
-def effective_dimension_values(
-    session: Session,
-    *,
-    user_id: uuid.UUID,
-    role_ids: list[uuid.UUID],
-    dimension_type_id: uuid.UUID,
-) -> set[str]:
-    base: set[str] = set()
-    if role_ids:
-        base = set(
-            session.scalars(
-                select(AuthRoleDimensionValue.value).where(
-                    AuthRoleDimensionValue.role_id.in_(role_ids),
-                    AuthRoleDimensionValue.dimension_type_id == dimension_type_id,
-                )
-            ).all()
-        )
-    adds: set[str] = set()
-    denies: set[str] = set()
-    for row in list_user_dimension_overrides(session, user_id):
-        if row.dimension_type_id != dimension_type_id:
-            continue
-        if row.effect == "add":
-            adds.add(row.value)
-        else:
-            denies.add(row.value)
-    return (base | adds) - denies
-
-
-def user_has_resource_access(
-    session: Session,
-    *,
-    user_id: uuid.UUID,
-    role_codes: list[str],
-    resource_type: str,
-    resource_id: uuid.UUID,
-) -> bool:
-    return resource_id in effective_resource_ids(
-        session, user_id=user_id, role_codes=role_codes, resource_type=resource_type
-    )
+__all__ = [
+    "OverrideError",
+    "delete_user_dimension_override",
+    "delete_user_resource_grant",
+    "effective_dimension_values",
+    "effective_resource_ids",
+    "list_user_dimension_overrides",
+    "list_user_resource_grants",
+    "upsert_user_dimension_override",
+    "upsert_user_resource_grant",
+    "user_has_resource_access",
+]

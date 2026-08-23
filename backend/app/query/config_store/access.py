@@ -8,7 +8,7 @@ from app.query.config_store.schemas import ConfigError
 
 
 def assert_config_readable(actor: UserContext, record: QueryConfigRecord) -> None:
-    if "admin" in actor.roles:
+    if actor.is_root:
         return
     owner = record.owner_id
     if owner is None:

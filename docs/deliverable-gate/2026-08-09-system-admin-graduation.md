@@ -44,7 +44,7 @@
 | AUTH-001 | F02-AUTH | IMPLEMENTED | `[x]` | `roles.smoke` · `test_auth_rbac_l1` | |
 | AUTH-002 | F02-AUTH | IMPLEMENTED | `[x]` | `orgs.smoke` 4 条 · org API | |
 | AUTH-003 | F02-AUTH | IMPLEMENTED | `[x]` | `users.smoke` 6+1 条 | 含解锁 |
-| AUTH-004 | F02-AUTH | **PARTIAL** | `[x]` | `grants.smoke` · `datasources/acl.py` · **`dashboard/acl.py`（2026-08-09）** | 仪表板 grant 过滤已补；**缺 backend pytest**；报表类型未扫 |
+| AUTH-004 | F02-AUTH | IMPLEMENTED | `[x]` | `test_auth_resource_acl_matrix.py` · `test_auth_user_override_enforcement.py` · dashboard/report ACL | 2026-08-24：用户例外授权接入执行链；报表 grant pytest 绿 |
 | AUTH-005 | F02-AUTH | IMPLEMENTED | `[x]` | `rls` API · `test_auth_rbac_l1` T-AUTH-D* | |
 | AUTH-006 | F02-AUTH | IMPLEMENTED | `[x]` | `RlsAdminPage` · `rls.smoke` | |
 | AUTH-007 | F02-AUTH | IMPLEMENTED | `[x]` | `predicate.py` · `test_auth_rbac_l1` T-AUTH-RLS* | 后台仅配置面 |
@@ -56,8 +56,8 @@
 
 | 状态 | 数量 | 占比（含 DEFERRED） |
 |------|------|---------------------|
-| IMPLEMENTED | 7 | 70% |
-| PARTIAL | 2 | 20% |
+| IMPLEMENTED | 8 | 80% |
+| PARTIAL | 1 | 10% |
 | DEFERRED | 1 | 10% |
 | MISSING | 0 | 0% |
 

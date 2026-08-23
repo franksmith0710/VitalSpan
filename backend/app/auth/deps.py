@@ -82,7 +82,9 @@ async def require_resource_visible(
     user = await get_current_user(request)
     session = get_meta_session()
     try:
-        ensure_resource_visible(session, user.roles, resource_type, resource_id)
+        ensure_resource_visible(
+            session, user.roles, resource_type, resource_id, user_id=user.id
+        )
     except VisibilityError as exc:
         raise HTTPException(
             status_code=exc.status,

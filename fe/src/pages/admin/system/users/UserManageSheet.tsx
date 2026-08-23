@@ -24,6 +24,7 @@ import { UserAccountStatusPanel } from "./UserAccountStatusPanel";
 import { UserOrgBindingPanel } from "./UserOrgBindingPanel";
 import { UserResetPasswordPanel } from "./UserResetPasswordPanel";
 import { UserImAccountsPanel, type ImAccounts } from "./UserImAccountsPanel";
+import { UserOverrideGrantsPanel } from "./UserOverrideGrantsPanel";
 import { isUserLocked, type UserAccountFields } from "./userAccountStatus";
 
 type UserOut = { id: string; username: string; email?: string | null; imAccounts?: ImAccounts } & UserAccountFields;
@@ -43,7 +44,7 @@ export function UserManageSheet({
   onUserChange,
 }: UserManageSheetProps) {
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<"roles" | "org">("roles");
+  const [tab, setTab] = useState<"roles" | "org" | "overrides">("roles");
   const [selectedRoleIds, setSelectedRoleIds] = useState<string[]>([]);
   const [accountStatus, setAccountStatus] = useState<Required<UserAccountFields>>({
     isActive: true,
@@ -129,15 +130,16 @@ export function UserManageSheet({
 
         <Tabs
           value={tab}
-          onValueChange={(v) => setTab(v as "roles" | "org")}
+          onValueChange={(v) => setTab(v as "roles" | "org" | "overrides")}
           className="flex min-h-0 flex-1 flex-col"
         >
-          <TabsList className="mx-6 mt-4 grid w-[calc(100%-3rem)] grid-cols-2">
+          <TabsList className="mx-6 mt-4 grid w-[calc(100%-3rem)] grid-cols-3">
             <TabsTrigger value="roles" className="gap-1.5">
               <Shield className="size-3.5" aria-hidden />
               角色
             </TabsTrigger>
             <TabsTrigger value="org">组织与安全</TabsTrigger>
+            <TabsTrigger value="overrides">例外授权</TabsTrigger>
           </TabsList>
 
           <TabsContent
@@ -246,6 +248,17 @@ export function UserManageSheet({
                     onActionError={onActionError}
                   />
                 </>
+              ) : null}
+            </div>
+          </TabsContent>
+
+          <TabsContent
+            value="overrides"
+            className="mt-0 min-h-0 flex-1 overflow-y-auto data-[state=inactive]:hidden"
+          >
+            <div className="px-6 py-4">
+              {user ? (
+                <UserOverrideGrantsPanel userId={user.id} onActionError={onActionError} />
               ) : null}
             </div>
           </TabsContent>

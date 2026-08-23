@@ -21,7 +21,7 @@ RESOURCE_TYPE = "datasource"
 def list_visible_ids(session: Session, actor: UserContext) -> list[uuid.UUID] | None:
     if bypasses_resource_acl(actor):
         return None
-    return list_visible_resource_ids(session, actor.roles, RESOURCE_TYPE)
+    return list_visible_resource_ids(session, actor.roles, RESOURCE_TYPE, user_id=actor.id)
 
 
 def list_visible_ids_for_roles(
@@ -41,16 +41,21 @@ def assert_visible(
     data_source_id: uuid.UUID,
     *,
     is_root: bool = False,
+    user_id: str | uuid.UUID | None = None,
 ) -> None:
     if is_root:
         return
-    ensure_resource_visible(session, role_codes, RESOURCE_TYPE, data_source_id)
+    ensure_resource_visible(
+        session, role_codes, RESOURCE_TYPE, data_source_id, user_id=user_id
+    )
 
 
 def assert_visible_actor(session: Session, actor: UserContext, data_source_id: uuid.UUID) -> None:
     if bypasses_resource_acl(actor):
         return
-    ensure_resource_visible(session, actor.roles, RESOURCE_TYPE, data_source_id)
+    ensure_resource_visible(
+        session, actor.roles, RESOURCE_TYPE, data_source_id, user_id=actor.id
+    )
 
 
 def apply_list_filter(stmt: Select, session: Session, actor: UserContext) -> Select:

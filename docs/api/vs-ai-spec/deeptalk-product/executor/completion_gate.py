@@ -17,6 +17,10 @@ DASHBOARD_ID_RE = re.compile(
     r"dashboardId=([0-9a-fA-F-]{36})",
     re.IGNORECASE,
 )
+DASHBOARD_OK_RE = re.compile(
+    r"ok\s+dashboardId=([0-9a-fA-F-]{36})",
+    re.IGNORECASE,
+)
 VALIDATE_OK_RE = re.compile(r"validate\s+ok|dry-run ok|preflight ok", re.IGNORECASE)
 
 FORBIDDEN_PHRASES = (
@@ -77,8 +81,17 @@ def check_completion(workflow: str, agent_summary: str, tool_stdout: str = "") -
         if not artifact_id:
             reasons.append("workflow 2 requires artifactId=<uuid> in summary or tool output")
     elif wf == "3":
+        if not tool_stdout.strip():
+            reasons.append(
+                "workflow 3 requires tool_stdout from vitalspan_compose_dashboard or vitalspan_upload_dashboard",
+            )
+        elif not DASHBOARD_OK_RE.search(tool_stdout):
+            reasons.append("tool_stdout must contain ok dashboardId=<uuid> from compose or upload")
         if not dashboard_id:
             reasons.append("workflow 3 requires dashboardId=<uuid> in summary or tool output")
+        stdout_match = DASHBOARD_OK_RE.search(tool_stdout)
+        if dashboard_id and stdout_match and dashboard_id.lower() != stdout_match.group(1).lower():
+            reasons.append("dashboardId in summary does not match tool_stdout")
     elif wf == "1":
         if not VALIDATE_OK_RE.search(text):
             reasons.append("workflow 1 requires validate ok / preflight ok in output")

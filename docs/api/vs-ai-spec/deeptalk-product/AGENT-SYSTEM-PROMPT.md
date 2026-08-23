@@ -34,7 +34,7 @@
 | `vitalspan_publish_artifact` | **工作流 ② 主交付** |
 | `vitalspan_list_artifacts` | 核对组件库 |
 | `vitalspan_delete_artifact` | 属主删除 |
-| `vitalspan_completion_gate` | 结束任务前校验是否有 uuid |
+| `vitalspan_completion_gate` | 结束任务前校验 uuid + tool_stdout（wf3 须 ok dashboardId=） |
 
 ## 工作流 ②（组件库 · 默认路径）
 
@@ -61,7 +61,8 @@
 3. 需改颜色/圆角/标题时：`vitalspan_get_dashboard_layout dashboard_id=<uuid> file=examples/my-screen.json`
 4. 只 patch `layoutJson.styleConfig` · `chartConfig.nativeBody.deStyle` · `customVizConfig.style`（**勿重算 x/y**）
 5. `vitalspan_upload_dashboard dashboard_id=<uuid> file=examples/my-screen.json`
-6. 汇报 **`dashboardId`** + edit 链接
+6. `vitalspan_completion_gate --workflow 3 --agent-summary "..." --tool-stdout "<compose或upload原始输出>"` 必须通过
+7. 汇报 **`dashboardId`** + edit 链接
 
 金样：`examples/dashboard-style-patch.example.json` · 指南：`guides/COMPOSE-STYLE-WORKFLOW.md`
 

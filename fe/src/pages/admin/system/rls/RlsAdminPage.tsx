@@ -58,6 +58,7 @@ import { useListPagination } from "@/lib/list-pagination";
 import { queryKeys } from "@/lib/queryKeys";
 import { RlsRoleBindingPanel } from "./RlsRoleBindingPanel";
 import { RlsColumnBindingsPanel } from "./RlsColumnBindingsPanel";
+import { ColumnMasksPanel } from "./ColumnMasksPanel";
 import { RlsDimensionValuesPanel } from "./RlsDimensionValuesPanel";
 import type { DimensionGroupOut, DimensionTypeOut } from "./rls-types";
 import { SystemAdminListHint } from "../SystemAdminListHint";
@@ -300,6 +301,7 @@ export function RlsAdminPage() {
               <TabsTrigger value="groups">维度分组</TabsTrigger>
               <TabsTrigger value="bindings">角色绑定</TabsTrigger>
               <TabsTrigger value="columns">列映射</TabsTrigger>
+              <TabsTrigger value="masks">列脱敏</TabsTrigger>
             </TabsList>
             {tab === "dimensions" ? (
               <Button type="button" variant="primary" size="sm" onClick={() => setDimOpen(true)}>
@@ -532,6 +534,12 @@ export function RlsAdminPage() {
         <TabsContent value="columns" className="mt-0 flex min-h-0 flex-1 flex-col">
           <ListPageTableFrame>
             <RlsColumnBindingsPanel dimensions={dimensions} />
+          </ListPageTableFrame>
+        </TabsContent>
+
+        <TabsContent value="masks" className="mt-0 flex min-h-0 flex-1 flex-col">
+          <ListPageTableFrame>
+            <ColumnMasksPanel />
           </ListPageTableFrame>
         </TabsContent>
       </Tabs>

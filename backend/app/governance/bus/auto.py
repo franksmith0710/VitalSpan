@@ -26,7 +26,7 @@ def _set_fsm(entry_id: uuid.UUID, state: FsmState) -> None:
 
 
 def _assert_auto_role(actor: UserContext) -> None:
-    if "admin" in actor.roles or "integration" in actor.roles:
+    if actor.is_root or "integration" in actor.roles:
         return
     raise catalog_service.CatalogError(
         "GOV_AUTO_BUS_FORBIDDEN",

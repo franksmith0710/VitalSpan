@@ -9,6 +9,7 @@ from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
+from app.auth.permissions import permission_matches
 from app.datasources.models import get_meta_session
 from app.metadata.dataset.errors import (
     META_DATASET_DEMO_PROTECTED,
@@ -107,11 +108,23 @@ def _row_to_out(
     })
 
 
+def _has_dataset_manage(user: UserContext) -> bool:
+    return user.is_root or permission_matches(
+        set(user.permissions), "dataset:manage", user.is_root
+    )
+
+
+def _has_dataset_read(user: UserContext) -> bool:
+    return _has_dataset_manage(user) or permission_matches(
+        set(user.permissions), "dataset:read", user.is_root
+    )
+
+
 def _assert_dataset_write_access(user: UserContext, dataset_id: str) -> None:
-    roles = set(user.roles)
-    if roles.intersection({"admin", "analyst"}):
+    if _has_dataset_manage(user):
         return
-    if "viewer" in roles and not roles.intersection({"editor", "analyst", "admin"}):
+    roles = set(user.roles)
+    if "viewer" in roles and not roles.intersection({"editor", "analyst"}):
         raise DatasetError(META_DATASET_FORBIDDEN, "viewer cannot create datasets", 403)
     if "enterprise" in roles:
         prefix = _USER_DATASET_SCOPE.get(user.id, "ds-")
@@ -120,9 +133,9 @@ def _assert_dataset_write_access(user: UserContext, dataset_id: str) -> None:
 
 
 def _assert_dataset_read_access(user: UserContext, row: DatasetRecord) -> None:
-    roles = set(user.roles)
-    if "admin" in roles:
+    if _has_dataset_read(user):
         return
+    roles = set(user.roles)
     if "enterprise" in roles:
         prefix = _USER_DATASET_SCOPE.get(user.id, "ds-")
         if not row.dataset_id.startswith(prefix):

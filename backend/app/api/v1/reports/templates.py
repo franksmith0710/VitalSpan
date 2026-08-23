@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Response, status
@@ -97,7 +98,24 @@ def publish_template(
 
     try:
         acl.assert_template_write_access(actor, template_key)
-        return report_service.publish_template(template_key, actor, change_note=change_note)
+        result = report_service.publish_template(template_key, actor, change_note=change_note)
+        from app.auth.audit.write_hooks import record_domain_publish
+        from app.core.db.meta import get_meta_session
+
+        db = get_meta_session()
+        try:
+            record_domain_publish(
+                db,
+                actor_id=actor.id,
+                actor_username=actor.username,
+                target_type="report",
+                target_id=uuid.uuid5(uuid.NAMESPACE_URL, f"report-template:{template_key}"),
+                detail={"templateKey": template_key},
+            )
+            db.commit()
+        finally:
+            db.close()
+        return result
     except TemplateDefError as exc:
         return _template_error(exc)
 

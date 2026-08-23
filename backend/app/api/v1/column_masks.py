@@ -77,7 +77,7 @@ def create_column_mask(
     return ColumnMaskOut.model_validate(row)
 
 
-@router.delete("/{mask_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{mask_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
 def delete_column_mask(
     mask_id: uuid.UUID,
     actor: Annotated[UserContext, Depends(require_permission(PERM_MASK_MANAGE))],

@@ -1,7 +1,7 @@
 {
   "id": "sparse-three-tier",
   "name": "三阶疏朗",
-  "description": "KPI 带 + 中行三列 + 底行双图 + 仪表带",
+  "description": "KPI 带 + 中行三列 + 底行双图 + 仪表带（v2 加高 KPI/底行，避免标题挡数值）",
   "surfaceKind": "data-screen",
   "canvas": {
     "width": 1920,
@@ -28,7 +28,7 @@
     },
     "titleStyle": {
       "color": "#e2e8f0",
-      "fontSize": 14,
+      "fontSize": 13,
       "fontWeight": 600
     },
     "chartLabelStyle": {
@@ -42,7 +42,7 @@
       "x": 48,
       "y": 48,
       "width": 592,
-      "height": 100,
+      "height": 128,
       "defaultChartType": "kpi"
     },
     {
@@ -51,7 +51,7 @@
       "x": 664,
       "y": 48,
       "width": 592,
-      "height": 100,
+      "height": 128,
       "defaultChartType": "kpi"
     },
     {
@@ -60,64 +60,64 @@
       "x": 1280,
       "y": 48,
       "width": 592,
-      "height": 100,
+      "height": 128,
       "defaultChartType": "kpi"
     },
     {
       "type": "chart",
       "title": "左栏图表",
       "x": 48,
-      "y": 172,
+      "y": 200,
       "width": 592,
-      "height": 340
+      "height": 304
     },
     {
       "type": "chart",
       "title": "中栏图表",
       "x": 664,
-      "y": 172,
+      "y": 200,
       "width": 592,
-      "height": 340
+      "height": 304
     },
     {
       "type": "chart",
       "title": "右栏图表",
       "x": 1280,
-      "y": 172,
+      "y": 200,
       "width": 592,
-      "height": 340
+      "height": 304
     },
     {
       "type": "customViz",
       "title": "AI 趋势",
       "x": 48,
-      "y": 536,
+      "y": 520,
       "width": 900,
-      "height": 300
+      "height": 296
     },
     {
       "type": "customViz",
       "title": "AI 排名",
       "x": 972,
-      "y": 536,
+      "y": 520,
       "width": 900,
-      "height": 300
+      "height": 296
     },
     {
       "type": "chart",
       "title": "对比图",
       "x": 48,
-      "y": 860,
+      "y": 832,
       "width": 900,
-      "height": 172
+      "height": 200
     },
     {
       "type": "chart",
       "title": "分布图",
       "x": 972,
-      "y": 860,
+      "y": 832,
       "width": 900,
-      "height": 172
+      "height": 200
     }
   ]
 }

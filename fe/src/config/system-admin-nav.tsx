@@ -6,6 +6,7 @@ import {
   ScrollText,
   Shield,
   ShieldAlert,
+  ShieldCheck,
   Users,
 } from "lucide-react";
 import type { NavSection } from "@/components/layout/app-sidebar";
@@ -54,6 +55,11 @@ export const SYSTEM_ADMIN_NAV_SECTIONS: NavSection[] = [
         name: "平台对接",
         icon: <Link2 className="size-5" aria-hidden />,
         path: "/admin/system/platform-connect",
+      },
+      {
+        name: "认证集成",
+        icon: <ShieldCheck className="size-5" aria-hidden />,
+        path: "/admin/system/auth-integration",
       },
     ],
   },

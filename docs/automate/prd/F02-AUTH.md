@@ -129,3 +129,14 @@ API 登记见 [`docs/api/README.md`](../../api/README.md) §认证（PRD 列 `�
 - **代码锚点**：`backend/app/auth/audit/write_hooks.py` · `backend/app/auth/audit/service.py` · `backend/app/api/v1/audit.py` · `tests/test_auth_rbac_l1.py` T-AUTH-AU01~AU13 · T-AUTH-A01~A09 回归
 - **演化建议**：M-DEPTH F-C 闭合浏览 UI；非 auth 域写操作扩展；生产留存策略
 - **里程碑对齐**：r21 · 已完成；**M-DEPTH F-C · 已闭合 · 2026-07-29**
+
+## Phase C（C1–C5 · 2026-08-24）
+
+> 计划文件不修改；本节为交付对账。
+
+| ID | 能力 | 状态 | 代码锚点 |
+|----|------|------|----------|
+| C1 | 组织范围管理员 `system:org_scoped.manage` | 已实现 | `org_scope.py` · `users/service.py` · `tests/test_auth_org_scoped_admin.py` |
+| C2 | 用户级资源/维度例外授权 | 已实现 | `user_overrides/service.py` · `UserManageSheet`「例外授权」Tab · `tests/test_auth_user_overrides.py` |
+| C3 | 列脱敏 + 域删除/发布审计扩展 | 已实现 | `masking/service.py` · `query/service.py` · `audit/write_hooks.py` · `AuditLogPage` 预设筛选 |
+| C5 | LDAP/OIDC 规格 + UI 骨架 | 已实现（骨架） | `docs/specs/auth-ldap-oidc-integration.md` · `auth-integration` 导航 · `login/oidc.py` |

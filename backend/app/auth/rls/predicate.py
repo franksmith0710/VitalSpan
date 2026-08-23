@@ -46,7 +46,7 @@ def _expand_org_subtree(session: Session, root_ids: set[uuid.UUID]) -> set[uuid.
 
 def resolve_user_org_node_ids(session: Session, user_id: uuid.UUID) -> set[uuid.UUID]:
     from app.auth.deps import resolve_user_roles
-    from app.auth.rls.bindings.service import resolve_effective_values
+    from app.auth.user_overrides.merge import effective_dimension_values
 
     role_codes = resolve_user_roles(str(user_id))
     roles = list(session.scalars(select(AuthRole).where(AuthRole.code.in_(role_codes))))
@@ -54,9 +54,15 @@ def resolve_user_org_node_ids(session: Session, user_id: uuid.UUID) -> set[uuid.
         session.scalars(select(AuthDimensionType).where(AuthDimensionType.org_dimension.is_(True)))
     )
     raw: set[str] = set()
-    for role in roles:
-        for org_type in org_types:
-            raw.update(resolve_effective_values(session, role.id, org_type.id))
+    for org_type in org_types:
+        raw.update(
+            effective_dimension_values(
+                session,
+                user_id=user_id,
+                role_ids=[role.id for role in roles],
+                dimension_type_id=org_type.id,
+            )
+        )
     root_ids = {uuid.UUID(v) for v in raw}
     return _expand_org_subtree(session, root_ids)
 
@@ -102,11 +108,12 @@ def build_multi_dimension_rls_fragment(
     table_alias: str = "t",
 ) -> str:
     from app.auth.deps import resolve_user_roles
-    from app.auth.rls.bindings.service import resolve_effective_values
+    from app.auth.user_overrides.merge import effective_dimension_values
 
     validate_column_name(table_alias)
     role_codes = resolve_user_roles(str(user_id))
     roles = list(session.scalars(select(AuthRole).where(AuthRole.code.in_(role_codes))))
+    role_ids = [role.id for role in roles]
     if not roles:
         return "1=0"
 
@@ -129,9 +136,12 @@ def build_multi_dimension_rls_fragment(
                 build_org_rls_fragment(org_ids, column=column, alias=table_alias)
             )
         else:
-            merged: set[str] = set()
-            for role in roles:
-                merged.update(resolve_effective_values(session, role.id, dim_id))
+            merged = effective_dimension_values(
+                session,
+                user_id=user_id,
+                role_ids=role_ids,
+                dimension_type_id=dim_id,
+            )
             fragments.append(
                 build_dimension_value_fragment(
                     sorted(merged), column=column, alias=table_alias

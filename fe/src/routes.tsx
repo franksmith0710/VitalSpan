@@ -33,6 +33,7 @@ import { RlsAdminPage } from "@/pages/admin/system/rls/RlsAdminPage";
 import { AuditLogPage } from "@/pages/admin/system/audit/AuditLogPage";
 import { GrantsPage } from "@/pages/admin/system/grants/GrantsPage";
 import { SystemAdminHomePage } from "@/pages/admin/system/SystemAdminHomePage";
+import { AuthIntegrationPage } from "@/pages/admin/system/auth-integration/AuthIntegrationPage";
 import { PlatformConnectPage } from "@/pages/admin/system/platform-connect/PlatformConnectPage";
 import { GovernanceCatalogPage } from "@/pages/admin/governance/GovernanceCatalogPage";
 import { GovernanceWorkflowPage } from "@/pages/admin/governance/GovernanceWorkflowPage";
@@ -284,6 +285,14 @@ export function AppRoutes() {
             element={
               <RequireCapabilityName capability={PERM_SYSTEM_PLATFORM_CONNECT_READ}>
                 <PlatformConnectPage />
+              </RequireCapabilityName>
+            }
+          />
+          <Route
+            path="system/auth-integration"
+            element={
+              <RequireCapabilityName capability={PERM_SYSTEM_PLATFORM_CONNECT_READ}>
+                <AuthIntegrationPage />
               </RequireCapabilityName>
             }
           />

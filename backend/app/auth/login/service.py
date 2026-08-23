@@ -93,3 +93,16 @@ def authenticate(session: Session, username: str, password: str) -> AuthUser:
 
 def resolve_role_codes(session: Session, user_id: uuid.UUID) -> list[str]:
     return user_service.resolve_role_codes_for_user(session, user_id)
+
+
+def handle_oidc_callback(
+    session: Session,
+    *,
+    provider: str,
+    code: str,
+    state: str | None,
+):
+    """OIDC 登录回调占位；完整实现见 `auth/login/oidc.py` 与 spec gate 文档。"""
+    from app.auth.login.oidc import handle_oidc_callback as _handle_oidc_callback
+
+    return _handle_oidc_callback(session, provider=provider, code=code, state=state)

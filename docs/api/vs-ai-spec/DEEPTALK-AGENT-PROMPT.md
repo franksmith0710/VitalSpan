@@ -19,33 +19,49 @@
 4. bundle 必须 `host.vsCv.mount(`；样式读 `(p && p.style) || {}`。
 5. 禁止 `output/` 当交付目录；草稿用 `examples/<name>.json`。
 6. 禁止「规范包与 VitalSpan 无关」「写到磁盘即交付」。
-7. **禁止** 用浏览器登录 5173 创建看板/大屏 — 用 `vitalspan_create_dashboard`（API + env 密码）。
+7. **禁止** 用浏览器登录 5173 创建看板/大屏 — 用插件 `vitalspan_compose_dashboard` 或 `vitalspan_create_dashboard`（API + env 密码）。
 
 ## 三条工作流
 
 | 线 | 何时 | 完成证据 | 禁止 |
 |----|------|----------|------|
 | **② 组件库** | 开发**新** html/d3 组件 | **`artifactId=<uuid>`** | 同任务拼大屏；write_file 当完成 |
-| **③ 大屏** | 编排 layout | **`dashboardId`** | 写组件 HTML |
+| **③ 大屏** | 编排 layout | **`dashboardId`** + compose/upload **tool_stdout** | 写组件 HTML |
 | **① 内置图** | 标准 chartType | `/charts/validate` 200 | 走 customViz |
+
+## 注册工具（DeepTalk 插件 vitalspan）
+
+| 工具名 | 用途 |
+|--------|------|
+| `vitalspan_health_check` | ②/③ 前置 |
+| `vitalspan_scaffold_artifact` | ② 脚手架 |
+| `vitalspan_validate_artifact` | ② 预检 + stamp |
+| `vitalspan_publish_artifact` | **② 主交付** |
+| `vitalspan_list_artifacts` | 核对组件库 |
+| `vitalspan_list_layout_templates` | ③ 选 20 套排布模板 |
+| `vitalspan_compose_dashboard` | **③ 一键创建+编排**（`template=` + chart_types） |
+| `vitalspan_get_dashboard_layout` | **③ 导出 layout** → 改样式 → upload |
+| `vitalspan_upload_dashboard` | **③ 保存 layout**（`--file` 或 chart_types） |
+| `vitalspan_create_dashboard` | ③ 仅创建空壳（一般用 compose 即可） |
+| `vitalspan_list_dashboards` | 列出已有看板/大屏 |
+| `vitalspan_list_chart_types` | ① 内置图类型清单 |
+| `vitalspan_completion_gate` | 结束任务前校验 uuid + tool_stdout |
 
 ## 工作流 ②（组件库 · 主路径）
 
-1. `python tools/check-vitalspan-health.py` → ok  
-2. **`python tools/scaffold-custom-viz.py --id <id> --name <中文名>`**（默认 `html-minimal`）  
+1. `vitalspan_health_check` 或 `python tools/check-vitalspan-health.py` → ok  
+2. **`vitalspan_scaffold_artifact`** 或 `python tools/scaffold-custom-viz.py --id <id> --name <中文名>`  
 3. 编辑 `examples/<id>.json` 或 `.bundle.html`（**禁止**从零写 manifest）  
-4. **`python tools/validate-ai-viz-bundle.py --file examples/<id>.json`** → preflight ok  
-5. **`python tools/publish-ai-viz-artifact.py --file examples/<id>.json`** → **`ok artifactId=...`**  
-6. 可选：`python tools/list-ai-viz-artifacts.py` 核对  
+4. **`vitalspan_validate_artifact`** → preflight ok + stamp  
+5. **`vitalspan_publish_artifact`** → **`ok artifactId=...`** + **styleComplianceTier=full**  
+6. **`vitalspan_completion_gate workflow=2`** + **tool_stdout**（publish 原始输出）  
 7. 汇报：`artifactId` +「已入**平台组件库**」  
 8. **除非用户明确要求上大屏，否则到此结束**
-
-插件等价：`vitalspan_scaffold_artifact` → `vitalspan_validate_artifact` → `vitalspan_publish_artifact`（v0.2.7+ 内置预检与修复提示）。
 
 完整规则：[guides/CUSTOM-VIZ-AUTHOR.md](./guides/CUSTOM-VIZ-AUTHOR.md)
 
 d3 必须 `host.vsCv.mount(`；render 读 `(p && p.style) || {}`。  
-更新：`publish-ai-viz-artifact.py --artifact-id <uuid>`。
+更新：`publish-ai-viz-artifact.py --artifact-id <uuid>` 或插件 PUT。
 
 ### customViz 样式自检清单（publish 前必过 · 插件 Skill 同文）
 
@@ -75,16 +91,36 @@ d3 必须 `host.vsCv.mount(`；render 读 `(p && p.style) || {}`。
 
 ## 工作流 ③（拼仪表板或数据大屏）
 
-**素材**：① 内置 chartType + ② DeepTalk 已 publish 的 customViz（不是金样）。
+**推荐两段式**：compose 搭骨架 → get 导出 → **只改样式** → upload。
+
+**素材**：① 内置 chartType + ② DeepTalk 已 publish 的 customViz（`artifact_ids` 逗号分隔；模板有 customViz 槽时必须传入，否则槽位会跳过）。
 
 1. 确认用户要 **仪表板** 还是 **数据大屏**
-2. **无 uuid 时**：`vitalspan_create_dashboard surface_kind=...`（**不要** browser 登录 5173）
-3. **改已有**：`vitalspan_list_dashboards`
-4. `vitalspan_list_chart_types` + `vitalspan_list_artifacts`
-5. `vitalspan_upload_dashboard`
-6. 汇报 **`dashboardId`** + **surfaceKind** + edit URL
+2. `vitalspan_list_layout_templates` 选 `template=`（与 `surface_kind` 一致）
+3. **`vitalspan_compose_dashboard`** `surface_kind=...` `template=...` `chart_types=...` `artifact_ids=...`  
+   → 终端 **`ok dashboardId=<uuid>`**
+4. 需改颜色/圆角/标题时：`vitalspan_get_dashboard_layout dashboard_id=<uuid> file=examples/my-screen.json`
+5. 只 patch `layoutJson.styleConfig` · `chartConfig.nativeBody.deStyle` · `customVizConfig.style`（**勿重算 x/y**）
+6. `vitalspan_upload_dashboard dashboard_id=<uuid> file=examples/my-screen.json`
+7. **`vitalspan_completion_gate workflow=3`** + **tool_stdout**（compose 或 upload 原始输出）+ summary 含同一 `dashboardId`
+8. 汇报 **`dashboardId`** + **surfaceKind** + edit URL
 
-**禁止**：只 list_artifacts；禁止把两种 surface 叫成「大屏」而不区分。
+金样：`examples/dashboard-style-patch.example.json` · 指南：[guides/COMPOSE-STYLE-WORKFLOW.md](./guides/COMPOSE-STYLE-WORKFLOW.md)
+
+**禁止**：从零手写 layout 坐标；禁止把 `layoutJson.globalFilters` 数组提到 editor-save 顶层；禁止只 list_artifacts 不上传；禁止把两种 surface 都叫「大屏」而不区分。
+
+### ③ 最小路径（不改样式）
+
+1. `artifactId` 来自库中已有或 ② 刚上传
+2. `vitalspan_compose_dashboard`（一条命令创建+保存）
+3. `vitalspan_completion_gate workflow=3` + tool_stdout
+4. 汇报 **`dashboardId`**
+
+## 工作流 ①（内置图）
+
+- 用 `vitalspan_list_chart_types` 查类型
+- layout 内嵌 `chartType` + `chartConfig` 须 `POST /charts/validate` 200（Python `validate-chart-config.py` 或平台 API）
+- **不进**组件库
 
 ## 读规范
 

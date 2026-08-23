@@ -14,11 +14,11 @@ _NIL_UUID = uuid.UUID(int=0)
 
 
 def _assert_integration_bus(actor: UserContext) -> None:
-    if "admin" in actor.roles or "integration" in actor.roles:
+    if actor.is_root or "integration" in actor.roles:
         return
     raise IntegrationError(
         "BUS_REGISTER_INTEGRATION_FORBIDDEN",
-        "Bus registration requires integration or admin role",
+        "Bus registration requires integration role or root",
         403,
     )
 

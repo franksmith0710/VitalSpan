@@ -18,7 +18,7 @@ RESOURCE_TYPE = "dashboard"
 def list_granted_ids(session: Session, actor: UserContext) -> list[uuid.UUID] | None:
     if bypasses_resource_acl(actor):
         return None
-    return list_visible_resource_ids(session, actor.roles, RESOURCE_TYPE)
+    return list_visible_resource_ids(session, actor.roles, RESOURCE_TYPE, user_id=actor.id)
 
 
 def can_access(
@@ -41,7 +41,9 @@ def can_access(
     except ValueError:
         return False
     try:
-        ensure_resource_visible(session, actor.roles, RESOURCE_TYPE, dashboard_id)
+        ensure_resource_visible(
+            session, actor.roles, RESOURCE_TYPE, dashboard_id, user_id=actor.id
+        )
         return True
     except VisibilityError:
         return False

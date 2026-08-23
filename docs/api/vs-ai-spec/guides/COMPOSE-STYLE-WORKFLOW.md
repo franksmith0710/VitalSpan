@@ -75,6 +75,19 @@ vitalspan_upload_dashboard
 - **写 JSON**：从零或金样手写（细）
 - **推荐**：compose → get → patch style → upload（兼顾速度与样式控制）
 
+## compose 自动样式（v0.2.15+）
+
+`vitalspan_compose_dashboard` 按**槽位高度**自动写入 `chartConfig.nativeBody.deStyle`：
+
+| 场景 | 行为 |
+|------|------|
+| KPI / 仪表 槽高 ≤132px | 隐藏组件标题栏，按高度缩放 KPI 字号 |
+| KPI 槽高 133–156px | 缩小标题字号 + 缩放 KPI |
+| 图表槽高 &lt;200px | 缩小标题、隐藏图例 |
+| 图表槽高 &lt;240px | 隐藏图例 |
+
+已有大屏需 **重新 compose** 或 get 后手工 patch `deStyle` 再 upload。
+
 ## 数据绑定说明
 
 - compose 内置图：官方演示 **Dataset**（`__demo:sample_db__` → 平台解析为 demo 数据源）

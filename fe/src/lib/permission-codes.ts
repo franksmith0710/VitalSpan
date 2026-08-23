@@ -25,6 +25,7 @@ export const PERM_SYSTEM_ORG_READ = "system:org.read";
 export const PERM_SYSTEM_RLS_READ = "system:rls.read";
 export const PERM_SYSTEM_AUDIT_READ = "system:audit.read";
 export const PERM_SYSTEM_PLATFORM_CONNECT_READ = "system:platform_connect.read";
+export const PERM_SYSTEM_ORG_SCOPED_MANAGE = "system:org_scoped.manage";
 
 /** Route path → minimum capability (admin shell). */
 export const ROUTE_PERMISSION_MATRIX: Record<string, string> = {
@@ -38,6 +39,7 @@ export const ROUTE_PERMISSION_MATRIX: Record<string, string> = {
   "/admin/system/roles": PERM_SYSTEM_ROLE_READ,
   "/admin/system/grants": PERM_SYSTEM_GRANT_READ,
   "/admin/system/platform-connect": PERM_SYSTEM_PLATFORM_CONNECT_READ,
+  "/admin/system/auth-integration": PERM_SYSTEM_PLATFORM_CONNECT_READ,
   "/admin/system/rls": PERM_SYSTEM_RLS_READ,
   "/admin/system/audit": PERM_SYSTEM_AUDIT_READ,
 };
@@ -50,6 +52,7 @@ export const SYSTEM_ADMIN_NAV_CAPABILITIES: Record<string, string> = {
   "/admin/system/roles": PERM_SYSTEM_ROLE_READ,
   "/admin/system/grants": PERM_SYSTEM_GRANT_READ,
   "/admin/system/platform-connect": PERM_SYSTEM_PLATFORM_CONNECT_READ,
+  "/admin/system/auth-integration": PERM_SYSTEM_PLATFORM_CONNECT_READ,
   "/admin/system/rls": PERM_SYSTEM_RLS_READ,
   "/admin/system/audit": PERM_SYSTEM_AUDIT_READ,
 };

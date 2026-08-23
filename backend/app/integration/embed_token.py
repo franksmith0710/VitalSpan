@@ -43,12 +43,17 @@ class EmbedTokenOut(BaseModel):
     sdk_params: dict = Field(alias="sdkParams")
 
 
+from app.auth.permissions import permission_matches
+
+
 def _assert_embed_issue(actor: UserContext) -> None:
-    if "admin" in actor.roles or "dashboard:share" in actor.roles:
+    if actor.is_root or permission_matches(
+        set(actor.permissions), "dashboard:share", actor.is_root
+    ):
         return
     raise IntegrationError(
         "EMBED_TOKEN_FORBIDDEN",
-        "Embed token requires admin or dashboard:share role",
+        "Embed token requires dashboard:share permission",
         403,
     )
 

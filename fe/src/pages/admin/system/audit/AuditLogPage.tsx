@@ -13,6 +13,7 @@ import {
   RowActions,
 } from "@/components/layout/list-page-kit";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { IconButton } from "@/components/ui/button";
 import { HintTooltip } from "@/components/ui/hint-tooltip";
 import { DateField } from "@/components/ui/date-field";
@@ -30,6 +31,7 @@ import { useListPagination } from "@/lib/list-pagination";
 import { AuditDetailSheet } from "./AuditDetailSheet";
 import {
   AUDIT_ACTION_OPTIONS,
+  AUDIT_PRESET_FILTERS,
   AUDIT_TARGET_TYPE_OPTIONS,
   auditActionLabel,
   auditTargetTypeLabel,
@@ -160,6 +162,22 @@ export function AuditLogPage() {
                 placeholder="结束日期"
                 aria-label="筛选结束日期"
               />
+              <div className="flex flex-wrap gap-2">
+                {AUDIT_PRESET_FILTERS.map((preset) => (
+                  <Button
+                    key={preset.id}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setActionFilter(preset.action);
+                      setTargetType(preset.targetType);
+                    }}
+                  >
+                    {preset.label}
+                  </Button>
+                ))}
+              </div>
             </>
           }
           actions={

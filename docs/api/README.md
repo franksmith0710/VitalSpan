@@ -83,6 +83,11 @@ redoc: /redoc
 | POST | `/api/v1/users/{id}/roles/{role_id}` | 增量绑定单角色 | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | DELETE | `/api/v1/users/{id}/roles/{role_id}` | 增量移除单角色（204） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | PUT/GET/DELETE | `/api/v1/users/{id}/org` | 用户组织归属 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/users.py` |
+| GET/PUT/DELETE | `/api/v1/users/{id}/resource-grants` | 用户级资源例外授权（add/deny；有效 = 角色 ∪ add − deny） | 内部 | Phase C | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` · `user_overrides/service.py` |
+| GET/PUT/DELETE | `/api/v1/users/{id}/dimension-overrides` | 用户级维度例外（add/deny） | 内部 | Phase C | AUTH-006 | 已实现 | `backend/app/api/v1/users.py` |
+| GET/POST/DELETE | `/api/v1/column-masks` | 列脱敏策略（hide/partial/hash；`dataset:mask.manage`） | 内部 | Phase C | — | 已实现 | `backend/app/api/v1/column_masks.py` |
+| GET | `/api/v1/auth-integration/status` | 外部认证集成状态摘要 | 内部 | Phase C | — | 已实现 | `backend/app/api/v1/auth_integration.py` |
+| POST | `/api/v1/auth-integration/oidc/callback` | OIDC 回调占位（501 未配置） | 内部 | Phase C | — | 规划 | `backend/app/auth/login/oidc.py` |
 | GET/POST | `/api/v1/orgs` | 组织树节点列表/创建（`q` · `limit` · `offset`） | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/orgs.py` |
 | GET/PUT/DELETE | `/api/v1/orgs/{org_id}` | 组织节点详情/更新/删除 | 内部 | 一期 | AUTH-002 | 已实现 | `backend/app/api/v1/orgs.py` |
 | GET | `/api/v1/platform/delivery/email/slots` | QQ / 163 双槽位 SMTP 摘要列表 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, status
@@ -98,6 +99,7 @@ def delete_dataset(
         from app.auth.audit.write_hooks import record_domain_delete
         from app.core.db.meta import get_meta_session
 
+        target_id = uuid.uuid5(uuid.NAMESPACE_URL, f"dataset:{dataset_id}")
         db = get_meta_session()
         try:
             record_domain_delete(
@@ -105,7 +107,7 @@ def delete_dataset(
                 actor_id=actor.id,
                 actor_username=actor.username,
                 target_type="dataset",
-                target_id=uuid.UUID(dataset_id) if _is_uuid(dataset_id) else uuid.uuid4(),
+                target_id=target_id,
                 detail={"datasetId": dataset_id},
             )
             db.commit()

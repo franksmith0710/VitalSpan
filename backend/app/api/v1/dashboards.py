@@ -389,6 +389,7 @@ def delete_dashboard(
             target_id=dashboard_id,
             detail={"name": existing.name},
         )
+        db.commit()
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except dash_service.DashboardError as exc:
         return _error_response(exc)

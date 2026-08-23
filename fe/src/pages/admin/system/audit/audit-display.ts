@@ -27,6 +27,14 @@ const ACTION_LABELS: Record<string, string> = {
   "role.permissions.replace": "替换角色权限",
   "grant.create": "创建资源授权",
   "grant.delete": "撤销资源授权",
+  "datasource.delete": "删除数据源",
+  "dashboard.delete": "删除仪表板",
+  "dataset.delete": "删除数据集",
+  "report.publish": "发布报表",
+  "column_mask.create": "创建列脱敏",
+  "column_mask.delete": "删除列脱敏",
+  "user.override.resource.upsert": "用户例外资源授权",
+  "user.override.resource.delete": "移除用户例外授权",
   "group.create": "创建分组",
   "group.update": "更新分组",
   "group.delete": "删除分组",
@@ -49,6 +57,11 @@ const TARGET_TYPE_LABELS: Record<string, string> = {
   dimension: "维度",
   grant: "资源授权",
   profile: "个人资料",
+  datasource: "数据源",
+  dashboard: "仪表板",
+  dataset: "数据集",
+  report: "报表",
+  column_mask: "列脱敏",
 };
 
 const DETAIL_KEY_LABELS: Record<string, string> = {
@@ -171,6 +184,16 @@ export const AUDIT_TARGET_TYPE_OPTIONS = [
   { value: "group", label: "分组" },
   { value: "dimension", label: "维度" },
   { value: "grant", label: "资源授权" },
+  { value: "datasource", label: "数据源" },
+  { value: "dashboard", label: "仪表板" },
+  { value: "dataset", label: "数据集" },
+  { value: "report", label: "报表" },
+] as const;
+
+export const AUDIT_PRESET_FILTERS = [
+  { id: "domain-delete", label: "资源删除", targetType: "dashboard", action: "dashboard.delete" },
+  { id: "datasource-delete", label: "数据源删除", targetType: "datasource", action: "datasource.delete" },
+  { id: "report-publish", label: "报表发布", targetType: "report", action: "report.publish" },
 ] as const;
 
 export const AUDIT_ACTION_OPTIONS = [
@@ -189,4 +212,8 @@ export const AUDIT_ACTION_OPTIONS = [
   { value: "org.create", label: "创建组织" },
   { value: "org.update", label: "更新组织" },
   { value: "org.delete", label: "删除组织" },
+  { value: "datasource.delete", label: "删除数据源" },
+  { value: "dashboard.delete", label: "删除仪表板" },
+  { value: "dataset.delete", label: "删除数据集" },
+  { value: "report.publish", label: "发布报表" },
 ] as const;
