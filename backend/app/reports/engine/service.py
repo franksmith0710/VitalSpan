@@ -12,6 +12,7 @@ from app.reports.catalog import service as catalog_service
 from app.reports.catalog.schemas import CatalogNodeOut
 from app.reports.engine import acl as engine_acl
 from app.reports.engine import execute as engine_execute
+from app.reports.engine.crosstab_apply import apply_crosstab_blocks
 from app.reports.engine.errors import (
     RPT_ENGINE_EMPTY_TEMPLATE,
     RPT_ENGINE_INVALID_PARAMETER,
@@ -155,6 +156,7 @@ def run_template(template_id: uuid.UUID, payload: RenderRunIn, actor: UserContex
                 db, actor, ext, parameters, fallback_data_source_id=ds_id,
             )
         if node.template_key:
+            sections = apply_crosstab_blocks(sections, node.template_key)
             block_sections = engine_execute.build_sections_from_template_blocks(node.template_key)
             if block_sections:
                 sections = block_sections + sections

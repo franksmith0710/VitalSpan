@@ -71,6 +71,7 @@ import { useAuth } from "@/context/auth-context";
 import { isDemoPackageDashboard } from "@/lib/demoPackage";
 import {
   DashboardSurfaceViewModeToggle,
+  filterDashboardSurfaceListItems,
   formatDashboardListUpdatedAt,
   useDashboardSurfaceListSearch,
   type DashboardSurfaceViewMode,
@@ -233,7 +234,13 @@ export function DataScreenListPage() {
     [listQuery.data?.items],
   );
   const total = listQuery.data?.total ?? 0;
-  const rowIds = useMemo(() => sortedItems.map((item) => item.id), [sortedItems]);
+  const visibleItems = useMemo(
+    () => (hasFilters ? filterDashboardSurfaceListItems(sortedItems, debouncedQ) : sortedItems),
+    [sortedItems, hasFilters, debouncedQ],
+  );
+  const displayTotal =
+    hasFilters && visibleItems.length < sortedItems.length ? visibleItems.length : total;
+  const rowIds = useMemo(() => visibleItems.map((item) => item.id), [visibleItems]);
   const selection = useListRowSelection(rowIds);
   const batch = useListBatchMode(selection.clear);
 
@@ -388,7 +395,7 @@ export function DataScreenListPage() {
                 <DashboardListCardSkeleton key={index} />
               ))}
             </div>
-          ) : listQuery.isError ? null : sortedItems.length === 0 ? (
+          ) : listQuery.isError ? null : visibleItems.length === 0 ? (
             <ListPageCardGridEmptyState
               icon={<Monitor className="size-7" aria-hidden />}
               title={hasFilters ? "未找到匹配的大屏" : "暂无数据大屏"}
@@ -404,7 +411,7 @@ export function DataScreenListPage() {
           ) : (
             <>
               <div className={LIST_PAGE_CARD_GRID_CLASS}>
-                {sortedItems.map((screen) => (
+                {visibleItems.map((screen) => (
                   <DashboardListCard
                     key={screen.id}
                     dashboard={screen}
@@ -423,7 +430,7 @@ export function DataScreenListPage() {
                 ))}
               </div>
               <p className="mt-4 text-theme-xs text-gray-500 dark:text-gray-400">
-                共 {total} 个大屏
+                共 {displayTotal} 个大屏
                 {(listQuery.data?.items.length ?? 0) < total ? "（当前页未加载全部）" : ""}
                 ，按最近更新排序
               </p>
@@ -434,7 +441,7 @@ export function DataScreenListPage() {
           <ListPageTableFrame>
             <DataTable
               loading={listQuery.isLoading}
-              empty={!listQuery.isLoading && !listQuery.isError && sortedItems.length === 0}
+              empty={!listQuery.isLoading && !listQuery.isError && visibleItems.length === 0}
               headers={[
                 ...(canEdit && batch.batchMode
                   ? [
@@ -442,7 +449,7 @@ export function DataScreenListPage() {
                         key="select-all"
                         checked={selection.allSelected}
                         indeterminate={selection.someSelected}
-                        disabled={sortedItems.length === 0}
+                        disabled={visibleItems.length === 0}
                         onCheckedChange={() => selection.toggleAll()}
                       />,
                     ]
@@ -462,7 +469,7 @@ export function DataScreenListPage() {
                 action: hasFilters ? undefined : createButton,
                 layout: "data-screen",
               }}
-              rows={sortedItems.map((row) => {
+              rows={visibleItems.map((row) => {
                 const widgetCount = row.widgetCount ?? row.previewSummary?.widgets?.length ?? row.layoutJson?.widgets?.length ?? 0;
                 const viewPath = dataScreenPreviewPath(row.id);
                 const editPath = dataScreenEditPath(row.id);
@@ -530,11 +537,11 @@ export function DataScreenListPage() {
           </ListPageTableFrame>
         )}
 
-        {!listQuery.isLoading && total > 0 ? (
+        {!listQuery.isLoading && displayTotal > 0 ? (
           <ListPagePagination
             current={pagination.page}
             pageSize={pagination.pageSize}
-            total={total}
+            total={displayTotal}
             showSizeChanger
             onChange={pagination.onPageChange}
           />

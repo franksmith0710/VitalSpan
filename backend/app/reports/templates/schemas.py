@@ -5,8 +5,9 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 TemplateFormat = Literal["excel", "pdf"]
-BlockType = Literal["sql", "table", "chart"]
+BlockType = Literal["sql", "table", "chart", "crosstab"]
 ChartType = Literal["line", "bar", "pie"]
+CrosstabAgg = Literal["sum", "count", "max", "min"]
 _STORAGE_REF_RE = r"^storage://templates/[a-z0-9_-]+\.(excel|pdf)$"
 
 
@@ -16,6 +17,10 @@ class TemplateBlock(BaseModel):
     query_ref: str | None = Field(default=None, alias="queryRef", max_length=256)
     table_ref: str | None = Field(default=None, alias="tableRef", max_length=256)
     chart_type: ChartType | None = Field(default=None, alias="chartType")
+    row_field: str | None = Field(default=None, alias="rowField", max_length=64)
+    col_field: str | None = Field(default=None, alias="colField", max_length=64)
+    value_field: str | None = Field(default=None, alias="valueField", max_length=64)
+    agg: CrosstabAgg | None = Field(default="sum")
 
 
 class ExportHookOut(BaseModel):

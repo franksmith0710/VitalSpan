@@ -131,6 +131,8 @@ def build_sections_from_template_blocks(template_key: str) -> list[dict[str, Any
                 "rows": [[block.get("title") or ""]],
                 "placeholder": False,
             })
+        elif block_type == "crosstab":
+            continue
         elif block_type == "chart":
             sections.append({
                 "kind": "chart",

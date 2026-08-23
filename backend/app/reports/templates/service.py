@@ -13,8 +13,9 @@ from app.reports.templates.schemas import (
 
 from app.reports.persistence import template_repo, memory_stores
 
-_VALID_BLOCKS = frozenset({"sql", "table", "chart"})
+_VALID_BLOCKS = frozenset({"sql", "table", "chart", "crosstab"})
 _VALID_CHART_TYPES = frozenset({"line", "bar", "pie"})
+_VALID_AGG = frozenset({"sum", "count", "max", "min"})
 _store = memory_stores.template_definitions  # test compat
 
 
@@ -46,6 +47,8 @@ def _block_identity(block: TemplateBlock) -> tuple[str, str]:
         return block.block_type, block.query_ref or ""
     if block.block_type == "table":
         return block.block_type, block.table_ref or ""
+    if block.block_type == "crosstab":
+        return block.block_type, block.table_ref or ""
     return block.block_type, block.chart_type or ""
 
 
@@ -56,6 +59,22 @@ def _validate_block(block: TemplateBlock) -> None:
         raise TemplateDefError("RPT_TEMPLATE_INVALID_BLOCK", "sql block requires queryRef", 422)
     if block.block_type == "table" and not (block.table_ref and block.table_ref.strip()):
         raise TemplateDefError("RPT_TEMPLATE_INVALID_BLOCK", "table block requires tableRef", 422)
+    if block.block_type == "crosstab":
+        if not (block.table_ref and block.table_ref.strip()):
+            raise TemplateDefError("RPT_TEMPLATE_INVALID_BLOCK", "crosstab block requires tableRef", 422)
+        for field_name, value in (
+            ("rowField", block.row_field),
+            ("colField", block.col_field),
+            ("valueField", block.value_field),
+        ):
+            if not (value and str(value).strip()):
+                raise TemplateDefError(
+                    "RPT_TEMPLATE_INVALID_BLOCK",
+                    f"crosstab block requires {field_name}",
+                    422,
+                )
+        if block.agg and block.agg not in _VALID_AGG:
+            raise TemplateDefError("RPT_TEMPLATE_INVALID_BLOCK", "Invalid crosstab agg", 422)
     if block.block_type == "chart":
         if block.chart_type is None:
             raise TemplateDefError("RPT_TEMPLATE_INVALID_BLOCK", "chart block requires chartType", 422)

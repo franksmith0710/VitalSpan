@@ -5,6 +5,8 @@ from __future__ import annotations
 import io
 from typing import Any
 
+from app.reports.render.pdf_renderer import _section_table_data
+
 
 def render_excel(title: str, sections: list[dict[str, Any]]) -> bytes:
     from openpyxl import Workbook
@@ -17,8 +19,7 @@ def render_excel(title: str, sections: list[dict[str, Any]]) -> bytes:
     for idx, section in enumerate(sections):
         name = str(section.get("metricKey") or f"Sheet{idx + 1}")[:31]
         ws = wb.create_sheet(name)
-        cols = section.get("columns") or []
-        rows = section.get("rows") or []
+        cols, rows = _section_table_data(section)
         if cols:
             ws.append(cols)
         for row in rows:

@@ -59,6 +59,7 @@ import { Label } from "@/components/ui/label";
 import { SearchField } from "@/components/ui/search-field";
 import {
   DashboardSurfaceViewModeToggle,
+  filterDashboardSurfaceListItems,
   formatDashboardListUpdatedAt,
   useDashboardSurfaceListSearch,
   type DashboardSurfaceViewMode,
@@ -167,7 +168,13 @@ export function DashboardListPage() {
   const items = listQuery.data?.items ?? [];
   const total = listQuery.data?.total ?? items.length;
   const sortedItems = useMemo(() => sortDashboardListItems(items), [items]);
-  const rowIds = useMemo(() => sortedItems.map((item) => item.id), [sortedItems]);
+  const visibleItems = useMemo(
+    () => (hasFilters ? filterDashboardSurfaceListItems(sortedItems, debouncedQ) : sortedItems),
+    [sortedItems, hasFilters, debouncedQ],
+  );
+  const displayTotal =
+    hasFilters && visibleItems.length < sortedItems.length ? visibleItems.length : total;
+  const rowIds = useMemo(() => visibleItems.map((item) => item.id), [visibleItems]);
   const selection = useListRowSelection(rowIds);
   const batch = useListBatchMode(selection.clear);
 
@@ -290,7 +297,7 @@ export function DashboardListPage() {
                   <DashboardListCardSkeleton key={index} />
                 ))}
               </div>
-            ) : listQuery.isError ? null : sortedItems.length === 0 ? (
+            ) : listQuery.isError ? null : visibleItems.length === 0 ? (
               <ListPageCardGridEmptyState
                 icon={<DashboardListEmptyIcon />}
                 title={hasFilters ? "未找到匹配的看板" : "暂无仪表板"}
@@ -306,7 +313,7 @@ export function DashboardListPage() {
             ) : (
               <>
                 <div className={LIST_PAGE_CARD_GRID_CLASS}>
-                  {sortedItems.map((dashboard) => (
+                  {visibleItems.map((dashboard) => (
                     <DashboardListCard
                       key={dashboard.id}
                       dashboard={dashboard}
@@ -324,7 +331,7 @@ export function DashboardListPage() {
                   ))}
                 </div>
                 <p className="mt-4 text-theme-xs text-gray-500 dark:text-gray-400">
-                  共 {total} 个看板
+                  共 {displayTotal} 个看板
                   {items.length < total ? "（当前页未加载全部）" : ""}
                   ，按最近更新排序
                 </p>
@@ -335,7 +342,7 @@ export function DashboardListPage() {
           <ListPageTableFrame>
           <DataTable
             loading={listQuery.isLoading}
-            empty={!listQuery.isLoading && !listQuery.isError && sortedItems.length === 0}
+            empty={!listQuery.isLoading && !listQuery.isError && visibleItems.length === 0}
             headers={[
               ...(canEdit && batch.batchMode
                 ? [
@@ -343,7 +350,7 @@ export function DashboardListPage() {
                       key="select-all"
                       checked={selection.allSelected}
                       indeterminate={selection.someSelected}
-                      disabled={sortedItems.length === 0}
+                      disabled={visibleItems.length === 0}
                       onCheckedChange={() => selection.toggleAll()}
                     />,
                   ]
@@ -363,7 +370,7 @@ export function DashboardListPage() {
               action: hasFilters ? undefined : createButton,
               layout: "cards",
             }}
-            rows={sortedItems.map((row) => {
+            rows={visibleItems.map((row) => {
               const widgetCount = row.widgetCount ?? row.previewSummary?.widgets?.length ?? row.layoutJson?.widgets?.length ?? 0;
               const viewPath = `/admin/dashboards/${row.id}`;
               const editPath = `/admin/dashboards/${row.id}/edit`;
@@ -430,11 +437,11 @@ export function DashboardListPage() {
           </ListPageTableFrame>
         )}
 
-        {!listQuery.isLoading && total > 0 ? (
+        {!listQuery.isLoading && displayTotal > 0 ? (
           <ListPagePagination
             current={pagination.page}
             pageSize={pagination.pageSize}
-            total={total}
+            total={displayTotal}
             showSizeChanger
             onChange={pagination.onPageChange}
           />

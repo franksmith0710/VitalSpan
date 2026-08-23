@@ -18,6 +18,18 @@ def _section_label(section: dict[str, Any], idx: int) -> str:
     )
 
 
+def _section_table_data(section: dict[str, Any]) -> tuple[list[str], list[list[Any]]]:
+    if section.get("kind") == "crosstab":
+        col_labels = [str(c) for c in (section.get("colLabels") or [])]
+        row_labels = [str(r) for r in (section.get("rowLabels") or [])]
+        matrix = section.get("matrix") or []
+        cols = [""] + col_labels
+        rows = [[row_labels[i], *[str(c) for c in matrix[i]]] for i in range(len(row_labels))]
+        return cols, rows
+    cols = [str(c) for c in (section.get("columns") or [])]
+    return cols, list(section.get("rows") or [])
+
+
 def render_pdf(title: str, sections: list[dict[str, Any]]) -> bytes:
     try:
         from reportlab.lib import colors
@@ -50,8 +62,7 @@ def render_pdf(title: str, sections: list[dict[str, Any]]) -> bytes:
     for idx, section in enumerate(sections):
         label = _section_label(section, idx)
         story.append(Paragraph(escape(label), heading_style))
-        cols = section.get("columns") or []
-        rows = section.get("rows") or []
+        cols, rows = _section_table_data(section)
         if cols and rows:
             data = [cols] + [[str(c) for c in row] for row in rows]
             table = Table(data, repeatRows=1)

@@ -11,12 +11,21 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.core.config import get_settings
+from app.core.platform_config.smtp_settings import SmtpSettings
 from app.main import app as fastapi_app
 from app.reports.scheduler import service as scheduler_service
 from jwt_auth import AUTH
 
 _SQLITE = "sqlite+pysqlite:///file:report_dash_sched?mode=memory&cache=shared&uri=true"
 FAKE_PDF = b"%PDF-1.4 visual snapshot\n" + b"x" * 600
+_CONFIGURED_SMTP = SmtpSettings(
+    host="localhost",
+    port=1025,
+    from_addr="reports@vitalspan.local",
+    username=None,
+    password=None,
+    source="env",
+)
 
 
 class _FakePage:
@@ -89,8 +98,14 @@ def mock_playwright(monkeypatch):
 
 @contextmanager
 def _mock_smtp_send():
-    """Patch connect_smtp (delivery_adapter uses it, not smtplib.SMTP directly)."""
-    with patch("app.reports.scheduler.delivery_adapter.connect_smtp") as smtp_cls:
+    """Patch connect_smtp + configured resolve (DB cleared slot must not block tests)."""
+    with patch(
+        "app.reports.scheduler.delivery_adapter.resolve_email_smtp",
+        return_value=_CONFIGURED_SMTP,
+    ), patch(
+        "app.reports.scheduler.channels.dispatch.resolve_email_smtp",
+        return_value=_CONFIGURED_SMTP,
+    ), patch("app.reports.scheduler.delivery_adapter.connect_smtp") as smtp_cls:
         yield smtp_cls.return_value.__enter__.return_value
 
 
@@ -366,7 +381,7 @@ def test_dashboard_execute_smtp_attaches_pdf(client: TestClient, mock_playwright
         )
         assert exec_resp.status_code == 200, exec_resp.text
         body = exec_resp.json()
-        assert body.get("status") == "semi_real_succeeded", body
+        assert body.get("status") == "semi_real_succeeded"
         assert body.get("deliverySteps")[0]["status"] == "delivered"
         smtp_instance.send_message.assert_called_once()
         msg = smtp_instance.send_message.call_args[0][0]
@@ -531,7 +546,14 @@ def test_template_schedule_smtp_pdf_attachment(client: TestClient):
         json={
             "catalogNodeId": node_id,
             "defaultDataSourceId": ds_id,
-            "metrics": [{"key": "m1", "label": "M1", "expression": "SELECT 1 AS m1", "visible": True}],
+            "metrics": [{
+                "key": "m1",
+                "label": "M1",
+                "queryMode": "dataset",
+                "datasetId": ds_id,
+                "boundConfigId": str(uuid.uuid4()),
+                "visible": True,
+            }],
             "filters": [],
             "changeNote": "init",
         },
@@ -554,12 +576,7 @@ def test_template_schedule_smtp_pdf_attachment(client: TestClient):
         headers=AUTH,
         json={"action": "schedule"},
     )
-    with patch("app.reports.engine.execute.execute_query") as mock_q:
-        from app.query.schemas import ExecuteResponse
-
-        mock_q.return_value = ExecuteResponse(
-            columns=["m1"], rows=[[1]], rowCount=1, truncated=False, traceId="t",
-        )
+    with patch("app.reports.engine.service.export_template_bytes", return_value=FAKE_PDF):
         with _mock_smtp_send() as smtp_instance:
             exec_resp = client.post(
                 f"/api/v1/reports/schedules/{schedule_id}/execute",

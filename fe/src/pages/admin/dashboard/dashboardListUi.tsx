@@ -22,6 +22,18 @@ export function useDashboardSurfaceListSearch() {
   };
 }
 
+export function filterDashboardSurfaceListItems<
+  T extends { name: string; slug: string; description?: string | null },
+>(items: T[], q: string): T[] {
+  const needle = q.trim().toLowerCase();
+  if (!needle) return items;
+  return items.filter((item) =>
+    [item.name, item.slug, item.description ?? ""].some((part) =>
+      part.toLowerCase().includes(needle),
+    ),
+  );
+}
+
 export function formatDashboardListUpdatedAt(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) {
