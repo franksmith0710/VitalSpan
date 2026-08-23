@@ -7,6 +7,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
+from app.auth.bypass import bypasses_rls
 from app.auth.deps import UserContext
 from app.auth.rls.hooks import prepare_query_rls
 from app.auth.rls.predicate import RlsConfigError, validate_column_name
@@ -29,11 +30,8 @@ def merge_where_clause(sql: str, fragment: str) -> str:
     return f"{normalized} WHERE ({fragment})"
 
 
-ADMIN_BYPASS_ROLES = frozenset({"admin"})
-
-
 def _should_bypass_rls(user: UserContext) -> bool:
-    return bool(ADMIN_BYPASS_ROLES.intersection(user.roles))
+    return bypasses_rls(user)
 
 
 def apply_rls_to_sql(

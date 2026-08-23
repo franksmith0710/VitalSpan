@@ -3,8 +3,12 @@ from __future__ import annotations
 import uuid
 from dataclasses import dataclass
 
+from sqlalchemy.orm import Session
+
 from app.auth.deps import UserContext
+from app.auth.models import get_meta_engine
 from app.reports.catalog import acl
+from app.reports.catalog import grant_acl
 from app.reports.catalog.errors import ReportCatalogError
 from app.reports.catalog.schemas import CatalogNodeCreate, CatalogNodeMove, CatalogNodeOut, CatalogNodeUpdate
 from app.reports.persistence import catalog_repo, memory_stores
@@ -151,6 +155,10 @@ def list_nodes(parent_id: uuid.UUID | None, actor: UserContext) -> list[CatalogN
         items = [n for n in items if n.parent_id == parent_id]
     else:
         items = [n for n in items if n.parent_id is None]
+    with Session(bind=get_meta_engine()) as session:
+        readable = grant_acl.list_readable_node_ids(session, actor)
+        if readable is not None:
+            items = [n for n in items if n.id in readable]
     return [_to_out(n) for n in sorted(items, key=lambda x: (x.sort_order, x.name))]
 
 
@@ -176,8 +184,12 @@ def create_node(payload: CatalogNodeCreate, actor: UserContext) -> CatalogNodeOu
     return _to_out(_get(node_id))
 
 
-def get_node(node_id: uuid.UUID) -> CatalogNodeOut:
-    return _to_out(_get(node_id))
+def get_node(node_id: uuid.UUID, actor: UserContext | None = None) -> CatalogNodeOut:
+    node = _get(node_id)
+    if actor is not None:
+        with Session(bind=get_meta_engine()) as session:
+            grant_acl.assert_node_readable(session, actor, node_id)
+    return _to_out(node)
 
 
 def update_node(node_id: uuid.UUID, payload: CatalogNodeUpdate, actor: UserContext) -> CatalogNodeOut:

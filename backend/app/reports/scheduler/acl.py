@@ -31,7 +31,7 @@ def _is_dashboard_owner(actor: UserContext, source_id: uuid.UUID | None) -> bool
 
 
 def _has_schedule_manage(actor: UserContext, row: dict) -> bool:
-    if actor.is_root or "admin" in actor.roles:
+    if actor.is_root:
         return True
     if "report:manage" in actor.permissions:
         return True

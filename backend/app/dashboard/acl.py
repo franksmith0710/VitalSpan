@@ -4,6 +4,7 @@ import uuid
 
 from sqlalchemy.orm import Session
 
+from app.auth.bypass import bypasses_resource_acl
 from app.auth.deps import UserContext
 from app.auth.resources.service import (
     VisibilityError,
@@ -11,14 +12,13 @@ from app.auth.resources.service import (
     list_visible_resource_ids,
 )
 
-ADMIN_BYPASS_ROLES = frozenset({"admin"})
 RESOURCE_TYPE = "dashboard"
 
 
-def list_granted_ids(session: Session, role_codes: list[str]) -> list[uuid.UUID] | None:
-    if ADMIN_BYPASS_ROLES.intersection(role_codes):
+def list_granted_ids(session: Session, actor: UserContext) -> list[uuid.UUID] | None:
+    if bypasses_resource_acl(actor):
         return None
-    return list_visible_resource_ids(session, role_codes, RESOURCE_TYPE)
+    return list_visible_resource_ids(session, actor.roles, RESOURCE_TYPE)
 
 
 def can_access(
@@ -30,7 +30,7 @@ def can_access(
     official_slugs: set[str],
     slug: str | None = None,
 ) -> bool:
-    if ADMIN_BYPASS_ROLES.intersection(actor.roles):
+    if bypasses_resource_acl(actor):
         return True
     if slug and slug in official_slugs:
         return True
@@ -48,7 +48,6 @@ def can_access(
 
 
 __all__ = [
-    "ADMIN_BYPASS_ROLES",
     "RESOURCE_TYPE",
     "VisibilityError",
     "can_access",

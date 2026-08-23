@@ -19,8 +19,8 @@ def _actor_uuid(actor: UserContext) -> str | None:
 
 
 def can_manage_components(actor: UserContext) -> bool:
-    if "admin" in actor.roles:
-        return True
+    if actor.is_root:
+        return
     perms = set(getattr(actor, "permissions", ()) or ())
     return "viz:component.manage" in perms or "dashboard:*" in perms or "*" in perms
 

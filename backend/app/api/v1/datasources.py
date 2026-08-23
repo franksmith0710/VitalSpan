@@ -71,6 +71,7 @@ def list_data_sources(
     return ds_service.list_data_sources(
         db,
         role_codes=user.roles,
+        is_root=user.is_root,
         limit=limit,
         offset=offset,
         type=type,

@@ -209,7 +209,7 @@ def list_dashboards(
     q: str | None = None,
 ) -> DashboardListResponse:
     base = select(Dashboard).where(Dashboard.deleted_at.is_(None))
-    if actor is not None and "admin" not in actor.roles:
+    if actor is not None and not actor.is_root:
         from app.dashboard import acl
 
         try:
@@ -221,7 +221,7 @@ def list_dashboards(
             Dashboard.created_by == actor_uuid,
             Dashboard.slug.in_(official_slugs),
         ]
-        granted_ids = acl.list_granted_ids(db, actor.roles)
+        granted_ids = acl.list_granted_ids(db, actor)
         if granted_ids:
             clauses.append(Dashboard.id.in_(granted_ids))
         base = base.where(or_(*clauses))

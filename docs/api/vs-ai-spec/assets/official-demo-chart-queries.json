@@ -1,7 +1,7 @@
 {
   "version": 1,
   "dataSourceRef": "__demo:sample_db__",
-  "note": "Built-in chart demo SQL from backend official_demo_sql.py; requires sample_db (:3307).",
+  "note": "Legacy SQL snippets for reference; compose v0.2.11+ uses Dataset encoding (demoDatasetBinding.ts). Requires sample_db (:3307) + seed-demo-package.",
   "queries": {
     "area": {
       "chartType": "area",

@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 from app.auth.models import AuthResourceGrant
 from app.core.db.sql_compat import ilike
 from app.core.logging import trace_id_var
-from app.datasources.acl import apply_list_filter, assert_visible
+from app.datasources.acl import apply_list_filter_for_roles, assert_visible
 from app.datasources.credentials import CredentialDecryptError, decrypt_credential, encrypt_credential
 from app.datasources.models import DataSource, get_meta_session
 from app.datasources.pool import pool_manager
@@ -271,6 +271,7 @@ def list_data_sources(
     session: Session,
     *,
     role_codes: list[str],
+    is_root: bool = False,
     limit: int = 50,
     offset: int = 0,
     type: str | None = None,
@@ -281,7 +282,7 @@ def list_data_sources(
     offset = max(0, offset)
     base = select(DataSource)
     base = _active_filter(base)
-    base = apply_list_filter(base, session, role_codes)
+    base = apply_list_filter_for_roles(base, session, role_codes, is_root=is_root)
     if type:
         base = base.where(DataSource.type == type)
     if q:
@@ -291,7 +292,7 @@ def list_data_sources(
         base = base.where(~_managed_analytics_clause())
     count_stmt = select(func.count()).select_from(DataSource)
     count_stmt = _active_filter(count_stmt)
-    count_stmt = apply_list_filter(count_stmt, session, role_codes)
+    count_stmt = apply_list_filter_for_roles(count_stmt, session, role_codes, is_root=is_root)
     if type:
         count_stmt = count_stmt.where(DataSource.type == type)
     if q:
@@ -346,8 +347,10 @@ def create_data_source(session: Session, payload: DataSourceCreate) -> DataSourc
     return _to_out(row)
 
 
-def get_data_source(session: Session, data_source_id: uuid.UUID, *, role_codes: list[str]) -> DataSourceOut:
-    assert_visible(session, role_codes, data_source_id)
+def get_data_source(
+    session: Session, data_source_id: uuid.UUID, *, role_codes: list[str], is_root: bool = False,
+) -> DataSourceOut:
+    assert_visible(session, role_codes, data_source_id, is_root=is_root)
     row = session.get(DataSource, data_source_id)
     if row is None or row.deleted_at is not None:
         raise DataSourceError("DATASOURCE_NOT_FOUND", "Data source not found", 404)
@@ -360,8 +363,9 @@ def update_data_source(
     payload: DataSourceUpdate,
     *,
     role_codes: list[str],
+    is_root: bool = False,
 ) -> DataSourceOut:
-    assert_visible(session, role_codes, data_source_id)
+    assert_visible(session, role_codes, data_source_id, is_root=is_root)
     row = session.get(DataSource, data_source_id)
     if row is None or row.deleted_at is not None:
         raise DataSourceError("DATASOURCE_NOT_FOUND", "Data source not found", 404)
@@ -400,8 +404,9 @@ def patch_data_source(
     payload: DataSourcePatch,
     *,
     role_codes: list[str],
+    is_root: bool = False,
 ) -> DataSourceOut:
-    assert_visible(session, role_codes, data_source_id)
+    assert_visible(session, role_codes, data_source_id, is_root=is_root)
     row = session.get(DataSource, data_source_id)
     if row is None or row.deleted_at is not None:
         raise DataSourceError("DATASOURCE_NOT_FOUND", "Data source not found", 404)
@@ -432,8 +437,10 @@ def patch_data_source(
     return _to_out(row)
 
 
-def delete_data_source(session: Session, data_source_id: uuid.UUID, *, role_codes: list[str]) -> None:
-    assert_visible(session, role_codes, data_source_id)
+def delete_data_source(
+    session: Session, data_source_id: uuid.UUID, *, role_codes: list[str], is_root: bool = False,
+) -> None:
+    assert_visible(session, role_codes, data_source_id, is_root=is_root)
     row = session.get(DataSource, data_source_id)
     if row is None or row.deleted_at is not None:
         raise DataSourceError("DATASOURCE_NOT_FOUND", "Data source not found", 404)
@@ -521,8 +528,10 @@ def test_connection_draft(payload: TestConnectionIn) -> TestConnectionOut:
         _release_test_slot(key)
 
 
-def test_connection_by_id(session: Session, data_source_id: uuid.UUID, *, role_codes: list[str]) -> TestConnectionOut:
-    assert_visible(session, role_codes, data_source_id)
+def test_connection_by_id(
+    session: Session, data_source_id: uuid.UUID, *, role_codes: list[str], is_root: bool = False,
+) -> TestConnectionOut:
+    assert_visible(session, role_codes, data_source_id, is_root=is_root)
     key = _inflight_key_saved(data_source_id)
     _acquire_test_slot(key)
     try:

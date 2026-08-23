@@ -67,7 +67,7 @@ python tools\upload-dashboard-layout.py --dashboard-id <大屏uuid> --file examp
 | 总览 | [guides/THREE-WORKFLOWS.md](./guides/THREE-WORKFLOWS.md) |
 | ② 组件库 | [guides/CUSTOM-VIZ-AUTHOR.md](./guides/CUSTOM-VIZ-AUTHOR.md) · [EXTERNAL-AUTHOR.md](./EXTERNAL-AUTHOR.md) · [00-REQUIREMENTS.md](./00-REQUIREMENTS.md) |
 | ① 内置图 | [guides/L1-L2-CHART-CONFIG.md](./guides/L1-L2-CHART-CONFIG.md) |
-| ③ 大屏 | [guides/DASHBOARD-LAYOUT.md](./guides/DASHBOARD-LAYOUT.md) |
+| ③ 大屏 | [guides/DASHBOARD-LAYOUT.md](./guides/DASHBOARD-LAYOUT.md) · [compose+样式补丁](./guides/COMPOSE-STYLE-WORKFLOW.md) |
 | DeepTalk 提示词 | [DEEPTALK-AGENT-PROMPT.md](./DEEPTALK-AGENT-PROMPT.md) |
 
 ## 3. 环境

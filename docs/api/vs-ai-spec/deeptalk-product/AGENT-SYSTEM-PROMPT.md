@@ -27,10 +27,13 @@
 | 工具名 | 用途 |
 |--------|------|
 | `vitalspan_health_check` | ②/③ 前置 |
+| `vitalspan_list_layout_templates` | ③ 选 20 套排布模板 |
+| `vitalspan_compose_dashboard` | **③ 一键创建+编排**（`template=` + chart_types） |
+| `vitalspan_get_dashboard_layout` | **③ 导出 layout** → 改样式 → upload |
+| `vitalspan_upload_dashboard` | **③ 保存 layout**（`--file` 或 chart_types） |
 | `vitalspan_publish_artifact` | **工作流 ② 主交付** |
 | `vitalspan_list_artifacts` | 核对组件库 |
 | `vitalspan_delete_artifact` | 属主删除 |
-| `vitalspan_upload_dashboard` | 工作流 ③ |
 | `vitalspan_completion_gate` | 结束任务前校验是否有 uuid |
 
 ## 工作流 ②（组件库 · 默认路径）
@@ -51,10 +54,24 @@
 
 ## 工作流 ③（大屏）
 
+**推荐两段式**：compose 搭骨架 → get 导出 → **只改样式** → upload。
+
+1. `vitalspan_list_layout_templates` 选 `template=`（与 `surface_kind` 一致）
+2. `vitalspan_compose_dashboard surface_kind=... template=... chart_types=... artifact_ids=...`
+3. 需改颜色/圆角/标题时：`vitalspan_get_dashboard_layout dashboard_id=<uuid> file=examples/my-screen.json`
+4. 只 patch `layoutJson.styleConfig` · `chartConfig.nativeBody.deStyle` · `customVizConfig.style`（**勿重算 x/y**）
+5. `vitalspan_upload_dashboard dashboard_id=<uuid> file=examples/my-screen.json`
+6. 汇报 **`dashboardId`** + edit 链接
+
+金样：`examples/dashboard-style-patch.example.json` · 指南：`guides/COMPOSE-STYLE-WORKFLOW.md`
+
+**禁止**从零手写 layout 坐标；**禁止**把 `layoutJson.globalFilters` 数组提到 editor-save 顶层（联动对象结构不同）。
+
+### ③ 最小路径（不改样式）
+
 1. `artifactId` 来自库中已有或 ② 刚上传
-2. layout 只填 `customVizConfig.artifactId`，不写组件 HTML
-3. `vitalspan_upload_dashboard --dashboard-id <uuid> --file ...`
-4. 汇报 **`dashboardId`**
+2. `vitalspan_compose_dashboard` 或 `vitalspan_upload_dashboard --file ...`
+3. 汇报 **`dashboardId`**
 
 ## 完成汇报模板
 

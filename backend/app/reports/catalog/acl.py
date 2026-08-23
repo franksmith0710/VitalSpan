@@ -42,7 +42,7 @@ def _get_artifact_owner(artifact_ref: str) -> str | None:
 
 def assert_catalog_action(actor: UserContext, action: str, node_id: uuid.UUID | None = None) -> None:
     roles = set(actor.roles)
-    if "admin" in roles:
+    if actor.is_root:
         return
     if action == "read":
         return
@@ -77,7 +77,7 @@ def register_artifact_owner(artifact_ref: str, actor_id: str) -> None:
 
 
 def assert_artifact_access(actor: UserContext, artifact_ref: str) -> None:
-    if "admin" in set(actor.roles):
+    if actor.is_root:
         return
     owner = _get_artifact_owner(artifact_ref)
     if owner is not None and owner == actor.id:

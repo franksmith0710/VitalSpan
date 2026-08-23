@@ -25,6 +25,8 @@
 | customViz | **只填 `artifactId`**，引用**组件库**中的条目 |
 | 内置图 | widget `type: chart` + `chartConfig`（工作流 ①，不进组件库） |
 
+**DeepTalk 插件推荐**：`compose` 搭骨架 → `get_dashboard_layout` 导出 → 只改样式 → `upload`。见 [COMPOSE-STYLE-WORKFLOW.md](./COMPOSE-STYLE-WORKFLOW.md)。
+
 ## 组件从哪来（可混用）
 
 | 来源 | 用法 |
