@@ -18,8 +18,8 @@
 |-------|------|----------|
 | 0 | 轨道决策 | ✅ B（2026-08-24） |
 | 1 | 契约 + 本文档对齐 | 契约 §3/§5 与本文一致 |
-| **2** | **DeepTalk spike** | 下方 **Spike 10 条 ≥8/10** |
-| 3 | Task 1–9 | smoke 绿 + Task 9 十条 |
+| **2** | **DeepTalk spike** | ✅ **8/10**（#4/#10 → Phase 4） |
+| **3** | Task 1–9 | ▶ 进行中 · smoke + Task 9 |
 | 4 | E2E | [E2E-CHECKLIST](./E2E-CHECKLIST.md) §1–§5 |
 
 **Spike 10 条（Phase 2 · 用 v0.2.16 zip 或最小 mock）**

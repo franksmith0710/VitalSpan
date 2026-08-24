@@ -68,7 +68,7 @@ Task 文档中的「沙箱内取数」= **DeepTalk 插件视图 CSP**（`connect
 
 **生产基线（release）**：[`deeptalk-plugins/plugins/vitalspan`](../../../../deeptalk-plugins/plugins/vitalspan) **v0.2.16** — `components.tools` ×14 + `skills/vitalspan-bi`。
 
-**B 轨目标（Phase 3 完成后发 v0.3.x）**：
+**B 轨目标（Phase 3 进行中 · spike 8/10 已通过 2026-08-24）**：
 
 | 组件 | 状态 | 说明 |
 |------|------|------|

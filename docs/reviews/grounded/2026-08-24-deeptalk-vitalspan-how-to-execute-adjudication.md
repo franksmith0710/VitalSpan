@@ -316,8 +316,8 @@ cd deeptalk-plugins && npm run release
 |----------|-----------|
 | ~~**1. 定 A 或 B**~~ | ✅ **B**（2026-08-24） |
 | ~~**2. Phase 1 只改文档**~~ | ✅ commit `1b4f50d6` |
-| **3. Phase 2 DeepTalk spike** | spike 包已装 · [验收记录](./2026-08-24-deeptalk-vitalspan-phase2-spike.md) · **待重启 DeepTalk 手测 7 项** |
-| **4. Phase 3** | spike 通过后：「按 Phase 3 实现 Task 1–9」 |
+| **3. Phase 2 DeepTalk spike** | ✅ 8/10 · [验收记录](./2026-08-24-deeptalk-vitalspan-phase2-spike.md) · #4/#10 → Phase 4 |
+| **4. Phase 3** | ▶ Task 1–9 正式验收 + `npm run smoke` + release |
 | **5. 写 plan** | 可选 `/plan-create` 附本报告 §9 |
 
 **推荐默认路径（资源一般）**：**Phase 0 定 B 意图 → Phase 1 文档 → Phase 2 spike → 再决定是否 Phase 3**。

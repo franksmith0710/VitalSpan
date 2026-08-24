@@ -1,5 +1,11 @@
 # vs-ai-spec 变更
 
+## 2026-08-24 (Phase 2 spike 闭合 · Phase 3 启动)
+
+- Spike **8/10** 通过（DeepTalk 日志 + `spike-host-verify.mjs`）；#4/#10 延后 Phase 4
+- 插件 `npm run smoke` 回归绿
+- Phase 3 Task 1–9 正式验收进行中
+
 ## 2026-08-24 (B 轨决策 · Phase 0/1)
 
 - Phase 0：**B 轻量工作区** 决策闭合（用户确认）
