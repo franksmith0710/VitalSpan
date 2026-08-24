@@ -1,7 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { buildGisOverlayGeoJson } from "@/components/charts/engine/maplibre/gisMapOverlay";
-import { readGisProject, resolveGisRenderableBasemap, DEFAULT_GIS_GLOBE_VIEW } from "@/components/charts/engine/maplibre/gisProject";
+import { readGisProject, resolveGisOverlayStyle, resolveGisRenderableBasemap, DEFAULT_GIS_GLOBE_VIEW } from "@/components/charts/engine/maplibre/gisProject";
 import { applyBasemapRuntimePatch } from "@/components/charts/engine/maplibre/gisBasemapPalette";
 import {
   appendGisOverlayLayers,
@@ -13,6 +13,8 @@ import {
   syncGisOverlayData,
   syncGisOverlayStyle,
 } from "@/components/charts/engine/maplibre/gisMapOverlayStyle";
+import { buildGeoJsonBoundsKey, fitGisOverlayBounds } from "@/components/charts/engine/maplibre/gisMapOverlayFit";
+import { mountGisOverlayInteraction } from "@/components/charts/engine/maplibre/gisMapOverlayInteraction";
 import { applyGisGlobeToStyle, spaceBackdropForPreset } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
 import {
   applyGlobeAtmosphere,
@@ -56,21 +58,28 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     onPaintReady,
     instanceKey,
     layoutFootprint,
+    onLinkageClick,
   } = props;
   const hostRef = useRef<HTMLDivElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const appliedStyleKeyRef = useRef<string | null>(null);
   const syncedViewKeyRef = useRef<string | null>(null);
+  const overlayFitKeyRef = useRef<string | null>(null);
   const project = useMemo(() => readGisProject(chartConfig), [chartConfig]);
   const projectRef = useRef(project);
   projectRef.current = project;
   const overlayGeoJson = useMemo(
     () =>
       chartConfig
-        ? buildGisOverlayGeoJson(chartConfig, viewModel.dataset.columns, viewModel.dataset.rows)
+        ? buildGisOverlayGeoJson(
+            chartConfig,
+            viewModel.dataset.columns,
+            viewModel.dataset.rows,
+            styleContext.chartColors,
+          )
         : null,
-    [chartConfig, viewModel.dataset.columns, viewModel.dataset.rows],
+    [chartConfig, styleContext.chartColors, viewModel.dataset.columns, viewModel.dataset.rows],
   );
   const overlayGeoJsonRef = useRef(overlayGeoJson);
   overlayGeoJsonRef.current = overlayGeoJson;
@@ -164,6 +173,17 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const syncOverlayRuntime = useCallback((map: MapLibreMap) => {
     syncGisOverlayData(map, overlayGeoJsonRef.current);
     syncGisOverlayStyle(map, overlayLayerOptionsRef.current);
+    const resolved = resolveGisOverlayStyle(
+      overlayLayerOptionsRef.current.overlay,
+      overlayLayerOptionsRef.current.chartColors,
+    );
+    if (resolved.autoFit && overlayGeoJsonRef.current) {
+      const boundsKey = buildGeoJsonBoundsKey(overlayGeoJsonRef.current);
+      if (boundsKey && overlayFitKeyRef.current !== boundsKey) {
+        fitGisOverlayBounds(map, overlayGeoJsonRef.current);
+        overlayFitKeyRef.current = boundsKey;
+      }
+    }
   }, []);
 
   const mapStyleKey = useMemo(
@@ -435,7 +455,40 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     const map = mapRef.current;
     if (!map) return;
     syncGisOverlayData(map, overlayGeoJson);
-  }, [overlayGeoJson]);
+    const runFit = () => {
+      const resolved = resolveGisOverlayStyle(project.overlay, styleContext.chartColors);
+      if (!resolved.autoFit || !overlayGeoJson) {
+        if (!overlayGeoJson) overlayFitKeyRef.current = null;
+        return;
+      }
+      const boundsKey = buildGeoJsonBoundsKey(overlayGeoJson);
+      if (boundsKey && overlayFitKeyRef.current !== boundsKey) {
+        fitGisOverlayBounds(map, overlayGeoJson);
+        overlayFitKeyRef.current = boundsKey;
+      }
+    };
+    if (map.isStyleLoaded()) runFit();
+    else map.once("load", runFit);
+  }, [overlayGeoJson, project.overlay, styleContext.chartColors]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    let dispose: (() => void) | undefined;
+    const cluster = resolveGisOverlayStyle(project.overlay, styleContext.chartColors).cluster;
+    const mount = () => {
+      dispose?.();
+      dispose = mountGisOverlayInteraction(map, cluster, (payload) => {
+        onLinkageClick?.({ name: payload.name, value: payload.value });
+      });
+    };
+    if (map.isStyleLoaded()) mount();
+    else map.once("load", mount);
+    return () => {
+      map.off("load", mount);
+      dispose?.();
+    };
+  }, [onLinkageClick, overlayStyleKey, project.overlay, styleContext.chartColors]);
 
   useEffect(() => {
     const map = mapRef.current;

@@ -30,6 +30,11 @@ DEMO_DATASET_SPECS: tuple[dict[str, Any], ...] = (
         "tables": [{"name": "v_sales_geo"}],
     },
     {
+        "dataset_id": "demo-map-scatter",
+        "display_name": "【官方示例】GIS 散点坐标",
+        "tables": [{"name": "de_map_heat"}],
+    },
+    {
         "dataset_id": "demo-gov-grid-stats",
         "display_name": "【官方示例】网格事件统计",
         "tables": [{"name": "gov_grid_stats"}],

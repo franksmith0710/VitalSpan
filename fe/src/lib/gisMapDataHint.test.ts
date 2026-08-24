@@ -22,6 +22,11 @@ describe("resolveGisMapDataHint", () => {
     expect(hint.message).toContain("区域地图");
   });
 
+  it("includes sample sql when unbound", () => {
+    const hint = resolveGisMapDataHint(defaultChartConfig("gis-map"), []);
+    expect(hint.sampleSql).toContain("de_map_heat");
+  });
+
   it("warns when only longitude is bound", () => {
     const config = {
       ...defaultChartConfig("gis-map"),

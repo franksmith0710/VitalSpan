@@ -16,8 +16,7 @@ import {
   writeGisProject,
   type GisProjectOverlay,
 } from "@/components/charts/engine/maplibre/gisProject";
-import { resolveInheritPreviewColors } from "@/lib/chartPalette";
-import { readChartDeStyle } from "@/lib/chartDeStyle";
+import { resolveGisChartColors } from "@/lib/resolveGisChartColors";
 
 const OVERLAY_HINT =
   "绑定数值型经度、纬度后显示散点；可选指标控制圆点大小。按省/市着色请改用「区域地图」。";
@@ -25,10 +24,10 @@ const OVERLAY_HINT =
 export function ChartGisMapOverlayPanel() {
   const { cfg, mutateChartConfig, dashboardStyle } = useChartInspector();
   const project = readGisProject(cfg);
-  const deStyle = readChartDeStyle(cfg);
-  const paletteColors = deStyle.paletteColors?.length
-    ? deStyle.paletteColors
-    : resolveInheritPreviewColors(dashboardStyle?.paletteId, dashboardStyle?.paletteColors);
+  const paletteColors = useMemo(
+    () => resolveGisChartColors(cfg, dashboardStyle),
+    [cfg, dashboardStyle],
+  );
   const resolved = useMemo(
     () => resolveGisOverlayStyle(project.overlay, paletteColors),
     [paletteColors, project.overlay],
@@ -123,6 +122,24 @@ export function ChartGisMapOverlayPanel() {
           label="按指标缩放大小"
           checked={resolved.scaleByMetric}
           onCheckedChange={(scaleByMetric) => patchOverlay({ scaleByMetric })}
+        />
+
+        <InspectorSwitchRow
+          label="按类别分色"
+          checked={resolved.colorByCategory}
+          onCheckedChange={(colorByCategory) => patchOverlay({ colorByCategory })}
+        />
+
+        <InspectorSwitchRow
+          label="低 zoom 聚合"
+          checked={resolved.cluster}
+          onCheckedChange={(cluster) => patchOverlay({ cluster })}
+        />
+
+        <InspectorSwitchRow
+          label="有散点时自动定位"
+          checked={resolved.autoFit}
+          onCheckedChange={(autoFit) => patchOverlay({ autoFit })}
         />
 
         <InspectorSwitchRow

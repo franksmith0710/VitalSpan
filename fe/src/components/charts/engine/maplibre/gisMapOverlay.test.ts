@@ -30,7 +30,7 @@ describe("buildGisOverlayGeoJson", () => {
       type: "Point",
       coordinates: [116.4, 39.9],
     });
-    expect(geojson?.features[0]?.properties).toMatchObject({ value: 10, sizeNorm: 0 });
+    expect(geojson?.features[0]?.properties).toMatchObject({ value: 10, sizeNorm: 0, color: expect.any(String) });
     expect(geojson?.features[1]?.properties).toMatchObject({ value: 20, sizeNorm: 1 });
   });
 

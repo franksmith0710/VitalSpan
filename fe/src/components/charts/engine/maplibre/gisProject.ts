@@ -53,6 +53,14 @@ export type GisProjectOverlay = {
   strokeColor?: string;
   /** 描边宽度（px） */
   strokeWidth?: number;
+  /** 有散点时自动 fitBounds（首次或数据变更） */
+  autoFit?: boolean;
+  /** 低 zoom 聚合散点 */
+  cluster?: boolean;
+  /** 聚合停止的最大 zoom */
+  clusterMaxZoom?: number;
+  /** 按标签/类别字段分色（palette） */
+  colorByCategory?: boolean;
 };
 
 export type GisProject = {
@@ -95,6 +103,10 @@ export const DEFAULT_GIS_OVERLAY: Required<
     | "scaleByMetric"
     | "strokeColor"
     | "strokeWidth"
+    | "autoFit"
+    | "cluster"
+    | "clusterMaxZoom"
+    | "colorByCategory"
   >
 > = {
   radiusMin: 4,
@@ -105,6 +117,10 @@ export const DEFAULT_GIS_OVERLAY: Required<
   scaleByMetric: true,
   strokeColor: "#ffffff",
   strokeWidth: 1,
+  autoFit: true,
+  cluster: true,
+  clusterMaxZoom: 12,
+  colorByCategory: true,
 };
 
 const DEFAULT_GIS_OVERLAY_COLOR = "#2563eb";
@@ -119,6 +135,10 @@ export type ResolvedGisOverlayStyle = {
   scaleByMetric: boolean;
   strokeColor: string;
   strokeWidth: number;
+  autoFit: boolean;
+  cluster: boolean;
+  clusterMaxZoom: number;
+  colorByCategory: boolean;
 };
 
 export function resolveGisOverlayStyle(
@@ -156,6 +176,11 @@ export function resolveGisOverlayStyle(
     typeof overlay?.strokeColor === "string" && overlay.strokeColor.trim()
       ? overlay.strokeColor.trim()
       : DEFAULT_GIS_OVERLAY.strokeColor;
+  const clusterMaxZoomRaw = Number(overlay?.clusterMaxZoom);
+  const clusterMaxZoom =
+    Number.isFinite(clusterMaxZoomRaw) && clusterMaxZoomRaw >= 0
+      ? clusterMaxZoomRaw
+      : DEFAULT_GIS_OVERLAY.clusterMaxZoom;
   return {
     color,
     radiusMin,
@@ -166,6 +191,10 @@ export function resolveGisOverlayStyle(
     scaleByMetric: overlay?.scaleByMetric !== false,
     strokeColor,
     strokeWidth,
+    autoFit: overlay?.autoFit !== false,
+    cluster: overlay?.cluster !== false,
+    clusterMaxZoom,
+    colorByCategory: overlay?.colorByCategory !== false,
   };
 }
 
@@ -323,6 +352,11 @@ function normalizeGisProjectOverlay(input: unknown): GisProjectOverlay | undefin
   }
   const strokeWidth = Number(raw.strokeWidth);
   if (Number.isFinite(strokeWidth) && strokeWidth >= 0) next.strokeWidth = strokeWidth;
+  if (raw.autoFit === false) next.autoFit = false;
+  if (raw.cluster === false) next.cluster = false;
+  const clusterMaxZoom = Number(raw.clusterMaxZoom);
+  if (Number.isFinite(clusterMaxZoom) && clusterMaxZoom >= 0) next.clusterMaxZoom = clusterMaxZoom;
+  if (raw.colorByCategory === false) next.colorByCategory = false;
   return Object.keys(next).length > 0 ? next : undefined;
 }
 

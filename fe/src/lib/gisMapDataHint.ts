@@ -1,5 +1,6 @@
 import { classifyDatasetField } from "@/components/dashboard/datasetFieldClassification";
 import { activeFieldRefs } from "@/lib/chartConfigState";
+import { GIS_MAP_SCATTER_SAMPLE_SQL } from "@/lib/gisMapScatter";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
 export type GisMapDataHintTone = "info" | "warn" | "ok";
@@ -7,6 +8,8 @@ export type GisMapDataHintTone = "info" | "warn" | "ok";
 export type GisMapDataHint = {
   tone: GisMapDataHintTone;
   message: string;
+  /** 右栏展示的示例 SQL */
+  sampleSql?: string | null;
   /** 地图内浮层用短文案 */
   overlayMessage?: string;
 };
@@ -62,7 +65,8 @@ export function resolveGisMapDataHint(
     return {
       tone: "info",
       message:
-        "底图无需数据集即可显示。可选叠加散点：同时绑定数值型经度、纬度（如 longitude 116.4、latitude 39.9）；数值控制圆点大小，标签可选。示例 SQL：SELECT city, longitude, latitude, amount FROM stores WHERE longitude IS NOT NULL;",
+        "底图无需数据集即可显示。可选叠加散点：同时绑定数值型经度、纬度；数值控制圆点大小，标签可选。可一键接入官方 de_map_heat 示例。",
+      sampleSql: GIS_MAP_SCATTER_SAMPLE_SQL,
     };
   }
 

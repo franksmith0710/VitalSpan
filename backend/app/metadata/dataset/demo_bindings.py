@@ -36,6 +36,10 @@ _DEMO_DATASET_BINDING_SPECS: dict[str, dict[str, object]] = {
         "table": "v_sales_geo",
         "columns": ["province", "city", "district", "amount"],
     },
+    "demo-map-scatter": {
+        "table": "de_map_heat",
+        "columns": ["point_name", "lng", "lat", "amount", "province", "city"],
+    },
 }
 
 

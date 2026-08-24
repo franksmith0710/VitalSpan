@@ -20,6 +20,10 @@ import type { TileServiceResolve } from "@/lib/tileServices";
 export const GIS_OVERLAY_SOURCE_ID = "vs-gis-overlay";
 export const GIS_OVERLAY_CIRCLE_LAYER_ID = "vs-gis-overlay-circles";
 export const GIS_OVERLAY_LABEL_LAYER_ID = "vs-gis-overlay-labels";
+export const GIS_OVERLAY_CLUSTER_LAYER_ID = "vs-gis-overlay-clusters";
+export const GIS_OVERLAY_CLUSTER_COUNT_LAYER_ID = "vs-gis-overlay-cluster-count";
+export const GIS_OVERLAY_UNCLUSTERED_FILTER = ["!", ["has", "point_count"]] as const;
+export const GIS_OVERLAY_CLUSTER_FILTER = ["has", "point_count"] as const;
 export { GIS_BUILDINGS_3D_LAYER_ID } from "@/components/charts/engine/maplibre/gisBuildings3d";
 export const PMTILES_SOURCE_ID = "protomaps";
 
@@ -110,14 +114,14 @@ export function appendGisOverlayLayers(
   options: GisOverlayLayerOptions,
 ): StyleSpecification {
   const data = overlay ?? emptyGisOverlayGeoJson();
-  const { source, circleLayer, labelLayer } = buildGisOverlayLayerDefinitions(data, options);
+  const { source, layers } = buildGisOverlayLayerDefinitions(data, options);
   return {
     ...style,
     sources: {
       ...style.sources,
       [source.id]: source.spec,
     },
-    layers: [...(style.layers ?? []), circleLayer, labelLayer],
+    layers: [...(style.layers ?? []), ...layers],
   };
 }
 

@@ -36,6 +36,7 @@ import { activeFieldRefs } from "@/lib/chartConfigState";
 import { chartHasAdvancedTab } from "@/lib/chartInspectorCapabilities";
 import { filterVisibleCatalogItems } from "@/lib/chartPaletteTaxonomy";
 import { isGeoMapChartType, isGisMapChartType } from "@/lib/chartViewConfig";
+import { resolveMapChartTypeGuide } from "@/lib/mapChartTypeGuide";
 
 function buildValidateSuccessMessage(cfg: ReturnType<typeof useChartInspector>["cfg"]): string {
   const dims = [...new Set(activeFieldRefs(cfg.dimensions).map((d) => d.field))];
@@ -127,6 +128,7 @@ export function ChartEditorColumn({
 
   const showAdvancedTab = chartHasAdvancedTab(cfg.chartType);
   const tableProfile = tableInspectorProfile(cfg.chartType);
+  const mapTypeGuide = resolveMapChartTypeGuide(columns);
 
   return (
     <div className={cn("flex min-h-0 flex-1 flex-col overflow-hidden bg-white dark:bg-gray-900", className)}>
@@ -180,6 +182,16 @@ export function ChartEditorColumn({
                 </SelectContent>
               </Select>
             </div>
+            {mapTypeGuide &&
+            (isGeoMapChartType(cfg.chartType) || isGisMapChartType(cfg.chartType)) ? (
+              <p
+                role="status"
+                data-testid="map-chart-type-guide"
+                className="rounded-md border border-brand-500/20 bg-brand-500/5 px-2 py-1.5 text-[10px] leading-snug text-gray-600 dark:text-gray-400"
+              >
+                {mapTypeGuide}
+              </p>
+            ) : null}
             {isGeoMapChartType(cfg.chartType) ? (
               <ChartMapDataPanel />
             ) : isGisMapChartType(cfg.chartType) ? (

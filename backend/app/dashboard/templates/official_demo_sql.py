@@ -269,6 +269,12 @@ def _build_official_chart_queries() -> dict[str, OfficialDemoChartQuery]:
         "SELECT region_map AS 省份, amount AS 销售额\n"
         "FROM de_map_province"
     )
+    gis_map_scatter_sql = (
+        "SELECT point_name, lng, lat, amount, province, city\n"
+        "FROM de_map_heat\n"
+        "WHERE lng IS NOT NULL AND lat IS NOT NULL\n"
+        "LIMIT 500"
+    )
     pie_sql = (
         "SELECT region_name AS 地区, total_amount AS 销售额\n"
         "FROM vs_official_region_share"
@@ -458,6 +464,13 @@ def _build_official_chart_queries() -> dict[str, OfficialDemoChartQuery]:
         ),
         _q("map", "区域地图", map_sql, dimensions=("省份",), metrics=("销售额",)),
         _q("map-3d", "3D 区域地图", map_sql, dimensions=("省份",), metrics=("销售额",)),
+        _q(
+            "gis-map",
+            "GIS 地图",
+            gis_map_scatter_sql,
+            dimensions=("lng", "lat", "point_name"),
+            metrics=("amount",),
+        ),
         _q("table-info", "明细表", table_info_sql),
         _q(
             "table-normal",

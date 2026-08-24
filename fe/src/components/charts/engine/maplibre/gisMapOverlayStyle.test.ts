@@ -8,11 +8,13 @@ import {
   buildGisOverlayCircleRadius,
   buildGisOverlayStyleKey,
   syncGisOverlayData,
+  syncGisOverlayStyle,
 } from "@/components/charts/engine/maplibre/gisMapOverlayStyle";
 import { GIS_OVERLAY_SOURCE_ID } from "@/components/charts/engine/maplibre/gisMapStyle";
 import { appendGisOverlayLayers, buildPmtilesStyle } from "@/components/charts/engine/maplibre/gisMapStyle";
 import {
   GIS_OVERLAY_CIRCLE_LAYER_ID,
+  GIS_OVERLAY_CLUSTER_LAYER_ID,
   GIS_OVERLAY_LABEL_LAYER_ID,
   GIS_OVERLAY_SOURCE_ID,
 } from "@/components/charts/engine/maplibre/gisMapStyle";
@@ -76,7 +78,7 @@ describe("appendGisOverlayLayers", () => {
     };
     const style = appendGisOverlayLayers(base, geojson, {
       flavor: "light",
-      overlay: { color: "#112233", opacity: 0.5 },
+      overlay: { color: "#112233", opacity: 0.5, colorByCategory: false },
       chartColors: ["#999999"],
     });
     expect(style.sources?.[GIS_OVERLAY_SOURCE_ID]).toBeDefined();
@@ -132,6 +134,41 @@ describe("buildGisOverlayCirclePaint", () => {
     const paint = buildGisOverlayCirclePaint(resolveGisOverlayStyle({ strokeColor: "#000000", strokeWidth: 2 }));
     expect(paint["circle-stroke-color"]).toBe("#000000");
     expect(paint["circle-stroke-width"]).toBe(2);
+  });
+});
+
+describe("syncGisOverlayStyle", () => {
+  it("updates circle and label paint when layers exist", () => {
+    const setPaintProperty = vi.fn();
+    const setLayoutProperty = vi.fn();
+    const setLayerZoomRange = vi.fn();
+    const map = {
+      isStyleLoaded: () => true,
+      getLayer: (id: string) =>
+        id === GIS_OVERLAY_CIRCLE_LAYER_ID ||
+        id === GIS_OVERLAY_CLUSTER_LAYER_ID ||
+        id === GIS_OVERLAY_LABEL_LAYER_ID
+          ? {}
+          : null,
+      setPaintProperty,
+      setLayoutProperty,
+      setLayerZoomRange,
+      once: vi.fn(),
+    };
+
+    syncGisOverlayStyle(map as never, {
+      flavor: "light",
+      overlay: { color: "#aabbcc", opacity: 0.4 },
+      chartColors: ["#111111"],
+    });
+
+    expect(setPaintProperty).toHaveBeenCalledWith(
+      GIS_OVERLAY_CIRCLE_LAYER_ID,
+      "circle-color",
+      expect.anything(),
+    );
+    expect(setLayoutProperty).toHaveBeenCalled();
+    expect(setLayerZoomRange).toHaveBeenCalled();
   });
 });
 

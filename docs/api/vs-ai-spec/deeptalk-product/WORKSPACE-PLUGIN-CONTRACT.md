@@ -55,16 +55,17 @@
 
 ## 3. 插件仓应交付什么（当前缺口 → Task 1–9）
 
-现有 [`deeptalk-plugins/plugins/vitalspan`](../../../../deeptalk-plugins/plugins/vitalspan) 已有 **`components.tools`**（v0.2.x），**尚缺**工作区形态：
+现有 [`deeptalk-plugins/plugins/vitalspan`](../../../../deeptalk-plugins/plugins/vitalspan) **v0.3.0**：
 
 | 组件 | 状态 | 说明 |
 |------|------|------|
-| `components.tools` | 已有 | Agent wf2/wf3 |
-| `workspace-templates/*.workspace.json` | **待做** | 「新建工作区」列表 |
-| `views/*.js` | **待做** | iframe 业务页（构建产物） |
-| `views/workspace-setup.js` | **待做** | 创建向导（有绑定时） |
-| `execTools` | **按需** | 视图内调 VitalSpan API（替代 iframe fetch） |
-| `scripts/assemble-plugin.mjs` | **待做** | 只打包 `plugin/`，不拷 `src/` |
+| `components.tools` | ✅ 已有 | Agent wf2/wf3 |
+| `workspace-templates/*.workspace.json` | ✅ `vitalspan.bi.default` | 「新建工作区」列表 |
+| `views/home.js` | ✅ B 轨 MVP | 绑定摘要 · health · 跳 5173 |
+| `views/workspace-setup.js` | ✅ | 创建向导 |
+| `execTools` `vitalspan_health` | ✅ B 轨 MVP | iframe 内 health（无 fetch） |
+| `scripts/assemble-plugin.mjs` | ✅ | 校验可安装布局 |
+| iframe 内 list/compose | ⏸ 二期（C 轨） | 仍用 Agent tools + 5173 |
 
 实施顺序与验收：**严格**按 [SPECIAL-WORKSPACE-PLUGIN-TASK.md](./SPECIAL-WORKSPACE-PLUGIN-TASK.md) Task 1→9。
 
