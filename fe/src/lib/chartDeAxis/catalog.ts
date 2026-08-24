@@ -242,19 +242,25 @@ const DE_AXIS_CATALOG: Record<string, ChartAxisEntry> = {
       { axisId: "drill", index: 1, legacy: { kind: "dimension", index: 2 } },
     ],
   ),
-  /** 全球 PMTiles 底图 + 可选经纬度散点叠加（见 gisMapOverlay.ts） */
+  /** 全球 PMTiles 底图 + 可选散点/OD 飞线（见 gisMapOverlay.ts · gisMapFlow.ts） */
   "gis-map": entry(
     [
-      deAxis.xDim("经度 / 维度", { required: false }),
-      deAxis.xExt("纬度 / 维度", { required: false }),
-      deAxis.yMet("数值 / 指标", { required: false, showAggregation: true }),
-      deAxis.drill("标签 / 维度", { required: false }),
+      deAxis.xDim("经度 / 起点经", { required: false }),
+      deAxis.xExt("纬度 / 起点纬", { required: false }),
+      deAxis.yMet("数值 / 流量", { required: false, showAggregation: true }),
+      deAxis.drill("流向 / 维度", {
+        limit: 3,
+        required: false,
+        slotLabels: ["终点经度", "终点纬度", "标签"],
+      }),
     ],
     [
       { axisId: "xAxis", index: 0, legacy: { kind: "dimension", index: 0 } },
       { axisId: "xAxisExt", index: 0, legacy: { kind: "dimension", index: 1 } },
       { axisId: "yAxis", index: 0, legacy: { kind: "metric", index: 0 } },
       { axisId: "drill", index: 0, legacy: { kind: "dimension", index: 2 } },
+      { axisId: "drill", index: 1, legacy: { kind: "dimension", index: 3 } },
+      { axisId: "drill", index: 2, legacy: { kind: "dimension", index: 4 } },
     ],
   ),
   heatmap: entry(

@@ -1,5 +1,6 @@
 import { ChartDataSlots } from "./ChartDataSlots";
 import { ChartGisMapScatterSetup } from "./ChartGisMapScatterSetup";
+import { ChartGisMapFlowSetup } from "./ChartGisMapFlowSetup";
 import { GisMapDataHintBanner } from "./GisMapDataHintBanner";
 import { useChartInspector } from "./chartInspectorContext";
 import { resolveGisMapDataHint } from "@/lib/gisMapDataHint";
@@ -13,6 +14,7 @@ export function ChartGisMapDataPanel() {
     <div className="space-y-2" data-testid="chart-gis-map-data-panel">
       <GisMapDataHintBanner hint={hint} />
       <ChartGisMapScatterSetup />
+      <ChartGisMapFlowSetup />
       <ChartDataSlots hideMapHint />
     </div>
   );

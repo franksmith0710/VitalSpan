@@ -1,12 +1,20 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { buildGisOverlayGeoJson } from "@/components/charts/engine/maplibre/gisMapOverlay";
-import { readGisProject, resolveGisOverlayStyle, resolveGisRenderableBasemap, DEFAULT_GIS_GLOBE_VIEW } from "@/components/charts/engine/maplibre/gisProject";
+import { buildGisFlowGeoJson } from "@/components/charts/engine/maplibre/gisMapFlow";
+import { readGisProject, resolveGisFlowStyle, resolveGisOverlayStyle, resolveGisRenderableBasemap, DEFAULT_GIS_GLOBE_VIEW } from "@/components/charts/engine/maplibre/gisProject";
 import { applyBasemapRuntimePatch } from "@/components/charts/engine/maplibre/gisBasemapPalette";
 import {
+  appendGisFlowLayers,
   appendGisOverlayLayers,
   buildPmtilesStyle,
 } from "@/components/charts/engine/maplibre/gisMapStyle";
+import {
+  buildGisFlowStyleKey,
+  emptyGisFlowGeoJson,
+  syncGisFlowData,
+  syncGisFlowStyle,
+} from "@/components/charts/engine/maplibre/gisMapFlowStyle";
 import {
   buildGisOverlayStyleKey,
   emptyGisOverlayGeoJson,
@@ -83,6 +91,20 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   );
   const overlayGeoJsonRef = useRef(overlayGeoJson);
   overlayGeoJsonRef.current = overlayGeoJson;
+  const flowGeoJson = useMemo(
+    () =>
+      chartConfig
+        ? buildGisFlowGeoJson(
+            chartConfig,
+            viewModel.dataset.columns,
+            viewModel.dataset.rows,
+            styleContext.chartColors,
+          )
+        : null,
+    [chartConfig, styleContext.chartColors, viewModel.dataset.columns, viewModel.dataset.rows],
+  );
+  const flowGeoJsonRef = useRef(flowGeoJson);
+  flowGeoJsonRef.current = flowGeoJson;
   const [pmtilesStyle, setPmtilesStyle] = useState<StyleSpecification | null>(null);
   const [pmtilesLoading, setPmtilesLoading] = useState(false);
   const [pmtilesErrorHint, setPmtilesErrorHint] = useState<string | null>(null);
@@ -169,20 +191,46 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     () => buildGisOverlayStyleKey(overlayLayerOptions),
     [overlayLayerOptions],
   );
+  const flowLayerOptions = useMemo(
+    () => ({
+      flavor,
+      flow: project.flow,
+      chartColors: styleContext.chartColors,
+    }),
+    [flavor, project.flow, styleContext.chartColors],
+  );
+  const flowLayerOptionsRef = useRef(flowLayerOptions);
+  flowLayerOptionsRef.current = flowLayerOptions;
+  const flowStyleKey = useMemo(
+    () => buildGisFlowStyleKey(flowLayerOptions),
+    [flowLayerOptions],
+  );
 
   const syncOverlayRuntime = useCallback((map: MapLibreMap) => {
     syncGisOverlayData(map, overlayGeoJsonRef.current);
     syncGisOverlayStyle(map, overlayLayerOptionsRef.current);
-    const resolved = resolveGisOverlayStyle(
+    syncGisFlowData(map, flowGeoJsonRef.current);
+    syncGisFlowStyle(map, flowLayerOptionsRef.current);
+    const overlayResolved = resolveGisOverlayStyle(
       overlayLayerOptionsRef.current.overlay,
       overlayLayerOptionsRef.current.chartColors,
     );
-    if (resolved.autoFit && overlayGeoJsonRef.current) {
-      const boundsKey = buildGeoJsonBoundsKey(overlayGeoJsonRef.current);
+    const flowResolved = resolveGisFlowStyle(
+      flowLayerOptionsRef.current.flow,
+      flowLayerOptionsRef.current.chartColors,
+    );
+    const fitTargets = [
+      overlayResolved.autoFit ? overlayGeoJsonRef.current : null,
+      flowResolved.autoFit && flowResolved.enabled ? flowGeoJsonRef.current : null,
+    ].filter(Boolean) as GeoJSON.FeatureCollection[];
+    if (fitTargets.length > 0) {
+      const boundsKey = buildGeoJsonBoundsKey(...fitTargets);
       if (boundsKey && overlayFitKeyRef.current !== boundsKey) {
-        fitGisOverlayBounds(map, overlayGeoJsonRef.current);
+        fitGisOverlayBounds(map, fitTargets);
         overlayFitKeyRef.current = boundsKey;
       }
+    } else if (!overlayGeoJsonRef.current && !flowGeoJsonRef.current) {
+      overlayFitKeyRef.current = null;
     }
   }, []);
 
@@ -199,9 +247,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         projection: project.projection,
         atmospherePreset: project.atmospherePreset,
         overlayStyleKey,
+        flowStyleKey,
       }),
     [
       flavor,
+      flowStyleKey,
       overlayStyleKey,
       project.atmospherePreset,
       project.basemapLayers,
@@ -221,8 +271,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       emptyGisOverlayGeoJson(),
       overlayLayerOptions,
     );
-    return applyGisGlobeToStyle(withOverlay, project.projection, project.atmospherePreset);
-  }, [overlayLayerOptions, pmtilesStyle, project.atmospherePreset, project.projection]);
+    const withFlow = appendGisFlowLayers(withOverlay, emptyGisFlowGeoJson(), flowLayerOptions);
+    return applyGisGlobeToStyle(withFlow, project.projection, project.atmospherePreset);
+  }, [flowLayerOptions, overlayLayerOptions, pmtilesStyle, project.atmospherePreset, project.projection]);
 
   const styleKey = mapStyleKey;
   const atmosphereKey = useMemo(
@@ -455,21 +506,33 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     const map = mapRef.current;
     if (!map) return;
     syncGisOverlayData(map, overlayGeoJson);
+    syncGisFlowData(map, flowGeoJson);
     const runFit = () => {
-      const resolved = resolveGisOverlayStyle(project.overlay, styleContext.chartColors);
-      if (!resolved.autoFit || !overlayGeoJson) {
-        if (!overlayGeoJson) overlayFitKeyRef.current = null;
+      const overlayResolved = resolveGisOverlayStyle(project.overlay, styleContext.chartColors);
+      const flowResolved = resolveGisFlowStyle(project.flow, styleContext.chartColors);
+      const fitTargets = [
+        overlayResolved.autoFit ? overlayGeoJson : null,
+        flowResolved.autoFit && flowResolved.enabled ? flowGeoJson : null,
+      ].filter(Boolean) as GeoJSON.FeatureCollection[];
+      if (fitTargets.length === 0) {
+        if (!overlayGeoJson && !flowGeoJson) overlayFitKeyRef.current = null;
         return;
       }
-      const boundsKey = buildGeoJsonBoundsKey(overlayGeoJson);
+      const boundsKey = buildGeoJsonBoundsKey(...fitTargets);
       if (boundsKey && overlayFitKeyRef.current !== boundsKey) {
-        fitGisOverlayBounds(map, overlayGeoJson);
+        fitGisOverlayBounds(map, fitTargets);
         overlayFitKeyRef.current = boundsKey;
       }
     };
     if (map.isStyleLoaded()) runFit();
     else map.once("load", runFit);
-  }, [overlayGeoJson, project.overlay, styleContext.chartColors]);
+  }, [flowGeoJson, overlayGeoJson, project.flow, project.overlay, styleContext.chartColors]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    syncGisFlowStyle(map, flowLayerOptions);
+  }, [flowLayerOptions, flowStyleKey]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -531,7 +594,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const showDataOverlayHint =
     !statusHint &&
     dataHint != null &&
-    shouldShowGisMapOverlayHint(dataHint, Boolean(overlayGeoJson));
+    shouldShowGisMapOverlayHint(
+      dataHint,
+      Boolean(overlayGeoJson) ||
+        (resolveGisFlowStyle(project.flow, styleContext.chartColors).enabled && Boolean(flowGeoJson)),
+    );
 
   return (
     <div

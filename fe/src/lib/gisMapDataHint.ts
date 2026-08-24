@@ -1,5 +1,7 @@
 import { classifyDatasetField } from "@/components/dashboard/datasetFieldClassification";
 import { activeFieldRefs } from "@/lib/chartConfigState";
+import { isGisFlowEnabled } from "@/components/charts/engine/maplibre/gisProject";
+import { GIS_MAP_FLOW_SAMPLE_SQL } from "@/lib/gisMapFlow";
 import { GIS_MAP_SCATTER_SAMPLE_SQL } from "@/lib/gisMapScatter";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
@@ -40,11 +42,14 @@ function hasGeoNameColumns(columns: string[]): boolean {
   return columns.some((c) => looksLikeGeoName(c));
 }
 
-/** GIS 地图数据绑定向导：底图可空载；散点需数值经纬度 */
+/** GIS 地图数据绑定向导：底图可空载；散点或 OD 飞线 */
 export function resolveGisMapDataHint(
   config: ChartViewConfig,
   columns: string[],
 ): GisMapDataHint {
+  if (isGisFlowEnabled(config.nativeBody?.gisProject)) {
+    return resolveGisMapFlowDataHint(config, columns);
+  }
   const dims = activeFieldRefs(config.dimensions);
   const metrics = activeFieldRefs(config.metrics);
   const lngField = dims[0]?.field?.trim();
@@ -137,6 +142,46 @@ export function resolveGisMapDataHint(
     tone: "info",
     message:
       "底图无需数据集即可显示。可选叠加散点：同时绑定数值型经度、纬度；按省/市着色请改用「区域地图」。",
+  };
+}
+
+function resolveGisMapFlowDataHint(config: ChartViewConfig, columns: string[]): GisMapDataHint {
+  const dims = activeFieldRefs(config.dimensions);
+  const metrics = activeFieldRefs(config.metrics);
+  const fromLng = dims[0]?.field?.trim();
+  const fromLat = dims[1]?.field?.trim();
+  const toLng = dims[2]?.field?.trim();
+  const toLat = dims[3]?.field?.trim();
+  const hasBinding = Boolean(fromLng || fromLat || toLng || toLat || metrics.some((m) => m.field?.trim()));
+
+  if (!hasBinding) {
+    return {
+      tone: "info",
+      message:
+        "OD 飞线模式：绑定起点经/纬、终点经/纬（流向槽）与可选流量指标。可一键接入全球枢纽示例。",
+      sampleSql: GIS_MAP_FLOW_SAMPLE_SQL,
+    };
+  }
+
+  if (fromLng && looksLikeGeoName(fromLng) && !looksLikeLngField(fromLng)) {
+    return {
+      tone: "warn",
+      message: `「${fromLng}」不是经度坐标。OD 飞线需数值型起点/终点经纬度。`,
+      overlayMessage: `「${fromLng}」不能作为起点经度`,
+    };
+  }
+
+  if (!fromLng || !fromLat || !toLng || !toLat) {
+    return {
+      tone: "warn",
+      message: "OD 飞线需同时绑定起点经度、起点纬度、终点经度、终点纬度四个字段。",
+      overlayMessage: "请绑定完整的 from/to 经纬度",
+    };
+  }
+
+  return {
+    tone: "ok",
+    message: "OD 飞线已配置：查询结果中的有效 from/to 坐标将绘制大圆弧线。",
   };
 }
 

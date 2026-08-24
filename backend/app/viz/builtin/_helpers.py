@@ -17,10 +17,10 @@ GAUGE_RULE = FieldRule(0, 0, 1, 1)
 MAP_RULE = FieldRule(1, 3, 1, 1)
 GIS_MAP_RULE = FieldRule(
     0,
-    3,
+    5,
     0,
     1,
-    note="底图无需字段；可选叠加点位需经度+纬度维度",
+    note="底图无需字段；可选散点或 OD 飞线叠加",
 )
 HEATMAP_MATRIX = FieldRule(2, 2, 1, 1)
 COMBO_RULE = FieldRule(1, 8, 1, 8, note="左柱或右线至少 1 个指标")

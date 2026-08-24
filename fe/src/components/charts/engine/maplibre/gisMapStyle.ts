@@ -6,6 +6,11 @@ import {
   type GisOverlayLayerOptions,
 } from "@/components/charts/engine/maplibre/gisMapOverlayStyle";
 import {
+  buildGisFlowLayerDefinitions,
+  emptyGisFlowGeoJson,
+  type GisFlowLayerOptions,
+} from "@/components/charts/engine/maplibre/gisMapFlowStyle";
+import {
   applyBasemapLayerVisibility,
   buildBasemapFlavor,
 } from "@/components/charts/engine/maplibre/gisBasemapPalette";
@@ -106,7 +111,7 @@ export function appendBuildings3dLayer(
   return appendBuildings3dLayerToStyle(style, flavor, true);
 }
 
-export type { GisOverlayLayerOptions };
+export type { GisOverlayLayerOptions, GisFlowLayerOptions };
 
 export function appendGisOverlayLayers(
   style: StyleSpecification,
@@ -115,6 +120,23 @@ export function appendGisOverlayLayers(
 ): StyleSpecification {
   const data = overlay ?? emptyGisOverlayGeoJson();
   const { source, layers } = buildGisOverlayLayerDefinitions(data, options);
+  return {
+    ...style,
+    sources: {
+      ...style.sources,
+      [source.id]: source.spec,
+    },
+    layers: [...(style.layers ?? []), ...layers],
+  };
+}
+
+export function appendGisFlowLayers(
+  style: StyleSpecification,
+  flow: GeoJSON.FeatureCollection | null,
+  options: GisFlowLayerOptions,
+): StyleSpecification {
+  const data = flow ?? emptyGisFlowGeoJson();
+  const { source, layers } = buildGisFlowLayerDefinitions(data, options);
   return {
     ...style,
     sources: {
