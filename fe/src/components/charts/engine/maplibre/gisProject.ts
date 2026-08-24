@@ -15,6 +15,98 @@ export type GisProjectView = {
   pitch?: number;
 };
 
+/** GIS 初始视角各字段合法范围（与 MapLibre 相机一致） */
+export const GIS_VIEW_BOUNDS = {
+  lng: { min: -180, max: 180 },
+  lat: { min: -85, max: 85 },
+  zoom: { min: 0, max: 22 },
+  bearing: { min: -180, max: 180 },
+  pitch: { min: 0, max: 85 },
+} as const;
+
+export type GisViewBoundField = keyof typeof GIS_VIEW_BOUNDS;
+
+export const GIS_VIEW_DECIMALS = 2;
+
+export type GisViewDraftFields = {
+  centerLng: string;
+  centerLat: string;
+  zoom: string;
+  bearing: string;
+  pitch: string;
+};
+
+export function clampGisViewScalar(field: GisViewBoundField, value: number): number {
+  const { min, max } = GIS_VIEW_BOUNDS[field];
+  return Number(Math.min(max, Math.max(min, value)).toFixed(GIS_VIEW_DECIMALS));
+}
+
+export function formatGisViewScalar(value: number, decimals = GIS_VIEW_DECIMALS): string {
+  if (!Number.isFinite(value)) return "";
+  return value.toFixed(decimals);
+}
+
+export function formatGisViewDraftFromView(view: GisProjectView): GisViewDraftFields {
+  return {
+    centerLng: formatGisViewScalar(view.center[0]),
+    centerLat: formatGisViewScalar(view.center[1]),
+    zoom: formatGisViewScalar(view.zoom),
+    bearing: formatGisViewScalar(view.bearing ?? 0),
+    pitch: formatGisViewScalar(view.pitch ?? 0),
+  };
+}
+
+export function finalizeGisViewDraftField(
+  field: keyof GisViewDraftFields,
+  raw: string,
+): string {
+  if (raw.trim() === "") return raw;
+  const num = Number(raw);
+  if (!Number.isFinite(num)) return raw;
+  const boundField: GisViewBoundField =
+    field === "centerLng" ? "lng" : field === "centerLat" ? "lat" : field;
+  return formatGisViewScalar(clampGisViewScalar(boundField, num));
+}
+
+export function parseGisViewDraft(draft: GisViewDraftFields): GisProjectView | null {
+  if (
+    draft.centerLng.trim() === "" ||
+    draft.centerLat.trim() === "" ||
+    draft.zoom.trim() === "" ||
+    draft.bearing.trim() === "" ||
+    draft.pitch.trim() === ""
+  ) {
+    return null;
+  }
+  const lng = Number(draft.centerLng);
+  const lat = Number(draft.centerLat);
+  const zoom = Number(draft.zoom);
+  const bearing = Number(draft.bearing);
+  const pitch = Number(draft.pitch);
+  if (!Number.isFinite(lng) || !Number.isFinite(lat) || !Number.isFinite(zoom)) return null;
+  if (!Number.isFinite(bearing) || !Number.isFinite(pitch)) return null;
+  if (lng < GIS_VIEW_BOUNDS.lng.min || lng > GIS_VIEW_BOUNDS.lng.max) return null;
+  if (lat < GIS_VIEW_BOUNDS.lat.min || lat > GIS_VIEW_BOUNDS.lat.max) return null;
+  if (zoom < GIS_VIEW_BOUNDS.zoom.min || zoom > GIS_VIEW_BOUNDS.zoom.max) return null;
+  if (bearing < GIS_VIEW_BOUNDS.bearing.min || bearing > GIS_VIEW_BOUNDS.bearing.max) return null;
+  if (pitch < GIS_VIEW_BOUNDS.pitch.min || pitch > GIS_VIEW_BOUNDS.pitch.max) return null;
+  return normalizeGisProjectView({
+    center: [lng, lat],
+    zoom,
+    bearing,
+    pitch,
+  });
+}
+
+export function normalizeGisProjectView(view: GisProjectView): GisProjectView {
+  return {
+    center: [clampGisViewScalar("lng", view.center[0]), clampGisViewScalar("lat", view.center[1])],
+    zoom: clampGisViewScalar("zoom", view.zoom),
+    bearing: clampGisViewScalar("bearing", view.bearing ?? 0),
+    pitch: clampGisViewScalar("pitch", view.pitch ?? 0),
+  };
+}
+
 export type GisProjectFog = {
   color?: string;
   "high-color"?: string;
@@ -400,11 +492,17 @@ function normalizeGisView(input: unknown): GisProjectView | undefined {
   if (!Number.isFinite(lng) || !Number.isFinite(lat) || !Number.isFinite(zoom)) return undefined;
   const bearing = Number(view.bearing);
   const pitch = Number(view.pitch);
-  return {
+  const normalized = normalizeGisProjectView({
     center: [lng, lat],
     zoom,
-    bearing: Number.isFinite(bearing) ? bearing : undefined,
-    pitch: Number.isFinite(pitch) ? pitch : undefined,
+    bearing: Number.isFinite(bearing) ? bearing : 0,
+    pitch: Number.isFinite(pitch) ? pitch : 0,
+  });
+  return {
+    center: normalized.center,
+    zoom: normalized.zoom,
+    bearing: Number.isFinite(bearing) ? normalized.bearing : undefined,
+    pitch: Number.isFinite(pitch) ? normalized.pitch : undefined,
   };
 }
 

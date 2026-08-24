@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  clampGisViewScalar,
   DEFAULT_GIS_PROJECT,
   DEFAULT_PMTILES_TILE_SERVICE_ID,
+  finalizeGisViewDraftField,
+  formatGisViewDraftFromView,
+  formatGisViewScalar,
+  parseGisViewDraft,
   readGisProject,
   resolveGisRenderableBasemap,
 } from "@/components/charts/engine/maplibre/gisProject";
@@ -124,5 +129,37 @@ describe("gisProject", () => {
         nativeBody: { gisProject: { earthOpacity: 2 } },
       }).earthOpacity,
     ).toBeUndefined();
+  });
+
+  it("formats and clamps gis view draft fields", () => {
+    expect(formatGisViewScalar(-92.5036543)).toBe("-92.50");
+    expect(clampGisViewScalar("lng", -200)).toBe(-180);
+    expect(clampGisViewScalar("lat", 90)).toBe(85);
+    expect(clampGisViewScalar("zoom", 25)).toBe(22);
+    expect(clampGisViewScalar("bearing", 270)).toBe(180);
+    expect(clampGisViewScalar("pitch", -5)).toBe(0);
+
+    const draft = formatGisViewDraftFromView({
+      center: [-92.5036543, 52.36808583],
+      zoom: 3.7449,
+      bearing: 0,
+      pitch: 0,
+    });
+    expect(draft).toEqual({
+      centerLng: "-92.50",
+      centerLat: "52.37",
+      zoom: "3.74",
+      bearing: "0.00",
+      pitch: "0.00",
+    });
+
+    expect(finalizeGisViewDraftField("centerLng", "-92.5036543")).toBe("-92.50");
+    expect(parseGisViewDraft(draft)).toEqual({
+      center: [-92.5, 52.37],
+      zoom: 3.74,
+      bearing: 0,
+      pitch: 0,
+    });
+    expect(parseGisViewDraft({ ...draft, centerLng: "200" })).toBeNull();
   });
 });

@@ -23,49 +23,30 @@ import {
 import {
   DEFAULT_GIS_GLOBE_VIEW,
   DEFAULT_PMTILES_TILE_SERVICE_ID,
+  finalizeGisViewDraftField,
+  formatGisViewDraftFromView,
+  GIS_VIEW_BOUNDS,
+  GIS_VIEW_DECIMALS,
   GIS_ATMOSPHERE_PRESET_ORDER,
   GIS_ATMOSPHERE_PRESETS,
   GIS_BASEMAP_FLAVORS,
+  normalizeGisProjectView,
+  parseGisViewDraft,
   readGisProject,
   writeGisProject,
   type GisAtmospherePreset,
   type GisBasemapFlavor,
   type GisLabelLang,
+  type GisViewDraftFields,
 } from "@/components/charts/engine/maplibre/gisProject";
 import { captureGisMapViewCamera, applyGisMapViewCamera } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 import { buildGisConfiguredViewKey } from "@/components/charts/engine/maplibre/gisMapRuntime";
 import { listTileServices } from "@/lib/tileServices";
 
-function parseViewDraft(draft: {
-  centerLng: string;
-  centerLat: string;
-  zoom: string;
-  bearing: string;
-  pitch: string;
-}) {
-  if (
-    draft.centerLng.trim() === "" ||
-    draft.centerLat.trim() === "" ||
-    draft.zoom.trim() === "" ||
-    draft.bearing.trim() === "" ||
-    draft.pitch.trim() === ""
-  ) {
-    return null;
-  }
-  const lng = Number(draft.centerLng);
-  const lat = Number(draft.centerLat);
-  const zoom = Number(draft.zoom);
-  const bearing = Number(draft.bearing);
-  const pitch = Number(draft.pitch);
-  if (!Number.isFinite(lng) || !Number.isFinite(lat) || lat < -85 || lat > 85) return null;
-  if (!Number.isFinite(zoom) || !Number.isFinite(bearing) || !Number.isFinite(pitch)) return null;
-  return {
-    center: [lng, lat] as [number, number],
-    zoom: Math.max(0, Math.min(22, zoom)),
-    bearing,
-    pitch: Math.max(0, Math.min(85, pitch)),
-  };
-}
+const GIS_VIEW_STEP = 10 ** -GIS_VIEW_DECIMALS;
+
+const GIS_VIEW_HINT =
+  "经度 −180–180、纬度 −85–85、缩放 0–22、旋转 −180–180°、倾斜 0–85°；保留两位小数。拖拽地图后点「读取当前视角」写回；改视角会关闭球面自转。";
 
 const FLAVOR_LABELS: Record<GisBasemapFlavor, string> = {
   light: "浅色",
@@ -110,11 +91,12 @@ export function ChartGisMapProjectPanel() {
     [mutateChartConfig],
   );
 
-  const [centerLng, setCenterLng] = useState(String(view.center[0]));
-  const [centerLat, setCenterLat] = useState(String(view.center[1]));
-  const [zoom, setZoom] = useState(String(view.zoom));
-  const [bearing, setBearing] = useState(String(view.bearing ?? 0));
-  const [pitch, setPitch] = useState(String(view.pitch ?? 0));
+  const initialViewDraft = formatGisViewDraftFromView(view);
+  const [centerLng, setCenterLng] = useState(initialViewDraft.centerLng);
+  const [centerLat, setCenterLat] = useState(initialViewDraft.centerLat);
+  const [zoom, setZoom] = useState(initialViewDraft.zoom);
+  const [bearing, setBearing] = useState(initialViewDraft.bearing);
+  const [pitch, setPitch] = useState(initialViewDraft.pitch);
   const viewDraftRef = useRef({ centerLng, centerLat, zoom, bearing, pitch });
   viewDraftRef.current = { centerLng, centerLat, zoom, bearing, pitch };
   const committedViewKeyRef = useRef("");
@@ -144,7 +126,7 @@ export function ChartGisMapProjectPanel() {
   );
 
   const applyViewDraft = useCallback(() => {
-    const nextView = parseViewDraft(viewDraftRef.current);
+    const nextView = parseGisViewDraft(viewDraftRef.current);
     if (!nextView) return;
     const nextKey = buildGisConfiguredViewKey(nextView);
     if (nextKey === committedViewKeyRef.current) return;
@@ -161,6 +143,15 @@ export function ChartGisMapProjectPanel() {
     [applyViewDraft],
   );
 
+  const blurViewField = useCallback(
+    (field: keyof GisViewDraftFields, setter: (value: string) => void) => {
+      const formatted = finalizeGisViewDraftField(field, viewDraftRef.current[field]);
+      setter(formatted);
+      patchViewDraft({ [field]: formatted });
+    },
+    [patchViewDraft],
+  );
+
   const committedViewKey = useMemo(
     () => buildGisConfiguredViewKey(view),
     [view.bearing, view.center[0], view.center[1], view.pitch, view.zoom],
@@ -168,11 +159,13 @@ export function ChartGisMapProjectPanel() {
   committedViewKeyRef.current = committedViewKey;
 
   useEffect(() => {
-    setCenterLng(String(view.center[0]));
-    setCenterLat(String(view.center[1]));
-    setZoom(String(view.zoom));
-    setBearing(String(view.bearing ?? 0));
-    setPitch(String(view.pitch ?? 0));
+    const draft = formatGisViewDraftFromView(view);
+    setCenterLng(draft.centerLng);
+    setCenterLat(draft.centerLat);
+    setZoom(draft.zoom);
+    setBearing(draft.bearing);
+    setPitch(draft.pitch);
+    viewDraftRef.current = draft;
   }, [committedViewKey]);
 
   useEffect(() => {
@@ -187,21 +180,20 @@ export function ChartGisMapProjectPanel() {
     }
   }, [cfg, enabledTileServices, mutateChartConfig, project.tileServiceId, tileServicesLoading]);
 
-  const commitCenter = () => applyViewDraft();
-
-  const commitZoom = () => applyViewDraft();
-
-  const commitBearing = () => applyViewDraft();
-
-  const commitPitch = () => applyViewDraft();
+  const commitCenterLng = () => blurViewField("centerLng", setCenterLng);
+  const commitCenterLat = () => blurViewField("centerLat", setCenterLat);
+  const commitZoom = () => blurViewField("zoom", setZoom);
+  const commitBearing = () => blurViewField("bearing", setBearing);
+  const commitPitch = () => blurViewField("pitch", setPitch);
 
   const captureCurrentView = () => {
     const captured = captureGisMapViewCamera(widget.id);
     if (!captured) return;
+    const normalized = normalizeGisProjectView(captured);
     mutateChartConfig((current) => {
       const currentProject = readGisProject(current);
       return writeGisProject(current, {
-        view: captured,
+        view: normalized,
         ...(currentProject.autoRotate ? { autoRotate: false } : {}),
       });
     });
@@ -435,10 +427,7 @@ export function ChartGisMapProjectPanel() {
 
         <div className="grid gap-2 rounded-lg border border-gray-200 p-2 dark:border-gray-800">
           <div className="flex items-center justify-between gap-2">
-            <InspectorFieldLabel
-              label="初始视角"
-              hint="修改数值即时同步地图（缩放 0–22）；拖拽地图后点「读取当前视角」写回配置。改视角会关闭球面自转。"
-            />
+            <InspectorFieldLabel label="初始视角" hint={GIS_VIEW_HINT} />
             <button
               type="button"
               className="shrink-0 text-[10px] text-brand-500 hover:underline"
@@ -454,14 +443,18 @@ export function ChartGisMapProjectPanel() {
             <Input
               className={INSPECTOR_CTRL}
               inputMode="decimal"
+              type="number"
+              min={GIS_VIEW_BOUNDS.lng.min}
+              max={GIS_VIEW_BOUNDS.lng.max}
+              step={GIS_VIEW_STEP}
               aria-label="中心经度"
               value={centerLng}
               onChange={(e) => {
                 setCenterLng(e.target.value);
                 patchViewDraft({ centerLng: e.target.value });
               }}
-              onBlur={commitCenter}
-              onKeyDown={onEnterCommit(commitCenter)}
+              onBlur={commitCenterLng}
+              onKeyDown={onEnterCommit(commitCenterLng)}
             />
           </div>
           <div className="grid gap-1.5">
@@ -469,14 +462,18 @@ export function ChartGisMapProjectPanel() {
             <Input
               className={INSPECTOR_CTRL}
               inputMode="decimal"
+              type="number"
+              min={GIS_VIEW_BOUNDS.lat.min}
+              max={GIS_VIEW_BOUNDS.lat.max}
+              step={GIS_VIEW_STEP}
               aria-label="中心纬度"
               value={centerLat}
               onChange={(e) => {
                 setCenterLat(e.target.value);
                 patchViewDraft({ centerLat: e.target.value });
               }}
-              onBlur={commitCenter}
-              onKeyDown={onEnterCommit(commitCenter)}
+              onBlur={commitCenterLat}
+              onKeyDown={onEnterCommit(commitCenterLat)}
             />
           </div>
         </div>
@@ -487,6 +484,10 @@ export function ChartGisMapProjectPanel() {
             <Input
               className={INSPECTOR_CTRL}
               inputMode="decimal"
+              type="number"
+              min={GIS_VIEW_BOUNDS.zoom.min}
+              max={GIS_VIEW_BOUNDS.zoom.max}
+              step={GIS_VIEW_STEP}
               aria-label="缩放"
               value={zoom}
               onChange={(e) => {
@@ -502,6 +503,10 @@ export function ChartGisMapProjectPanel() {
             <Input
               className={INSPECTOR_CTRL}
               inputMode="decimal"
+              type="number"
+              min={GIS_VIEW_BOUNDS.bearing.min}
+              max={GIS_VIEW_BOUNDS.bearing.max}
+              step={GIS_VIEW_STEP}
               aria-label="旋转"
               value={bearing}
               onChange={(e) => {
@@ -517,6 +522,10 @@ export function ChartGisMapProjectPanel() {
             <Input
               className={INSPECTOR_CTRL}
               inputMode="decimal"
+              type="number"
+              min={GIS_VIEW_BOUNDS.pitch.min}
+              max={GIS_VIEW_BOUNDS.pitch.max}
+              step={GIS_VIEW_STEP}
               aria-label="倾斜"
               value={pitch}
               onChange={(e) => {

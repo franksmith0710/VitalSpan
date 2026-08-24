@@ -93,7 +93,7 @@ describe("ChartGisMapProjectPanel initial view", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "GIS 底图" }));
-    const zoomField = screen.getByRole("textbox", { name: "缩放" });
+    const zoomField = screen.getByRole("spinbutton", { name: "缩放" });
     await user.clear(zoomField);
     await user.type(zoomField, "4");
 
@@ -136,13 +136,13 @@ describe("ChartGisMapProjectPanel initial view", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "GIS 底图" }));
-    const zoomField = screen.getByRole("textbox", { name: "缩放" });
+    const zoomField = screen.getByRole("spinbutton", { name: "缩放" });
     await user.clear(zoomField);
     await user.type(zoomField, "4");
-    expect(zoomField).toHaveValue("4");
+    expect(zoomField).toHaveValue(4);
 
     await user.click(screen.getByRole("button", { name: "bump" }));
-    expect(zoomField).toHaveValue("4");
+    expect(zoomField).toHaveValue(4);
   });
 
   it("captures live map camera into gisProject.view", async () => {
