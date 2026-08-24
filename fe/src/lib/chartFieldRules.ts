@@ -1,5 +1,5 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
-import type { ChartAxesConfig, DeAxisId } from "@/lib/chartDeAxis";
+import { deriveFieldRuleFromDeCatalog, type ChartAxesConfig, type DeAxisId } from "@/lib/chartDeAxis";
 import { getCachedCatalog, type ChartTypeCatalogItem } from "@/lib/chartRegistry";
 import { migrateChartConfigToDeAxes, syncLegacyFieldsFromAxes } from "@/lib/resolveChartEncoding";
 
@@ -26,6 +26,13 @@ const FALLBACK_FIELD_RULES: Record<string, ChartFieldRule> = {
   "bullet-graph": { minDimensions: 1, maxDimensions: 1, minMetrics: 2, maxMetrics: 3 },
   "stock-line": { minDimensions: 1, maxDimensions: 8, minMetrics: 4, maxMetrics: 4 },
   map: { minDimensions: 1, maxDimensions: 3, minMetrics: 1, maxMetrics: 1 },
+  "gis-map": {
+    minDimensions: 0,
+    maxDimensions: 5,
+    minMetrics: 0,
+    maxMetrics: 1,
+    note: "底图无需字段；可选散点或 OD 飞线叠加",
+  },
   heatmap: { minDimensions: 2, maxDimensions: 2, minMetrics: 1, maxMetrics: 1 },
   kpi: { minDimensions: 0, maxDimensions: 0, minMetrics: 1, maxMetrics: 1 },
   timeline: {
@@ -95,6 +102,19 @@ export function resolveChartFieldRule(chartType: string): ChartFieldRule {
   };
 }
 
+/** catalog/BE 与 DE 轴蓝图取较大上限，避免 OD 飞线 drill 槽在持久化时被裁切 */
+export function resolveEffectiveChartFieldRule(chartType: string): ChartFieldRule {
+  const rule = resolveChartFieldRule(chartType);
+  const deRule = deriveFieldRuleFromDeCatalog(chartType);
+  return {
+    minDimensions: Math.max(rule.minDimensions, deRule.minDimensions),
+    maxDimensions: Math.max(rule.maxDimensions, deRule.maxDimensions),
+    minMetrics: Math.max(rule.minMetrics, deRule.minMetrics),
+    maxMetrics: Math.max(rule.maxMetrics, deRule.maxMetrics),
+    note: rule.note,
+  };
+}
+
 function trimAxes(axes: ChartAxesConfig | undefined): ChartAxesConfig | undefined {
   if (!axes) return undefined;
   const next: ChartAxesConfig = {};
@@ -110,7 +130,7 @@ function trimAxes(axes: ChartAxesConfig | undefined): ChartAxesConfig | undefine
 /** 提交校验前：迁移 DE 轴 → 同步 legacy → 剔除空槽并按类型上限裁剪 */
 export function sanitizeChartFieldsForValidate(cfg: ChartViewConfig): ChartViewConfig {
   const synced = syncLegacyFieldsFromAxes(migrateChartConfigToDeAxes(cfg));
-  const rule = resolveChartFieldRule(synced.chartType);
+  const rule = resolveEffectiveChartFieldRule(synced.chartType);
   return {
     ...synced,
     axes: trimAxes(synced.axes),

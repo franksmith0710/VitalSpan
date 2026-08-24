@@ -6,7 +6,7 @@ import {
   type DeAxisId,
 } from "@/lib/chartDeAxis";
 import { ensureDeAxisCapacity, migrateChartConfigToDeAxes } from "@/lib/resolveChartEncoding";
-import { resolveChartFieldRule } from "@/lib/chartFieldRules";
+import { resolveChartFieldRule, resolveEffectiveChartFieldRule } from "@/lib/chartFieldRules";
 
 export type ChartFieldSlotHints = {
   dimensionLabel: string;
@@ -101,7 +101,7 @@ export function chartRenderRequiredCounts(chartType: ChartType | string): {
 /** 切换图表类型时补齐 DE 轴结构并同步 dimensions/metrics 投影 */
 export function ensureChartSlotCapacity(cfg: ChartViewConfig): ChartViewConfig {
   const migrated = migrateChartConfigToDeAxes(cfg);
-  const rule = resolveChartFieldRule(migrated.chartType);
+  const rule = resolveEffectiveChartFieldRule(migrated.chartType);
   const withAxes = ensureDeAxisCapacity(migrated);
   const dimensions = [...(withAxes.dimensions ?? [])].slice(0, rule.maxDimensions);
   const metrics = [...(withAxes.metrics ?? [])].slice(0, rule.maxMetrics);

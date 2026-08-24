@@ -2,6 +2,14 @@ import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { activeFieldRefs } from "@/lib/chartConfigState";
 import { parseMetricValue } from "@/lib/buildChartRenderModel";
 import { isGisFlowEnabled } from "@/components/charts/engine/maplibre/gisProject";
+import { migrateChartConfigToDeAxes, syncLegacyFieldsFromAxes } from "@/lib/resolveChartEncoding";
+
+/** 从 DE 轴投影读取 OD 槽位，避免 axes/dimensions 漂移时 hint/渲染读错列 */
+export function resolveGisMapFlowDimensions(config: ChartViewConfig) {
+  return activeFieldRefs(
+    syncLegacyFieldsFromAxes(migrateChartConfigToDeAxes(config)).dimensions,
+  );
+}
 
 export type GisFlowSegment = {
   fromLng: number;
@@ -71,8 +79,10 @@ export function buildGisFlowGeoJson(
 ): GeoJSON.FeatureCollection | null {
   if (!isGisFlowEnabled(config.nativeBody?.gisProject)) return null;
 
-  const dims = activeFieldRefs(config.dimensions);
-  const metrics = activeFieldRefs(config.metrics);
+  const dims = resolveGisMapFlowDimensions(config);
+  const metrics = activeFieldRefs(
+    syncLegacyFieldsFromAxes(migrateChartConfigToDeAxes(config)).metrics,
+  );
   if (dims.length < 4 || rows.length === 0) return null;
 
   const fromLngField = dims[0]!.field;

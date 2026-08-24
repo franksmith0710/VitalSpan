@@ -2,6 +2,7 @@ import { classifyDatasetField } from "@/components/dashboard/datasetFieldClassif
 import { activeFieldRefs } from "@/lib/chartConfigState";
 import { isGisFlowEnabled } from "@/components/charts/engine/maplibre/gisProject";
 import { GIS_MAP_FLOW_SAMPLE_SQL } from "@/lib/gisMapFlow";
+import { resolveGisMapFlowDimensions } from "@/components/charts/engine/maplibre/gisMapFlow";
 import { GIS_MAP_SCATTER_SAMPLE_SQL } from "@/lib/gisMapScatter";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
@@ -146,7 +147,7 @@ export function resolveGisMapDataHint(
 }
 
 function resolveGisMapFlowDataHint(config: ChartViewConfig, columns: string[]): GisMapDataHint {
-  const dims = activeFieldRefs(config.dimensions);
+  const dims = resolveGisMapFlowDimensions(config);
   const metrics = activeFieldRefs(config.metrics);
   const fromLng = dims[0]?.field?.trim();
   const fromLat = dims[1]?.field?.trim();

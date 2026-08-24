@@ -6,8 +6,8 @@
 | 核验范围 | `docs/automate/plans/2026-08-24-gis-map-flow-overlay.md` 全清单 + 同会话「初始视角两位小数」 |
 | 锚点 | `gisMapFlow*.ts` · `gisProject.flow` · `ChartGisMapFlowPanel` · `GisMapView.tsx` |
 | 总体判定 | **PARTIAL** |
-| **总分 / 档位** | **6/10 · C** |
-| 状态 | approved-fix |
+| **总分 / 档位** | **7/10 · B** |
+| 状态 | approved-fix（P0/P1 走查 2026-08-24 18:58） |
 | **sampling** | `full`（plan 10 改动区 + 9 面板控件 + 1 数据按钮） |
 
 ## 1. 核验标准与预期
@@ -127,7 +127,13 @@ ChartGisMapFlowPanel
 | T2 弧线可见 | 1 | 0 | 2 | 1 | 1 | 5 | D | UNVERIFIED |
 | T1 面板 | 2 | 1 | 2 | 1 | 1 | 7 | B | PARTIAL |
 | T5 单测 | 2 | 2 | 1 | 2 | 1 | 8 | B | PARTIAL |
-| **总体** | — | — | — | — | — | **6** | **C** | **PARTIAL** |
+| **总体** | — | — | — | — | — | **7** | **B** | **PARTIAL** |
+
+**走查中修复（2026-08-24）**
+
+1. `applyGisMapFlowConfig` / `applyGisMapScatterConfig`：切换预设前 `axes: undefined`，避免 migrate 优先旧 axes 导致槽位 UI 不刷新。
+2. `sanitizeChartFieldsForValidate`：用 `resolveEffectiveChartFieldRule`（catalog 与 DE 蓝图取 max），保存时不再裁掉 OD drill 维。
+3. `resolveGisMapFlowDimensions`：hint/GeoJSON 从 DE 轴投影读 from/to，避免 axes/dimensions 漂移。
 
 **打通但不对**：无（C=0 项为「未验可见性」而非验错）  
 **假功能**：E04–E06 仅 GATE，不能标 REAL
@@ -136,11 +142,12 @@ ChartGisMapFlowPanel
 
 | 步骤 | 操作 | 期望 | 实际 | 一致？ | 证据 |
 |------|------|------|------|--------|------|
-| 1 | vitest plan 命令集 + scatter/project | 全绿 | **29/29 passed** | ✅ | 2026-08-24 18:42 run |
+| 1 | vitest plan 命令集 + FlowPanel/hint/sanitize | 全绿 | **39+ passed**（含新增 sanitize/flow 回归） | ✅ | 2026-08-24 18:58 |
 | 2 | pytest catalog parity | 绿 | **4 passed** | ✅ | 同会话 |
 | 3 | Read plan 改动 10 项 | 文件均存在 | grep 命中全部 | ✅ | 见 §2 |
-| 4 | BROWSER gis-map 预览 + OD 示例 | 见弧线 | **未执行** | ❌ | — |
-| 5 | gisMapDataHint flow 分支 | 有单测 | **0 flow case** | ❌ | gisMapDataHint.test.ts |
+| 4 | BROWSER 编辑页 OD 一键 + 样式面板 | 槽位 from/to + flow 开关 | **UI 通**；散点→OD 曾槽位不刷新（已修 `axes: undefined`）；保存曾裁切 drill 维（已修 effective rule） | ⚠️ | `localhost:5173` edit 2026-08-24 |
+| 5 | BROWSER 更新图表数据 + 见弧线 | 6 条枢纽 OD 弧线 | **validate 失败**：`CHART_DATASET_REQUIRED`（OD 示例为 SQL 模式，后端仅 Dataset 出数）→ 无底图弧线证据 | ❌ | 同页「更新图表数据」 |
+| 6 | gisMapDataHint flow 分支 | 有单测 | **3 flow case** | ✅ | gisMapDataHint.test.ts |
 
 ## 5. 修复文档
 
@@ -195,7 +202,7 @@ ChartGisMapFlowPanel
 | 9 | data hint | ✅ | ❌ flow | — | **代码有、测不足** |
 | 10 | viz.md | ✅ | — | — | **已实现** |
 
-**结论**：**代码层面 plan 10/10 已落地**；**真实性验收未闭环**（总体 PARTIAL 6/10，不能标 REAL）。
+**结论**：**代码层面 plan 10/10 已落地**；**真实性验收 PARTIAL 7/10**（UI/单测闭环；**地图见弧线仍 blocked**：OD 示例 SQL 与 `CHART_DATASET_REQUIRED` 冲突，需 Dataset 化 demo 或 manual 数据绑定后再 BROWSER 复验）。
 
 同会话 **初始视角两位小数**（T10）：✅ 已实现且有单测/面板测。
 
