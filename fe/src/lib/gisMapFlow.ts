@@ -16,6 +16,8 @@ FROM (
 export function applyGisMapFlowConfig(cfg: ChartViewConfig, dataSourceId?: string): ChartViewConfig {
   const withSlots = ensureChartSlotCapacity({
     ...cfg,
+    // 散点/手绑后 axes 已存在；migrate 会优先 axes 并覆盖 dimensions，须先清空再写 OD 槽位
+    axes: undefined,
     mode: "sql",
     sql: GIS_MAP_FLOW_SAMPLE_SQL,
     datasetId: undefined,

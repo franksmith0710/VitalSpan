@@ -17,6 +17,7 @@ export function applyGisMapScatterConfig(
 ): ChartViewConfig {
   return ensureChartSlotCapacity({
     ...cfg,
+    axes: undefined,
     mode: "dataset",
     sql: undefined,
     datasetId: DEMO_MAP_SCATTER_DATASET_ID,

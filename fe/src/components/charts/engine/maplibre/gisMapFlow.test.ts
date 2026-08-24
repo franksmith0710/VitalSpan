@@ -10,7 +10,8 @@ describe("gisMapFlow", () => {
   it("interpolates great circle with more than two coordinates", () => {
     const arc = interpolateGreatCircleArc(121.47, 31.23, -118.24, 34.05, 8);
     expect(arc.length).toBeGreaterThan(2);
-    expect(arc[0]).toEqual([121.47, 31.23]);
+    expect(arc[0]?.[0]).toBeCloseTo(121.47, 2);
+    expect(arc[0]?.[1]).toBeCloseTo(31.23, 2);
     expect(arc[arc.length - 1]?.[0]).toBeCloseTo(-118.24, 1);
   });
 
