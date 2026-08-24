@@ -6,8 +6,8 @@
 | 核验范围 | `gis-map` 经纬度散点：数据绑定、GeoJSON/sizeNorm、样式配置、样式面板、MapLibre 运行时同步 |
 | 锚点 | `fe/src/components/charts/engine/maplibre/gisMapOverlay*.ts` · `gisProject.ts` · `GisMapView.tsx` · `ChartGisMapOverlayPanel.tsx` |
 | 总体判定 | **PARTIAL** |
-| **总分 / 档位** | **6/10 · C** |
-| 状态 | approved-fix（P0 已落地 2026-08-24） |
+| **总分 / 档位** | **7/10 · B** |
+| 状态 | approved-fix（P0 已落地 2026-08-24）· BROWSER 走查 2026-08-24 |
 | **sampling** | `full`（散点子系统 12 实体 + 10 面板控件） |
 
 ## 1. 核验标准与预期（来自用户/对话）
@@ -104,7 +104,7 @@ ChartGisMapOverlayPanel
 | 必验实体 | 12 |
 | GATE only | 5（E7–E10、E12） |
 | CHAIN | 4（E1–E4、E11） |
-| UI / BROWSER | 0 |
+| UI / BROWSER | 1（E9 底图 + autoFit；散点见点待放大复验） |
 | NONE（未独立验） | 2（E5、E6） |
 | REAL 达标 | 0/12（T7 提示子项可单算 REAL，非散点渲染主路径） |
 | **逐一校验** | **否** — 12 实体中 0 项达 UI/BROWSER；10 个面板控件 0 项 UI 验 |
@@ -131,7 +131,11 @@ ChartGisMapOverlayPanel
 | 2 | Read `GisMapView` style deps | 数据变更不触发 `JSON.stringify(style)` | `overlayGeoJson` 在 style useMemo deps | ❌ | `GisMapView.tsx:159-171` |
 | 3 | Grep `ChartGisMapOverlayPanel.test` | 存在 UI 单测 | **无文件** | ❌ | glob 0 命中 |
 | 4 | Grep demo dataset lng/lat | 仓内 seed/SQL 示例 | 仅 `gisMapDataHint.ts` 文案 | ❌ | 无 seed 文件 |
-| 5 | BROWSER 绑定 lng/lat 见散点 | 地球上有圆点 | **未执行**（无 MCP 走查） | — | UNVERIFIED |
+| 5 | BROWSER 绑定 lng/lat 见散点 | 地球上有圆点 | 预览模式 PMTiles 底图 + autoFit 东亚；MapLibre 8 层；API 500 行；**散点圆点截图未清晰辨认** | ⚠️ | `localhost:5173` 预览 2026-08-24 |
+| 6 | seed `demo-map-scatter` | 一键接入可用 | 需先 `python scripts/seed-demo-package.py`；数据集列表缓存未刷新时会误报「尚未就绪」 | ⚠️ | 走查中已 seed；刷新数据集列表后通过 |
+| 7 | T7 错绑 province | 黄条 warn、无散点 | 编辑态见「地区字段不能当经纬度…」 | ✅ | 首屏截图 |
+| 8 | 一键接入 de_map_heat | 槽位 lng/lat/point_name/amount | 按钮 + 校验通过文案 | ✅ | ChartGisMapScatterSetup |
+| 9 | 编辑态实时预览 | 选中组件可见底图 | 多组件看板编辑态 GIS 区黑屏（mount gate / 未 inView） | ❌ | 预览模式才挂载 canvas |
 
 ## 5. 修复文档（P0）
 
@@ -188,6 +192,24 @@ ChartGisMapOverlayPanel
 | T4 | 新增 `ChartGisMapOverlayPanel.test.tsx`（5 项 UI 接线） | vitest 5/5 绿 |
 
 **复验后判定**：T5/T4 由 STUB/PARTIAL 提升至 **CHAIN/UI**；总体仍 **PARTIAL**（缺 BROWSER 见点、demo Dataset）。
+
+## 9. BROWSER 走查记录（2026-08-24）
+
+**环境**：`localhost:5173` · 看板 `58e63e97-a12b-44e5-a8ed-e2af5b7aacdc` · admin · sample-mysql + PMTiles 已登记
+
+| # | 检查项 | 结果 | 备注 |
+|---|--------|------|------|
+| 1 | GIS 底图（PMTiles） | ✅ | 预览模式可见东亚底图 |
+| 2 | 错绑 province → 黄条 | ✅ | 编辑态 warn，无散点 |
+| 3 | 一键接入 de_map_heat | ✅ | 槽位自动填充；需 seed + 刷新数据集列表 |
+| 4 | 数据集 execute | ✅ | API 返回 500 行 lng/lat/amount |
+| 5 | autoFit | ✅ | 预览自动定位东亚/中国范围 |
+| 6 | 散点可见 + cluster | ⚠️ | overlay 层已挂载（maplibregl 8 层）；截图未清晰看到圆点/cluster |
+| 7 | 点击 tooltip | — | 未在截图坐标系下稳定复现 |
+| 8 | 样式 Tab 散点叠加 | — | 本次未逐控件改色 |
+| 9 | 编辑态 canvas | ❌ | 编辑页 GIS 区长期黑屏，预览模式才渲染 |
+
+**走查结论**：链路 **大部分打通**；交付前建议：① seed 后提示刷新数据集缓存；② 编辑态 mount gate 导致 GIS 难即时预览；③ 放大至 city 级复验散点/cluster/tooltip。
 
 ---
 
