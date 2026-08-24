@@ -1,5 +1,12 @@
 # vs-ai-spec 变更
 
+## 2026-08-24 (工作区插件形态 · 文档收口)
+
+- 产品对接真源：[deeptalk-product/WORKSPACE-PLUGIN-CONTRACT.md](./deeptalk-product/WORKSPACE-PLUGIN-CONTRACT.md)
+- 新增 [SPECIAL-WORKSPACE-PLUGIN-TASK.md](./deeptalk-product/SPECIAL-WORKSPACE-PLUGIN-TASK.md) · [PREFLIGHT-DUAL-TRACK.md](./deeptalk-product/PREFLIGHT-DUAL-TRACK.md)
+- 修订 `deeptalk-product/README` · `AGENT-SYSTEM-PROMPT` · `E2E-CHECKLIST` · `IRON-RULES` §7 · `DEEPTALK-AGENT-PROMPT` · Cursor 规则
+- `integrations/vitalspan/` + `executor/cli.py` 降级为 **开发/CI 备用**；产品路径 = vitalspan 插件 zip + 特殊工作区
+
 ## 2026-08-20 (MVP 无源码上传)
 
 - 新增 [MVP-UPLOAD.md](./MVP-UPLOAD.md) · `tools/mvp-upload.py` · 根目录 `upload-component.ps1`

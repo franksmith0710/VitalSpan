@@ -69,8 +69,12 @@ DeepTalk 集成项目  ──HTTP──►  VitalSpan 平台能力
 
 | 项 | 值 |
 |----|-----|
-| 桌面包 MVP | `C:\Users\<你>\Desktop\vs-ai-spec-deeptalk-test`（`scripts/sync-vs-ai-spec-pack.ps1`） |
-| **DeepTalk 产品仓** | `integrations/vitalspan/`（`scripts/sync-vs-ai-spec-to-deeptalk-repo.ps1`） |
+| **产品对接（定论）** | 安装 **vitalspan 插件 zip** + 可选 **VitalSpan BI 特殊工作区** → [deeptalk-product/WORKSPACE-PLUGIN-CONTRACT.md](./deeptalk-product/WORKSPACE-PLUGIN-CONTRACT.md) |
+| 插件源码 | `deeptalk-plugins/plugins/vitalspan/` → `npm run release` |
+| 桌面包 MVP | `vs-ai-spec-deeptalk-test`（`scripts/sync-vs-ai-spec-pack.ps1`） |
+| 开发备用 sync | `integrations/vitalspan/`（`scripts/sync-vs-ai-spec-to-deeptalk-repo.ps1` · executor/cli · CI） |
 | 产品 Agent 提示词 | [deeptalk-product/AGENT-SYSTEM-PROMPT.md](./deeptalk-product/AGENT-SYSTEM-PROMPT.md) |
 | DeepTalk 提示词（简） | [DEEPTALK-AGENT-PROMPT.md](./DEEPTALK-AGENT-PROMPT.md) |
 | 仓内真源 | `docs/api/vs-ai-spec/` |
+
+**5173 验收不变**：wf2/wf3 完成证据仍为 `artifactId` / `dashboardId`；工作区 iframe 只做连接与跳转，不重做完整 BI 编辑器。

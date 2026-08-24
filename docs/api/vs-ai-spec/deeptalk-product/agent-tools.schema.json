@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "DeepTalk VitalSpan Agent Tools",
-  "description": "Register in DeepTalk Agent. Plugin tools run in vitalspan plugin; legacy tools via integrations/vitalspan/executor/cli.py",
+  "description": "DeepTalk VitalSpan Agent Tools. Primary: vitalspan plugin components.tools (Node fetch). Legacy dev/CI: integrations/vitalspan/executor/cli.py",
   "tools": [
     {
       "name": "vitalspan_health_check",
