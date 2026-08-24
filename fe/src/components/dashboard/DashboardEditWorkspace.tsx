@@ -128,7 +128,7 @@ export function DashboardEditWorkspace({
   return (
     <div
       className={cn(
-        "flex min-h-0 flex-1 gap-1.5 overflow-hidden [&>*]:min-h-0",
+        "flex min-h-0 flex-1 gap-0 overflow-hidden [&>*]:min-h-0",
         className,
       )}
     >
@@ -165,7 +165,7 @@ export function DashboardEditWorkspace({
         <>
           <WidgetEditRailResizeHandle
             onPointerDown={onShellResizePointerDown}
-            className="w-[5px] shrink-0"
+            className="w-1 shrink-0 -mx-px"
             ariaLabel="调整画布与配置栏宽度"
             testId="dashboard-edit-rail-shell-resize-handle"
           />

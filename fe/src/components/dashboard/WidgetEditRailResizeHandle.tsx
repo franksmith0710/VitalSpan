@@ -24,7 +24,7 @@ export function WidgetEditRailResizeHandle({
       onPointerDown={onPointerDown}
       className={cn(
         "group relative z-[2] h-full shrink-0 cursor-col-resize touch-none select-none",
-        "bg-gray-200/80 hover:bg-brand-200/80 dark:bg-gray-800 dark:hover:bg-brand-500/25",
+        "bg-transparent hover:bg-brand-100/80 dark:hover:bg-brand-500/15",
         className,
       )}
       data-testid={testId}

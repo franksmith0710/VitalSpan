@@ -228,7 +228,7 @@ export function ChartGisMapProjectPanel() {
       data-testid="chart-gis-map-project-panel"
     >
       <div className={INSPECTOR_SECTION_GAP}>
-        <div className="grid gap-1.5 rounded-lg border border-gray-200 p-2 dark:border-gray-800">
+        <div className="grid gap-1.5">
           <InspectorFieldLabel label="全球 PMTiles 服务" />
           <Select
             value={project.tileServiceId ?? ""}

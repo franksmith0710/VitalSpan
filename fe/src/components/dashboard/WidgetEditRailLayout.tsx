@@ -76,7 +76,7 @@ export function WidgetEditRailLayout({
       </ExpandedRailPanel>
       <WidgetEditRailResizeHandle
         onPointerDown={onResizePointerDown}
-        className="w-[5px] shrink-0"
+        className="w-1 shrink-0 -mx-px"
       />
       <ExpandedRailPanel
         label={rightLabel}
