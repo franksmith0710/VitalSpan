@@ -314,10 +314,11 @@ cd deeptalk-plugins && npm run release
 
 | 你现在做 | 命令/动作 |
 |----------|-----------|
-| **1. 定 A 或 B** | 回复一句 → 写入契约 §5 |
-| **2. Phase 1 只改文档** | 可说「按 Phase 1 改契约和 Task」 |
-| **3. 写 plan** | `/plan-create` 附本报告 §9 |
-| **4. B 且 spike 过** | 再说「按 Phase 3 实现」 |
+| ~~**1. 定 A 或 B**~~ | ✅ **B**（2026-08-24） |
+| ~~**2. Phase 1 只改文档**~~ | ✅ 契约 §1.1/§3/§5 + Task 门控/spike/Task8/目录 |
+| **3. Phase 2 DeepTalk spike** | 真机跑 Task 文首 **Spike 10 条**（≥8/10） |
+| **4. Phase 3** | spike 通过后：「按 Phase 3 实现 Task 1–9」 |
+| **5. 写 plan** | 可选 `/plan-create` 附本报告 §9 |
 
 **推荐默认路径（资源一般）**：**Phase 0 定 B 意图 → Phase 1 文档 → Phase 2 spike → 再决定是否 Phase 3**。
 

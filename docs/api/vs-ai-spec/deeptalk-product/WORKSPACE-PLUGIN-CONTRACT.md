@@ -17,12 +17,23 @@
 ```
 用户安装 vitalspan 插件
     → 新建「VitalSpan BI」特殊工作区（向导写入 instanceConfig）
-    → 工作区视图：连接状态 / 资源列表 / 跳转 5173（iframe 内 pluginExec 取数）
+    → 工作区视图：连接状态 / health / **外链跳转 5173**（iframe 内仅 pluginExec 取数，**不**嵌 5173 编辑器）
     → Agent 聊天仍可调 components.tools 做 wf2/wf3
     → 正式 BI 编辑与验收：5173（artifactId / dashboardId）
 ```
 
 **禁止**再向客户/内部描述「对接 = 改 DeepTalk 源码 + `integrations/vitalspan/executor/cli.py`」。
+
+### 1.1 壳 iframe 与 VitalSpan「不做 BI 沙箱」（必读）
+
+| 层 | 是否 iframe | 与 gis/5173 铁律 |
+|----|-------------|------------------|
+| **DeepTalk 插件视图**（home / 向导） | 是（宿主 CSP 容器） | **不冲突** — 不是 BI 引擎 |
+| **VitalSpan 5173 管理面 / 大屏 / 样式编辑** | **否**（外链或独立窗口） | 真 UI 仍在 5173 |
+| **gis-map / GeoLibre 整应用** | **禁止**嵌入 DeepTalk iframe | 与 ADR-12 一致 |
+| **customViz 正式渲染** | 在 5173 父页 mount | 不在 DeepTalk iframe 内交付 |
+
+Task 文档中的「沙箱内取数」= **DeepTalk 插件视图 CSP**（`connect-src 'none'` → `pluginExec`），**不是**把 VitalSpan BI 放进 sandbox。
 
 ---
 
@@ -53,21 +64,23 @@
 
 ---
 
-## 3. 插件仓应交付什么（当前缺口 → Task 1–9）
+## 3. 插件仓应交付什么（B 轨 · 实施状态）
 
-现有 [`deeptalk-plugins/plugins/vitalspan`](../../../../deeptalk-plugins/plugins/vitalspan) **v0.3.0**：
+**生产基线（release）**：[`deeptalk-plugins/plugins/vitalspan`](../../../../deeptalk-plugins/plugins/vitalspan) **v0.2.16** — `components.tools` ×14 + `skills/vitalspan-bi`。
+
+**B 轨目标（Phase 3 完成后发 v0.3.x）**：
 
 | 组件 | 状态 | 说明 |
 |------|------|------|
-| `components.tools` | ✅ 已有 | Agent wf2/wf3 |
-| `workspace-templates/*.workspace.json` | ✅ `vitalspan.bi.default` | 「新建工作区」列表 |
-| `views/home.js` | ✅ B 轨 MVP | 绑定摘要 · health · 跳 5173 |
-| `views/workspace-setup.js` | ✅ | 创建向导 |
-| `execTools` `vitalspan_health` | ✅ B 轨 MVP | iframe 内 health（无 fetch） |
-| `scripts/assemble-plugin.mjs` | ✅ | 校验可安装布局 |
-| iframe 内 list/compose | ⏸ 二期（C 轨） | 仍用 Agent tools + 5173 |
+| `components.tools` | ✅ v0.2.16 已有 | Agent wf2/wf3；Phase 3 须 **smoke 回归** |
+| `workspace-templates/vitalspan.bi.default` | ⏳ Phase 3 | 「新建工作区」列表 |
+| `views/home.js` | ⏳ Phase 3 | 绑定摘要 · health · **外链** 5173 |
+| `views/workspace-setup.js` | ⏳ Phase 3 | 创建向导 |
+| `execTools` `vitalspan_health` | ⏳ Phase 3 | iframe 内 health（无 fetch） |
+| `scripts/assemble-plugin.mjs` | ⏳ Phase 3 | 校验可安装布局（与 `release.mjs` 一致） |
+| iframe 内 list/compose | ⏸ C 轨二期 | 仍用 Agent tools + 5173 |
 
-实施顺序与验收：**严格**按 [SPECIAL-WORKSPACE-PLUGIN-TASK.md](./SPECIAL-WORKSPACE-PLUGIN-TASK.md) Task 1→9。
+**门控**：Phase 2 DeepTalk spike ≥8/10 通过后，才执行 Task 1–9。见 [执行评审](../../../reviews/grounded/2026-08-24-deeptalk-vitalspan-how-to-execute-adjudication.md)。
 
 ---
 
@@ -103,15 +116,24 @@
 
 ---
 
-## 5. 轨道决策（2026-08-24 · 已选 **B 轻量工作区**）
+## 5. 轨道决策（Phase 0 · 已闭合）
+
+| 字段 | 值 |
+|------|-----|
+| **决策** | **B — 轻量工作区** |
+| **日期** | 2026-08-24 |
+| **确认** | 用户回复「b」· Phase 0 已闭合 |
+| **范围** | 模板 + 向导 + home（health + 外链 5173）+ execTool `vitalspan_health` |
+| **不含** | iframe 内 compose/upload/list（C 轨）；iframe 内嵌 5173 / gis |
+| **下一步** | Phase 1 文档（本契约/Task 已对齐）→ **Phase 2 DeepTalk spike** → Phase 3 Task 1–9 |
 
 | 选项 | 范围 | 决策 |
 |------|------|------|
 | A 维持现状 | 仅 Agent 工具 + 5173 | 否 |
-| **B 轻量工作区** | 模板 + 导航 + 连接/health + 跳 5173 + 最小 execTools | **是（MVP）** |
-| C 完整 BI 工作区 | iframe 内 list/compose/delete | 否（二期；仍不替代 5173 编辑器） |
+| **B 轻量工作区** | 模板 + 导航 + 连接/health + 跳 5173 + 最小 execTools | **是** |
+| C 完整 BI 工作区 | iframe 内 list/compose/delete | 否（二期） |
 
-B 范围：视图 `vitalspan:home` · 向导 `vitalspan:workspace-setup` · execTool `vitalspan_health` · **不含** iframe 内 compose/upload。
+B 视图注册名：`vitalspan:home` · `vitalspan:workspace-setup` · execTool `vitalspan_health`。
 
 ---
 

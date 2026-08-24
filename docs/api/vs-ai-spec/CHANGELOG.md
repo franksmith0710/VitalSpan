@@ -1,5 +1,13 @@
 # vs-ai-spec 变更
 
+## 2026-08-24 (B 轨决策 · Phase 0/1)
+
+- Phase 0：**B 轻量工作区** 决策闭合（用户确认）
+- Phase 1：`WORKSPACE-PLUGIN-CONTRACT` §1.1 iframe 口径 · §3 改回 v0.2.16 基线 · §5 正式决策
+- `SPECIAL-WORKSPACE-PLUGIN-TASK.md`：Phase 2 spike 门控 · B-min Task 8 · 目录对齐 release.mjs
+- 评审落盘：`docs/reviews/grounded/2026-08-24-deeptalk-vitalspan-*-adjudication.md`
+- **下一步**：Phase 2 DeepTalk spike（≥8/10）通过后 Phase 3 Task 1–9
+
 ## 2026-08-24 (工作区插件形态 · 文档收口)
 
 - 产品对接真源：[deeptalk-product/WORKSPACE-PLUGIN-CONTRACT.md](./deeptalk-product/WORKSPACE-PLUGIN-CONTRACT.md)

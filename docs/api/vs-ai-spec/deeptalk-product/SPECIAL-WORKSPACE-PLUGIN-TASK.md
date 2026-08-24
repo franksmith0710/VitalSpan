@@ -1,12 +1,41 @@
 ﻿# VitalSpan 特殊工作区插件 — 实施计划
 
-> 插件仓：deeptalk-plugins/plugins/vitalspan/ · 产品契约：[WORKSPACE-PLUGIN-CONTRACT.md](./WORKSPACE-PLUGIN-CONTRACT.md) · 轨道：**B 轻量工作区**（home + workspace-setup + vitalspan_health execTool）
+> 插件仓：`deeptalk-plugins/plugins/vitalspan/` · 契约：[WORKSPACE-PLUGIN-CONTRACT.md](./WORKSPACE-PLUGIN-CONTRACT.md)  
+> **轨道：B 轻量工作区**（Phase 0 已决策 · 2026-08-24）  
+> **执行顺序**：[Phase 2 spike](../../../reviews/grounded/2026-08-24-deeptalk-vitalspan-how-to-execute-adjudication.md) **通过后再做 Task 1–9**
 
 > **执行者**：按任务顺序改目标插件仓库。每完成一节就勾选。  
 > **底座**：`deeptalk` 只读，不改引擎、不加跨仓 alias、不申请专用 `window.*`。  
 > **替换规则**：标识已在 Task 1 冻结（见 `docs/PLUGIN_IDS.md`）；禁止再改 plugin-id / template-id / view 名。
 
-**目标：** 做出一个可安装的专业工作区插件：能出现在「新建工作区」、能写入实例绑定、能用左侧导航打开全页业务视图、能在沙箱内取数和跳转。
+**目标：** 做出一个可安装的专业工作区插件：能出现在「新建工作区」、能写入实例绑定、能用左侧导航打开全页业务视图、能在 **DeepTalk 插件壳 CSP** 内通过 `pluginExec` 取数并 **外链** 5173。
+
+**做法：** 插件提供模板和视图；宿主负责安装、创建工作区、注入 `instanceConfig`、路由和 iframe 桥。业务语义只存在插件仓。
+
+**Phase 门控（必守）**
+
+| Phase | 内容 | 通过标准 |
+|-------|------|----------|
+| 0 | 轨道决策 | ✅ B（2026-08-24） |
+| 1 | 契约 + 本文档对齐 | 契约 §3/§5 与本文一致 |
+| **2** | **DeepTalk spike** | 下方 **Spike 10 条 ≥8/10** |
+| 3 | Task 1–9 | smoke 绿 + Task 9 十条 |
+| 4 | E2E | [E2E-CHECKLIST](./E2E-CHECKLIST.md) §1–§5 |
+
+**Spike 10 条（Phase 2 · 用 v0.2.16 zip 或最小 mock）**
+
+1. 插件 settings loaded  
+2. 新建工作区列表有 **VitalSpan BI**  
+3. 向导 `vitalspan:workspace-setup` 可加载  
+4. `workspaceSetup.complete` → 磁盘 `instanceConfig.vitalspan`  
+5. 导航打开 `vitalspan:home`  
+6. iframe 无对 `:8000` 的 `fetch`  
+7. `pluginExec('vitalspan_health')` 成功（需 execTool）  
+8. 外链 5173 正常  
+9. 未绑定显示横幅  
+10. 连续切视图 20 次稳定  
+
+**未过 spike → 禁止开始 Task 1。**
 
 **做法：** 插件提供模板和视图；宿主负责安装、创建工作区、注入 `instanceConfig`、路由和 iframe 桥。业务语义只存在插件仓。
 
@@ -35,29 +64,36 @@
 
 ---
 
-## 完成后的目录
+## 完成后的目录（与 `release.mjs` 打 zip 一致 · 根上即 `plugin.json`）
 
 ```text
 deeptalk-plugins/plugins/vitalspan/
-├── plugin/
-│   ├── plugin.json
-│   ├── workspace-templates/vitalspan.workspace.json
-│   ├── views/home.js              # 构建产物
-│   ├── views/workspace-setup.js       # 有绑定时才要
-│   └── exec-tools/load-instance.cjs   # 需要外网/本机服务时才要
+├── plugin.json                        # 根 manifest（非 plugin/ 子目录）
+├── workspace-templates/
+│   └── vitalspan.bi.default.workspace.json
+├── views/
+│   ├── home.js                        # 构建产物
+│   └── workspace-setup.js
+├── exec-tools/
+│   └── vitalspan-health.cjs           # B 轨仅此一个
+├── dist/                              # components.tools（已有）
+├── skills/
+├── assets/
 ├── src/
-│   ├── ids.ts                         # 冻结后的标识常量
-│   ├── pluginRuntime.ts               # 宿主桥类型
-│   ├── instanceConfig.ts              # 读/校验 instanceConfig
-│   ├── hostBridge.ts                  # viewData 监听、navigate、pluginExec
-│   ├── pages/WorkspaceSetupPage.tsx   # 可选
-│   └── pages/HomePage.tsx
+│   ├── ids.ts
+│   ├── pluginRuntime.ts
+│   ├── instanceConfig.ts
+│   ├── hostBridge.ts
+│   ├── readWorkspaceMeta.ts
+│   └── views/*-entry.ts               # esbuild → views/*.js
 ├── scripts/
-│   └── assemble-plugin.mjs            # 把构建产物拷进 plugin/
-└── docs/PLUGIN_IDS.md                 # 与 ids.ts 同步的人读表
+│   ├── build-views.mjs
+│   ├── assemble-plugin.mjs
+│   └── smoke.mjs
+└── docs/PLUGIN_IDS.md
 ```
 
-没有绑定、没有外部服务时，删掉向导、`exec-tools` 和对应源文件，不要留空壳。
+C 轨扩展 execTools（如 `list-artifacts`）放 **二期**，不在 B Task 8 必做范围。
 
 ---
 
@@ -88,7 +124,7 @@ export const DOMAIN_KEY = "vitalspan" as const;
 export const VIEW_A = "home" as const;
 ```
 
-单测断言：`plugin/plugin.json` 的 `name`/`version`、模板的 `id`/`version`、向导提交里的 `plugin` 快照，三处与 `ids.ts` 一致。
+单测断言：根目录 `plugin.json` 的 `name`/`version`、模板的 `id`/`version`、向导提交里的 `plugin` 快照，三处与 `ids.ts` 一致。
 
 - [ ] 标识表已填
 - [ ] `src/ids.ts` 已写
@@ -101,7 +137,7 @@ export const VIEW_A = "home" as const;
 
 **完成标准：** 宿主能加载该插件；设置页 `workspaceTemplates`、`views` 为 loaded。
 
-创建 `plugin/plugin.json`：
+创建根目录 `plugin.json`（路径相对于插件仓根，见上方目录树）：
 
 ```json
 {
@@ -434,21 +470,44 @@ navigateWorkspace({ target: "experts" });
 
 ---
 
-## Task 8 — 视图取数（需要外部数据时）
+## Task 8 — 视图取数（execTools）
 
-iframe 不能 `fetch` 外部地址。要访问本机服务、客户系统、文件系统时，声明 `execTools`。
+iframe 不能 `fetch` 外部地址。外连 VitalSpan 须声明 `execTools` + `pluginExec`。
 
-在 `plugin.json` 增加：
+### B 轨最小集（本期必做）
+
+在 `plugin.json` 增加 **仅**：
+
+```json
+{
+  "name": "vitalspan_health",
+  "runtime": "js-worker",
+  "module": "exec-tools/vitalspan-health.cjs",
+  "export": "run",
+  "load": "lazy",
+  "keepAlive": "plugin",
+  "concurrency": "serial"
+}
+```
+
+视图调用：
+
+```ts
+await window.pluginExec("vitalspan_health", { apiBaseUrl: binding.apiBaseUrl });
+```
+
+凭据：`VITALSPAN_USERNAME` · `VITALSPAN_DEV_ADMIN_PASSWORD` 由 worker 读 env；**不进** instanceConfig。
+
+### C 轨扩展（二期 · 本期不做）
+
+list artifacts / list dashboards / compose 等 execTools — 见 [WORKSPACE-PLUGIN-CONTRACT](./WORKSPACE-PLUGIN-CONTRACT.md) C 轨。示例 ABI（`loadInstance`）：
 
 ```json
 {
   "name": "loadInstance",
   "runtime": "js-worker",
   "module": "exec-tools/load-instance.cjs",
-  "export": "run",
-  "load": "lazy",
-  "keepAlive": "plugin",
-  "concurrency": "serial"
+  "export": "run"
 }
 ```
 
@@ -499,7 +558,7 @@ const snapshot = await window.pluginExec("loadInstance", {
 
 **完成标准：** 构建产物安装进 DeepTalk 开发宿主后，下面清单全过；`deeptalk` 工作树没有本插件痕迹。
 
-`scripts/assemble-plugin.mjs` 最低要求：
+`scripts/assemble-plugin.mjs` + 仓库根 `scripts/release.mjs` 最低要求：
 
 1. 拷贝 `plugin.json`、模板
 2. 写入构建后的 `views/*.js`
