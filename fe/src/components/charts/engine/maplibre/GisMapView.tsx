@@ -9,6 +9,7 @@ import {
 } from "@/components/charts/engine/maplibre/gisMapStyle";
 import {
   buildGisOverlayStyleKey,
+  emptyGisOverlayGeoJson,
   syncGisOverlayData,
   syncGisOverlayStyle,
 } from "@/components/charts/engine/maplibre/gisMapOverlayStyle";
@@ -71,6 +72,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         : null,
     [chartConfig, viewModel.dataset.columns, viewModel.dataset.rows],
   );
+  const overlayGeoJsonRef = useRef(overlayGeoJson);
+  overlayGeoJsonRef.current = overlayGeoJson;
   const [pmtilesStyle, setPmtilesStyle] = useState<StyleSpecification | null>(null);
   const [pmtilesLoading, setPmtilesLoading] = useState(false);
   const [pmtilesErrorHint, setPmtilesErrorHint] = useState<string | null>(null);
@@ -151,24 +154,57 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     }),
     [flavor, project.overlay, styleContext.chartColors],
   );
+  const overlayLayerOptionsRef = useRef(overlayLayerOptions);
+  overlayLayerOptionsRef.current = overlayLayerOptions;
   const overlayStyleKey = useMemo(
     () => buildGisOverlayStyleKey(overlayLayerOptions),
     [overlayLayerOptions],
   );
 
+  const syncOverlayRuntime = useCallback((map: MapLibreMap) => {
+    syncGisOverlayData(map, overlayGeoJsonRef.current);
+    syncGisOverlayStyle(map, overlayLayerOptionsRef.current);
+  }, []);
+
+  const mapStyleKey = useMemo(
+    () =>
+      JSON.stringify({
+        tileServiceId,
+        flavor,
+        labelLang: project.labelLang,
+        landColor: project.landColor,
+        waterColor: project.waterColor,
+        basemapLayers: project.basemapLayers,
+        buildings3d: project.buildings3d,
+        projection: project.projection,
+        atmospherePreset: project.atmospherePreset,
+        overlayStyleKey,
+      }),
+    [
+      flavor,
+      overlayStyleKey,
+      project.atmospherePreset,
+      project.basemapLayers,
+      project.buildings3d,
+      project.labelLang,
+      project.landColor,
+      project.projection,
+      project.waterColor,
+      tileServiceId,
+    ],
+  );
+
   const style = useMemo(() => {
     if (!pmtilesStyle) return null;
-    const withOverlay = appendGisOverlayLayers(pmtilesStyle, overlayGeoJson, overlayLayerOptions);
+    const withOverlay = appendGisOverlayLayers(
+      pmtilesStyle,
+      emptyGisOverlayGeoJson(),
+      overlayLayerOptions,
+    );
     return applyGisGlobeToStyle(withOverlay, project.projection, project.atmospherePreset);
-  }, [
-    overlayGeoJson,
-    overlayLayerOptions,
-    pmtilesStyle,
-    project.atmospherePreset,
-    project.projection,
-  ]);
+  }, [overlayLayerOptions, pmtilesStyle, project.atmospherePreset, project.projection]);
 
-  const styleKey = useMemo(() => JSON.stringify(style), [style]);
+  const styleKey = mapStyleKey;
   const atmosphereKey = useMemo(
     () => `${project.projection ?? "mercator"}:${project.atmospherePreset ?? "day"}`,
     [project.atmospherePreset, project.projection],
@@ -250,6 +286,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           atmospherePreset: current.atmospherePreset,
         });
         applyConfiguredView(map);
+        syncOverlayRuntime(map);
         map.resize();
         onPaintReady?.();
       });
@@ -303,11 +340,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         buildings3d: project.buildings3d !== false,
         earthOpacity,
       });
+      syncOverlayRuntime(map);
       map.resize();
       onPaintReady?.();
     });
     appliedStyleKeyRef.current = styleKey;
-  }, [onPaintReady, style, styleKey]);
+  }, [earthOpacity, onPaintReady, project.basemapLayers, project.buildings3d, style, styleKey, syncOverlayRuntime]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -403,7 +441,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     const map = mapRef.current;
     if (!map) return;
     syncGisOverlayStyle(map, overlayLayerOptions);
-  }, [overlayLayerOptions, overlayStyleKey, styleKey]);
+  }, [overlayLayerOptions, overlayStyleKey]);
 
   useEffect(() => {
     remeasureShell();

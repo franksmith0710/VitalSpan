@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   resolveGisOverlayStyle,
   readGisProject,
@@ -7,7 +7,9 @@ import {
   buildGisOverlayCirclePaint,
   buildGisOverlayCircleRadius,
   buildGisOverlayStyleKey,
+  syncGisOverlayData,
 } from "@/components/charts/engine/maplibre/gisMapOverlayStyle";
+import { GIS_OVERLAY_SOURCE_ID } from "@/components/charts/engine/maplibre/gisMapStyle";
 import { appendGisOverlayLayers, buildPmtilesStyle } from "@/components/charts/engine/maplibre/gisMapStyle";
 import {
   GIS_OVERLAY_CIRCLE_LAYER_ID,
@@ -130,5 +132,41 @@ describe("buildGisOverlayCirclePaint", () => {
     const paint = buildGisOverlayCirclePaint(resolveGisOverlayStyle({ strokeColor: "#000000", strokeWidth: 2 }));
     expect(paint["circle-stroke-color"]).toBe("#000000");
     expect(paint["circle-stroke-width"]).toBe(2);
+  });
+});
+
+describe("syncGisOverlayData", () => {
+  it("calls setData on overlay source without waiting when style is loaded", () => {
+    const setData = vi.fn();
+    const geojson: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [116.4, 39.9] },
+          properties: { value: 1 },
+        },
+      ],
+    };
+    const map = {
+      isStyleLoaded: () => true,
+      getSource: (id: string) => (id === GIS_OVERLAY_SOURCE_ID ? { setData } : undefined),
+      once: vi.fn(),
+    };
+
+    syncGisOverlayData(map as never, geojson);
+    expect(setData).toHaveBeenCalledWith(geojson);
+  });
+
+  it("writes empty collection when geojson is null", () => {
+    const setData = vi.fn();
+    const map = {
+      isStyleLoaded: () => true,
+      getSource: () => ({ setData }),
+      once: vi.fn(),
+    };
+
+    syncGisOverlayData(map as never, null);
+    expect(setData).toHaveBeenCalledWith({ type: "FeatureCollection", features: [] });
   });
 });

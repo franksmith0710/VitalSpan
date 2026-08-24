@@ -14,7 +14,7 @@ OUT_DT = Path(r"c:\Users\30381\Documents\deeptalk工作区\examples\future-trend
 MANIFEST = {
     "id": "future-trend-chart",
     "displayName": "未来趋势图",
-    "version": "1.2.2",
+    "version": "1.2.3",
     "entry": "index.html",
     "runtime": "html",
     "rendererHint": "canvas",
