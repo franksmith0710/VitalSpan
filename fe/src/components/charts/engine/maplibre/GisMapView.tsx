@@ -7,6 +7,11 @@ import {
   appendGisOverlayLayers,
   buildPmtilesStyle,
 } from "@/components/charts/engine/maplibre/gisMapStyle";
+import {
+  buildGisOverlayStyleKey,
+  syncGisOverlayData,
+  syncGisOverlayStyle,
+} from "@/components/charts/engine/maplibre/gisMapOverlayStyle";
 import { applyGisGlobeToStyle, spaceBackdropForPreset } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
 import {
   applyGlobeAtmosphere,
@@ -42,6 +47,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const {
     chartConfig,
     viewModel,
+    style: styleContext,
     fill = false,
     height = 180,
     width,
@@ -137,13 +143,30 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     [pmtilesStyle, project],
   );
 
+  const overlayLayerOptions = useMemo(
+    () => ({
+      flavor,
+      overlay: project.overlay,
+      chartColors: styleContext.chartColors,
+    }),
+    [flavor, project.overlay, styleContext.chartColors],
+  );
+  const overlayStyleKey = useMemo(
+    () => buildGisOverlayStyleKey(overlayLayerOptions),
+    [overlayLayerOptions],
+  );
+
   const style = useMemo(() => {
     if (!pmtilesStyle) return null;
-    const withOverlay = overlayGeoJson
-      ? appendGisOverlayLayers(pmtilesStyle, overlayGeoJson, flavor)
-      : pmtilesStyle;
+    const withOverlay = appendGisOverlayLayers(pmtilesStyle, overlayGeoJson, overlayLayerOptions);
     return applyGisGlobeToStyle(withOverlay, project.projection, project.atmospherePreset);
-  }, [flavor, overlayGeoJson, pmtilesStyle, project.atmospherePreset, project.projection]);
+  }, [
+    overlayGeoJson,
+    overlayLayerOptions,
+    pmtilesStyle,
+    project.atmospherePreset,
+    project.projection,
+  ]);
 
   const styleKey = useMemo(() => JSON.stringify(style), [style]);
   const atmosphereKey = useMemo(
@@ -369,6 +392,18 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     observer?.observe(shell);
     return () => observer?.disconnect();
   }, [remeasureShell]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    syncGisOverlayData(map, overlayGeoJson);
+  }, [overlayGeoJson]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    syncGisOverlayStyle(map, overlayLayerOptions);
+  }, [overlayLayerOptions, overlayStyleKey, styleKey]);
 
   useEffect(() => {
     remeasureShell();

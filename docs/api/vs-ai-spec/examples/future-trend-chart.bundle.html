@@ -27,7 +27,7 @@ canvas{display:block;width:100%;height:100%}
 <script>
 (function(){
   var host=document.currentScript&&document.currentScript.parentElement;
-  var DEFAULTS={accentColor:"#00d4ff",secondaryColor:"#7c3aed",lineWidth:3,glowIntensity:.8,showArea:true,showParticles:true,showGrid:true,showScanLine:true,pointSize:6,animationDuration:2000,curveType:"smooth"};
+  var DEFAULTS={accentColor:"#00d4ff",secondaryColor:"#7c3aed",lineWidth:3,glowIntensity:.8,showArea:true,showParticles:true,showGrid:true,showScanLine:true,pointSize:6,animationDuration:2000,curveType:"smooth",chartPaddingTop:30,chartPaddingRight:40,chartPaddingBottom:45,chartPaddingLeft:55,labelFontSize:11,labelShow:true,tooltipFontSize:12};
   var STYLE=DEFAULTS,PAYLOAD=null,DATA=[],animProgress=0,animId=null,animStart=0,hoverIdx=-1,particles=[],scanLineTime=0;
   var canvas,ctx,container,tooltip,ttValue,ttLabel,dpr=1,W=0,H=0;
   var padding={top:30,right:40,bottom:45,left:55},chartW=0,chartH=0,chartX=0,chartY=0,initialized=false;
@@ -57,15 +57,15 @@ canvas{display:block;width:100%;height:100%}
     if(palette[0]&&!st.accentColor)out.accentColor=palette[0];
     if(palette[1]&&!st.secondaryColor)out.secondaryColor=palette[1];
     out._palette=palette;
-    out._labelShow=st.labelShow!==false;
+    out._labelShow=out.labelShow!==false;
     out._labelColor=st.labelColor||hostVar("--dashboard-text-secondary","#94a3b8");
-    out._labelFontSize=Number(st.labelFontSize)||11;
+    out._labelFontSize=Number(out.labelFontSize)||11;
     out._gridColor=hostVar("--dashboard-chart-grid","#334155");
     out._textPrimary=st.labelColor||hostVar("--dashboard-text-primary","#e2e8f0");
     out._tooltipShow=st.tooltipShow!==false;
     out._tooltipColor=st.tooltipColor||hostVar("--dashboard-text-primary","#e2e8f0");
     out._tooltipBg=st.tooltipBackground||hostVar("--dashboard-widget-surface","rgba(15,23,42,0.95)");
-    out._tooltipFontSize=Number(st.tooltipFontSize)||12;
+    out._tooltipFontSize=Number(out.tooltipFontSize)||12;
     return out;
   }
   function applyTooltipStyle(){
@@ -136,11 +136,18 @@ canvas{display:block;width:100%;height:100%}
     var top=Math.min(Math.max(ly-th-12,8),Math.max(8,H-th-8));
     tooltip.style.left=left+"px";tooltip.style.top=top+"px";
   }
+  function syncChartPadding(){
+    padding.top=Number(STYLE.chartPaddingTop)||0;
+    padding.right=Number(STYLE.chartPaddingRight)||0;
+    padding.bottom=Number(STYLE.chartPaddingBottom)||0;
+    padding.left=Number(STYLE.chartPaddingLeft)||0;
+  }
   function resize(){
     dpr=window.devicePixelRatio||1;
     var c=$$("container");W=c.clientWidth;H=c.clientHeight;
     canvas.width=W*dpr;canvas.height=H*dpr;canvas.style.width=W+"px";canvas.style.height=H+"px";
     ctx.setTransform(dpr,0,0,dpr,0,0);
+    syncChartPadding();
     chartX=padding.left;chartY=padding.top;chartW=Math.max(0,W-padding.left-padding.right);chartH=Math.max(0,H-padding.top-padding.bottom);
   }
   function calcDataRange(metricIdx){

@@ -34,6 +34,27 @@ export type GisBasemapLayerVisibility = {
   landDetail?: boolean;
 };
 
+export type GisProjectOverlay = {
+  /** 散点填充色；缺省取图表 palette 首色 */
+  color?: string;
+  /** 圆点半径下限（px） */
+  radiusMin?: number;
+  /** 圆点半径上限（px） */
+  radiusMax?: number;
+  /** 圆点不透明度 0–1 */
+  opacity?: number;
+  /** 是否显示散点标签 */
+  showLabels?: boolean;
+  /** 低于该 zoom 不显示标签 */
+  labelMinZoom?: number;
+  /** 是否按指标值缩放圆点大小 */
+  scaleByMetric?: boolean;
+  /** 描边色 */
+  strokeColor?: string;
+  /** 描边宽度（px） */
+  strokeWidth?: number;
+};
+
 export type GisProject = {
   basemap: GisBasemapId;
   tileServiceId?: string;
@@ -59,7 +80,94 @@ export type GisProject = {
   buildings3d?: boolean;
   /** 地球表面（矢量底图）不透明度 0–1，默认 1；不影响星空/大气 */
   earthOpacity?: number;
+  /** 经纬度散点叠加样式 */
+  overlay?: GisProjectOverlay;
 };
+
+export const DEFAULT_GIS_OVERLAY: Required<
+  Pick<
+    GisProjectOverlay,
+    | "radiusMin"
+    | "radiusMax"
+    | "opacity"
+    | "showLabels"
+    | "labelMinZoom"
+    | "scaleByMetric"
+    | "strokeColor"
+    | "strokeWidth"
+  >
+> = {
+  radiusMin: 4,
+  radiusMax: 14,
+  opacity: 0.75,
+  showLabels: true,
+  labelMinZoom: 4,
+  scaleByMetric: true,
+  strokeColor: "#ffffff",
+  strokeWidth: 1,
+};
+
+const DEFAULT_GIS_OVERLAY_COLOR = "#2563eb";
+
+export type ResolvedGisOverlayStyle = {
+  color: string;
+  radiusMin: number;
+  radiusMax: number;
+  opacity: number;
+  showLabels: boolean;
+  labelMinZoom: number;
+  scaleByMetric: boolean;
+  strokeColor: string;
+  strokeWidth: number;
+};
+
+export function resolveGisOverlayStyle(
+  overlay: GisProjectOverlay | undefined,
+  chartColors?: string[],
+): ResolvedGisOverlayStyle {
+  const radiusMinRaw = Number(overlay?.radiusMin);
+  const radiusMaxRaw = Number(overlay?.radiusMax);
+  const radiusMin =
+    Number.isFinite(radiusMinRaw) && radiusMinRaw >= 0 ? radiusMinRaw : DEFAULT_GIS_OVERLAY.radiusMin;
+  const radiusMax =
+    Number.isFinite(radiusMaxRaw) && radiusMaxRaw >= radiusMin
+      ? radiusMaxRaw
+      : Math.max(radiusMin, DEFAULT_GIS_OVERLAY.radiusMax);
+  const opacityRaw = Number(overlay?.opacity);
+  const opacity =
+    Number.isFinite(opacityRaw) && opacityRaw >= 0 && opacityRaw <= 1
+      ? opacityRaw
+      : DEFAULT_GIS_OVERLAY.opacity;
+  const labelMinZoomRaw = Number(overlay?.labelMinZoom);
+  const labelMinZoom =
+    Number.isFinite(labelMinZoomRaw) && labelMinZoomRaw >= 0
+      ? labelMinZoomRaw
+      : DEFAULT_GIS_OVERLAY.labelMinZoom;
+  const strokeWidthRaw = Number(overlay?.strokeWidth);
+  const strokeWidth =
+    Number.isFinite(strokeWidthRaw) && strokeWidthRaw >= 0
+      ? strokeWidthRaw
+      : DEFAULT_GIS_OVERLAY.strokeWidth;
+  const color =
+    typeof overlay?.color === "string" && overlay.color.trim()
+      ? overlay.color.trim()
+      : chartColors?.[0]?.trim() || DEFAULT_GIS_OVERLAY_COLOR;
+  const strokeColor =
+    typeof overlay?.strokeColor === "string" && overlay.strokeColor.trim()
+      ? overlay.strokeColor.trim()
+      : DEFAULT_GIS_OVERLAY.strokeColor;
+  return {
+    color,
+    radiusMin,
+    radiusMax,
+    opacity,
+    showLabels: overlay?.showLabels !== false,
+    labelMinZoom,
+    scaleByMetric: overlay?.scaleByMetric !== false,
+    strokeColor,
+    strokeWidth,
+  };
+}
 
 /** 本地/演示默认登记的全球 PMTiles 服务（运维 register 脚本同名 id）。 */
 export const DEFAULT_PMTILES_TILE_SERVICE_ID = "planet-z15";
@@ -170,6 +278,7 @@ function normalizeGisProject(raw: unknown): GisProject {
   const landColor = normalizeBasemapHexColor(candidate.landColor);
   const waterColor = normalizeBasemapHexColor(candidate.waterColor);
   const basemapLayers = normalizeBasemapLayerVisibility(candidate.basemapLayers);
+  const overlay = normalizeGisProjectOverlay(candidate.overlay);
   return {
     basemap: "pmtiles",
     tileServiceId,
@@ -190,7 +299,31 @@ function normalizeGisProject(raw: unknown): GisProject {
       Number.isFinite(earthOpacityRaw) && earthOpacityRaw >= 0 && earthOpacityRaw <= 1
         ? earthOpacityRaw
         : undefined,
+    overlay,
   };
+}
+
+function normalizeGisProjectOverlay(input: unknown): GisProjectOverlay | undefined {
+  if (!input || typeof input !== "object") return undefined;
+  const raw = input as GisProjectOverlay;
+  const next: GisProjectOverlay = {};
+  if (typeof raw.color === "string" && raw.color.trim()) next.color = raw.color.trim();
+  const radiusMin = Number(raw.radiusMin);
+  if (Number.isFinite(radiusMin) && radiusMin >= 0) next.radiusMin = radiusMin;
+  const radiusMax = Number(raw.radiusMax);
+  if (Number.isFinite(radiusMax) && radiusMax >= 0) next.radiusMax = radiusMax;
+  const opacity = Number(raw.opacity);
+  if (Number.isFinite(opacity) && opacity >= 0 && opacity <= 1) next.opacity = opacity;
+  if (raw.showLabels === false) next.showLabels = false;
+  const labelMinZoom = Number(raw.labelMinZoom);
+  if (Number.isFinite(labelMinZoom) && labelMinZoom >= 0) next.labelMinZoom = labelMinZoom;
+  if (raw.scaleByMetric === false) next.scaleByMetric = false;
+  if (typeof raw.strokeColor === "string" && raw.strokeColor.trim()) {
+    next.strokeColor = raw.strokeColor.trim();
+  }
+  const strokeWidth = Number(raw.strokeWidth);
+  if (Number.isFinite(strokeWidth) && strokeWidth >= 0) next.strokeWidth = strokeWidth;
+  return Object.keys(next).length > 0 ? next : undefined;
 }
 
 function migrateGeolibreProject(raw: unknown): GisProject {

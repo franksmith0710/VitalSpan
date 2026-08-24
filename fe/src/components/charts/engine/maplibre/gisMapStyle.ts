@@ -1,6 +1,11 @@
 import { layers } from "@protomaps/basemaps";
 import type { StyleSpecification } from "maplibre-gl";
 import {
+  buildGisOverlayLayerDefinitions,
+  emptyGisOverlayGeoJson,
+  type GisOverlayLayerOptions,
+} from "@/components/charts/engine/maplibre/gisMapOverlayStyle";
+import {
   applyBasemapLayerVisibility,
   buildBasemapFlavor,
 } from "@/components/charts/engine/maplibre/gisBasemapPalette";
@@ -97,52 +102,30 @@ export function appendBuildings3dLayer(
   return appendBuildings3dLayerToStyle(style, flavor, true);
 }
 
-function overlayLabelPaint(flavor: GisBasemapFlavor) {
-  const darkBasemap = flavor === "dark" || flavor === "black";
-  return {
-    "text-color": darkBasemap ? "#f8fafc" : "#0f172a",
-    "text-halo-color": darkBasemap ? "#0f172a" : "#ffffff",
-    "text-halo-width": 1,
-  };
-}
+export type { GisOverlayLayerOptions };
 
 export function appendGisOverlayLayers(
   style: StyleSpecification,
-  overlay: GeoJSON.FeatureCollection,
-  flavor: GisBasemapFlavor = "light",
+  overlay: GeoJSON.FeatureCollection | null,
+  options: GisOverlayLayerOptions,
 ): StyleSpecification {
+  const data = overlay ?? emptyGisOverlayGeoJson();
+  const { source, circleLayer, labelLayer } = buildGisOverlayLayerDefinitions(data, options);
   return {
     ...style,
     sources: {
       ...style.sources,
-      [GIS_OVERLAY_SOURCE_ID]: { type: "geojson", data: overlay },
+      [source.id]: source.spec,
     },
-    layers: [
-      ...(style.layers ?? []),
-      {
-        id: GIS_OVERLAY_CIRCLE_LAYER_ID,
-        type: "circle",
-        source: GIS_OVERLAY_SOURCE_ID,
-        paint: {
-          "circle-radius": ["interpolate", ["linear"], ["get", "value"], 0, 4, 100, 14],
-          "circle-color": "#2563eb",
-          "circle-opacity": 0.75,
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 1,
-        },
-      },
-      {
-        id: GIS_OVERLAY_LABEL_LAYER_ID,
-        type: "symbol",
-        source: GIS_OVERLAY_SOURCE_ID,
-        layout: {
-          "text-field": ["coalesce", ["get", "label"], ["to-string", ["get", "value"]]],
-          "text-size": 11,
-          "text-offset": [0, 1.2],
-          "text-anchor": "top",
-        },
-        paint: overlayLabelPaint(flavor),
-      },
-    ],
+    layers: [...(style.layers ?? []), circleLayer, labelLayer],
   };
+}
+
+/** @deprecated 保留测试引用；请使用 appendGisOverlayLayers + GisOverlayLayerOptions */
+export function appendGisOverlayLayersLegacy(
+  style: StyleSpecification,
+  overlay: GeoJSON.FeatureCollection,
+  flavor: GisBasemapFlavor = "light",
+): StyleSpecification {
+  return appendGisOverlayLayers(style, overlay, { flavor });
 }

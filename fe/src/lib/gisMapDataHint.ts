@@ -62,7 +62,7 @@ export function resolveGisMapDataHint(
     return {
       tone: "info",
       message:
-        "底图无需数据集即可显示。可选叠加散点：同时绑定数值型经度、纬度（如 116.4、39.9）；数值控制圆点大小，标签可选。",
+        "底图无需数据集即可显示。可选叠加散点：同时绑定数值型经度、纬度（如 longitude 116.4、latitude 39.9）；数值控制圆点大小，标签可选。示例 SQL：SELECT city, longitude, latitude, amount FROM stores WHERE longitude IS NOT NULL;",
     };
   }
 

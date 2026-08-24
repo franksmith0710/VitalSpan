@@ -30,5 +30,25 @@ describe("buildGisOverlayGeoJson", () => {
       type: "Point",
       coordinates: [116.4, 39.9],
     });
+    expect(geojson?.features[0]?.properties).toMatchObject({ value: 10, sizeNorm: 0 });
+    expect(geojson?.features[1]?.properties).toMatchObject({ value: 20, sizeNorm: 1 });
+  });
+
+  it("normalizes sizeNorm across metric range", () => {
+    const config = {
+      ...defaultChartConfig("gis-map"),
+      dimensions: [{ field: "lng" }, { field: "lat" }],
+      metrics: [{ field: "value" }],
+    };
+    const geojson = buildGisOverlayGeoJson(
+      config,
+      ["lng", "lat", "value"],
+      [
+        [116.4, 39.9, 0],
+        [121.5, 31.2, 100],
+      ],
+    );
+    expect(geojson?.features[0]?.properties?.sizeNorm).toBe(0);
+    expect(geojson?.features[1]?.properties?.sizeNorm).toBe(1);
   });
 });

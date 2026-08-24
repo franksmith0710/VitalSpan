@@ -14,7 +14,7 @@ OUT_DT = Path(r"c:\Users\30381\Documents\deeptalk工作区\examples\future-trend
 MANIFEST = {
     "id": "future-trend-chart",
     "displayName": "未来趋势图",
-    "version": "1.2.1",
+    "version": "1.2.2",
     "entry": "index.html",
     "runtime": "html",
     "rendererHint": "canvas",
@@ -24,6 +24,20 @@ MANIFEST = {
     },
     "styleSchema": {
         "type": "object",
+        "x-styleSections": [
+            {
+                "title": "图表布局",
+                "properties": [
+                    "chartPaddingTop",
+                    "chartPaddingBottom",
+                    "chartPaddingLeft",
+                    "chartPaddingRight",
+                    "labelShow",
+                    "labelFontSize",
+                    "tooltipFontSize",
+                ],
+            },
+        ],
         "properties": {
             "accentColor": {"type": "string", "format": "color", "title": "主题色", "default": "#00d4ff"},
             "secondaryColor": {"type": "string", "format": "color", "title": "辅助色", "default": "#7c3aed"},
@@ -42,6 +56,49 @@ MANIFEST = {
                 "default": 2000,
             },
             "curveType": {"type": "string", "title": "曲线类型", "enum": ["smooth", "straight"], "default": "smooth"},
+            "chartPaddingTop": {
+                "type": "number",
+                "title": "上边距",
+                "minimum": 0,
+                "maximum": 80,
+                "default": 30,
+            },
+            "chartPaddingBottom": {
+                "type": "number",
+                "title": "下边距",
+                "minimum": 0,
+                "maximum": 80,
+                "default": 45,
+            },
+            "chartPaddingLeft": {
+                "type": "number",
+                "title": "左边距",
+                "minimum": 0,
+                "maximum": 100,
+                "default": 55,
+            },
+            "chartPaddingRight": {
+                "type": "number",
+                "title": "右边距",
+                "minimum": 0,
+                "maximum": 80,
+                "default": 40,
+            },
+            "labelShow": {"type": "boolean", "title": "显示轴标签", "default": True},
+            "labelFontSize": {
+                "type": "number",
+                "title": "轴标签字号",
+                "minimum": 8,
+                "maximum": 16,
+                "default": 11,
+            },
+            "tooltipFontSize": {
+                "type": "number",
+                "title": "提示框字号",
+                "minimum": 10,
+                "maximum": 18,
+                "default": 12,
+            },
         },
     },
     "defaultStyle": {
@@ -56,6 +113,13 @@ MANIFEST = {
         "pointSize": 6,
         "animationDuration": 2000,
         "curveType": "smooth",
+        "chartPaddingTop": 30,
+        "chartPaddingBottom": 45,
+        "chartPaddingLeft": 55,
+        "chartPaddingRight": 40,
+        "labelShow": True,
+        "labelFontSize": 11,
+        "tooltipFontSize": 12,
     },
 }
 

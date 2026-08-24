@@ -54,7 +54,7 @@ const MAP_2D_STYLE: ChartStyleSectionId[] = ["background", "mapBasic", "title", 
 
 const MAP_3D_STYLE: ChartStyleSectionId[] = ["background", "title", "geo", "remark"];
 
-const GIS_MAP_STYLE: ChartStyleSectionId[] = ["gisProject", "background", "title", "remark"];
+const GIS_MAP_STYLE: ChartStyleSectionId[] = ["gisProject", "gisOverlay", "background", "title", "remark"];
 
 const MINIMAL: ChartStyleSectionId[] = [...SHELL];
 
