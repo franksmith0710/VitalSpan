@@ -28,24 +28,27 @@ REM 必须看到: ok artifactId=... styleComplianceTier=full warnings: none
 
 插件：`vitalspan_publish_artifact` **会先跑本地预检**（v0.2.7+），失败直接返回「修复提示」，禁止盲试 POST。
 
-## 2. 金样模板（按范式选，默认一个就够）
+## 2. 范式 × 金样（全部 5 套 scaffold · 禁止混用）
 
-| template | 何时用 |
-|----------|--------|
-| **`html-minimal`（默认）** | 大多数新组件：简单 DOM/表格/KPI；改 render 即可 · 平台金样 `artifactId=48f41700-a6c5-4495-add9-e0dd57f1f0a6` |
-| `scrolling-table` | 明确要**纵向循环滚动 + 悬停暂停** |
-| `alert-feed` | 单列滚动条/告警条 |
-| `ranking-bar` | 排名条形图 |
-| `trend-line` | 折线/趋势（d3 或 canvas 范式） |
+| 范式 | 何时用 | template | runtime | dimensions | metrics |
+|------|--------|----------|---------|------------|---------|
+| **P1 笛卡尔** | 类别 + 数值；排名/趋势 | `ranking-bar` · `trend-line` | html / d3 | min≥1，通常 max=1 | min≥1 |
+| **P2 多维明细** | 多列平铺、无聚合 | **`scrolling-table`** | html | min≥1，max>1 | **min=0, max=0** |
+| **P3 滚动条** | 单列文案 + 等级 | `alert-feed` | html | min=1, max=1 | min=1, max=1 |
+| **P4 通用 DOM** | KPI/简单双列/未定 | `html-minimal` | html | min≥1 | min≥1 |
 
-**不要**为每个业务组件新建金样文件；在 scaffold 出的 `examples/<id>.json` 上改 HTML 即可。
+DeepTalk 插件真源：`deeptalk-plugins/plugins/vitalspan/assets/custom-viz-paradigms.json`
+
+**不要**为每个业务 id 新建金样；在 scaffold 出的 `examples/<id>.json` 上改 HTML，**fieldSlots 须与范式一致**。
 
 ## 3. manifest 必填（缺一 422）
+
+fieldSlots **随范式变化**，勿一律抄下面示例（P4 示例）：
 
 ```json
 {
   "fieldSlots": {
-    "dimensions": { "min": 1, "max": 6, "label": "明细列" },
+    "dimensions": { "min": 1, "max": 6, "label": "维度列" },
     "metrics": { "min": 1, "max": 6, "label": "数值列" }
   },
   "styleSchema": {
@@ -60,7 +63,8 @@ REM 必须看到: ok artifactId=... styleComplianceTier=full warnings: none
 
 - 时间轴维度可加 `"expect": "date"`（编辑器会拒绝 province 等非日期字段）
 - 每个 `properties.*` 必须有中文 `"title"`
-- **流动/明细表**（只展示多列文本、不做聚合）：复制 `scrolling-table` 模板，设 **`metrics.min=0, max=0`**；勿对纯表格误设 `metrics.min>=1`（预检会 `[warn] AIVIZ_WARN_DETAIL_TABLE_METRICS`）
+- **P2** 须 `metrics.min=0,max=0`；**P1/P3/P4** 须 `metrics.min≥1`（仅 P2 在 `dimensions.max>1` 时允许 metrics 为 0）
+- 预检 `[warn] AIVIZ_WARN_DETAIL_TABLE_METRICS` = fieldSlots **不符合 P2 范式**（与 manifest.id 无关）
 
 ## 4. entry HTML 硬规则
 

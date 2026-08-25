@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from app.viz.registry import ChartTypeAlreadyRegisteredError, registry
+from app.viz.registry import registry
 
 from app.viz.builtin.compare import COMPARE_SPECS
 from app.viz.builtin.distribute import DISTRIBUTE_SPECS
@@ -25,9 +25,4 @@ ALL_BUILTIN_SPECS = (
 
 def register_builtin_chart_types() -> None:
     for spec in ALL_BUILTIN_SPECS:
-        if registry.has(spec.type):
-            continue
-        try:
-            registry.register(spec)
-        except ChartTypeAlreadyRegisteredError:
-            pass
+        registry.upsert(spec)

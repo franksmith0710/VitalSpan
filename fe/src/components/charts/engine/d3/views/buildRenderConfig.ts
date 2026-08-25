@@ -378,6 +378,7 @@ export function buildD3DispatchPayload(
       legendLayout: styleProps.legendLayout,
       ...cartesianStyle,
       ...compareStyle,
+      instanceKey: props.instanceKey,
       onPointClick:
         props.onInteraction
           ? (datum) => {

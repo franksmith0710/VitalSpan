@@ -256,12 +256,17 @@ function graphPlan(
   const si = colIndex(columns, src);
   const di = colIndex(columns, dst);
   const nodeSet = new Set<string>();
+  const edgeKeys = new Set<string>();
   const edges: Array<{ source: string; target: string }> = [];
   for (const r of rows) {
     const s = String(r[si] ?? "");
     const t = String(r[di] ?? "");
+    if (!s || !t) continue;
     nodeSet.add(s);
     nodeSet.add(t);
+    const key = `${s}\0${t}`;
+    if (edgeKeys.has(key)) continue;
+    edgeKeys.add(key);
     edges.push({ source: s, target: t });
   }
   const layout = spec.styleVariant === "dagre" ? "dagre" : "force";

@@ -120,8 +120,8 @@ def _collect_field_slot_warnings(manifest: dict) -> list[StyleComplianceWarning]
             StyleComplianceWarning(
                 code="AIVIZ_WARN_DETAIL_TABLE_METRICS",
                 message=(
-                    "明细表/流动表应设 metrics.min=0, max=0；"
-                    "当前 dimensions.max>1 且 metrics.min>=1 会导致仅绑维度列时无法出数"
+                    "fieldSlots 与 P2 多维明细范式不符：dimensions.max>1 时 metrics 须 min=0,max=0；"
+                    "与 manifest.id 无关，请对齐金样或改 fieldSlots"
                 ),
             )
         ]

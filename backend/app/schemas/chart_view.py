@@ -190,6 +190,15 @@ class ChartViewConfig(BaseModel):
         return self
 
     @model_validator(mode="after")
+    def sync_axes_legacy_projection(self) -> ChartViewConfig:
+        from app.viz.chart_axis_encoding import project_axes_to_legacy_fields
+
+        projected = project_axes_to_legacy_fields(self.chart_type, self.axes)
+        if projected is not None:
+            self.dimensions, self.metrics = projected
+        return self
+
+    @model_validator(mode="after")
     def validate_l1_rules(self) -> ChartViewConfig:
         from app.viz.registry import ChartTypeNotRegistered, get_spec
 
@@ -224,6 +233,10 @@ class ChartViewConfig(BaseModel):
                 )
             return self
         rule = spec.field_rule
+        if self.chart_type == "gis-map":
+            from app.viz.builtin._helpers import GIS_MAP_RULE
+
+            rule = GIS_MAP_RULE
         dim_n = len(self.dimensions)
         met_n = len(self.metrics)
         if not (rule.min_dimensions <= dim_n <= rule.max_dimensions):

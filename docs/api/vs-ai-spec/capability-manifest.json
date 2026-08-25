@@ -929,11 +929,11 @@
       "deprecated": false,
       "migratesTo": null,
       "fieldRule": {
-        "minDimensions": 1,
-        "maxDimensions": 3,
-        "minMetrics": 1,
+        "minDimensions": 0,
+        "maxDimensions": 5,
+        "minMetrics": 0,
         "maxMetrics": 1,
-        "note": ""
+        "note": "底图无需字段；可选散点或 OD 飞线叠加"
       }
     },
     {

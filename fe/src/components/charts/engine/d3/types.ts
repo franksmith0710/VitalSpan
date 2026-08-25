@@ -50,6 +50,8 @@ export type D3RenderConfig<TOptions extends Record<string, unknown> = Record<str
   legendLayout?: import("@/components/charts/engine/d3/core/d3Legend").D3LegendLayout;
   visualScale?: number;
   renderTier?: Geo3dRenderTier;
+  /** WebGL / 力导向等实例槽位 key（widgetId） */
+  instanceKey?: string;
   options: TOptions;
 };
 

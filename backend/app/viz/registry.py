@@ -26,6 +26,11 @@ class ChartTypeRegistry:
                 )
             self._specs[spec.type] = spec
 
+    def upsert(self, spec: ChartTypeSpec) -> None:
+        """注册或热重载时刷新 spec（避免 uvicorn reload 残留旧 field_rule）。"""
+        with self._lock:
+            self._specs[spec.type] = spec
+
     def get(self, type: str) -> ChartTypeSpec:
         with self._lock:
             try:
@@ -50,6 +55,9 @@ def get_spec(type: str) -> ChartTypeSpec:
 
 
 def export_chart_type_catalog() -> list[dict]:
+    from app.viz.builtin import register_builtin_chart_types
+
+    register_builtin_chart_types()
     return [
         {
             "type": s.type,

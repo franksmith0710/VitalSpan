@@ -4,9 +4,8 @@ from __future__ import annotations
 
 HINTS: dict[str, str] = {
     "AIVIZ_INVALID_MANIFEST": (
-        "manifest 缺字段。复制 examples/html-minimal.json 结构："
-        "fieldSlots.dimensions + metrics（一般 min>=1；明细表 dimensions.max>1 时 metrics.min 可为 0）、"
-        "styleSchema.properties（至少 1 项中文 title）"
+        "manifest 缺字段。先判范式 P1–P4，用 scaffold 复制对应金样；"
+        "fieldSlots 须与范式一致（见 assets/custom-viz-paradigms.json）"
     ),
     "AIVIZ_UNSAFE_CONTENT": (
         "HTML 安全规则：禁止 <script src=、HTML 属性 onclick=/onmouseenter=、javascript:。"
@@ -29,6 +28,10 @@ HINTS: dict[str, str] = {
     "AIVIZ_WARN_MOUNT_RECOMMENDED": "html 也应 host.vsCv.mount(render)，否则 resize/样式可能不同步",
     "AIVIZ_WARN_STYLE_COMPLIANCE": (
         "render 内读 var st = (p && p.style) || {}；styleSchema 每项加中文 title"
+    ),
+    "AIVIZ_WARN_DETAIL_TABLE_METRICS": (
+        "fieldSlots 与 P2 多维明细范式不符：dimensions.max>1 时须 metrics.min=0,max=0；"
+        "换 scrolling-table 金样或改 manifest（与组件 id 无关）"
     ),
 }
 

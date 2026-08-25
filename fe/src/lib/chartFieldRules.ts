@@ -1,4 +1,5 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import { BACKEND_CATALOG_FIELD_RULES } from "@/components/charts/chartCatalogBackendFieldRules";
 import { deriveFieldRuleFromDeCatalog, type ChartAxesConfig, type DeAxisId } from "@/lib/chartDeAxis";
 import { getCachedCatalog, type ChartTypeCatalogItem } from "@/lib/chartRegistry";
 import { migrateChartConfigToDeAxes, syncLegacyFieldsFromAxes } from "@/lib/resolveChartEncoding";
@@ -93,12 +94,21 @@ const FALLBACK_FIELD_RULES: Record<string, ChartFieldRule> = {
 export function resolveChartFieldRule(chartType: string): ChartFieldRule {
   const fromCatalog = getCachedCatalog()?.find((c) => c.type === chartType)?.fieldRule;
   const fallback = FALLBACK_FIELD_RULES[chartType];
+  const backendSnap = BACKEND_CATALOG_FIELD_RULES[chartType];
+  const base: ChartFieldRule = {
+    minDimensions: fromCatalog?.minDimensions ?? fallback?.minDimensions ?? backendSnap?.minDimensions ?? 0,
+    maxDimensions: fromCatalog?.maxDimensions ?? fallback?.maxDimensions ?? backendSnap?.maxDimensions ?? 8,
+    minMetrics: fromCatalog?.minMetrics ?? fallback?.minMetrics ?? backendSnap?.minMetrics ?? 0,
+    maxMetrics: fromCatalog?.maxMetrics ?? fallback?.maxMetrics ?? backendSnap?.maxMetrics ?? 8,
+    note: fromCatalog?.note ?? fallback?.note ?? backendSnap?.note,
+  };
+  if (!backendSnap) return base;
   return {
-    minDimensions: fromCatalog?.minDimensions ?? fallback?.minDimensions ?? 0,
-    maxDimensions: fromCatalog?.maxDimensions ?? fallback?.maxDimensions ?? 8,
-    minMetrics: fromCatalog?.minMetrics ?? fallback?.minMetrics ?? 0,
-    maxMetrics: fromCatalog?.maxMetrics ?? fallback?.maxMetrics ?? 8,
-    note: fromCatalog?.note ?? fallback?.note,
+    minDimensions: Math.max(base.minDimensions, backendSnap.minDimensions),
+    maxDimensions: Math.max(base.maxDimensions, backendSnap.maxDimensions),
+    minMetrics: Math.max(base.minMetrics, backendSnap.minMetrics),
+    maxMetrics: Math.max(base.maxMetrics, backendSnap.maxMetrics),
+    note: base.note || backendSnap.note,
   };
 }
 

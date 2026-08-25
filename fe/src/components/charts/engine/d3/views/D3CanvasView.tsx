@@ -13,6 +13,7 @@ import {
 } from "@/components/charts/engine/d3/core/chartPresentationScale";
 import { renderD3Chart } from "@/components/charts/engine/d3/renderDispatch";
 import { buildD3DispatchPayload } from "@/components/charts/engine/d3/views/buildRenderConfig";
+import { buildD3CanvasContentKey } from "@/components/charts/engine/d3/views/buildD3CanvasContentKey";
 import { d3ChartTestId } from "@/components/charts/engine/d3/views/d3TestId";
 import {
   ADVANCED_CHART_ROW_CAP,
@@ -65,6 +66,23 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
 
   const testId = d3ChartTestId(viewModel.chartType, plan.plotType);
   const mapEmptyOk = viewModel.chartType === "map" || viewModel.chartType === "map-3d";
+
+  const contentKey = useMemo(
+    () =>
+      buildD3CanvasContentKey({
+        chartType: viewModel.chartType,
+        plotType: plan.plotType,
+        plan,
+        rowCount: capped.length,
+        rowSample: capped
+          .slice(0, 6)
+          .map((row) => row.map((cell) => String(cell ?? "")).join(","))
+          .join("|"),
+        style,
+        chartConfig,
+      }),
+    [viewModel.chartType, plan, capped, style, chartConfig],
+  );
 
   const readPaintSize = useCallback(() => {
     const el = containerRef.current;
@@ -135,6 +153,9 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
     [plan, capped.length, readPaintSize, visualScale, props, mapEmptyOk, style.depthVisual],
   );
 
+  const measureAndRenderRef = useRef(measureAndRender);
+  measureAndRenderRef.current = measureAndRender;
+
   const onLiveResize = useCallback(() => {
     setChartAnimationSuppressed(true);
     if (liveTimerRef.current !== null) return;
@@ -156,8 +177,8 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
   useEmbeddedChartLiveResize(fill && !plan.empty, containerRef, onLiveResize, onCommitResize);
 
   useEffect(() => {
-    measureAndRender("data", true);
-  }, [measureAndRender]);
+    measureAndRenderRef.current("data", true);
+  }, [contentKey]);
 
   useEffect(() => {
     if (!fill || plan.empty) return;
