@@ -112,6 +112,21 @@ Task 文档中的「沙箱内取数」= **DeepTalk 插件视图 CSP**（`connect
 - 凭据不进 Agent 工具参数；execTools worker 读 env（见 Task 8）
 - 视图未绑定：横幅 + `reason`，**禁止**静默演示数据冒充已绑定
 
+### 4.1 5173 管理面 IA 对齐（`feAdminUrl`）
+
+真源：[`docs/ui/layout.md`](../../../ui/layout.md) · 运行态 `http://127.0.0.1:5173/admin`。
+
+| 侧栏 | 菜单 | 路径 | DeepTalk wf |
+|------|------|------|-------------|
+| 分析 | **组件库** | `/admin/viz-components` | **②** publish 后验收 |
+| 分析 | 仪表板 | `/admin/dashboards` | **③** dashboard |
+| 分析 | 数据大屏 | `/admin/data-screens` | **③** data-screen |
+| 数据准备 | 数据连接 | `/admin/datasources` | 平台配置（非 wf 主路径） |
+
+- `feAdminUrl` 填 **`http://127.0.0.1:5173/admin`**（含 `/admin` 前缀）；打开后默认进仪表板列表，**wf2 须再进组件库**。
+- 插件 home 提供 wf2/wf3 **深链**（见 `home-entry.ts`）。
+- 评审：[5173 对齐记录](../../../reviews/grounded/2026-08-25-deeptalk-vitalspan-5173-admin-alignment.md)
+
 ---
 
 ## 5. 轨道决策（Phase 0 · 已闭合）

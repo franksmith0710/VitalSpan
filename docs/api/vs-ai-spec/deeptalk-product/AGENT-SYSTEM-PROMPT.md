@@ -76,7 +76,7 @@
 工作流 ② 完成
 artifactId=<uuid>
 styleComplianceTier=full
-已入平台组件库；5173 图表盘「自定义」可拖
+已入平台组件库；5173 **分析 → 组件库**（`/admin/viz-components`）可见
 ```
 
 ## 禁止说法

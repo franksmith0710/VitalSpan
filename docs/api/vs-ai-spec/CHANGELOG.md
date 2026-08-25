@@ -1,5 +1,11 @@
 # vs-ai-spec 变更
 
+## 2026-08-25 (5173 管理面 IA 对齐)
+
+- 新增 [5173 对齐评审](../../../reviews/grounded/2026-08-25-deeptalk-vitalspan-5173-admin-alignment.md)
+- E2E §4 / 契约 §4.1 / AGENT-SYSTEM-PROMPT：「图表盘自定义」→ **分析→组件库** `/admin/viz-components`
+- 插件 home 增加 wf2/wf3 5173 深链按钮
+
 ## 2026-08-25 (Phase 4 · B 轨 v0.3.0 交付)
 
 - 用户 Phase 4 手测全过；契约 §3 更新为 **v0.3.0 已交付**

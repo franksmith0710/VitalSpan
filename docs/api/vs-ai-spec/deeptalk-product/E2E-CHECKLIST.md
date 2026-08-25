@@ -39,9 +39,12 @@ vitalspan_completion_gate workflow=3 + tool_stdout（compose/upload 含 ok dashb
 
 ## 4. 前端 5173
 
-- [ ] 图表盘「自定义」可见已 publish 组件
-- [ ] 样式面板改色生效（bundle 读 `p.style`）
-- [ ] 属主移除按钮 → DELETE 204
+> IA 真源：[layout.md](../../../ui/layout.md) · `/admin` 默认重定向 **仪表板**；wf2 验收进 **分析 → 组件库**。
+
+- [ ] **分析 → 组件库**（`/admin/viz-components`）可见已 publish 组件
+- [ ] 组件编辑页样式面板改色生效（bundle 读 `p.style`）
+- [ ] 组件库卡片 **属主移除** → DELETE 204
+- [ ] **wf3**：`/admin/dashboards/:id/edit` 或 `/admin/data-screens/:id/edit` 可打开 compose 结果
 
 ## 5. Agent 行为
 
