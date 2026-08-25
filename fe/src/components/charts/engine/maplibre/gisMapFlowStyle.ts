@@ -255,17 +255,62 @@ function moveFlowLayersToTop(map: MapLibreMap) {
   }
 }
 
-export function syncGisFlowData(map: MapLibreMap, geoJson: GeoJSON.FeatureCollection | null) {
+let gisFlowDataSyncGeneration = 0;
+
+/** @internal vitest only */
+export function resetGisFlowDataSyncGenerationForTests() {
+  gisFlowDataSyncGeneration = 0;
+}
+
+export function syncGisFlowData(
+  map: MapLibreMap,
+  geoJson: GeoJSON.FeatureCollection | null,
+  options?: GisFlowLayerOptions,
+) {
+  const generation = ++gisFlowDataSyncGeneration;
+  const payload = geoJson ?? emptyGisFlowGeoJson();
+  const ensureLayers = () => {
+    if (!options || !shouldAppendGisFlowLayers(options)) return;
+    if (map.getSource(GIS_FLOW_SOURCE_ID)) return;
+    try {
+      const { source, layers } = buildGisFlowLayerDefinitions(payload, options);
+      if (!map.getSource(source.id)) {
+        map.addSource(source.id, source.spec);
+      }
+      for (const layer of layers) {
+        if (!map.getLayer(layer.id)) {
+          map.addLayer(layer);
+        }
+      }
+    } catch (error) {
+      const container = map.getContainer?.();
+      if (container instanceof HTMLElement) {
+        container.dataset.vsFlowEnsureError =
+          error instanceof Error ? error.message : String(error);
+      }
+    }
+  };
   const apply = () => {
+    if (generation !== gisFlowDataSyncGeneration) return;
+    ensureLayers();
     const source = map.getSource(GIS_FLOW_SOURCE_ID) as import("maplibre-gl").GeoJSONSource | undefined;
     if (!source) return;
-    source.setData(geoJson ?? emptyGisFlowGeoJson());
+    source.setData(payload);
     moveFlowLayersToTop(map);
+    const container = map.getContainer?.();
+    if (container instanceof HTMLElement && payload.features.length > 0) {
+      container.dataset.vsFlowSynced = String(payload.features.length);
+    }
+    const container = map.getContainer?.();
+    if (container instanceof HTMLElement && payload.features.length > 0) {
+      container.dataset.vsFlowSynced = String(payload.features.length);
+    }
   };
-  whenGisMapStyleReady(map, apply);
   if (map.isStyleLoaded()) {
-    map.once("idle", apply);
+    apply();
+    return;
   }
+  whenGisMapStyleReady(map, apply);
 }
 
 export function syncGisFlowStyle(map: MapLibreMap, options: GisFlowLayerOptions) {

@@ -67,25 +67,28 @@ export function useVizComponentEditor(componentId: string | undefined) {
     [queryClient],
   );
 
-  const uploadThumbnail = useCallback(async (id: string): Promise<boolean> => {
-    const uploaded = await persistVizComponentThumbnailBestEffort(id);
-    if (uploaded) {
+  const uploadThumbnail = useCallback(async (id: string): Promise<{ ok: true } | { ok: false; message: string }> => {
+    const result = await persistVizComponentThumbnailBestEffort(id);
+    if (result.ok) {
       invalidateVizComponentCaches(queryClient, id);
-      return true;
+      return { ok: true };
     }
-    toast.warning("封面截图失败", {
-      description: "请确认左侧预览已加载完成，再点「更新封面」重试。",
+    const description = result.stage === "upload" && result.message.includes("404")
+      ? "封面上传接口不可用（后端可能未重启到最新版本）。请重启 backend 后再试。"
+      : result.message || "请确认左侧预览已加载完成，再点「更新封面」重试。";
+    toast.warning(result.stage === "upload" ? "封面上传失败" : "封面截图失败", {
+      description,
     });
-    return false;
+    return { ok: false, message: result.message };
   }, [queryClient]);
 
   const refreshThumbnail = useCallback(async (): Promise<boolean> => {
     if (!component) return false;
     setRefreshingThumbnail(true);
     try {
-      const uploaded = await uploadThumbnail(component.id);
-      if (uploaded) toast.success("封面已更新");
-      return uploaded;
+      const result = await uploadThumbnail(component.id);
+      if (result.ok) toast.success("封面已更新");
+      return result.ok;
     } finally {
       setRefreshingThumbnail(false);
     }
@@ -112,20 +115,35 @@ export function useVizComponentEditor(componentId: string | undefined) {
       }
 
       let thumbnailUploaded = false;
+      let thumbnailUploadError = "";
       if (thumbnailBlob) {
         try {
           await uploadVizComponentThumbnailBlob(component.id, thumbnailBlob);
           thumbnailUploaded = true;
           invalidateVizComponentCaches(queryClient, component.id);
         } catch (err) {
+          thumbnailUploadError = err instanceof Error ? err.message : String(err);
           console.warn("[viz-component-save] thumbnail upload failed", err);
         }
       }
 
       if (!thumbnailUploaded) {
-        toast.warning(isDirty ? "组件已保存，但封面截图失败" : "封面截图失败", {
-          description: "请确认左侧预览已加载完成，再点「更新封面」重试。",
-        });
+        const captureFailed = !thumbnailBlob;
+        const description = !captureFailed && thumbnailUploadError.includes("404")
+          ? "封面上传接口不可用（后端可能未重启到最新版本）。请重启 backend 后再试。"
+          : captureFailed
+            ? "请确认左侧预览已加载完成，再点「更新封面」重试。"
+            : thumbnailUploadError || "请确认左侧预览已加载完成，再点「更新封面」重试。";
+        toast.warning(
+          isDirty
+            ? captureFailed
+              ? "组件已保存，但封面截图失败"
+              : "组件已保存，但封面上传失败"
+            : captureFailed
+              ? "封面截图失败"
+              : "封面上传失败",
+          { description },
+        );
       } else if (isDirty) {
         toast.success("组件已保存");
       }

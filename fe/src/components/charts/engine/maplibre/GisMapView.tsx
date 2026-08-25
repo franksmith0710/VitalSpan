@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { buildGisOverlayGeoJson } from "@/components/charts/engine/maplibre/gisMapOverlay";
 import { buildGisFlowGeoJson } from "@/components/charts/engine/maplibre/gisMapFlow";
@@ -114,6 +114,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const [pmtilesLoading, setPmtilesLoading] = useState(false);
   const [pmtilesErrorHint, setPmtilesErrorHint] = useState<string | null>(null);
   const [mapErrorHint, setMapErrorHint] = useState<string | null>(null);
+  const [mapRuntimeEpoch, setMapRuntimeEpoch] = useState(0);
 
   const tileServiceId = project.tileServiceId;
   const flavor = project.basemapFlavor ?? "light";
@@ -215,7 +216,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const syncOverlayRuntime = useCallback((map: MapLibreMap) => {
     syncGisOverlayData(map, overlayGeoJsonRef.current);
     syncGisOverlayStyle(map, overlayLayerOptionsRef.current);
-    syncGisFlowData(map, flowGeoJsonRef.current);
+    syncGisFlowData(map, flowGeoJsonRef.current, flowLayerOptionsRef.current);
     syncGisFlowStyle(map, flowLayerOptionsRef.current);
     const overlayResolved = resolveGisOverlayStyle(
       overlayLayerOptionsRef.current.overlay,
@@ -314,6 +315,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
     let cancelled = false;
     let map: MapLibreMap | null = null;
+    let resyncDataLayers: (() => void) | undefined;
 
     void (async () => {
       const maplibregl = await loadMapLibreRuntime();
@@ -334,6 +336,13 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       mapRef.current = map;
       appliedStyleKeyRef.current = styleKey;
       syncedViewKeyRef.current = null;
+
+      resyncDataLayers = () => {
+        if (cancelled || !map) return;
+        syncGisOverlayData(map, overlayGeoJsonRef.current);
+        syncGisFlowData(map, flowGeoJsonRef.current, flowLayerOptionsRef.current);
+      };
+      map.on("style.load", resyncDataLayers);
 
       map.on("error", (event) => {
         if (cancelled) return;
@@ -369,6 +378,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         });
         applyConfiguredView(map);
         syncOverlayRuntime(map);
+        setMapRuntimeEpoch((epoch) => epoch + 1);
         map.resize();
         onPaintReady?.();
       });
@@ -378,6 +388,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     return () => {
       cancelled = true;
       setMapErrorHint(null);
+      if (map && resyncDataLayers) {
+        map.off("style.load", resyncDataLayers);
+      }
       mapRef.current?.remove();
       mapRef.current = null;
       appliedStyleKeyRef.current = null;
@@ -423,6 +436,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         earthOpacity,
       });
       syncOverlayRuntime(map);
+      setMapRuntimeEpoch((epoch) => epoch + 1);
       map.resize();
       onPaintReady?.();
     });
@@ -513,11 +527,23 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     return () => observer?.disconnect();
   }, [remeasureShell]);
 
+  useLayoutEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    syncGisOverlayData(map, overlayGeoJson);
+    syncGisFlowData(map, flowGeoJson, flowLayerOptions);
+  }, [flowGeoJson, flowLayerOptions, mapBootstrapKey, mapRuntimeEpoch, overlayGeoJson, styleKey]);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     syncGisOverlayData(map, overlayGeoJson);
-    syncGisFlowData(map, flowGeoJson);
+    syncGisFlowData(map, flowGeoJson, flowLayerOptions);
+  }, [flowGeoJson, flowLayerOptions, mapRuntimeEpoch, overlayGeoJson]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
     const runFit = () => {
       const overlayResolved = resolveGisOverlayStyle(project.overlay, styleContext.chartColors);
       const flowResolved = resolveGisFlowStyle(project.flow, styleContext.chartColors);

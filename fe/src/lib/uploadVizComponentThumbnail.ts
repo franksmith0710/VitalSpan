@@ -44,14 +44,29 @@ export async function persistVizComponentThumbnailFromWidget(
   await uploadThumbnailBlob(componentId, blob);
 }
 
+export type VizComponentThumbnailPersistResult =
+  | { ok: true }
+  | { ok: false; stage: "capture" | "upload"; message: string };
+
 /** 封面失败不阻断保存；须在离开编辑页之前 await */
-export async function persistVizComponentThumbnailBestEffort(componentId: string): Promise<boolean> {
+export async function persistVizComponentThumbnailBestEffort(
+  componentId: string,
+): Promise<VizComponentThumbnailPersistResult> {
+  let blob: Blob;
   try {
-    await persistVizComponentThumbnail(componentId);
-    return true;
+    blob = await captureVizComponentEditThumbnailBlob();
   } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.warn("[viz-component-save] thumbnail capture failed", err);
+    return { ok: false, stage: "capture", message };
+  }
+  try {
+    await uploadThumbnailBlob(componentId, blob);
+    return { ok: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
     console.warn("[viz-component-save] thumbnail upload failed", err);
-    return false;
+    return { ok: false, stage: "upload", message };
   }
 }
 

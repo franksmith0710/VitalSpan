@@ -64,9 +64,13 @@ export function whenGisMapStyleReady(map: MapLibreMap, run: () => void) {
   const onReady = () => {
     map.off("load", onReady);
     map.off("style.load", onReady);
+    if (!map.isStyleLoaded()) return;
     run();
   };
-  map.once("load", onReady);
+  // setStyle 后 load 不再触发；仅 style.load 会到。已 loaded 时勿挂 once("load") 以免永不回调。
+  if (!map.loaded()) {
+    map.once("load", onReady);
+  }
   map.once("style.load", onReady);
 }
 

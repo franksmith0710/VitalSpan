@@ -51,4 +51,29 @@ describe("resolveD3ChartColors", () => {
       "#111111",
     ]);
   });
+
+  it("uses full palette when a sub-dimension splits series with a single metric", () => {
+    const config: ChartViewConfig = {
+      chartType: "line",
+      dataSourceId: "ds",
+      mode: "sql",
+      sql: "select 1",
+      dimensions: [
+        { field: "period", label: "周期" },
+        { field: "dim", label: "维度" },
+      ],
+      metrics: [{ field: "cnt", label: "数量" }],
+    };
+    const style: ChartStyleContext = {
+      ...baseStyle,
+      chartColors: ["#111111", "#222222", "#333333", "#444444"],
+    };
+    expect(
+      resolveD3ChartColors(
+        style,
+        { kind: "d3", plotType: "Line", options: { color: ["#465fff"] } },
+        config,
+      ),
+    ).toEqual(["#111111", "#222222", "#333333", "#444444"]);
+  });
 });

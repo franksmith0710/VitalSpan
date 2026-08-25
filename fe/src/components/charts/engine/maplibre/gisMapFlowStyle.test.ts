@@ -1,10 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildGisFlowLayerDefinitions,
   buildGisFlowLineGradient,
   buildGisFlowLineWidth,
   buildGisFlowStyleKey,
   emptyGisFlowGeoJson,
+  resetGisFlowDataSyncGenerationForTests,
   syncGisFlowData,
   syncGisFlowStyle,
   GIS_FLOW_SOURCE_ID,
@@ -66,6 +67,10 @@ describe("gisMapFlowStyle", () => {
 });
 
 describe("syncGisFlowData", () => {
+  beforeEach(() => {
+    resetGisFlowDataSyncGenerationForTests();
+  });
+
   it("calls setData on flow source when style is loaded", () => {
     const setData = vi.fn();
     const geojson: GeoJSON.FeatureCollection = {
@@ -100,7 +105,7 @@ describe("syncGisFlowData", () => {
     const setData = vi.fn();
     const map = {
       isStyleLoaded: () => true,
-      getSource: () => ({ setData }),
+      getSource: (id: string) => (id === GIS_FLOW_SOURCE_ID ? { setData } : undefined),
       getLayer: () => ({}),
       moveLayer: vi.fn(),
       once: vi.fn(),
@@ -108,6 +113,106 @@ describe("syncGisFlowData", () => {
 
     syncGisFlowData(map as never, null);
     expect(setData).toHaveBeenCalledWith({ type: "FeatureCollection", features: [] });
+  });
+
+  it("adds flow source at runtime when style omits flow layers", () => {
+    const setData = vi.fn();
+    const addSource = vi.fn();
+    const addLayer = vi.fn();
+    const sources = new Map<string, { setData: typeof setData }>();
+    const geojson: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: { type: "LineString", coordinates: [[0, 0], [1, 1]] },
+          properties: {},
+        },
+      ],
+    };
+    const map = {
+      isStyleLoaded: () => true,
+      getSource: (id: string) => sources.get(id),
+      getLayer: () => undefined,
+      addSource: (id: string, spec: unknown) => {
+        addSource(id, spec);
+        sources.set(id, { setData });
+      },
+      addLayer,
+      moveLayer: vi.fn(),
+      once: vi.fn(),
+    };
+
+    syncGisFlowData(map as never, geojson, {
+      flavor: "light",
+      layersActive: true,
+      flow: { enabled: true, color: "#f97316" },
+    });
+
+    expect(addSource).toHaveBeenCalledWith(GIS_FLOW_SOURCE_ID, expect.objectContaining({ type: "geojson" }));
+    expect(addLayer).toHaveBeenCalled();
+    expect(setData).toHaveBeenCalledWith(geojson);
+  });
+
+  it("does not register idle callback that can overwrite newer flow data", () => {
+    const setData = vi.fn();
+    const once = vi.fn();
+    const geojson: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: { type: "LineString", coordinates: [[0, 0], [1, 1]] },
+          properties: {},
+        },
+      ],
+    };
+    const map = {
+      isStyleLoaded: () => true,
+      getSource: (id: string) => (id === GIS_FLOW_SOURCE_ID ? { setData } : undefined),
+      getLayer: () => ({}),
+      moveLayer: vi.fn(),
+      once,
+    };
+
+    syncGisFlowData(map as never, geojson);
+    expect(once).not.toHaveBeenCalled();
+    expect(setData).toHaveBeenCalledWith(geojson);
+  });
+
+  it("ignores stale style.load callbacks after a newer sync", () => {
+    const setData = vi.fn();
+    const queued: Array<() => void> = [];
+    const geojson: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: { type: "LineString", coordinates: [[0, 0], [1, 1]] },
+          properties: {},
+        },
+      ],
+    };
+    let styleLoaded = false;
+    const map = {
+      isStyleLoaded: () => styleLoaded,
+      loaded: () => false,
+      getSource: (id: string) => (id === GIS_FLOW_SOURCE_ID ? { setData } : undefined),
+      getLayer: () => ({}),
+      moveLayer: vi.fn(),
+      once: (_event: string, cb: () => void) => {
+        queued.push(cb);
+      },
+      off: vi.fn(),
+    };
+
+    syncGisFlowData(map as never, null);
+    syncGisFlowData(map as never, geojson);
+    styleLoaded = true;
+    for (const run of queued) run();
+
+    expect(setData).not.toHaveBeenCalledWith({ type: "FeatureCollection", features: [] });
+    expect(setData).toHaveBeenCalledWith(geojson);
   });
 });
 

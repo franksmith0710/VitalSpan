@@ -54,10 +54,14 @@ describe("persistVizComponentThumbnail", () => {
     expect(apiUploadBlob).not.toHaveBeenCalled();
   });
 
-  it("best effort returns false instead of throwing", async () => {
+  it("best effort returns capture failure instead of throwing", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     vi.mocked(findVizComponentThumbnailCaptureRoot).mockReturnValue(null);
-    await expect(persistVizComponentThumbnailBestEffort("comp-1")).resolves.toBe(false);
+    await expect(persistVizComponentThumbnailBestEffort("comp-1")).resolves.toEqual({
+      ok: false,
+      stage: "capture",
+      message: expect.stringMatching(/未找到/),
+    });
     warn.mockRestore();
   });
 
