@@ -74,7 +74,8 @@ d3 必须 `host.vsCv.mount(`；render 读 `(p && p.style) || {}`。
 |--------|------|
 | mount | `host.vsCv.mount(function(p){…})` |
 | 读样式 | `var st = (p && p.style) \|\| {}` 驱动 DOM/CSS |
-| 禁止 | `vs-cv-style-update`、`getStyle()`、`.vs-cv-style` |
+| layout | 读 `p.layout.width/height` 缩放；内容多或 widget 小 → 组件内 `overflow-y:auto`，能展示多少就多少 |
+| 禁止 | `vs-cv-style-update`、`getStyle()`、`.vs-cv-style`、固定 px 无视 resize |
 | schema | 每个 property 有 **`"title": "中文"`** |
 | hooks | boolean 开关配 `styleHooks.hideWhenFalse`（推荐） |
 | 验收 | publish 输出 **full** → `completion_gate workflow=2` + **tool_stdout** |

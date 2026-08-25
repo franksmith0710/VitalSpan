@@ -58,11 +58,33 @@ describe("gisMapFlowStyle", () => {
       scaleByMetric: false,
       autoFit: true,
       animate: true,
+      arcLift: 0.62,
     });
     expect(width[0]).toBe("interpolate");
     expect(width[2]).toEqual(["zoom"]);
     expect(width[3]).toBe(0);
-    expect(width[4]).toBeCloseTo(7.2);
+    expect(width[4]).toBeCloseTo(16.8);
+  });
+
+  it("avoids nested zoom arithmetic when scaling by metric", () => {
+    const width = buildGisFlowLineWidth({
+      enabled: true,
+      color: "#f97316",
+      widthMin: 4,
+      widthMax: 14,
+      opacity: 1,
+      scaleByMetric: true,
+      autoFit: true,
+      animate: true,
+      arcLift: 0.62,
+    });
+    expect(width[0]).toBe("interpolate");
+    expect(width[2]).toEqual(["zoom"]);
+    const inner = width[4];
+    expect(Array.isArray(inner)).toBe(true);
+    expect(inner?.[0]).toBe("interpolate");
+    expect(JSON.stringify(width)).not.toContain('"*"');
+    expect(JSON.stringify(width)).not.toContain('"+"');
   });
 });
 

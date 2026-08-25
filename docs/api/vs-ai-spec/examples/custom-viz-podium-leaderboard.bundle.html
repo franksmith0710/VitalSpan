@@ -50,15 +50,13 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
   opacity:.92;flex:var(--base-flex,1) 1 0;min-height:calc(18px * var(--vs-scale))
 }
 .list-area{
-  flex:1;min-height:0;overflow:hidden;
-  display:flex;flex-direction:column;
-  gap:calc(2px * var(--vs-scale));
+  flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;
   margin-top:var(--list-gap,0px)
 }
 .list-row{
-  flex:1 1 0;min-height:0;
   display:flex;align-items:center;
-  padding:0 calc(4px * var(--vs-scale));
+  min-height:calc(30px * var(--vs-scale));
+  padding:calc(4px * var(--vs-scale));
   border-bottom:1px dashed rgba(100,116,139,.18);
   opacity:0;animation:vsFade .45s ease-out forwards
 }
@@ -142,15 +140,12 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
       }
     }
     var listGap=(podiumH>0&&restCount>0)?gap:0;
-    var listH=Math.max(0,innerH-podiumH-listGap);
-    return{scale:scale,podiumH:podiumH,listH:listH,listGap:listGap};
+    return{scale:scale,podiumH:podiumH,listGap:listGap};
   }
   function applyLayout(container,pa,la,metrics){
     container.style.setProperty('--vs-scale',String(metrics.scale));
     pa.style.setProperty('--podium-area-h',metrics.podiumH+'px');
     la.style.setProperty('--list-gap',metrics.listGap+'px');
-    la.style.height=metrics.listH>0?(metrics.listH+'px'):'0px';
-    la.style.flex=metrics.listH>0?'0 0 auto':'1 1 auto';
   }
   function showHint(pa,la,text,metrics){
     pa.innerHTML='';pa.style.display='none';

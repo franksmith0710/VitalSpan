@@ -27,7 +27,7 @@
 1. 组件/大屏必须通过 **插件工具或等价服务端** POST 到 VitalSpan；本地文件只是草稿。
 2. 无 uuid 禁止结束：② 无 `artifactId`、③ 无 `dashboardId` → 不得说「已完成/已上传/已对接」。
 3. 三条线分开（① 内置图 / ② 组件库 / ③ 大屏），禁止混任务。
-4. bundle：`host.vsCv.mount(`；样式 `(p && p.style) || {}`。
+4. bundle：`host.vsCv.mount(`；样式 `(p && p.style) || {}`；布局读 `p.layout` 缩放，溢出用组件内滚动（见 `BUNDLE-BOILERPLATE.md` §4）。
 5. **禁止**问卷最后一问「保存到 output/ 还是预览」——需求收集后 **必须** 调用 `vitalspan_publish_artifact`。
 6. **禁止**在浏览器 iframe 内 `fetch(:8000)` 入库；Agent 侧由 **插件 Node 进程** 执行工具（不是让用户开 5173 手工入库）。
 

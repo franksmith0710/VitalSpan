@@ -65,7 +65,34 @@ var svg = host.vsCv.d3.select(host.querySelector("#vs-cv-chart"));
 | 尺寸 | 读 `p.layout.width` / `p.layout.height`；禁仅 `clientWidth \|\| 320` 作唯一依据 |
 | 生命周期 | **必须** `host.vsCv.mount(render)`（html / d3 均如此） |
 
-## 4. 预检告警码
+## 4. 容器自适应与溢出（DeepTalk 组件通用）
+
+用户拖大/拖小 widget 时，**内容须随 `p.layout` 等比缩放**（字号、间距、柱高、图标等用 `--vs-scale` 或 `clamp()`，勿写死 px）。
+
+**溢出策略**（列表/明细类默认）：
+
+| 场景 | 做法 |
+|------|------|
+| 容器够大 | 全部可见，无滚动条 |
+| 内容多于可视区 | **组件内** `overflow-y: auto`（或等价滚动区） |
+| 容器太小 | **能展示多少就多少**，其余滚动查看 |
+| 数据量控制 | 用 styleSchema（如 `maxItems`）或平台 `truncated`；**不要**强行压缩行高塞满 |
+
+结构建议：
+
+```css
+html, body { height: 100%; overflow: hidden; }
+#vs-cv-root { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
+#vs-cv-scroll { flex: 1; min-height: 0; overflow-y: auto; }
+```
+
+- 外层 `overflow: hidden` 防止撑破 widget 壳；**滚动发生在组件内 designated 区域**
+- 禁止「固定 px 布局 + 忽略 layout 变化」；禁止为塞满而 `flex:1` 压扁每一行到不可读
+- 特例：P1/P2 **自动滚动**范式（`scrolling-table` 等）用动画 viewport，不用用户手滚
+
+金样：`examples/custom-viz-podium-leaderboard.json` · `examples/scrolling-table.bundle.html`
+
+## 5. 预检告警码
 
 | code | 含义 |
 |------|------|
@@ -76,7 +103,7 @@ var svg = host.vsCv.d3.select(host.querySelector("#vs-cv-chart"));
 
 修复提示见 `assets/aiviz-publish-hints.json`。
 
-## 5. 金样
+## 6. 金样
 
 | 范式 | 模板 | 可编辑 `.bundle.html` |
 |------|------|------------------------|

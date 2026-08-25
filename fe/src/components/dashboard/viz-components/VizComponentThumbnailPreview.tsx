@@ -82,7 +82,7 @@ export function VizComponentThumbnailPreview({
       <PreviewMock widgetType={widgetType} />
       <div className="pointer-events-none absolute inset-x-0 bottom-2 flex justify-center px-3">
         <p className="rounded bg-white/80 px-2 py-0.5 text-[10px] text-gray-500 shadow-sm dark:bg-gray-900/80 dark:text-gray-400">
-          保存后将生成封面截图
+          暂无封面，请保存或批量生成
         </p>
       </div>
     </div>

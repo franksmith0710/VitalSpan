@@ -30,8 +30,9 @@ L3 customViz 采用 **唯一 Base**（`CustomVizWidget`）+ `POST/PUT /api/v1/ai
 | Payload 状态机（unbound/empty/error/bound） | styleSchema 扩展项 |
 | fieldSlots / styleSchema / 安全红线（入库 lint） | — |
 | render 内读 `p.layout` 调整布局 | — |
+| 列表/明细：容器内溢出滚动（能展示多少就多少） | 固定 px 无视 resize |
 
-平台**不**保证任意 DOM 自动美观；只保证数据/配置/生命周期纪律。
+平台**不**保证任意 DOM 自动美观；只保证数据/配置/生命周期纪律。布局纪律见 [BUNDLE-BOILERPLATE.md](./BUNDLE-BOILERPLATE.md) §4。
 
 ## d3 runtime
 

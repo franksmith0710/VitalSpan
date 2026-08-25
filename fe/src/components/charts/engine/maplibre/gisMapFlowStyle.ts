@@ -89,51 +89,66 @@ function metricWidthExpr(resolved: ResolvedGisFlowStyle): number | ExpressionSpe
   return (resolved.widthMin + resolved.widthMax) / 2;
 }
 
+const FLOW_LINE_ZOOM_WIDTH_STOPS: Array<[number, number]> = [
+  [0, 2.8],
+  [1, 3.4],
+  [2, 4.2],
+  [4, 5.2],
+  [6, 6],
+];
+
+/** MapLibre 6.6 禁止 zoom 插值内再嵌套 `["*", inner, n]` / `["+", inner, n]`，须展平为双层 interpolate。 */
+function buildZoomScaledMetricWidth(
+  widthMin: number,
+  widthMax: number,
+  extraPx: number,
+): ExpressionSpecification {
+  const stops: unknown[] = ["interpolate", ["linear"], ["zoom"]];
+  for (const [zoom, factor] of FLOW_LINE_ZOOM_WIDTH_STOPS) {
+    stops.push(
+      zoom,
+      [
+        "interpolate",
+        ["linear"],
+        ["coalesce", ["get", "weightNorm"], 0.5],
+        0,
+        widthMin * factor + extraPx,
+        1,
+        widthMax * factor + extraPx,
+      ],
+    );
+  }
+  return stops as ExpressionSpecification;
+}
+
+function buildZoomScaledFixedWidth(base: number, extraPx: number): ExpressionSpecification {
+  const stops: unknown[] = ["interpolate", ["linear"], ["zoom"]];
+  for (const [zoom, factor] of FLOW_LINE_ZOOM_WIDTH_STOPS) {
+    stops.push(zoom, base * factor + extraPx);
+  }
+  return stops as ExpressionSpecification;
+}
+
 export function buildGisFlowLineWidth(
   resolved: ResolvedGisFlowStyle,
   extraPx = 0,
 ): ExpressionSpecification {
+  if (resolved.scaleByMetric) {
+    return buildZoomScaledMetricWidth(resolved.widthMin, resolved.widthMax, extraPx);
+  }
   const base = metricWidthExpr(resolved);
   if (typeof base === "number") {
-    return [
-      "interpolate",
-      ["linear"],
-      ["zoom"],
-      0,
-      base * 1.2 + extraPx,
-      1,
-      base * 1.8 + extraPx,
-      2,
-      base * 2.4 + extraPx,
-      4,
-      base * 3.2 + extraPx,
-      6,
-      base * 4 + extraPx,
-    ];
+    return buildZoomScaledFixedWidth(base, extraPx);
   }
-  return [
-    "interpolate",
-    ["linear"],
-    ["zoom"],
-    0,
-    ["+", ["*", base, 1.2], extraPx],
-    1,
-    ["+", ["*", base, 1.8], extraPx],
-    2,
-    ["+", ["*", base, 2.4], extraPx],
-    4,
-    ["+", ["*", base, 3.2], extraPx],
-    6,
-    ["+", ["*", base, 4], extraPx],
-  ];
+  return buildZoomScaledMetricWidth(resolved.widthMin, resolved.widthMax, extraPx);
 }
 
-function buildGisFlowGlowWidth(lineWidth: ExpressionSpecification): ExpressionSpecification {
-  return ["interpolate", ["linear"], ["zoom"], 0, 8, 1, 11, 2, 14, 4, 18, 6, 22];
+function buildGisFlowGlowWidth(_lineWidth: ExpressionSpecification): ExpressionSpecification {
+  return ["interpolate", ["linear"], ["zoom"], 0, 14, 1, 18, 2, 22, 4, 28, 6, 34];
 }
 
 function buildGisFlowShadowWidth(_lineWidth: ExpressionSpecification): ExpressionSpecification {
-  return ["interpolate", ["linear"], ["zoom"], 0, 12, 1, 16, 2, 20, 4, 26, 6, 32];
+  return ["interpolate", ["linear"], ["zoom"], 0, 18, 1, 24, 2, 30, 4, 38, 6, 46];
 }
 
 function buildGisFlowLinePaint(resolved: ResolvedGisFlowStyle): Record<string, unknown> {
@@ -271,7 +286,8 @@ export function syncGisFlowData(
   const payload = geoJson ?? emptyGisFlowGeoJson();
   const ensureLayers = () => {
     if (!options || !shouldAppendGisFlowLayers(options)) return;
-    if (map.getSource(GIS_FLOW_SOURCE_ID)) return;
+    const lineLayerReady = Boolean(map.getLayer(GIS_FLOW_LINE_LAYER_ID));
+    if (map.getSource(GIS_FLOW_SOURCE_ID) && lineLayerReady) return;
     try {
       const { source, layers } = buildGisFlowLayerDefinitions(payload, options);
       if (!map.getSource(source.id)) {
@@ -282,29 +298,31 @@ export function syncGisFlowData(
           map.addLayer(layer);
         }
       }
-    } catch (error) {
-      const container = map.getContainer?.();
-      if (container instanceof HTMLElement) {
-        container.dataset.vsFlowEnsureError =
-          error instanceof Error ? error.message : String(error);
-      }
+    } catch {
+      // 样式热更新竞态时忽略；下一帧 sync 会重试
     }
   };
   const apply = () => {
     if (generation !== gisFlowDataSyncGeneration) return;
     ensureLayers();
-    const source = map.getSource(GIS_FLOW_SOURCE_ID) as import("maplibre-gl").GeoJSONSource | undefined;
-    if (!source) return;
-    source.setData(payload);
-    moveFlowLayersToTop(map);
-    const container = map.getContainer?.();
-    if (container instanceof HTMLElement && payload.features.length > 0) {
-      container.dataset.vsFlowSynced = String(payload.features.length);
-    }
-    const container = map.getContainer?.();
-    if (container instanceof HTMLElement && payload.features.length > 0) {
-      container.dataset.vsFlowSynced = String(payload.features.length);
-    }
+    const writeData = () => {
+      if (generation !== gisFlowDataSyncGeneration) return false;
+      const source = map.getSource(GIS_FLOW_SOURCE_ID) as import("maplibre-gl").GeoJSONSource | undefined;
+      if (!source) return false;
+      source.setData(payload);
+      moveFlowLayersToTop(map);
+      const host = map.getContainer();
+      if (host instanceof HTMLElement) {
+        host.dataset.flowSourceLen = String(payload.features.length);
+        host.dataset.flowLayerReady = map.getLayer(GIS_FLOW_LINE_LAYER_ID) ? "1" : "0";
+      }
+      return true;
+    };
+    if (writeData()) return;
+    map.once("idle", () => {
+      if (writeData()) return;
+      map.once("idle", writeData);
+    });
   };
   if (map.isStyleLoaded()) {
     apply();
@@ -344,7 +362,17 @@ export function syncGisFlowStyle(map: MapLibreMap, options: GisFlowLayerOptions)
 
 export function buildGisFlowStyleKey(options: GisFlowLayerOptions): string {
   const resolved = resolveGisFlowStyle(options.flow, options.chartColors);
-  return JSON.stringify({ ...resolved, flavor: options.flavor, layersActive: options.layersActive === true });
+  return JSON.stringify({
+    enabled: resolved.enabled,
+    color: resolved.color,
+    widthMin: resolved.widthMin,
+    widthMax: resolved.widthMax,
+    opacity: resolved.opacity,
+    scaleByMetric: resolved.scaleByMetric,
+    animate: resolved.animate,
+    flavor: options.flavor,
+    layersActive: options.layersActive === true,
+  });
 }
 
 export function shouldAppendGisFlowLayers(options: GisFlowLayerOptions): boolean {

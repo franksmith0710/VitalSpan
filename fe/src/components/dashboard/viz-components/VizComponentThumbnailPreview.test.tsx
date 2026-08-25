@@ -37,6 +37,6 @@ describe("VizComponentThumbnailPreview", () => {
     });
     render(<VizComponentThumbnailPreview widgetType="chart" />);
     expect(screen.getByTestId("viz-component-thumbnail-placeholder")).toBeInTheDocument();
-    expect(screen.getByText("保存后将生成封面截图")).toBeInTheDocument();
+    expect(screen.getByText("暂无封面，请保存或批量生成")).toBeInTheDocument();
   });
 });

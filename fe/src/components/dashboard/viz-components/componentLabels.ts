@@ -48,6 +48,12 @@ export const VIZ_COMPONENTS_HUB = {
   toastPublished: "组件已发布",
   toastArchived: "组件已下架",
   toastDeleted: "组件已删除",
+  batchThumbnails: "批量生成封面",
+  batchThumbnailsRunning: "生成中…",
+  batchThumbnailsCancel: "取消生成",
+  batchThumbnailsNone: "所有组件已有封面截图",
+  batchThumbnailsDone: (ok: number, failed: number) =>
+    failed > 0 ? `已生成 ${ok} 个封面，${failed} 个失败` : `已为 ${ok} 个组件生成封面`,
 } as const;
 
 export const COMPONENT_ACTIONS = {

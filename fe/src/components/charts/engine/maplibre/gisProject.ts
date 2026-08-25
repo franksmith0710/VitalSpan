@@ -1,5 +1,6 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { normalizeBasemapHexColor } from "@/components/charts/engine/maplibre/gisBasemapPalette";
+import { DEFAULT_FLOW_ARC_LIFT } from "@/components/charts/engine/maplibre/gisFlowDefaults";
 
 /** gis-map 仅支持管理员登记的全球 PMTiles 外部底图。 */
 export type GisBasemapId = "pmtiles";
@@ -172,6 +173,8 @@ export type GisProjectFlow = {
   autoFit?: boolean;
   /** 流动光点与枢纽呼吸动画；默认开启 */
   animate?: boolean;
+  /** 拱形高度 0.2–1.2；越大弧线越弯（仅影响 GeoJSON 路径） */
+  arcLift?: number;
 };
 
 export type GisProject = {
@@ -239,13 +242,14 @@ export const DEFAULT_GIS_OVERLAY: Required<
 const DEFAULT_GIS_OVERLAY_COLOR = "#2563eb";
 
 export const DEFAULT_GIS_FLOW: Required<
-  Pick<GisProjectFlow, "widthMin" | "widthMax" | "opacity" | "scaleByMetric" | "autoFit">
+  Pick<GisProjectFlow, "widthMin" | "widthMax" | "opacity" | "scaleByMetric" | "autoFit" | "arcLift">
 > = {
-  widthMin: 3,
-  widthMax: 9,
+  widthMin: 4,
+  widthMax: 14,
   opacity: 0.95,
   scaleByMetric: true,
   autoFit: true,
+  arcLift: DEFAULT_FLOW_ARC_LIFT,
 };
 
 export type ResolvedGisFlowStyle = {
@@ -257,6 +261,7 @@ export type ResolvedGisFlowStyle = {
   scaleByMetric: boolean;
   autoFit: boolean;
   animate: boolean;
+  arcLift: number;
 };
 
 export function isGisFlowEnabled(project: GisProject | undefined | null): boolean {
@@ -282,6 +287,11 @@ export function resolveGisFlowStyle(
     typeof flow?.color === "string" && flow.color.trim()
       ? flow.color.trim()
       : chartColors?.[0] ?? "#f97316";
+  const arcLiftRaw = Number(flow?.arcLift);
+  const arcLift =
+    Number.isFinite(arcLiftRaw) && arcLiftRaw >= 0.15 && arcLiftRaw <= 1.5
+      ? arcLiftRaw
+      : DEFAULT_GIS_FLOW.arcLift;
   return {
     enabled: flow?.enabled === true,
     color,
@@ -291,6 +301,7 @@ export function resolveGisFlowStyle(
     scaleByMetric: flow?.scaleByMetric !== false,
     autoFit: flow?.autoFit !== false,
     animate: flow?.animate !== false,
+    arcLift,
   };
 }
 
@@ -518,6 +529,8 @@ function normalizeGisProjectFlow(input: unknown): GisProjectFlow | undefined {
   if (raw.scaleByMetric === false) next.scaleByMetric = false;
   if (raw.autoFit === false) next.autoFit = false;
   if (raw.animate === false) next.animate = false;
+  const arcLift = Number(raw.arcLift);
+  if (Number.isFinite(arcLift) && arcLift >= 0.15 && arcLift <= 1.5) next.arcLift = arcLift;
   return Object.keys(next).length > 0 ? next : undefined;
 }
 

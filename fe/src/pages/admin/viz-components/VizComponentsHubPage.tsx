@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
-import { Boxes, Pencil, Upload } from "lucide-react";
+import { Boxes, ImageIcon, Pencil, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import {
@@ -61,6 +61,8 @@ import {
 } from "@/components/dashboard/hubCardUi";
 import { cn } from "@/lib/utils";
 import { VizComponentsHubFilters } from "./VizComponentsHubFilters";
+import { VizComponentThumbnailBatchStudio } from "@/components/dashboard/viz-components/VizComponentThumbnailBatchStudio";
+import { useVizComponentThumbnailBatch } from "@/hooks/useVizComponentThumbnailBatch";
 
 function ComponentCardSkeleton() {
   return (
@@ -119,6 +121,7 @@ export function VizComponentsHubPage() {
   const [referencesTarget, setReferencesTarget] = useState<VizComponentListItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<VizComponentListItem | null>(null);
   const pagination = useListPagination(20, [surfaceTab, widgetFilter, q]);
+  const thumbnailBatch = useVizComponentThumbnailBatch(canManage);
 
   const listQuery = useQuery({
     queryKey: queryKeys.vizComponents.list({
@@ -178,6 +181,22 @@ export function VizComponentsHubPage() {
   const items = listQuery.data?.items ?? [];
   const total = listQuery.data?.total ?? 0;
 
+  const handleBatchThumbnails = async () => {
+    if (thumbnailBatch.running) {
+      thumbnailBatch.cancel();
+      return;
+    }
+    const result = await thumbnailBatch.run();
+    invalidate();
+    if (result.ok === 0 && result.failed === 0) {
+      toast.message(VIZ_COMPONENTS_HUB.batchThumbnailsNone);
+      return;
+    }
+    if (result.ok > 0 || result.failed > 0) {
+      toast.success(VIZ_COMPONENTS_HUB.batchThumbnailsDone(result.ok, result.failed));
+    }
+  };
+
   return (
     <AdminPageShell
       layout="list"
@@ -191,6 +210,20 @@ export function VizComponentsHubPage() {
       actions={
         <div className="flex items-center gap-2">
           {canCreate ? <CreateVizComponentButton /> : null}
+          {canCreate ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={pending && !thumbnailBatch.running}
+              onClick={() => void handleBatchThumbnails()}
+            >
+              <ImageIcon className="size-4" aria-hidden />
+              {thumbnailBatch.running
+                ? VIZ_COMPONENTS_HUB.batchThumbnailsRunning
+                : VIZ_COMPONENTS_HUB.batchThumbnails}
+            </Button>
+          ) : null}
           <Button type="button" variant="outline" size="sm" asChild>
             <Link to="/admin/viz-templates">{VIZ_COMPONENTS_HUB.layoutTemplates}</Link>
           </Button>
@@ -198,6 +231,19 @@ export function VizComponentsHubPage() {
       }
     >
       <ListPageSection>
+        {thumbnailBatch.progress ? (
+          <p className="mb-3 text-theme-sm text-gray-600 dark:text-gray-300" role="status">
+            正在生成封面 {thumbnailBatch.progress.current}/{thumbnailBatch.progress.total}：
+            {thumbnailBatch.progress.name}
+            <button
+              type="button"
+              className="ml-3 text-brand-500 hover:underline"
+              onClick={() => thumbnailBatch.cancel()}
+            >
+              {VIZ_COMPONENTS_HUB.batchThumbnailsCancel}
+            </button>
+          </p>
+        ) : null}
         <ListPageToolbar
           filters={
             <VizComponentsHubFilters
@@ -324,6 +370,12 @@ export function VizComponentsHubPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <VizComponentThumbnailBatchStudio
+        widget={thumbnailBatch.activeWidget}
+        studioKey={thumbnailBatch.studioKey}
+        dashboardStyle={thumbnailBatch.dashboardStyle}
+      />
     </AdminPageShell>
   );
 }

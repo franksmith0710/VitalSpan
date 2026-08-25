@@ -1,12 +1,9 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { activeFieldRefs } from "@/lib/chartConfigState";
 import { parseMetricValue } from "@/lib/buildChartRenderModel";
-import { isGisFlowEnabled } from "@/components/charts/engine/maplibre/gisProject";
+import { isGisFlowEnabled, resolveGisFlowStyle } from "@/components/charts/engine/maplibre/gisProject";
 import { migrateChartConfigToDeAxes, syncLegacyFieldsFromAxes } from "@/lib/resolveChartEncoding";
-import {
-  DEFAULT_FLOW_ARC_LIFT,
-  interpolateElevatedFlowArc,
-} from "@/components/charts/engine/maplibre/gisMapFlowArc";
+import { interpolateElevatedFlowArc } from "@/components/charts/engine/maplibre/gisMapFlowArc";
 
 export { interpolateGreatCircleArc } from "@/components/charts/engine/maplibre/gisMapFlowArc";
 
@@ -28,7 +25,17 @@ export type GisFlowSegment = {
 
 const DEFAULT_FLOW_COLOR = "#f97316";
 
-const ARC_SEGMENTS = 64;
+const ARC_SEGMENTS = 80;
+
+function gisOdCoordinatesReady(config: ChartViewConfig): boolean {
+  const dims = resolveGisMapFlowDimensions(config);
+  return Boolean(
+    dims[0]?.field?.trim() &&
+      dims[1]?.field?.trim() &&
+      dims[2]?.field?.trim() &&
+      dims[3]?.field?.trim(),
+  );
+}
 
 /** 跨日界线时 MapLibre 会把 LineString 画成横穿全屏的错线，须拆段。 */
 export function splitLineAtAntimeridian(coords: [number, number][]): [number, number][][] {
@@ -54,6 +61,7 @@ function buildFlowArcFeatures(
   index: number,
   fallbackColor: string,
   weightNorm: number | undefined,
+  arcLift: number,
 ): GeoJSON.Feature[] {
   const arcCoords = interpolateElevatedFlowArc(
     segment.fromLng,
@@ -61,7 +69,7 @@ function buildFlowArcFeatures(
     segment.toLng,
     segment.toLat,
     ARC_SEGMENTS,
-    DEFAULT_FLOW_ARC_LIFT,
+    arcLift,
   );
   const arcs = splitLineAtAntimeridian(arcCoords);
   const lineFeatures = arcs.map((coordinates, arcIndex) => ({
@@ -99,7 +107,7 @@ export function buildGisFlowGeoJson(
   rows: (string | number | boolean | null)[][],
   chartColors?: string[],
 ): GeoJSON.FeatureCollection | null {
-  if (!gisFlowFieldsReady(config)) return null;
+  if (!gisOdCoordinatesReady(config)) return null;
 
   const dims = resolveGisMapFlowDimensions(config);
   const metrics = activeFieldRefs(
@@ -155,6 +163,7 @@ export function buildGisFlowGeoJson(
   const minWeight = weights.length ? Math.min(...weights) : undefined;
   const maxWeight = weights.length ? Math.max(...weights) : undefined;
   const fallbackColor = chartColors?.[0] ?? DEFAULT_FLOW_COLOR;
+  const arcLift = resolveGisFlowStyle(config.nativeBody?.gisProject, chartColors).arcLift;
 
   const features: GeoJSON.Feature[] = [];
   segments.forEach((segment, index) => {
@@ -162,19 +171,13 @@ export function buildGisFlowGeoJson(
     if (segment.weight != null && minWeight != null && maxWeight != null) {
       weightNorm = maxWeight === minWeight ? 0.5 : (segment.weight - minWeight) / (maxWeight - minWeight);
     }
-    features.push(...buildFlowArcFeatures(segment, index, fallbackColor, weightNorm));
+    features.push(...buildFlowArcFeatures(segment, index, fallbackColor, weightNorm, arcLift));
   });
 
   return { type: "FeatureCollection", features };
 }
 
 export function gisFlowFieldsReady(config: ChartViewConfig): boolean {
-  if (!isGisFlowEnabled(config.nativeBody?.gisProject)) return false;
-  const dims = resolveGisMapFlowDimensions(config);
-  return Boolean(
-    dims[0]?.field?.trim() &&
-      dims[1]?.field?.trim() &&
-      dims[2]?.field?.trim() &&
-      dims[3]?.field?.trim(),
-  );
+  if (!gisOdCoordinatesReady(config)) return false;
+  return isGisFlowEnabled(config.nativeBody?.gisProject) || gisOdCoordinatesReady(config);
 }

@@ -339,8 +339,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
       resyncDataLayers = () => {
         if (cancelled || !map) return;
-        syncGisOverlayData(map, overlayGeoJsonRef.current);
-        syncGisFlowData(map, flowGeoJsonRef.current, flowLayerOptionsRef.current);
+        syncOverlayRuntime(map);
+        setMapRuntimeEpoch((epoch) => epoch + 1);
       };
       map.on("style.load", resyncDataLayers);
 
@@ -536,6 +536,17 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!map || !style || renderBasemap !== "pmtiles") return;
+    if (!chartConfig || !isGisMapOdBindingComplete(chartConfig)) return;
+    if (map.getSource("vs-gis-flow")) return;
+    applyGisMapStylePreservingCamera(map, style, () => {
+      syncOverlayRuntime(map);
+      setMapRuntimeEpoch((epoch) => epoch + 1);
+    });
+  }, [chartConfig, renderBasemap, style, syncOverlayRuntime]);
+
+  useEffect(() => {
+    const map = mapRef.current;
     if (!map) return;
     syncGisOverlayData(map, overlayGeoJson);
     syncGisFlowData(map, flowGeoJson, flowLayerOptions);
@@ -692,6 +703,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           data-atmosphere={project.atmospherePreset ?? "night"}
           data-projection={projection}
           data-earth-opacity={earthOpacity}
+          data-flow-features={flowGeoJson?.features.length ?? 0}
+          data-flow-lines={
+            flowGeoJson?.features.filter((f) => f.geometry.type === "LineString").length ?? 0
+          }
           className="relative z-[4] h-full w-full"
           role="img"
           aria-label={ariaLabel ?? "GIS 地图"}

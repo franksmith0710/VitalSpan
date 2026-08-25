@@ -1,5 +1,11 @@
 # vs-ai-spec 变更
 
+## 2026-08-25 (customViz 容器自适应 · 溢出滚动通用规范)
+
+- [guides/BUNDLE-BOILERPLATE.md](./guides/BUNDLE-BOILERPLATE.md) 新增 **§4 容器自适应与溢出**：DeepTalk 组件须读 `p.layout` 缩放；内容多/widget 小 → 组件内滚动，能展示多少就多少
+- **IRON-RULES** · **HTML-RUNTIME** · **PLATFORM-SLA** · **CUSTOM-VIZ-AUTHOR** · **DEEPTALK-AGENT-PROMPT** 同步
+- 金样 `custom-viz-podium-leaderboard` → v1.1.1：领奖台随 layout 缩放 + 列表区 `overflow-y:auto`
+
 ## 2026-08-25 (政企内置大屏 compose 参考 · gov-*)
 
 - 新增 6 套 **5173 内置大屏** DeepTalk compose 参考：`gov-eco-monitor` · `gov-industrial-park` · `gov-smart-city` · `gov-digital-cockpit` · `gov-emergency-command` · `gov-community`

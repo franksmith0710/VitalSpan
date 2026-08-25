@@ -18,7 +18,6 @@ import {
 } from "@/lib/vizComponents";
 import {
   captureVizComponentEditThumbnailBlob,
-  persistVizComponentThumbnailBestEffort,
   uploadVizComponentThumbnailBlob,
 } from "@/lib/uploadVizComponentThumbnail";
 
@@ -31,7 +30,6 @@ export function useVizComponentEditor(componentId: string | undefined) {
   const queryClient = useQueryClient();
   const [widget, setWidget] = useState<LayoutWidget | null>(null);
   const [saving, setSaving] = useState(false);
-  const [refreshingThumbnail, setRefreshingThumbnail] = useState(false);
   const hydratedRevisionRef = useRef<number | null>(null);
 
   const detailQuery = useQuery({
@@ -66,33 +64,6 @@ export function useVizComponentEditor(componentId: string | undefined) {
     },
     [queryClient],
   );
-
-  const uploadThumbnail = useCallback(async (id: string): Promise<{ ok: true } | { ok: false; message: string }> => {
-    const result = await persistVizComponentThumbnailBestEffort(id);
-    if (result.ok) {
-      invalidateVizComponentCaches(queryClient, id);
-      return { ok: true };
-    }
-    const description = result.stage === "upload" && result.message.includes("404")
-      ? "封面上传接口不可用（后端可能未重启到最新版本）。请重启 backend 后再试。"
-      : result.message || "请确认左侧预览已加载完成，再点「更新封面」重试。";
-    toast.warning(result.stage === "upload" ? "封面上传失败" : "封面截图失败", {
-      description,
-    });
-    return { ok: false, message: result.message };
-  }, [queryClient]);
-
-  const refreshThumbnail = useCallback(async (): Promise<boolean> => {
-    if (!component) return false;
-    setRefreshingThumbnail(true);
-    try {
-      const result = await uploadThumbnail(component.id);
-      if (result.ok) toast.success("封面已更新");
-      return result.ok;
-    } finally {
-      setRefreshingThumbnail(false);
-    }
-  }, [component, uploadThumbnail]);
 
   const save = useCallback(async (): Promise<boolean> => {
     if (!component || !widget) return false;
@@ -132,8 +103,8 @@ export function useVizComponentEditor(componentId: string | undefined) {
         const description = !captureFailed && thumbnailUploadError.includes("404")
           ? "封面上传接口不可用（后端可能未重启到最新版本）。请重启 backend 后再试。"
           : captureFailed
-            ? "请确认左侧预览已加载完成，再点「更新封面」重试。"
-            : thumbnailUploadError || "请确认左侧预览已加载完成，再点「更新封面」重试。";
+            ? "请确认左侧预览已加载完成后再保存。"
+            : thumbnailUploadError || "请确认左侧预览已加载完成后再保存。";
         toast.warning(
           isDirty
             ? captureFailed
@@ -144,7 +115,7 @@ export function useVizComponentEditor(componentId: string | undefined) {
               : "封面上传失败",
           { description },
         );
-      } else if (isDirty) {
+      } else {
         toast.success("组件已保存");
       }
       return true;
@@ -169,14 +140,12 @@ export function useVizComponentEditor(componentId: string | undefined) {
     widget,
     componentMap,
     saving,
-    refreshingThumbnail,
     isDirty,
     isLoading: detailQuery.isLoading,
     isError: detailQuery.isError,
     error: detailQuery.error,
     refetch: detailQuery.refetch,
     save,
-    refreshThumbnail,
     patchWidget,
   };
 }

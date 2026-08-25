@@ -86,8 +86,8 @@ export function ChartGisMapFlowPanel() {
             <InspectorSliderField
               label="最小线宽"
               value={resolved.widthMin}
-              min={0.5}
-              max={8}
+              min={1}
+              max={12}
               step={0.5}
               unit="px"
               onChange={(widthMin) =>
@@ -99,10 +99,21 @@ export function ChartGisMapFlowPanel() {
               label="最大线宽"
               value={resolved.widthMax}
               min={resolved.widthMin}
-              max={12}
+              max={20}
               step={0.5}
               unit="px"
               onChange={(widthMax) => patchFlow({ widthMax })}
+            />
+
+            <InspectorSliderField
+              label="拱形高度"
+              value={Math.round(resolved.arcLift * 100)}
+              min={20}
+              max={120}
+              step={5}
+              unit="%"
+              hint="越大弧线越弯；地球视角下模拟向上飞线"
+              onChange={(next) => patchFlow({ arcLift: next / 100 })}
             />
 
             <InspectorSwitchRow

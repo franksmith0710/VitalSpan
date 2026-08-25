@@ -1,6 +1,8 @@
-/** 全球 OD 飞线弧线：大圆 + 径向抬升，在球面视角下形成立体拱形 */
+/** 全球 OD 飞线弧线：大圆 + 地理贝塞尔拱形（球面视角下向上弯） */
 
-export const DEFAULT_FLOW_ARC_LIFT = 0.42;
+import { DEFAULT_FLOW_ARC_LIFT } from "@/components/charts/engine/maplibre/gisFlowDefaults";
+
+export { DEFAULT_FLOW_ARC_LIFT } from "@/components/charts/engine/maplibre/gisFlowDefaults";
 
 function toRad(value: number): number {
   return (value * Math.PI) / 180;
@@ -17,24 +19,6 @@ function latLngToUnit(lng: number, lat: number): UnitVec {
   const lngR = toRad(lng);
   const cosLat = Math.cos(latR);
   return [cosLat * Math.cos(lngR), cosLat * Math.sin(lngR), Math.sin(latR)];
-}
-
-function normalizeVec(v: UnitVec): UnitVec {
-  const len = Math.hypot(v[0], v[1], v[2]) || 1;
-  return [v[0] / len, v[1] / len, v[2] / len];
-}
-
-function cross(a: UnitVec, b: UnitVec): UnitVec {
-  return [
-    a[1] * b[2] - a[2] * b[1],
-    a[2] * b[0] - a[0] * b[2],
-    a[0] * b[1] - a[1] * b[0],
-  ];
-}
-
-function unitToLatLng(x: number, y: number, z: number): [number, number] {
-  const n = normalizeVec([x, y, z]);
-  return [toDeg(Math.atan2(n[1], n[0])), toDeg(Math.asin(clamp(n[2], -1, 1)))];
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -57,6 +41,11 @@ function slerpUnit(a: UnitVec, b: UnitVec, t: number): UnitVec {
   return [a[0] * w0 + b[0] * w1, a[1] * w0 + b[1] * w1, a[2] * w0 + b[2] * w1];
 }
 
+function unitToLatLng(x: number, y: number, z: number): [number, number] {
+  const len = Math.hypot(x, y, z) || 1;
+  return [toDeg(Math.atan2(y, x)), toDeg(Math.asin(clamp(z / len, -1, 1)))];
+}
+
 /** 大圆路径插值（平面贴地，供测试/回退） */
 export function interpolateGreatCircleArc(
   fromLng: number,
@@ -65,45 +54,51 @@ export function interpolateGreatCircleArc(
   toLat: number,
   segments = 48,
 ): [number, number][] {
-  return interpolateElevatedFlowArc(fromLng, fromLat, toLng, toLat, segments, 0);
+  const v0 = latLngToUnit(fromLng, fromLat);
+  const v1 = latLngToUnit(toLng, toLat);
+  const coords: [number, number][] = [];
+  for (let i = 0; i <= segments; i += 1) {
+    const t = i / segments;
+    const base = slerpUnit(v0, v1, t);
+    coords.push(unitToLatLng(base[0], base[1], base[2]));
+  }
+  return coords;
 }
 
 /**
- * 大圆 + 径向抬升：中点沿法线抬高，连线在球面视角呈立体拱形。
- * @param lift 峰值相对抬升（0 = 贴地，0.4 ≈ 明显拱形）
+ * 大圆走向 + 地理二次贝塞尔拱形：中点沿弦线法向抬高，在 Globe 上呈明显向上弯的 OD 飞线。
+ * MapLibre 飞线仅有 lng/lat，无法写真实高度；此法为业界常用的 curveness 模拟。
  */
 export function interpolateElevatedFlowArc(
   fromLng: number,
   fromLat: number,
   toLng: number,
   toLat: number,
-  segments = 64,
+  segments = 80,
   lift = DEFAULT_FLOW_ARC_LIFT,
 ): [number, number][] {
-  const v0 = latLngToUnit(fromLng, fromLat);
-  const v1 = latLngToUnit(toLng, toLat);
-  const dot = clamp(v0[0] * v1[0] + v0[1] * v1[1] + v0[2] * v1[2], -1, 1);
-  const omega = Math.acos(dot);
-  if (!Number.isFinite(omega) || omega < 1e-10) {
+  const dLng = toLng - fromLng;
+  const dLat = toLat - fromLat;
+  const chordDeg = Math.hypot(dLng, dLat);
+  if (chordDeg < 1e-6) {
     return [
       [fromLng, fromLat],
       [toLng, toLat],
     ];
   }
-  const liftScale = lift * Math.min(1, omega / (Math.PI / 2));
-  const perp = normalizeVec(cross(v0, v1));
+
+  const curveness = clamp(lift, 0.05, 1.5) * Math.min(chordDeg * 0.52, 32);
+  const ctrlLng = (fromLng + toLng) / 2 - (dLat / chordDeg) * curveness;
+  const ctrlLat = (fromLat + toLat) / 2 + (dLng / chordDeg) * curveness;
+
   const coords: [number, number][] = [];
   for (let i = 0; i <= segments; i += 1) {
     const t = i / segments;
-    const base = slerpUnit(v0, v1, t);
-    const bulge = liftScale * Math.sin(Math.PI * t);
-    coords.push(
-      unitToLatLng(
-        base[0] + perp[0] * bulge,
-        base[1] + perp[1] * bulge,
-        base[2] + perp[2] * bulge,
-      ),
-    );
+    const u = 1 - t;
+    coords.push([
+      u * u * fromLng + 2 * u * t * ctrlLng + t * t * toLng,
+      u * u * fromLat + 2 * u * t * ctrlLat + t * t * toLat,
+    ]);
   }
   return coords;
 }
