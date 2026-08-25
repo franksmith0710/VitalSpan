@@ -47,7 +47,10 @@ def list_data_screens(client: httpx.Client, base: str, headers: dict[str, str]) 
     offset = 0
     limit = 100
     while True:
-        res = client.get(f"{base}/dashboards?surfaceKind=data-screen&limit={limit}&offset={offset}", headers=headers)
+        res = client.get(
+            f"{base}/dashboards?surfaceKind=data-screen&limit={limit}&offset={offset}",
+            headers=headers,
+        )
         res.raise_for_status()
         body = res.json()
         page = body.get("data", body)

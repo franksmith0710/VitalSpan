@@ -21,7 +21,9 @@ import {
 import { WidgetErrorBoundary } from "../WidgetErrorBoundary";
 import { resolveDashboardChrome } from "../dashboardChromeConfig";
 import { resolveComponentGapRuntime } from "../componentGapRuntime";
-import { readChartTitleVisible } from "@/lib/chartDeStyle";
+import { readChartTitleVisible, mergeChartTitleStyle } from "@/lib/chartDeStyle";
+import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
+import { mergeTitleStyle } from "../dashboardStyleConfig";
 import { pixelViewTitleHeightPx } from "../dashboardWidgetTypography";
 import { usePixelChromeScale } from "../pixelCanvas/PixelCanvasScaleContext";
 import { resolveEmbeddedLayoutFootprint } from "@/components/charts/engine/embeddedContainerSize";
@@ -177,12 +179,17 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
     pixel: shell === "shape",
   });
   const chromeInset = resolveWidgetChromeInset(dashboardStyle?.widgetStyle);
+  const effectiveScheme = resolveWidgetEffectiveScheme(dashboardStyle);
+  const widgetTitleStyle =
+    widget.type === "chart" && widget.chartConfig
+      ? mergeChartTitleStyle(dashboardStyle?.titleStyle, widget.chartConfig, effectiveScheme)
+      : mergeTitleStyle(dashboardStyle?.titleStyle);
   const titleChromePx =
     shell === "shape" &&
     widget.type === "chart" &&
     widget.chartConfig &&
     readChartTitleVisible(widget.chartConfig, dashboardStyle?.titleStyle)
-      ? pixelViewTitleHeightPx(chromeScale)
+      ? pixelViewTitleHeightPx(chromeScale, widgetTitleStyle)
       : 0;
   const pixelSize = useMemo(
     () =>

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   GEO3D_FEATURE_DEGRADE_THRESHOLD,
   resolveGeo3dQuality,
-  shouldRenderGeo3d,
 } from "@/components/charts/engine/three/geo3dQuality";
 
 describe("resolveGeo3dQuality", () => {
@@ -97,13 +96,5 @@ describe("resolveGeo3dQuality", () => {
         shortSide: 800,
       }),
     ).toBe("low");
-  });
-});
-
-describe("shouldRenderGeo3d", () => {
-  it("is false only for low quality", () => {
-    expect(shouldRenderGeo3d("high")).toBe(true);
-    expect(shouldRenderGeo3d("medium")).toBe(true);
-    expect(shouldRenderGeo3d("low")).toBe(false);
   });
 });

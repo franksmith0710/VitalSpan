@@ -7,15 +7,14 @@ export type Geo3dQualityLevel = "high" | "medium" | "low";
 
 export type Geo3dQualitySetting = "auto" | Geo3dQualityLevel;
 
-/** feature 数超过此值时 auto 模式降级 2D */
+/** feature 数超过此值时 auto 模式降为 medium（不再回退 2D） */
 export const GEO3D_FEATURE_DEGRADE_THRESHOLD = 80;
 
 /** 短边低于此像素时 auto 模式不用 high */
 export const GEO3D_HIGH_MIN_SHORT_SIDE = 320;
 
 /**
- * 缩略图不再单独降级：列表卡片与真实大屏走同一套判定，
- * 并发上限由 GEO3D_MAX_WEBGL_INSTANCES 的槽位机制兜底回退 2D。
+ * 缩略图与真实大屏走同一套判定；并发由 WebGL 槽位驱逐兜底，不再回退 2D。
  */
 export type ResolveGeo3dQualityInput = {
   quality?: Geo3dQualitySetting;
@@ -42,8 +41,4 @@ export function resolveGeo3dQuality(input: ResolveGeo3dQualityInput): Geo3dQuali
     return "medium";
   }
   return "high";
-}
-
-export function shouldRenderGeo3d(quality: Geo3dQualityLevel): boolean {
-  return quality !== "low";
 }

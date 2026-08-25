@@ -10,8 +10,74 @@ export const PIXEL_SCREEN_ACTION_RAIL_ICON_PX = 18;
 /** 像素画布缩放后，屏幕上目标可读高度（px），对齐 text-theme-sm 行高密度 */
 export const PIXEL_SCREEN_RAIL_HEIGHT_PX = 32;
 
-/** 预览态 shape 壳层标题栏屏幕高度（px） */
+/** 预览态 shape 壳层标题栏屏幕高度（px）— 默认 16px 字号 + 行高 + 间隙 */
 export const PIXEL_SCREEN_TITLE_HEIGHT_PX = 36;
+
+/** 无配置字号时的设计稿标题字号（px），对齐 --dw-screen-body */
+export const DEFAULT_WIDGET_TITLE_FONT_PX = 16;
+
+/** 标题行高下限（px），对齐 --dw-screen-title-height 2rem */
+export const WIDGET_TITLE_MIN_ROW_PX = 32;
+
+/** 标题与内容区间隙 = 字号 × 比例（字号越大间隙越大） */
+export const WIDGET_TITLE_CONTENT_GAP_RATIO = 0.25;
+
+/** 默认标题行高倍率，对齐 shape-title 1.375rem line-height */
+export const WIDGET_TITLE_LINE_HEIGHT_RATIO = 1.375;
+
+export type WidgetTitleChromeMetrics = {
+  fontSizePx: number;
+  lineHeightPx: number;
+  gapPx: number;
+  /** 标题区占用高度：max(行高, 最小行高) + 下间隙 */
+  blockHeightPx: number;
+};
+
+export function resolveWidgetTitleFontSizePx(titleStyle: CSSProperties = {}): number {
+  return parseCssPx(titleStyle.fontSize) ?? DEFAULT_WIDGET_TITLE_FONT_PX;
+}
+
+export function resolveWidgetTitleLineHeightPx(
+  titleStyle: CSSProperties,
+  fontSizePx: number,
+): number {
+  const explicit = parseCssPx(titleStyle.lineHeight);
+  if (explicit != null) return explicit;
+  if (typeof titleStyle.lineHeight === "number") {
+    return Math.round(fontSizePx * titleStyle.lineHeight);
+  }
+  return Math.round(fontSizePx * WIDGET_TITLE_LINE_HEIGHT_RATIO);
+}
+
+export function resolveWidgetTitleChromeMetrics(
+  titleStyle: CSSProperties = {},
+): WidgetTitleChromeMetrics {
+  const fontSizePx = resolveWidgetTitleFontSizePx(titleStyle);
+  const lineHeightPx = resolveWidgetTitleLineHeightPx(titleStyle, fontSizePx);
+  const gapPx = Math.max(2, Math.round(fontSizePx * WIDGET_TITLE_CONTENT_GAP_RATIO));
+  const minRowPx = Math.max(lineHeightPx, WIDGET_TITLE_MIN_ROW_PX);
+  return {
+    fontSizePx,
+    lineHeightPx,
+    gapPx,
+    blockHeightPx: minRowPx + gapPx,
+  };
+}
+
+/** shape-title 行高/下间隙 CSS 变量（含 edit 态 chrome-scale 补偿） */
+export function shapeTitleChromeStyle(
+  titleStyle: CSSProperties,
+  canvasScale = 1,
+): CSSProperties {
+  const scale = canvasScale > 0 ? canvasScale : 1;
+  const metrics = resolveWidgetTitleChromeMetrics(titleStyle);
+  const minRowPx = Math.max(metrics.lineHeightPx, WIDGET_TITLE_MIN_ROW_PX);
+  const scaled = (px: number) => `calc(${px}px / var(--pixel-canvas-chrome-scale, ${scale}))`;
+  return {
+    ["--widget-title-min-row" as string]: scaled(minRowPx),
+    ["--widget-title-content-gap" as string]: scaled(metrics.gapPx),
+  };
+}
 
 /**
  * 壳层（标题字号、标题栏高度、页签字号）的补偿基数，与 CSS
@@ -34,9 +100,13 @@ export function pixelDragRailHeightPx(canvasScale: number): number {
   return Math.ceil(PIXEL_SCREEN_RAIL_HEIGHT_PX / scale);
 }
 
-export function pixelViewTitleHeightPx(canvasScale: number): number {
+export function pixelViewTitleHeightPx(
+  canvasScale: number,
+  titleStyle: CSSProperties = {},
+): number {
   const scale = canvasScale > 0 ? canvasScale : 1;
-  return Math.ceil(PIXEL_SCREEN_TITLE_HEIGHT_PX / scale);
+  const metrics = resolveWidgetTitleChromeMetrics(titleStyle);
+  return Math.ceil(metrics.blockHeightPx / scale);
 }
 
 /** 画布内组件状态/空态文案 */

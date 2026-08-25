@@ -31,7 +31,8 @@ import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelSha
 import { useElementSize } from "@/hooks/useElementSize";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import { useGeoMapLevel, isGeoMapLevelReady } from "@/hooks/useGeoMapLevel";
-import { useDebouncedChartVisualScale } from "@/hooks/useDebouncedChartVisualScale";
+import { useChartVisualScale } from "@/hooks/useChartVisualScale";
+import { useDataScreenViewportTransforming } from "@/components/dashboard/screen/dataScreenVisualScaleContext";
 import { capChartPaintSize } from "@/lib/dashboardEditChartPerf";
 import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
 import { readChartDeStyle, readChartGeoStyle, readChartGeo3dStyle } from "@/lib/chartDeStyle";
@@ -157,7 +158,8 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const showPlaceholderHint = capped.length === 0 && Boolean(mapPlaceholderHint);
 
   const playing = usePixelShapePlayer();
-  const visualScale = useDebouncedChartVisualScale();
+  const visualScale = useChartVisualScale();
+  const viewportTransforming = useDataScreenViewportTransforming();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastMeasureRef = useRef({ width: 0, height: 0 });
   const liveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -639,9 +641,9 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   }, [props.layoutFootprint?.width, props.layoutFootprint?.height, onCommitResize]);
 
   useEffect(() => {
-    if (!fill || plan.empty || playing) return;
+    if (!fill || plan.empty || playing || viewportTransforming) return;
     onCommitResize();
-  }, [visualScale, fill, plan.empty, playing, onCommitResize]);
+  }, [visualScale, fill, plan.empty, playing, viewportTransforming, onCommitResize]);
 
   useEffect(() => {
     renderGenRef.current += 1;
@@ -667,7 +669,8 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     };
   }, []);
 
-  const showFallbackBanner = isThreeMap && renderEngine === "d3-fallback";
+  const showFallbackBanner =
+    isThreeMap && (renderEngine === "d3-fallback" || (renderEngine === "three" && fallbackReason));
 
   const overlayHint = useMemo(() => {
     if (showPlaceholderHint) return null;

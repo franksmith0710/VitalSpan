@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   buildGisFlowLayerDefinitions,
+  buildGisFlowLineWidth,
   buildGisFlowStyleKey,
   emptyGisFlowGeoJson,
   syncGisFlowData,
   syncGisFlowStyle,
   GIS_FLOW_SOURCE_ID,
+  GIS_FLOW_GLOW_LAYER_ID,
   GIS_FLOW_LINE_LAYER_ID,
 } from "@/components/charts/engine/maplibre/gisMapFlowStyle";
 
@@ -16,15 +18,35 @@ describe("gisMapFlowStyle", () => {
       flow: { enabled: true, color: "#112233", opacity: 0.6 },
     });
     expect(source.id).toBe("vs-gis-flow");
-    expect(layers).toHaveLength(1);
-    expect(layers[0]?.id).toBe("vs-gis-flow-lines");
-    expect(layers[0]?.paint?.["line-color"]).toBeDefined();
+    expect(layers).toHaveLength(2);
+    expect(layers[0]?.id).toBe("vs-gis-flow-lines-glow");
+    expect(layers[1]?.id).toBe("vs-gis-flow-lines");
+    expect(layers[1]?.paint?.["line-color"]).toBeDefined();
+    expect(layers[1]?.paint?.["line-width"]).toBeDefined();
   });
 
   it("changes style key when flow paint changes", () => {
     const a = buildGisFlowStyleKey({ flavor: "light", flow: { enabled: true, color: "#111111" } });
     const b = buildGisFlowStyleKey({ flavor: "light", flow: { enabled: true, color: "#222222" } });
     expect(a).not.toBe(b);
+  });
+
+  it("scales line width with zoom for globe overview", () => {
+    const width = buildGisFlowLineWidth({
+      enabled: true,
+      color: "#f97316",
+      widthMin: 3,
+      widthMax: 9,
+      opacity: 1,
+      scaleByMetric: false,
+      autoFit: true,
+    });
+    expect(width[0]).toBe("interpolate");
+    expect(width[2]).toEqual(["zoom"]);
+    expect(width[3]).toBe(0);
+    expect(width[4]).toBeCloseTo(7.2);
+    expect(width[5]).toBe(1);
+    expect(width[6]).toBeCloseTo(10.8);
   });
 });
 
@@ -73,10 +95,13 @@ describe("syncGisFlowData", () => {
 describe("syncGisFlowStyle", () => {
   it("updates line paint when layer exists", () => {
     const setPaintProperty = vi.fn();
+    const moveLayer = vi.fn();
     const map = {
       isStyleLoaded: () => true,
-      getLayer: (id: string) => (id === GIS_FLOW_LINE_LAYER_ID ? {} : undefined),
+      getLayer: (id: string) =>
+        id === GIS_FLOW_LINE_LAYER_ID || id === GIS_FLOW_GLOW_LAYER_ID ? {} : undefined,
       setPaintProperty,
+      moveLayer,
       once: vi.fn(),
     };
 

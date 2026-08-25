@@ -299,6 +299,7 @@ function PixelShapeInnerChrome({
         <WidgetShapeChrome
           title={widget.title}
           titleStyle={shapeTitlePresentationStyle(titleStyle, chromeScale)}
+          titleMetricsStyle={titleStyle}
           showTitle={showTitle}
           remark={remark}
           mode={mode}

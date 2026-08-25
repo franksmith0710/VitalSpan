@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type CSSProperties,
@@ -97,6 +98,7 @@ export function DataScreenEditViewport({
     userZoom,
     viewPanRef,
     scale,
+    baseTransform,
     offsetX,
     offsetY,
     rulerOffsetX,
@@ -112,8 +114,30 @@ export function DataScreenEditViewport({
     handleZoomOut,
     resetViewport,
     applyWheelZoom,
+    previewWheelZoom,
+    commitWheelZoomState,
     applyWheelPan,
   } = viewport;
+
+  const stageRef = useRef<HTMLDivElement>(null);
+  const wheelZoomRafRef = useRef<number | null>(null);
+
+  const syncStageTransform = useCallback(
+    (nextUserZoom: number) => {
+      const el = stageRef.current;
+      if (!el) return;
+      el.style.transform = `scale(${baseTransform.scaleX * nextUserZoom})`;
+    },
+    [baseTransform.scaleX],
+  );
+
+  const scheduleWheelZoomStateCommit = useCallback(() => {
+    if (wheelZoomRafRef.current != null) return;
+    wheelZoomRafRef.current = window.requestAnimationFrame(() => {
+      wheelZoomRafRef.current = null;
+      commitWheelZoomState();
+    });
+  }, [commitWheelZoomState]);
 
   const offsetXRef = useRef(offsetX);
   const offsetYRef = useRef(offsetY);
@@ -310,8 +334,17 @@ export function DataScreenEditViewport({
         const pointerX = event.clientX - rect.left;
         const pointerY = event.clientY - rect.top;
         const direction = event.deltaY > 0 ? -1 : 1;
-        const { pan } = applyWheelZoom(pointerX, pointerY, direction as 1 | -1);
-        syncPanLayer(pan);
+        const result = previewWheelZoom(
+          pointerX,
+          pointerY,
+          direction as 1 | -1,
+          event.deltaY,
+        );
+        if (result) {
+          syncStageTransform(result.zoom);
+          syncPanLayer(result.pan);
+          scheduleWheelZoomStateCommit();
+        }
         return;
       }
 
@@ -330,18 +363,33 @@ export function DataScreenEditViewport({
     return () => {
       wheelHost.removeEventListener("wheel", onWheel, { capture: true });
       cancelPanStateCommit();
+      if (wheelZoomRafRef.current != null) {
+        window.cancelAnimationFrame(wheelZoomRafRef.current);
+        wheelZoomRafRef.current = null;
+      }
     };
-  }, [applyWheelZoom, applyWheelPan, syncPanLayer, cancelPanStateCommit]);
+  }, [
+    applyWheelPan,
+    syncPanLayer,
+    cancelPanStateCommit,
+    previewWheelZoom,
+    syncStageTransform,
+    scheduleWheelZoomStateCommit,
+  ]);
 
   const handleResetViewport = useCallback(() => {
     const resetPan = resetViewport();
     syncPanLayer(resetPan);
-  }, [resetViewport, syncPanLayer]);
+    syncStageTransform(1);
+  }, [resetViewport, syncPanLayer, syncStageTransform]);
+
+  useLayoutEffect(() => {
+    syncStageTransform(userZoom);
+  }, [userZoom, syncStageTransform]);
 
   const stageStyle: CSSProperties = {
     width: canvasWidth,
     height: canvasHeight,
-    transform: `scale(${scale})`,
     transformOrigin: "top left",
   };
 
@@ -404,13 +452,14 @@ export function DataScreenEditViewport({
             className="absolute top-0 left-0 will-change-transform"
           >
             <div
+              ref={stageRef}
               className={cn("origin-top-left", (spacePan || panDragging) && "pointer-events-none")}
               data-testid="data-screen-canvas-stage"
               data-canvas-design-width={canvasWidth}
               data-canvas-design-height={canvasHeight}
               style={stageStyle}
             >
-              <DataScreenVisualScaleProvider scale={scale}>
+              <DataScreenVisualScaleProvider liveScale={scale}>
                 {children}
               </DataScreenVisualScaleProvider>
             </div>

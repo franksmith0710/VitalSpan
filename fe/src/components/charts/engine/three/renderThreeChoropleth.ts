@@ -6,7 +6,10 @@ import {
 } from "@/components/charts/engine/three/capVisualSnapshot";
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
-import type { GeoMapRenderResult } from "@/components/charts/engine/geo/geoMapRenderResult";
+import {
+  type GeoMapRenderResult,
+  resolveGeoMapFallbackBanner,
+} from "@/components/charts/engine/geo/geoMapRenderResult";
 import {
   getOfflineGeoMap,
   joinOfflineMapFeatures,
@@ -17,7 +20,6 @@ import { isDecorativeGeoFeature } from "@/components/charts/engine/geo/geoProjec
 import { colorForGeoHover } from "@/components/charts/engine/geo/geoSurfaceColors";
 import { createTooltipLayer, hideTooltip, showMergedTooltipAtViewport } from "@/components/charts/engine/d3/core/tooltipLayer";
 import type { D3Theme } from "@/components/charts/engine/d3/core/themeEngine";
-import { renderD3ChoroplethChart } from "@/components/charts/engine/d3/geo/renderChoropleth";
 import type { D3GeoRenderConfig } from "@/components/charts/engine/d3/types";
 import {
   colorForValue,
@@ -53,7 +55,6 @@ import {
 import { projectWorldToViewport, provinceWorldCenter } from "@/components/charts/engine/three/threeGeoScreen";
 import { resolveEmbeddedGeoRoam, VS_REGIONS_MAP_ID } from "@/components/charts/engine/geo/geoConstants";
 import { DEFAULT_GEO3D_EXTRUDE_INTENSITY, resolveGeoVisualMapEnabled } from "@/lib/chartDeStyle";
-import { resolveGeo3dQuality, shouldRenderGeo3d } from "@/components/charts/engine/three/geo3dQuality";
 import {
   releaseWebGLSlot,
   releaseWebGLSlotIfCurrent,
@@ -190,15 +191,18 @@ function applyProvinceBorderVisual(
   border.visible = true;
 }
 
-function d3Fallback(
-  container: HTMLElement,
-  config: D3GeoRenderConfig,
-  reason: string,
-): GeoMapRenderResult {
+function geo3dFailure(container: HTMLElement, reason: string): GeoMapRenderResult {
+  container.replaceChildren();
   container.dataset.webglApi = "none";
+  const msg = document.createElement("div");
+  msg.className =
+    "flex h-full items-center justify-center px-3 text-center text-theme-sm text-warning-600 dark:text-warning-400";
+  msg.setAttribute("role", "alert");
+  msg.textContent = resolveGeoMapFallbackBanner(reason);
+  container.appendChild(msg);
   return {
-    dispose: renderD3ChoroplethChart(container, config),
-    engine: "d3-fallback",
+    dispose: () => container.replaceChildren(),
+    engine: "three",
     fallbackReason: reason,
   };
 }
@@ -284,17 +288,6 @@ export async function renderThreeChoroplethChart(
     return { dispose: () => container.replaceChildren(), engine: "three" };
   }
 
-  const quality = resolveGeo3dQuality({
-    quality: geo3dStyle.quality,
-    drillDepth,
-    featureCount: features.length,
-    shortSide: Math.min(width, height),
-    renderTier: renderTier,
-  });
-  if (!shouldRenderGeo3d(quality)) {
-    return d3Fallback(container, config, "quality-degraded");
-  }
-
   const webglSlotKey =
     instanceKey ??
     `geo3d-${resolvedMapId}-${String(container.dataset.widgetId ?? (container.id || "anon"))}`;
@@ -305,15 +298,15 @@ export async function renderThreeChoroplethChart(
     slotReleased = true;
     releaseWebGLSlot(webglSlotKey);
   };
-  if (!tryAcquireWebGLSlot(webglSlotKey, { evictOldest: renderTier === "thumbnail" })) {
-    return d3Fallback(container, config, "webgl-cap-exceeded");
+  if (!tryAcquireWebGLSlot(webglSlotKey, { evictOldest: true })) {
+    return geo3dFailure(container, "webgl-cap-exceeded");
   }
 
   const webglProbe = probeWebGL();
   container.dataset.webglApi = webglProbe.api ?? "none";
   if (!webglProbe.ok) {
     releaseSlot();
-    return d3Fallback(container, config, "webgl-unavailable");
+    return geo3dFailure(container, "webgl-unavailable");
   }
 
   try {
@@ -417,7 +410,7 @@ export async function renderThreeChoroplethChart(
     });
     if (!renderer.getContext()) {
       renderer.dispose();
-      return d3Fallback(container, config, "webgl-unavailable");
+      return geo3dFailure(container, "webgl-unavailable");
     }
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setClearColor(0x000000, 0);
@@ -1266,7 +1259,7 @@ export async function renderThreeChoroplethChart(
       console.error("[map-3d] three init failed", err);
     }
     releaseSlot();
-    return d3Fallback(container, config, "three-init-failed");
+    return geo3dFailure(container, "three-init-failed");
   }
 }
 

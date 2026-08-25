@@ -230,7 +230,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     if (fitTargets.length > 0) {
       const boundsKey = buildGeoJsonBoundsKey(...fitTargets);
       if (boundsKey && overlayFitKeyRef.current !== boundsKey) {
-        fitGisOverlayBounds(map, fitTargets);
+        fitGisOverlayBounds(map, fitTargets, {
+          minZoom: flowResolved.enabled ? 1.35 : undefined,
+        });
         overlayFitKeyRef.current = boundsKey;
       }
     } else if (!overlayGeoJsonRef.current && !flowGeoJsonRef.current) {
@@ -524,7 +526,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       }
       const boundsKey = buildGeoJsonBoundsKey(...fitTargets);
       if (boundsKey && overlayFitKeyRef.current !== boundsKey) {
-        fitGisOverlayBounds(map, fitTargets);
+        fitGisOverlayBounds(map, fitTargets, {
+          minZoom: flowResolved.enabled ? 1.35 : undefined,
+        });
         overlayFitKeyRef.current = boundsKey;
       }
     };

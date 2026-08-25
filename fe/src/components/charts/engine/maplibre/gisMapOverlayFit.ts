@@ -75,18 +75,27 @@ export function buildGeoJsonBoundsKey(
 export function fitGisOverlayBounds(
   map: MapLibreMap,
   geoJson: GeoJSON.FeatureCollection | GeoJSON.FeatureCollection[] | null,
-  options?: { padding?: number; maxZoom?: number; duration?: number },
+  options?: { padding?: number; maxZoom?: number; minZoom?: number; duration?: number },
 ) {
   const collections = geoJson == null ? [] : Array.isArray(geoJson) ? geoJson : [geoJson];
   const bounds = mergeGeoJsonBounds(collections);
   if (!bounds) return false;
   const [minLng, minLat, maxLng, maxLat] = bounds;
+  const clampZoom = () => {
+    const floor = options?.minZoom;
+    if (floor != null && map.getZoom() < floor) {
+      map.setZoom(floor);
+    }
+  };
   if (minLng === maxLng && minLat === maxLat) {
     map.easeTo({
       center: [minLng, minLat],
       zoom: Math.min(options?.maxZoom ?? 10, 8),
       duration: options?.duration ?? 800,
     });
+    if (options?.minZoom != null) {
+      map.once("moveend", clampZoom);
+    }
     return true;
   }
   map.fitBounds(
@@ -100,5 +109,8 @@ export function fitGisOverlayBounds(
       duration: options?.duration ?? 800,
     },
   );
+  if (options?.minZoom != null) {
+    map.once("moveend", clampZoom);
+  }
   return true;
 }

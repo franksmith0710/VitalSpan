@@ -101,20 +101,20 @@ export function applyGisMapFlowConfig(
 
 /** 四坐标 OD 槽位齐备时自动开启飞线（避免只绑字段未开 flow.enabled 导致无弧线） */
 export function ensureGisMapOdFlowEnabled(cfg: ChartViewConfig): ChartViewConfig {
-  if (cfg.chartType !== "gis-map" || isGisFlowEnabled(cfg.nativeBody?.gisProject)) {
-    return cfg;
+  if (cfg.chartType !== "gis-map") return cfg;
+  const synced = syncLegacyFieldsFromAxes(migrateChartConfigToDeAxes(cfg));
+  if (isGisFlowEnabled(synced.nativeBody?.gisProject)) {
+    return synced;
   }
-  const dims = activeFieldRefs(
-    syncLegacyFieldsFromAxes(migrateChartConfigToDeAxes(cfg)).dimensions,
-  );
+  const dims = activeFieldRefs(synced.dimensions);
   const odReady = Boolean(
     dims[0]?.field?.trim() &&
       dims[1]?.field?.trim() &&
       dims[2]?.field?.trim() &&
       dims[3]?.field?.trim(),
   );
-  if (!odReady) return cfg;
-  return writeGisProject(cfg, { flow: { enabled: true } });
+  if (!odReady) return synced;
+  return writeGisProject(synced, { flow: { enabled: true } });
 }
 
 export function isGisMapFlowConfig(cfg: ChartViewConfig): boolean {

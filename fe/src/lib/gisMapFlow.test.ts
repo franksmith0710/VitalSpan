@@ -67,6 +67,25 @@ describe("gisMapFlow lib", () => {
     expect(next.nativeBody?.gisProject?.flow?.enabled).toBe(true);
   });
 
+  it("auto-enables flow when OD slots live on DE axes only", () => {
+    const cfg: ChartViewConfig = {
+      chartType: "gis-map",
+      axes: {
+        xAxis: [{ field: "from_lng" }],
+        xAxisExt: [{ field: "from_lat" }],
+        drill: [{ field: "to_lng" }, { field: "to_lat" }],
+      },
+    };
+    const next = ensureGisMapOdFlowEnabled(cfg);
+    expect(next.nativeBody?.gisProject?.flow?.enabled).toBe(true);
+    expect(next.dimensions?.map((d) => d.field)).toEqual([
+      "from_lng",
+      "from_lat",
+      "to_lng",
+      "to_lat",
+    ]);
+  });
+
   it("replaces scatter axes when switching from scatter preset", () => {
     const scatter = applyGisMapScatterConfig({ chartType: "gis-map" }, "sample-ds");
     expect(scatter.dimensions?.[0]?.field).toBe("lng");

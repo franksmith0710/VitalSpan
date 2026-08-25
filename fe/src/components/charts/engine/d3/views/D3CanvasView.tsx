@@ -23,7 +23,7 @@ import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelSha
 import { useElementSize } from "@/hooks/useElementSize";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import { useChartVisualScale } from "@/hooks/useChartVisualScale";
-import { useDebouncedChartVisualScale } from "@/hooks/useDebouncedChartVisualScale";
+import { useDataScreenViewportTransforming } from "@/components/dashboard/screen/dataScreenVisualScaleContext";
 import { capChartPaintSize } from "@/lib/dashboardEditChartPerf";
 import { cn } from "@/lib/utils";
 
@@ -55,7 +55,8 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
   );
 
   const playing = usePixelShapePlayer();
-  const visualScale = useDebouncedChartVisualScale();
+  const visualScale = useChartVisualScale();
+  const viewportTransforming = useDataScreenViewportTransforming();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastMeasureRef = useRef({ width: 0, height: 0 });
   const liveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -212,9 +213,9 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
   }, [props.layoutFootprint?.width, props.layoutFootprint?.height, measureAndRender]);
 
   useEffect(() => {
-    if (!fill || plan.empty || playing) return;
+    if (!fill || plan.empty || playing || viewportTransforming) return;
     measureAndRender("commit", true);
-  }, [visualScale, fill, plan.empty, playing, measureAndRender]);
+  }, [visualScale, fill, plan.empty, playing, viewportTransforming, measureAndRender]);
 
   useEffect(() => {
     return () => {

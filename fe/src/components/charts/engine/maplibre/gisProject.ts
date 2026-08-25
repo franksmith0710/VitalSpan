@@ -239,9 +239,9 @@ const DEFAULT_GIS_OVERLAY_COLOR = "#2563eb";
 export const DEFAULT_GIS_FLOW: Required<
   Pick<GisProjectFlow, "widthMin" | "widthMax" | "opacity" | "scaleByMetric" | "autoFit">
 > = {
-  widthMin: 2,
-  widthMax: 6,
-  opacity: 0.9,
+  widthMin: 3,
+  widthMax: 9,
+  opacity: 0.95,
   scaleByMetric: true,
   autoFit: true,
 };
@@ -278,7 +278,7 @@ export function resolveGisFlowStyle(
   const color =
     typeof flow?.color === "string" && flow.color.trim()
       ? flow.color.trim()
-      : chartColors?.[0] ?? "#38bdf8";
+      : chartColors?.[0] ?? "#f97316";
   return {
     enabled: flow?.enabled === true,
     color,

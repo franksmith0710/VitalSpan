@@ -463,11 +463,21 @@ export function DashboardWidget({
     inShapeShell &&
     resolvedWidget.chartConfig &&
     readChartTitleVisible(resolvedWidget.chartConfig, dashboardStyle?.titleStyle);
-  const titleChromePx = chartTitleVisibleInShell ? pixelViewTitleHeightPx(chromeScale) : 0;
+  const effectiveScheme = resolveWidgetEffectiveScheme(dashboardStyle);
+  const titleStyle =
+    resolvedWidget.chartConfig
+      ? mergeChartTitleStyle(
+          dashboardStyle?.titleStyle,
+          resolvedWidget.chartConfig,
+          effectiveScheme,
+        )
+      : mergeTitleStyle(dashboardStyle?.titleStyle);
+  const titleChromePx = chartTitleVisibleInShell
+    ? pixelViewTitleHeightPx(chromeScale, titleStyle)
+    : 0;
   const dragRailPx =
     inShapeShell && mode === "edit" && selected ? pixelDragRailHeightPx(chromeScale) : 0;
   const shapeContentChromePx = titleChromePx + dragRailPx;
-  const effectiveScheme = resolveWidgetEffectiveScheme(dashboardStyle);
   const shellResolved = resolvedWidget.chartConfig
     ? resolveChartContentShellStyle(
         dashboardStyle?.widgetStyle,
@@ -487,14 +497,6 @@ export function DashboardWidget({
   const chrome = resolveDashboardChrome(dashboardStyle);
   const chartTitleVisible =
     inShapeShell && chartTitleVisibleInShell && mode === "view";
-  const titleStyle =
-    resolvedWidget.chartConfig
-      ? mergeChartTitleStyle(
-          dashboardStyle?.titleStyle,
-          resolvedWidget.chartConfig,
-          effectiveScheme,
-        )
-      : mergeTitleStyle(dashboardStyle?.titleStyle);
   const queryLimit = resolvedWidget.chartConfig
     ? isCardPreview
       ? resolveCardPreviewQueryLimit(

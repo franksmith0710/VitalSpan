@@ -487,8 +487,8 @@ html.dark {
 .pixel-canvas-host .pixel-shape-inner .shape-title {
   display: flex;
   align-items: center;
-  min-height: calc(var(--dw-screen-title-height) / var(--pixel-canvas-chrome-scale));
-  padding: 0 0 calc(0.25rem / var(--pixel-canvas-chrome-scale));
+  min-height: var(--widget-title-min-row, calc(var(--dw-screen-title-height) / var(--pixel-canvas-chrome-scale)));
+  padding: 0 0 var(--widget-title-content-gap, calc(0.25rem / var(--pixel-canvas-chrome-scale)));
   background: transparent;
 }
 
@@ -510,9 +510,9 @@ html.dark {
 .pixel-canvas-host .pixel-shape-body > .shape-title {
   display: flex;
   align-items: center;
-  min-height: calc(var(--dw-screen-title-height) / var(--pixel-canvas-chrome-scale));
+  min-height: var(--widget-title-min-row, calc(var(--dw-screen-title-height) / var(--pixel-canvas-chrome-scale)));
   padding: calc(0.5rem / var(--pixel-canvas-chrome-scale)) calc(0.75rem / var(--pixel-canvas-chrome-scale))
-    calc(0.25rem / var(--pixel-canvas-chrome-scale));
+    var(--widget-title-content-gap, calc(0.25rem / var(--pixel-canvas-chrome-scale)));
 }
 
 .pixel-canvas-host .pixel-shape-body > .shape-title :where(.widget-inline-title:not([style*="font-size"])) {
@@ -528,8 +528,9 @@ html.dark {
 .dashboard-grid-edit .grid-widget-cell .shape-title {
   display: flex;
   align-items: center;
-  min-height: 2rem;
-  padding: 0.5rem 0.75rem 0.25rem;
+  min-height: var(--widget-title-min-row, 2rem);
+  padding: 0.5rem 0.75rem 0;
+  padding-bottom: var(--widget-title-content-gap, 0.25rem);
 }
 
 .dashboard-grid-edit .pixel-shape-body .shape-remark,

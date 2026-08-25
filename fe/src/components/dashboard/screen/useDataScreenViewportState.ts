@@ -172,34 +172,59 @@ export function useDataScreenViewportState({
   }, []);
 
   const applyWheelZoom = useCallback(
-    (pointerX: number, pointerY: number, direction: 1 | -1) => {
-      const previousZoom = userZoomRef.current;
-      const newZoom = clampDataScreenUserZoom(
-        previousZoom + direction * DATA_SCREEN_ZOOM_WHEEL_STEP,
-      );
-      if (newZoom === previousZoom) {
-        return { zoom: newZoom, pan: viewPanRef.current };
-      }
-
-      const newPan = computePanForZoomAtPointer({
+    (pointerX: number, pointerY: number, direction: 1 | -1, deltaY?: number) => {
+      const result = computeWheelZoomAtPointer({
         pointerX,
         pointerY,
         pan: viewPanRef.current,
         offsetX,
         offsetY,
         baseScale: baseTransform.scaleX,
-        oldZoom: previousZoom,
-        newZoom,
+        userZoom: userZoomRef.current,
+        direction,
+        deltaY,
+        bounds: boundsRef.current,
       });
-      const clamped = clampViewportPan(newPan, boundsRef.current);
-      viewPanRef.current = clamped;
-      userZoomRef.current = newZoom;
-      setUserZoom(newZoom);
-      setViewPan(clamped);
-      return { zoom: newZoom, pan: clamped };
+      if (!result) {
+        return { zoom: userZoomRef.current, pan: viewPanRef.current };
+      }
+      viewPanRef.current = result.pan;
+      userZoomRef.current = result.zoom;
+      setUserZoom(result.zoom);
+      setViewPan(result.pan);
+      return result;
     },
     [offsetX, offsetY, baseTransform.scaleX],
   );
+
+  const previewWheelZoom = useCallback(
+    (pointerX: number, pointerY: number, direction: 1 | -1, deltaY?: number) => {
+      const result = computeWheelZoomAtPointer({
+        pointerX,
+        pointerY,
+        pan: viewPanRef.current,
+        offsetX,
+        offsetY,
+        baseScale: baseTransform.scaleX,
+        userZoom: userZoomRef.current,
+        direction,
+        deltaY,
+        bounds: boundsRef.current,
+      });
+      if (!result) {
+        return { zoom: userZoomRef.current, pan: viewPanRef.current };
+      }
+      viewPanRef.current = result.pan;
+      userZoomRef.current = result.zoom;
+      return result;
+    },
+    [offsetX, offsetY, baseTransform.scaleX],
+  );
+
+  const commitWheelZoomState = useCallback(() => {
+    setUserZoom(userZoomRef.current);
+    setViewPan({ ...viewPanRef.current });
+  }, []);
 
   const applyWheelPan = useCallback(
     (deltaX: number, deltaY: number) => {
@@ -238,6 +263,46 @@ export function useDataScreenViewportState({
     handleZoomOut,
     resetViewport,
     applyWheelZoom,
+    previewWheelZoom,
+    commitWheelZoomState,
     applyWheelPan,
+  };
+}
+
+export function computeWheelZoomAtPointer(input: {
+  pointerX: number;
+  pointerY: number;
+  pan: ViewportPan;
+  offsetX: number;
+  offsetY: number;
+  baseScale: number;
+  userZoom: number;
+  direction: 1 | -1;
+  deltaY?: number;
+  bounds: ReturnType<typeof computeViewportScrollMetrics>["bounds"];
+}): { zoom: number; pan: ViewportPan } | null {
+  const previousZoom = input.userZoom;
+  const newZoom =
+    input.deltaY != null
+      ? clampDataScreenUserZoom(previousZoom * Math.exp(-input.deltaY * 0.002))
+      : clampDataScreenUserZoom(
+          previousZoom + input.direction * DATA_SCREEN_ZOOM_WHEEL_STEP,
+        );
+  if (newZoom === previousZoom) {
+    return null;
+  }
+  const newPan = computePanForZoomAtPointer({
+    pointerX: input.pointerX,
+    pointerY: input.pointerY,
+    pan: input.pan,
+    offsetX: input.offsetX,
+    offsetY: input.offsetY,
+    baseScale: input.baseScale,
+    oldZoom: previousZoom,
+    newZoom,
+  });
+  return {
+    zoom: newZoom,
+    pan: clampViewportPan(newPan, input.bounds),
   };
 }

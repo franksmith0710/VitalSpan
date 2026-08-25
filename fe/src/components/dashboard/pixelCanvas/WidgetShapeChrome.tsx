@@ -1,7 +1,7 @@
 import { GripVertical } from "lucide-react";
 import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
 import { cn } from "@/lib/utils";
-import { dwShapeTitle } from "../dashboardWidgetTypography";
+import { dwShapeTitle, shapeTitleChromeStyle } from "../dashboardWidgetTypography";
 import { WidgetInlineTitle } from "../WidgetInlineTitle";
 
 export type WidgetShapeChromeProps = {
@@ -18,6 +18,8 @@ export type WidgetShapeChromeProps = {
   onSelectPointerDown?: (event: PointerEvent<HTMLDivElement>) => void;
   onDragPointerDown?: (event: PointerEvent<HTMLDivElement>) => void;
   onDragKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void;
+  /** 未做 canvas scale 补偿的标题样式，用于计算标题区高度/间隙 */
+  titleMetricsStyle?: CSSProperties;
 };
 
 /**
@@ -36,6 +38,7 @@ export function WidgetShapeChrome({
   onSelectPointerDown,
   onDragPointerDown,
   onDragKeyDown,
+  titleMetricsStyle,
 }: WidgetShapeChromeProps) {
   if (!showTitle) {
     return (
@@ -70,6 +73,7 @@ export function WidgetShapeChrome({
           canDrag && "cursor-grab active:cursor-grabbing",
           canDrag && "pixel-shape-title-drag",
         )}
+        style={shapeTitleChromeStyle(titleMetricsStyle ?? titleStyle, canvasScale)}
         onPointerDown={isEdit ? handleChromePointerDown : undefined}
         onKeyDown={canDrag ? onDragKeyDown : undefined}
         role={canDrag ? "group" : undefined}

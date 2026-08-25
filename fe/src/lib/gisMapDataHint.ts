@@ -1,7 +1,7 @@
 import { classifyDatasetField } from "@/components/dashboard/datasetFieldClassification";
 import { activeFieldRefs } from "@/lib/chartConfigState";
 import { isGisFlowEnabled } from "@/components/charts/engine/maplibre/gisProject";
-import { GIS_MAP_FLOW_SAMPLE_SQL } from "@/lib/gisMapFlow";
+import { ensureGisMapOdFlowEnabled, GIS_MAP_FLOW_SAMPLE_SQL } from "@/lib/gisMapFlow";
 import { resolveGisMapFlowDimensions } from "@/components/charts/engine/maplibre/gisMapFlow";
 import { GIS_MAP_SCATTER_SAMPLE_SQL } from "@/lib/gisMapScatter";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -48,11 +48,12 @@ export function resolveGisMapDataHint(
   config: ChartViewConfig,
   columns: string[],
 ): GisMapDataHint {
-  if (isGisFlowEnabled(config.nativeBody?.gisProject)) {
-    return resolveGisMapFlowDataHint(config, columns);
+  const cfg = config.chartType === "gis-map" ? ensureGisMapOdFlowEnabled(config) : config;
+  if (isGisFlowEnabled(cfg.nativeBody?.gisProject)) {
+    return resolveGisMapFlowDataHint(cfg, columns);
   }
-  const dims = activeFieldRefs(config.dimensions);
-  const metrics = activeFieldRefs(config.metrics);
+  const dims = activeFieldRefs(cfg.dimensions);
+  const metrics = activeFieldRefs(cfg.metrics);
   const lngField = dims[0]?.field?.trim();
   const latField = dims[1]?.field?.trim();
   const hasBinding =

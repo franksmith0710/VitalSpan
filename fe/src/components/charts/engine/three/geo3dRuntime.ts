@@ -4,7 +4,7 @@ import { resolveGeo3dStylePreset } from "./geo3dVisualStyle";
 /** full=全屏预览；embed=看板/大屏内嵌；thumbnail=列表卡片等小尺寸预览 */
 export type Geo3dRenderTier = "full" | "embed" | "thumbnail";
 
-/** 短边低于此像素时 auto 模式强制回退 2D */
+/** 短边低于此像素时 auto 模式不用 high（仍渲染 3D） */
 export const GEO3D_THREE_MIN_SHORT_SIDE = 400;
 
 /** 同页允许同时存在的 WebGL 3D 地图实例上限 */

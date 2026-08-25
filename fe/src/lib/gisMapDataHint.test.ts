@@ -83,6 +83,20 @@ describe("resolveGisMapDataHint", () => {
     expect(hint.tone).toBe("ok");
     expect(hint.message).toContain("大圆弧线");
   });
+
+  it("auto-detects OD axes binding without flow.enabled and shows ok hint", () => {
+    const config = {
+      ...defaultChartConfig("gis-map"),
+      axes: {
+        xAxis: [{ field: "from_lng" }],
+        xAxisExt: [{ field: "from_lat" }],
+        drill: [{ field: "to_lng" }, { field: "to_lat" }],
+      },
+    };
+    const hint = resolveGisMapDataHint(config, ["from_lng", "from_lat", "to_lng", "to_lat"]);
+    expect(hint.tone).toBe("ok");
+    expect(hint.message).toContain("大圆弧线");
+  });
 });
 
 describe("shouldShowGisMapOverlayHint", () => {
