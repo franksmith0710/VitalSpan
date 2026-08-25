@@ -7,8 +7,22 @@ import {
 import { whenGisMapStyleReady } from "@/components/charts/engine/maplibre/gisMapRuntime";
 
 export const GIS_FLOW_SOURCE_ID = "vs-gis-flow";
+export const GIS_FLOW_SHADOW_LAYER_ID = "vs-gis-flow-lines-shadow";
 export const GIS_FLOW_GLOW_LAYER_ID = "vs-gis-flow-lines-glow";
 export const GIS_FLOW_LINE_LAYER_ID = "vs-gis-flow-lines";
+export const GIS_FLOW_PULSE_LAYER_ID = "vs-gis-flow-lines-pulse";
+export const GIS_FLOW_HUB_LAYER_ID = "vs-gis-flow-hubs";
+
+const GIS_FLOW_LINE_FILTER = ["==", ["geometry-type"], "LineString"] as const;
+const GIS_FLOW_HUB_FILTER = ["==", ["geometry-type"], "Point"] as const;
+
+const FLOW_LAYER_STACK = [
+  GIS_FLOW_SHADOW_LAYER_ID,
+  GIS_FLOW_GLOW_LAYER_ID,
+  GIS_FLOW_LINE_LAYER_ID,
+  GIS_FLOW_PULSE_LAYER_ID,
+  GIS_FLOW_HUB_LAYER_ID,
+] as const;
 
 type MapLibreMap = import("maplibre-gl").Map;
 
@@ -16,7 +30,49 @@ export type GisFlowLayerOptions = {
   flavor: GisBasemapFlavor;
   flow?: GisProjectFlow;
   chartColors?: string[];
+  layersActive?: boolean;
 };
+
+function parseHexRgb(hex: string): [number, number, number] | null {
+  const normalized = hex.trim().replace(/^#/, "");
+  if (normalized.length === 3) {
+    const r = Number.parseInt(normalized[0]! + normalized[0], 16);
+    const g = Number.parseInt(normalized[1]! + normalized[1], 16);
+    const b = Number.parseInt(normalized[2]! + normalized[2], 16);
+    return [r, g, b];
+  }
+  if (normalized.length === 6) {
+    const r = Number.parseInt(normalized.slice(0, 2), 16);
+    const g = Number.parseInt(normalized.slice(2, 4), 16);
+    const b = Number.parseInt(normalized.slice(4, 6), 16);
+    return Number.isFinite(r) && Number.isFinite(g) && Number.isFinite(b) ? [r, g, b] : null;
+  }
+  return null;
+}
+
+function rgbaFromHex(hex: string, alpha: number): string {
+  const rgb = parseHexRgb(hex);
+  if (!rgb) return `rgba(249, 115, 22, ${alpha})`;
+  return `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, ${alpha})`;
+}
+
+export function buildGisFlowLineGradient(color: string): ExpressionSpecification {
+  return [
+    "interpolate",
+    ["linear"],
+    ["line-progress"],
+    0,
+    rgbaFromHex(color, 0.2),
+    0.38,
+    rgbaFromHex(color, 0.72),
+    0.5,
+    "rgba(255, 255, 255, 0.98)",
+    0.62,
+    rgbaFromHex(color, 0.72),
+    1,
+    rgbaFromHex(color, 0.2),
+  ];
+}
 
 function metricWidthExpr(resolved: ResolvedGisFlowStyle): number | ExpressionSpecification {
   if (resolved.scaleByMetric) {
@@ -33,7 +89,6 @@ function metricWidthExpr(resolved: ResolvedGisFlowStyle): number | ExpressionSpe
   return (resolved.widthMin + resolved.widthMax) / 2;
 }
 
-/** 球面全景 zoom 很小时，固定 px 线宽几乎不可见，须随 zoom 放大。 */
 export function buildGisFlowLineWidth(resolved: ResolvedGisFlowStyle): ExpressionSpecification {
   const base = metricWidthExpr(resolved);
   if (typeof base === "number") {
@@ -71,15 +126,26 @@ export function buildGisFlowLineWidth(resolved: ResolvedGisFlowStyle): Expressio
 }
 
 function buildGisFlowGlowWidth(lineWidth: ExpressionSpecification): ExpressionSpecification {
-  return ["interpolate", ["linear"], ["zoom"], 0, 6, 1, 8, 2, 10, 4, 14, 6, 18];
+  return ["interpolate", ["linear"], ["zoom"], 0, 8, 1, 11, 2, 14, 4, 18, 6, 22];
 }
 
-export function buildGisFlowLinePaint(resolved: ResolvedGisFlowStyle): Record<string, unknown> {
+function buildGisFlowShadowWidth(lineWidth: ExpressionSpecification): ExpressionSpecification {
+  return ["interpolate", ["linear"], ["zoom"], 0, 12, 1, 16, 2, 20, 4, 26, 6, 32];
+}
+
+function buildGisFlowPulseWidth(lineWidth: ExpressionSpecification): ExpressionSpecification {
+  if (typeof lineWidth === "number") {
+    return lineWidth + 2.5;
+  }
+  return ["+", lineWidth, 2.5];
+}
+
+function buildGisFlowLinePaint(resolved: ResolvedGisFlowStyle): Record<string, unknown> {
   return {
-    "line-color": ["coalesce", ["get", "color"], resolved.color],
+    "line-gradient": buildGisFlowLineGradient(resolved.color),
     "line-opacity": resolved.opacity,
     "line-width": buildGisFlowLineWidth(resolved),
-    "line-blur": 0,
+    "line-blur": 0.15,
   };
 }
 
@@ -89,9 +155,34 @@ function buildGisFlowGlowPaint(
 ): Record<string, unknown> {
   return {
     "line-color": resolved.color,
-    "line-opacity": Math.min(1, resolved.opacity * 0.45),
+    "line-opacity": Math.min(1, resolved.opacity * 0.5),
     "line-width": buildGisFlowGlowWidth(lineWidth),
-    "line-blur": 2.5,
+    "line-blur": 3,
+  };
+}
+
+function buildGisFlowShadowPaint(
+  resolved: ResolvedGisFlowStyle,
+  lineWidth: ExpressionSpecification,
+): Record<string, unknown> {
+  return {
+    "line-color": "#0f172a",
+    "line-opacity": Math.min(0.55, resolved.opacity * 0.35),
+    "line-width": buildGisFlowShadowWidth(lineWidth),
+    "line-blur": 4,
+  };
+}
+
+function buildGisFlowPulsePaint(
+  resolved: ResolvedGisFlowStyle,
+  lineWidth: ExpressionSpecification,
+): Record<string, unknown> {
+  return {
+    "line-color": "#ffffff",
+    "line-opacity": resolved.opacity * 0.85,
+    "line-width": buildGisFlowPulseWidth(lineWidth),
+    "line-blur": 0.35,
+    "line-trim-offset": [0, 0.08],
   };
 }
 
@@ -101,32 +192,62 @@ export function buildGisFlowLayerDefinitions(
 ) {
   const resolved = resolveGisFlowStyle(options.flow, options.chartColors);
   const lineWidth = buildGisFlowLineWidth(resolved);
+  const lineLayout = {
+    "line-join": "round" as const,
+    "line-cap": "round" as const,
+  };
   const layers: LayerSpecification[] = [
+    {
+      id: GIS_FLOW_SHADOW_LAYER_ID,
+      type: "line",
+      source: GIS_FLOW_SOURCE_ID,
+      filter: GIS_FLOW_LINE_FILTER,
+      layout: lineLayout,
+      paint: buildGisFlowShadowPaint(resolved, lineWidth),
+    },
     {
       id: GIS_FLOW_GLOW_LAYER_ID,
       type: "line",
       source: GIS_FLOW_SOURCE_ID,
-      layout: {
-        "line-join": "round",
-        "line-cap": "round",
-      },
+      filter: GIS_FLOW_LINE_FILTER,
+      layout: lineLayout,
       paint: buildGisFlowGlowPaint(resolved, lineWidth),
     },
     {
       id: GIS_FLOW_LINE_LAYER_ID,
       type: "line",
       source: GIS_FLOW_SOURCE_ID,
-      layout: {
-        "line-join": "round",
-        "line-cap": "round",
-      },
+      filter: GIS_FLOW_LINE_FILTER,
+      layout: lineLayout,
       paint: buildGisFlowLinePaint(resolved),
+    },
+    {
+      id: GIS_FLOW_PULSE_LAYER_ID,
+      type: "line",
+      source: GIS_FLOW_SOURCE_ID,
+      filter: GIS_FLOW_LINE_FILTER,
+      layout: lineLayout,
+      paint: buildGisFlowPulsePaint(resolved, lineWidth),
+    },
+    {
+      id: GIS_FLOW_HUB_LAYER_ID,
+      type: "circle",
+      source: GIS_FLOW_SOURCE_ID,
+      filter: GIS_FLOW_HUB_FILTER,
+      paint: {
+        "circle-color": ["coalesce", ["get", "color"], resolved.color],
+        "circle-opacity": resolved.opacity,
+        "circle-radius": ["interpolate", ["linear"], ["zoom"], 0, 4, 2, 6, 4, 8, 6, 10],
+        "circle-blur": 0.25,
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 1.5,
+      },
     },
   ];
   return {
     source: {
       id: GIS_FLOW_SOURCE_ID,
-      spec: { type: "geojson" as const, data: flowGeoJson },
+      spec: { type: "geojson" as const, data: flowGeoJson, lineMetrics: true },
     },
     layers,
   };
@@ -136,40 +257,60 @@ export function emptyGisFlowGeoJson(): GeoJSON.FeatureCollection {
   return { type: "FeatureCollection", features: [] };
 }
 
+function moveFlowLayersToTop(map: MapLibreMap) {
+  for (const layerId of FLOW_LAYER_STACK) {
+    if (typeof map.getLayer === "function" && map.getLayer(layerId)) map.moveLayer(layerId);
+  }
+}
+
 export function syncGisFlowData(map: MapLibreMap, geoJson: GeoJSON.FeatureCollection | null) {
-  whenGisMapStyleReady(map, () => {
+  const apply = () => {
     const source = map.getSource(GIS_FLOW_SOURCE_ID) as import("maplibre-gl").GeoJSONSource | undefined;
     if (!source) return;
     source.setData(geoJson ?? emptyGisFlowGeoJson());
-  });
+    moveFlowLayersToTop(map);
+  };
+  whenGisMapStyleReady(map, apply);
+  if (map.isStyleLoaded()) {
+    map.once("idle", apply);
+  }
 }
-
-const FLOW_LAYER_IDS = [GIS_FLOW_GLOW_LAYER_ID, GIS_FLOW_LINE_LAYER_ID] as const;
 
 export function syncGisFlowStyle(map: MapLibreMap, options: GisFlowLayerOptions) {
   whenGisMapStyleReady(map, () => {
     if (!map.getLayer(GIS_FLOW_LINE_LAYER_ID)) return;
     const resolved = resolveGisFlowStyle(options.flow, options.chartColors);
     const lineWidth = buildGisFlowLineWidth(resolved);
-    const glowPaint = buildGisFlowGlowPaint(resolved, lineWidth);
-    const linePaint = buildGisFlowLinePaint(resolved);
-    if (map.getLayer(GIS_FLOW_GLOW_LAYER_ID)) {
-      for (const [key, value] of Object.entries(glowPaint)) {
-        map.setPaintProperty(GIS_FLOW_GLOW_LAYER_ID, key, value);
+    const paintByLayer: Record<string, Record<string, unknown>> = {
+      [GIS_FLOW_SHADOW_LAYER_ID]: buildGisFlowShadowPaint(resolved, lineWidth),
+      [GIS_FLOW_GLOW_LAYER_ID]: buildGisFlowGlowPaint(resolved, lineWidth),
+      [GIS_FLOW_LINE_LAYER_ID]: buildGisFlowLinePaint(resolved),
+      [GIS_FLOW_PULSE_LAYER_ID]: buildGisFlowPulsePaint(resolved, lineWidth),
+    };
+    for (const [layerId, paint] of Object.entries(paintByLayer)) {
+      if (!map.getLayer(layerId)) continue;
+      for (const [key, value] of Object.entries(paint)) {
+        map.setPaintProperty(layerId, key, value);
       }
     }
-    for (const [key, value] of Object.entries(linePaint)) {
-      map.setPaintProperty(GIS_FLOW_LINE_LAYER_ID, key, value);
+    if (map.getLayer(GIS_FLOW_HUB_LAYER_ID)) {
+      map.setPaintProperty(GIS_FLOW_HUB_LAYER_ID, "circle-color", [
+        "coalesce",
+        ["get", "color"],
+        resolved.color,
+      ]);
+      map.setPaintProperty(GIS_FLOW_HUB_LAYER_ID, "circle-opacity", resolved.opacity);
     }
-    for (const layerId of FLOW_LAYER_IDS) {
-      if (map.getLayer(layerId)) {
-        map.moveLayer(layerId);
-      }
-    }
+    moveFlowLayersToTop(map);
   });
 }
 
 export function buildGisFlowStyleKey(options: GisFlowLayerOptions): string {
   const resolved = resolveGisFlowStyle(options.flow, options.chartColors);
-  return JSON.stringify({ ...resolved, flavor: options.flavor });
+  return JSON.stringify({ ...resolved, flavor: options.flavor, layersActive: options.layersActive === true });
+}
+
+export function shouldAppendGisFlowLayers(options: GisFlowLayerOptions): boolean {
+  if (options.layersActive) return true;
+  return resolveGisFlowStyle(options.flow, options.chartColors).enabled;
 }

@@ -108,7 +108,13 @@ export function mountCustomVizHtml(
     const script = document.createElement("script");
     script.textContent = source;
     host.appendChild(script);
-    runInsertedScriptIfNeeded(script, source);
+    try {
+      runInsertedScriptIfNeeded(script, source);
+    } catch (error) {
+      detachRuntime();
+      host.replaceChildren();
+      throw error instanceof Error ? error : new Error("自定义组件脚本执行失败");
+    }
   }
 
   appendCustomVizStyleBridge(host, styleHooks);

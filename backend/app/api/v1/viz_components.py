@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from typing import Annotated, Generator, Literal
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Request, status
 from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 
@@ -137,6 +137,38 @@ def update_component(
 ):
     try:
         return component_service.update_component(db, component_id, payload, user)
+    except VizComponentError as exc:
+        return _error_response(exc)
+
+
+@router.put("/{component_id}/thumbnail")
+async def upload_component_thumbnail(
+    component_id: uuid.UUID,
+    request: Request,
+    user: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
+    db: Annotated[Session, Depends(_db)],
+):
+    try:
+        content = await request.body()
+        content_type = request.headers.get("content-type", "application/octet-stream")
+        return component_service.save_component_thumbnail(db, component_id, content, content_type, user)
+    except VizComponentError as exc:
+        return _error_response(exc)
+
+
+@router.get("/{component_id}/thumbnail")
+def download_component_thumbnail(
+    component_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    db: Annotated[Session, Depends(_db)],
+):
+    try:
+        body, media_type = component_service.get_component_thumbnail(db, component_id, user)
+        return Response(
+            content=body,
+            media_type=media_type,
+            headers={"Cache-Control": "private, max-age=3600"},
+        )
     except VizComponentError as exc:
         return _error_response(exc)
 

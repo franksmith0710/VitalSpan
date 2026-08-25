@@ -18,8 +18,7 @@ import {
   visibilityLabel,
   widgetTypeLabel,
 } from "@/components/dashboard/viz-components/componentLabels";
-import { WIDGET_CHART_LABELS } from "@/components/dashboard/widgetIcons";
-import type { VizComponentListItem, VizComponentPayload } from "@/lib/vizComponents";
+import type { VizComponentListItem } from "@/lib/vizComponents";
 import {
   HUB_CARD_BODY_CLASS,
   HUB_CARD_BODY_MORE_TRIGGER_CLASS,
@@ -34,9 +33,6 @@ import {
 
 type VizComponentCardProps = {
   item: VizComponentListItem;
-  payload?: VizComponentPayload;
-  payloadLoading?: boolean;
-  previewPaused?: boolean;
   canManage: boolean;
   pending?: boolean;
   onInsert: () => void;
@@ -48,9 +44,6 @@ type VizComponentCardProps = {
 
 export function VizComponentCard({
   item,
-  payload,
-  payloadLoading = false,
-  previewPaused = false,
   canManage,
   pending = false,
   onInsert,
@@ -65,16 +58,8 @@ export function VizComponentCard({
   const surfaces = item.surfaceKinds ?? [];
   const editPath = `/admin/viz-components/${item.id}/edit`;
 
-  const chartTypeLabel =
-    item.widgetType === "chart" && payload?.chartConfig?.chartType
-      ? WIDGET_CHART_LABELS[payload.chartConfig.chartType] ?? payload.chartConfig.chartType
-      : undefined;
-
-  const typeHint =
-    item.widgetType === "chart" ? chartTypeLabel : widgetTypeLabel(item.widgetType);
-
   const metaParts = [
-    typeHint,
+    widgetTypeLabel(item.widgetType),
     categoryLabel(item.categoryKey),
     visibilityLabel(item.visibility),
     item.status !== "published" ? statusLabel(item.status) : null,
@@ -96,12 +81,8 @@ export function VizComponentCard({
       <div className={HUB_CARD_PREVIEW_FRAME_CLASS} style={hubCardPreviewFrameStyle()}>
         <div className={HUB_CARD_PREVIEW_CONTENT_CLASS}>
           <ComponentPayloadPreview
-            componentId={item.id}
-            componentName={item.name}
             widgetType={item.widgetType}
-            payload={payload}
-            payloadLoading={payloadLoading}
-            previewPaused={previewPaused}
+            thumbnailUrl={item.thumbnailUrl}
             className="h-full"
           />
         </div>

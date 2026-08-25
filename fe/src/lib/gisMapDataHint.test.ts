@@ -68,15 +68,15 @@ describe("resolveGisMapDataHint", () => {
     expect(hint.message).toContain("终点");
   });
 
-  it("auto-completes to_lat hint when dataset has full OD columns", () => {
+  it("warns when to_lat missing even if dataset has full OD columns", () => {
     const config = {
       ...defaultChartConfig("gis-map"),
       nativeBody: { gisProject: { flow: { enabled: true } } },
       dimensions: [{ field: "from_lng" }, { field: "from_lat" }, { field: "to_lng" }],
     };
     const hint = resolveGisMapDataHint(config, ["from_lng", "from_lat", "to_lng", "to_lat"]);
-    expect(hint.tone).toBe("ok");
-    expect(hint.message).toContain("大圆弧线");
+    expect(hint.tone).toBe("warn");
+    expect(hint.message).toContain("终点");
   });
 
   it("ok when flow from/to coordinates configured", () => {

@@ -34,9 +34,13 @@ describe("gisMapFlow", () => {
       [[121.47, 31.23, -118.24, 34.05, "上海 → 洛杉矶", 920]],
       ["#38bdf8"],
     );
-    expect(geoJson?.features).toHaveLength(1);
-    expect(geoJson?.features[0]?.geometry.type).toBe("LineString");
-    expect(geoJson?.features[0]?.properties?.weightNorm).toBe(0.5);
+    expect(geoJson?.features.some((f) => f.geometry.type === "LineString")).toBe(true);
+    expect(geoJson?.features.some((f) => f.geometry.type === "Point")).toBe(true);
+    expect(geoJson?.features.filter((f) => f.geometry.type === "LineString").length).toBeGreaterThanOrEqual(1);
+    expect(geoJson?.features.filter((f) => f.geometry.type === "Point")).toHaveLength(2);
+    expect(
+      geoJson?.features.find((f) => f.geometry.type === "LineString")?.properties?.weightNorm,
+    ).toBe(0.5);
     expect(gisFlowFieldsReady(config)).toBe(true);
   });
 

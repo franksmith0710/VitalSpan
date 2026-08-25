@@ -16,6 +16,7 @@ import {
   updateVizComponent,
   type VizComponentDetail,
 } from "@/lib/vizComponents";
+import { persistVizComponentThumbnailBestEffort } from "@/lib/uploadVizComponentThumbnail";
 
 export function useVizComponentEditor(componentId: string | undefined) {
   const queryClient = useQueryClient();
@@ -66,6 +67,8 @@ export function useVizComponentEditor(componentId: string | undefined) {
         contentRevision: component.contentRevision,
       });
       applyDetail(updated);
+      await persistVizComponentThumbnailBestEffort(component.id);
+      void queryClient.invalidateQueries({ queryKey: queryKeys.vizComponents.all });
       toast.success("组件已保存");
       return true;
     } catch (err) {
@@ -78,7 +81,7 @@ export function useVizComponentEditor(componentId: string | undefined) {
     } finally {
       setSaving(false);
     }
-  }, [applyDetail, component, detailQuery, isDirty, widget]);
+  }, [applyDetail, component, detailQuery, isDirty, queryClient, widget]);
 
   const patchWidget = useCallback((patch: Partial<LayoutWidget>) => {
     setWidget((prev) => (prev ? { ...prev, ...patch } : prev));

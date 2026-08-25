@@ -3,6 +3,12 @@ import { activeFieldRefs } from "@/lib/chartConfigState";
 import { parseMetricValue } from "@/lib/buildChartRenderModel";
 import { isGisFlowEnabled } from "@/components/charts/engine/maplibre/gisProject";
 import { migrateChartConfigToDeAxes, syncLegacyFieldsFromAxes } from "@/lib/resolveChartEncoding";
+import {
+  DEFAULT_FLOW_ARC_LIFT,
+  interpolateElevatedFlowArc,
+} from "@/components/charts/engine/maplibre/gisMapFlowArc";
+
+export { interpolateGreatCircleArc } from "@/components/charts/engine/maplibre/gisMapFlowArc";
 
 /** 从 DE 轴投影读取 OD 槽位，避免 axes/dimensions 漂移时 hint/渲染读错列 */
 export function resolveGisMapFlowDimensions(config: ChartViewConfig) {
@@ -20,55 +26,71 @@ export type GisFlowSegment = {
   weight?: number;
 };
 
-const DEFAULT_FLOW_COLOR = "#38bdf8";
+const DEFAULT_FLOW_COLOR = "#f97316";
 
-const ARC_SEGMENTS = 48;
+const ARC_SEGMENTS = 64;
 
-function toRad(value: number): number {
-  return (value * Math.PI) / 180;
+/** 跨日界线时 MapLibre 会把 LineString 画成横穿全屏的错线，须拆段。 */
+export function splitLineAtAntimeridian(coords: [number, number][]): [number, number][][] {
+  if (coords.length < 2) return coords.length ? [coords] : [];
+  const segments: [number, number][][] = [];
+  let current: [number, number][] = [coords[0]!];
+  for (let i = 1; i < coords.length; i += 1) {
+    const prev = current[current.length - 1]!;
+    const next = coords[i]!;
+    if (Math.abs(next[0] - prev[0]) > 180) {
+      if (current.length >= 2) segments.push(current);
+      current = [next];
+      continue;
+    }
+    current.push(next);
+  }
+  if (current.length >= 2) segments.push(current);
+  return segments.length ? segments : [coords];
 }
 
-function toDeg(value: number): number {
-  return (value * 180) / Math.PI;
-}
-
-/** 大圆路径插值（全球 OD 弧线） */
-export function interpolateGreatCircleArc(
-  fromLng: number,
-  fromLat: number,
-  toLng: number,
-  toLat: number,
-  segments = ARC_SEGMENTS,
-): [number, number][] {
-  const lat1 = toRad(fromLat);
-  const lon1 = toRad(fromLng);
-  const lat2 = toRad(toLat);
-  const lon2 = toRad(toLng);
-  const delta =
-    2 *
-    Math.asin(
-      Math.sqrt(
-        Math.sin((lat1 - lat2) / 2) ** 2 +
-          Math.cos(lat1) * Math.cos(lat2) * Math.sin((lon1 - lon2) / 2) ** 2,
-      ),
-    );
-  if (!Number.isFinite(delta) || delta < 1e-10) {
-    return [
-      [fromLng, fromLat],
-      [toLng, toLat],
-    ];
-  }
-  const coords: [number, number][] = [];
-  for (let i = 0; i <= segments; i += 1) {
-    const f = i / segments;
-    const a = Math.sin((1 - f) * delta) / Math.sin(delta);
-    const b = Math.sin(f * delta) / Math.sin(delta);
-    const x = a * Math.cos(lat1) * Math.cos(lon1) + b * Math.cos(lat2) * Math.cos(lon2);
-    const y = a * Math.cos(lat1) * Math.sin(lon1) + b * Math.cos(lat2) * Math.sin(lon2);
-    const z = a * Math.sin(lat1) + b * Math.sin(lat2);
-    coords.push([toDeg(Math.atan2(y, x)), toDeg(Math.asin(z))]);
-  }
-  return coords;
+function buildFlowArcFeatures(
+  segment: GisFlowSegment,
+  index: number,
+  fallbackColor: string,
+  weightNorm: number | undefined,
+): GeoJSON.Feature[] {
+  const arcCoords = interpolateElevatedFlowArc(
+    segment.fromLng,
+    segment.fromLat,
+    segment.toLng,
+    segment.toLat,
+    ARC_SEGMENTS,
+    DEFAULT_FLOW_ARC_LIFT,
+  );
+  const arcs = splitLineAtAntimeridian(arcCoords);
+  const lineFeatures = arcs.map((coordinates, arcIndex) => ({
+    type: "Feature" as const,
+    id: `flow-${index}-${arcIndex}`,
+    geometry: { type: "LineString" as const, coordinates },
+    properties: {
+      label: segment.label,
+      weight: segment.weight,
+      weightNorm,
+      color: fallbackColor,
+      role: "arc",
+    },
+  }));
+  const hubFeatures: GeoJSON.Feature[] = [
+    {
+      type: "Feature",
+      id: `hub-from-${index}`,
+      geometry: { type: "Point", coordinates: [segment.fromLng, segment.fromLat] },
+      properties: { color: fallbackColor, role: "hub" },
+    },
+    {
+      type: "Feature",
+      id: `hub-to-${index}`,
+      geometry: { type: "Point", coordinates: [segment.toLng, segment.toLat] },
+      properties: { color: fallbackColor, role: "hub" },
+    },
+  ];
+  return [...lineFeatures, ...hubFeatures];
 }
 
 export function buildGisFlowGeoJson(
@@ -77,7 +99,7 @@ export function buildGisFlowGeoJson(
   rows: (string | number | boolean | null)[][],
   chartColors?: string[],
 ): GeoJSON.FeatureCollection | null {
-  if (!isGisFlowEnabled(config.nativeBody?.gisProject)) return null;
+  if (!gisFlowFieldsReady(config)) return null;
 
   const dims = resolveGisMapFlowDimensions(config);
   const metrics = activeFieldRefs(
@@ -102,15 +124,15 @@ export function buildGisFlowGeoJson(
 
   const segments: GisFlowSegment[] = [];
   for (const row of rows) {
-    const fromLng = Number(row[fromLngIdx]);
-    const fromLat = Number(row[fromLatIdx]);
-    const toLng = Number(row[toLngIdx]);
-    const toLat = Number(row[toLatIdx]);
+    const fromLng = parseMetricValue(row[fromLngIdx]);
+    const fromLat = parseMetricValue(row[fromLatIdx]);
+    const toLng = parseMetricValue(row[toLngIdx]);
+    const toLat = parseMetricValue(row[toLatIdx]);
     if (
-      !Number.isFinite(fromLng) ||
-      !Number.isFinite(fromLat) ||
-      !Number.isFinite(toLng) ||
-      !Number.isFinite(toLat)
+      fromLng == null ||
+      fromLat == null ||
+      toLng == null ||
+      toLat == null
     ) {
       continue;
     }
@@ -134,30 +156,13 @@ export function buildGisFlowGeoJson(
   const maxWeight = weights.length ? Math.max(...weights) : undefined;
   const fallbackColor = chartColors?.[0] ?? DEFAULT_FLOW_COLOR;
 
-  const features = segments.map((segment, index) => {
+  const features: GeoJSON.Feature[] = [];
+  segments.forEach((segment, index) => {
     let weightNorm: number | undefined;
     if (segment.weight != null && minWeight != null && maxWeight != null) {
       weightNorm = maxWeight === minWeight ? 0.5 : (segment.weight - minWeight) / (maxWeight - minWeight);
     }
-    return {
-      type: "Feature" as const,
-      id: index,
-      geometry: {
-        type: "LineString" as const,
-        coordinates: interpolateGreatCircleArc(
-          segment.fromLng,
-          segment.fromLat,
-          segment.toLng,
-          segment.toLat,
-        ),
-      },
-      properties: {
-        label: segment.label,
-        weight: segment.weight,
-        weightNorm,
-        color: fallbackColor,
-      },
-    };
+    features.push(...buildFlowArcFeatures(segment, index, fallbackColor, weightNorm));
   });
 
   return { type: "FeatureCollection", features };

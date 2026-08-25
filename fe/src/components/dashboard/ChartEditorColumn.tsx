@@ -38,7 +38,7 @@ import { filterVisibleCatalogItems } from "@/lib/chartPaletteTaxonomy";
 import { isGeoMapChartType, isGisMapChartType } from "@/lib/chartViewConfig";
 import { resolveMapChartTypeGuide } from "@/lib/mapChartTypeGuide";
 import { isGisFlowEnabled } from "@/components/charts/engine/maplibre/gisProject";
-import { isGisMapOdBindingComplete } from "@/lib/gisMapFlow";
+import { ensureGisMapOdFlowEnabled, isGisMapOdBindingComplete } from "@/lib/gisMapFlow";
 import { syncLegacyFieldsFromAxes, migrateChartConfigToDeAxes } from "@/lib/resolveChartEncoding";
 
 function buildValidateSuccessMessage(
@@ -91,17 +91,25 @@ export function ChartEditorColumn({
     setRefreshOk(false);
     setValidating(true);
     try {
+      const cfgForValidate = cfg.chartType === "gis-map" ? ensureGisMapOdFlowEnabled(cfg) : cfg;
       if (
-        cfg.chartType === "gis-map" &&
-        isGisFlowEnabled(cfg.nativeBody?.gisProject) &&
-        !isGisMapOdBindingComplete(cfg)
+        cfgForValidate !== cfg &&
+        isGisFlowEnabled(cfgForValidate.nativeBody?.gisProject) &&
+        !isGisFlowEnabled(cfg.nativeBody?.gisProject)
+      ) {
+        onChange(cfgForValidate);
+      }
+      if (
+        cfgForValidate.chartType === "gis-map" &&
+        isGisFlowEnabled(cfgForValidate.nativeBody?.gisProject) &&
+        !isGisMapOdBindingComplete(cfgForValidate)
       ) {
         setFieldError("OD 飞线需同时绑定 from_lng、from_lat、to_lng、to_lat 四个字段");
         return;
       }
       await apiFetch("/api/v1/charts/validate", {
         method: "POST",
-        body: JSON.stringify(sanitizeChartFieldsForValidate(cfg)),
+        body: JSON.stringify(sanitizeChartFieldsForValidate(cfgForValidate)),
       });
       refreshColumns();
       onDataRefresh?.();

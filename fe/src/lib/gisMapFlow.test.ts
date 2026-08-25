@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { applyGisMapFlowConfig, detectGisMapOdColumns, ensureGisMapOdBinding, ensureGisMapOdFlowEnabled, isGisMapFlowConfig, isGisMapOdBindingComplete, suggestGisMapOdFields } from "@/lib/gisMapFlow";
+import {
+  applyGisMapFlowConfig,
+  detectGisMapOdColumns,
+  ensureGisMapOdFlowEnabled,
+  isGisMapFlowConfig,
+  isGisMapOdBindingComplete,
+  suggestGisMapOdFields,
+} from "@/lib/gisMapFlow";
 import { applyGisMapScatterConfig } from "@/lib/gisMapScatter";
 import { fieldAtSlot } from "@/lib/resolveChartEncoding";
 import { suggestChartFields } from "@/lib/chartExecuteProbe";
@@ -86,7 +93,7 @@ describe("gisMapFlow lib", () => {
     ]);
   });
 
-  it("auto-completes missing to_lat when OD columns exist and flow is enabled", () => {
+  it("does not auto-complete missing to_lat when OD columns exist", () => {
     const cfg: ChartViewConfig = {
       chartType: "gis-map",
       nativeBody: { gisProject: { flow: { enabled: true } } },
@@ -96,10 +103,10 @@ describe("gisMapFlow lib", () => {
         drill: [{ field: "to_lng" }],
       },
     };
-    const next = ensureGisMapOdBinding(cfg, OD_COLUMNS);
-    expect(isGisMapOdBindingComplete(next)).toBe(true);
-    expect(next.axes?.drill?.map((d) => d.field)).toEqual(["to_lng", "to_lat", "route_name"]);
-    expect(next.metrics?.[0]?.field).toBe("weight");
+    const next = ensureGisMapOdFlowEnabled(cfg);
+    expect(isGisMapOdBindingComplete(next)).toBe(false);
+    expect(next.axes?.drill?.map((d) => d.field)).toEqual(["to_lng"]);
+    expect(next.metrics?.[0]?.field).toBeUndefined();
   });
 
   it("replaces scatter axes when switching from scatter preset", () => {

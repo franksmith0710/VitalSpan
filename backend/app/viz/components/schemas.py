@@ -33,6 +33,7 @@ class VizComponentOut(BaseModel):
     status: ComponentStatus
     payload_json: dict[str, Any] = Field(alias="payloadJson")
     thumbnail_ref: str | None = Field(default=None, alias="thumbnailRef")
+    thumbnail_url: str | None = Field(default=None, alias="thumbnailUrl")
     tags: list[str] = Field(default_factory=list)
     visibility: ComponentVisibility
     owner_user_id: uuid.UUID | None = Field(default=None, alias="ownerUserId")
@@ -55,6 +56,7 @@ class VizComponentListItem(BaseModel):
     surface_kinds: list[SurfaceKind] = Field(alias="surfaceKinds")
     status: ComponentStatus
     thumbnail_ref: str | None = Field(default=None, alias="thumbnailRef")
+    thumbnail_url: str | None = Field(default=None, alias="thumbnailUrl")
     tags: list[str] = Field(default_factory=list)
     visibility: ComponentVisibility
     content_revision: int = Field(alias="contentRevision")

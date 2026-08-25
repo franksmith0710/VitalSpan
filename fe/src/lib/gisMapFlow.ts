@@ -158,7 +158,9 @@ export function ensureGisMapOdFlowEnabled(cfg: ChartViewConfig): ChartViewConfig
       dims[3]?.field?.trim(),
   );
   if (!odReady) return synced;
-  return writeGisProject(synced, { flow: { enabled: true } });
+  return writeGisProject(synced, {
+    flow: { ...(synced.nativeBody?.gisProject?.flow ?? {}), enabled: true },
+  });
 }
 
 export function isGisMapFlowConfig(cfg: ChartViewConfig): boolean {

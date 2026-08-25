@@ -56,6 +56,10 @@ def thumbnail_ref_for(dashboard_id: uuid.UUID, ext: str = "webp") -> str:
     return f"dashboard-thumbnails/{dashboard_id}.{ext}"
 
 
+def viz_component_thumbnail_ref_for(component_id: uuid.UUID, ext: str = "webp") -> str:
+    return f"viz-component-thumbnails/{component_id}.{ext}"
+
+
 def thumbnail_path_for_ref(ref: str) -> Path:
     root = resolve_data_dir()
     path = (root / ref).resolve()
@@ -64,14 +68,23 @@ def thumbnail_path_for_ref(ref: str) -> Path:
     return path
 
 
-def write_thumbnail(dashboard_id: uuid.UUID, content: bytes, content_type: str) -> str:
-    media = validate_thumbnail_payload(content, content_type)
-    ext = "webp" if media == "image/webp" else "png" if media == "image/png" else "jpg"
-    ref = thumbnail_ref_for(dashboard_id, ext)
+def _write_thumbnail_ref(ref: str, content: bytes) -> str:
     path = thumbnail_path_for_ref(ref)
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(content)
     return ref
+
+
+def write_thumbnail(dashboard_id: uuid.UUID, content: bytes, content_type: str) -> str:
+    media = validate_thumbnail_payload(content, content_type)
+    ext = "webp" if media == "image/webp" else "png" if media == "image/png" else "jpg"
+    return _write_thumbnail_ref(thumbnail_ref_for(dashboard_id, ext), content)
+
+
+def write_viz_component_thumbnail(component_id: uuid.UUID, content: bytes, content_type: str) -> str:
+    media = validate_thumbnail_payload(content, content_type)
+    ext = "webp" if media == "image/webp" else "png" if media == "image/png" else "jpg"
+    return _write_thumbnail_ref(viz_component_thumbnail_ref_for(component_id, ext), content)
 
 
 def read_thumbnail_bytes(ref: str) -> tuple[bytes, str]:

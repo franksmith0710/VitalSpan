@@ -68,6 +68,20 @@ def _unique_component_key(db: Session, base: str) -> str:
         suffix += 1
 
 
+def _thumbnail_url(row: VizComponent) -> str | None:
+    if not row.thumbnail_ref:
+        return None
+    from app.dashboard.thumbnails import thumbnail_path_for_ref
+
+    try:
+        if not thumbnail_path_for_ref(row.thumbnail_ref).is_file():
+            return None
+    except ValueError:
+        return None
+    version = int(row.updated_at.timestamp()) if row.updated_at else 0
+    return f"/api/v1/viz-components/{row.id}/thumbnail?v={version}"
+
+
 def _to_out(row: VizComponent) -> VizComponentOut:
     return VizComponentOut(
         id=row.id,
@@ -80,6 +94,7 @@ def _to_out(row: VizComponent) -> VizComponentOut:
         status=row.status,  # type: ignore[arg-type]
         payload_json=row.payload_json,
         thumbnail_ref=row.thumbnail_ref,
+        thumbnail_url=_thumbnail_url(row),
         tags=row.tags or [],
         visibility=row.visibility,  # type: ignore[arg-type]
         owner_user_id=row.owner_user_id,
@@ -102,6 +117,7 @@ def _to_list_item(row: VizComponent, reference_counts: dict[str, int] | None = N
         surface_kinds=row.surface_kinds,  # type: ignore[arg-type]
         status=row.status,  # type: ignore[arg-type]
         thumbnail_ref=row.thumbnail_ref,
+        thumbnail_url=_thumbnail_url(row),
         tags=row.tags or [],
         visibility=row.visibility,  # type: ignore[arg-type]
         content_revision=row.content_revision,
@@ -366,3 +382,46 @@ def delete_component(db: Session, component_id: uuid.UUID, actor: UserContext) -
     assert_component_write(actor, row)
     db.delete(row)
     db.commit()
+
+
+def save_component_thumbnail(
+    db: Session,
+    component_id: uuid.UUID,
+    content: bytes,
+    content_type: str,
+    actor: UserContext,
+) -> VizComponentListItem:
+    from app.dashboard.thumbnails import write_viz_component_thumbnail
+
+    row = db.scalar(select(VizComponent).where(VizComponent.id == component_id))
+    if row is None:
+        raise VizComponentError("VIZ_COMPONENT_NOT_FOUND", "Component not found", 404)
+    assert_component_write(actor, row)
+    try:
+        row.thumbnail_ref = write_viz_component_thumbnail(component_id, content, content_type)
+    except ValueError as exc:
+        raise VizComponentError("VIZ_COMPONENT_INVALID_THUMBNAIL", str(exc), 422) from exc
+    row.updated_at = datetime.now(UTC)
+    db.commit()
+    db.refresh(row)
+    ref_counts = count_component_references(db)
+    return _to_list_item(row, ref_counts)
+
+
+def get_component_thumbnail(
+    db: Session,
+    component_id: uuid.UUID,
+    actor: UserContext,
+) -> tuple[bytes, str]:
+    from app.dashboard.thumbnails import read_thumbnail_bytes
+
+    row = db.scalar(select(VizComponent).where(VizComponent.id == component_id))
+    if row is None:
+        raise VizComponentError("VIZ_COMPONENT_NOT_FOUND", "Component not found", 404)
+    assert_component_read(actor, row)
+    if not row.thumbnail_ref:
+        raise VizComponentError("VIZ_COMPONENT_THUMBNAIL_NOT_FOUND", "Thumbnail not found", 404)
+    try:
+        return read_thumbnail_bytes(row.thumbnail_ref)
+    except FileNotFoundError as exc:
+        raise VizComponentError("VIZ_COMPONENT_THUMBNAIL_NOT_FOUND", "Thumbnail not found", 404) from exc

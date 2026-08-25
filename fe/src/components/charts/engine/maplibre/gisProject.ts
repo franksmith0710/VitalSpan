@@ -170,6 +170,8 @@ export type GisProjectFlow = {
   scaleByMetric?: boolean;
   /** 有飞线时自动 fitBounds */
   autoFit?: boolean;
+  /** 流动光点与枢纽呼吸动画；默认开启 */
+  animate?: boolean;
 };
 
 export type GisProject = {
@@ -254,6 +256,7 @@ export type ResolvedGisFlowStyle = {
   opacity: number;
   scaleByMetric: boolean;
   autoFit: boolean;
+  animate: boolean;
 };
 
 export function isGisFlowEnabled(project: GisProject | undefined | null): boolean {
@@ -287,6 +290,7 @@ export function resolveGisFlowStyle(
     opacity,
     scaleByMetric: flow?.scaleByMetric !== false,
     autoFit: flow?.autoFit !== false,
+    animate: flow?.animate !== false,
   };
 }
 
@@ -513,6 +517,7 @@ function normalizeGisProjectFlow(input: unknown): GisProjectFlow | undefined {
   if (Number.isFinite(opacity) && opacity >= 0 && opacity <= 1) next.opacity = opacity;
   if (raw.scaleByMetric === false) next.scaleByMetric = false;
   if (raw.autoFit === false) next.autoFit = false;
+  if (raw.animate === false) next.animate = false;
   return Object.keys(next).length > 0 ? next : undefined;
 }
 

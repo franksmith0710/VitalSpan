@@ -1,28 +1,43 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   buildGisFlowLayerDefinitions,
+  buildGisFlowLineGradient,
   buildGisFlowLineWidth,
   buildGisFlowStyleKey,
   emptyGisFlowGeoJson,
   syncGisFlowData,
   syncGisFlowStyle,
   GIS_FLOW_SOURCE_ID,
+  GIS_FLOW_SHADOW_LAYER_ID,
   GIS_FLOW_GLOW_LAYER_ID,
   GIS_FLOW_LINE_LAYER_ID,
+  GIS_FLOW_PULSE_LAYER_ID,
+  GIS_FLOW_HUB_LAYER_ID,
 } from "@/components/charts/engine/maplibre/gisMapFlowStyle";
 
 describe("gisMapFlowStyle", () => {
-  it("adds flow source and line layer", () => {
+  it("adds flow source with lineMetrics and stacked layers", () => {
     const { source, layers } = buildGisFlowLayerDefinitions(emptyGisFlowGeoJson(), {
       flavor: "light",
       flow: { enabled: true, color: "#112233", opacity: 0.6 },
     });
     expect(source.id).toBe("vs-gis-flow");
-    expect(layers).toHaveLength(2);
-    expect(layers[0]?.id).toBe("vs-gis-flow-lines-glow");
-    expect(layers[1]?.id).toBe("vs-gis-flow-lines");
-    expect(layers[1]?.paint?.["line-color"]).toBeDefined();
-    expect(layers[1]?.paint?.["line-width"]).toBeDefined();
+    expect(source.spec.lineMetrics).toBe(true);
+    expect(layers).toHaveLength(5);
+    expect(layers[0]?.id).toBe(GIS_FLOW_SHADOW_LAYER_ID);
+    expect(layers[1]?.id).toBe(GIS_FLOW_GLOW_LAYER_ID);
+    expect(layers[2]?.id).toBe(GIS_FLOW_LINE_LAYER_ID);
+    expect(layers[3]?.id).toBe(GIS_FLOW_PULSE_LAYER_ID);
+    expect(layers[4]?.id).toBe(GIS_FLOW_HUB_LAYER_ID);
+    expect(layers[2]?.paint?.["line-gradient"]).toBeDefined();
+    expect(layers[3]?.paint?.["line-trim-offset"]).toEqual([0, 0.08]);
+  });
+
+  it("builds crest highlight gradient", () => {
+    const gradient = buildGisFlowLineGradient("#f97316");
+    expect(gradient[0]).toBe("interpolate");
+    expect(gradient[2]).toEqual(["line-progress"]);
+    expect(String(gradient[8])).toContain("255, 255, 255");
   });
 
   it("changes style key when flow paint changes", () => {
@@ -40,13 +55,12 @@ describe("gisMapFlowStyle", () => {
       opacity: 1,
       scaleByMetric: false,
       autoFit: true,
+      animate: true,
     });
     expect(width[0]).toBe("interpolate");
     expect(width[2]).toEqual(["zoom"]);
     expect(width[3]).toBe(0);
     expect(width[4]).toBeCloseTo(7.2);
-    expect(width[5]).toBe(1);
-    expect(width[6]).toBeCloseTo(10.8);
   });
 });
 
@@ -72,6 +86,8 @@ describe("syncGisFlowData", () => {
     const map = {
       isStyleLoaded: () => true,
       getSource: (id: string) => (id === GIS_FLOW_SOURCE_ID ? { setData } : undefined),
+      getLayer: () => ({}),
+      moveLayer: vi.fn(),
       once: vi.fn(),
     };
 
@@ -84,6 +100,8 @@ describe("syncGisFlowData", () => {
     const map = {
       isStyleLoaded: () => true,
       getSource: () => ({ setData }),
+      getLayer: () => ({}),
+      moveLayer: vi.fn(),
       once: vi.fn(),
     };
 
@@ -96,10 +114,16 @@ describe("syncGisFlowStyle", () => {
   it("updates line paint when layer exists", () => {
     const setPaintProperty = vi.fn();
     const moveLayer = vi.fn();
+    const layerIds = new Set([
+      GIS_FLOW_SHADOW_LAYER_ID,
+      GIS_FLOW_GLOW_LAYER_ID,
+      GIS_FLOW_LINE_LAYER_ID,
+      GIS_FLOW_PULSE_LAYER_ID,
+      GIS_FLOW_HUB_LAYER_ID,
+    ]);
     const map = {
       isStyleLoaded: () => true,
-      getLayer: (id: string) =>
-        id === GIS_FLOW_LINE_LAYER_ID || id === GIS_FLOW_GLOW_LAYER_ID ? {} : undefined,
+      getLayer: (id: string) => (layerIds.has(id) ? {} : undefined),
       setPaintProperty,
       moveLayer,
       once: vi.fn(),

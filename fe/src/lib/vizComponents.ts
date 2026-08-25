@@ -41,6 +41,7 @@ export type VizComponentListItem = {
   surfaceKinds: VizSurfaceKind[];
   status: "draft" | "published" | "archived";
   thumbnailRef: string | null;
+  thumbnailUrl?: string | null;
   tags: string[];
   visibility: "org" | "private";
   contentRevision: number;

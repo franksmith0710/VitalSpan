@@ -272,6 +272,7 @@ redoc: /redoc
 | GET/POST | `/api/v1/viz-components` | 组件库列表/创建草稿 | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
 | POST | `/api/v1/viz-components/batch-resolve` | 批量解析引用组件 payload | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
 | GET/PUT/DELETE | `/api/v1/viz-components/{id}` | 组件详情/更新/删除 | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
+| PUT/GET | `/api/v1/viz-components/{id}/thumbnail` | 组件库封面截图上传/下载 | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
 | POST | `/api/v1/viz-components/{id}/publish` | 发布组件（`viz:component.manage`） | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
 | GET | `/api/v1/viz-components/{id}/references` | 组件引用明细（看板/大屏实例列表） | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |
 | POST | `/api/v1/viz-components/{id}/archive` | 下架组件（对标 dashboard-templates archive） | 内部 | 一期 | DASH-010 | 已实现 | `backend/app/api/v1/viz_components.py` |

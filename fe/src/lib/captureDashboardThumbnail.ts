@@ -1,6 +1,7 @@
 import { toPng } from "html-to-image";
 
 export const DASHBOARD_THUMBNAIL_CAPTURE_ATTR = "data-dashboard-thumbnail-capture";
+export const VIZ_COMPONENT_THUMBNAIL_CAPTURE_ATTR = "data-viz-component-thumbnail-capture";
 /** 与 Hub 卡片 16/10 预览框一致：按宽度铺满，多余高度从顶部裁掉 */
 export const DASHBOARD_THUMB_ASPECT = 16 / 10;
 /** 小于此体积视为空图（0 字节或 1×1 占位），禁止上传 */
@@ -20,6 +21,10 @@ export function findDashboardThumbnailCaptureRoot(): HTMLElement | null {
     return stage.closest<HTMLElement>(HOST_SELECTOR) ?? stage;
   }
   return document.querySelector<HTMLElement>(`[${DASHBOARD_THUMBNAIL_CAPTURE_ATTR}]`);
+}
+
+export function findVizComponentThumbnailCaptureRoot(): HTMLElement | null {
+  return document.querySelector<HTMLElement>(`[${VIZ_COMPONENT_THUMBNAIL_CAPTURE_ATTR}]`);
 }
 
 export function resolveVisibleCaptureTarget(root: HTMLElement): HTMLElement {

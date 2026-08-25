@@ -141,7 +141,7 @@ export function CustomVizWidget({
     (node: HTMLDivElement | null) => {
       hostRef.current = node;
       hostSizeRef(node);
-      setHostEl(node);
+      setHostEl((prev) => (prev === node ? prev : node));
     },
     [hostSizeRef],
   );
@@ -242,9 +242,14 @@ export function CustomVizWidget({
 
   useEffect(() => {
     if (!hostEl || !html) return undefined;
-    const cleanup = mountCustomVizHtml(hostEl, html, { styleHooks: manifestStyleHooks });
-    injectCustomVizPayload(hostEl, runtimePayloadRef.current);
-    return cleanup;
+    try {
+      const cleanup = mountCustomVizHtml(hostEl, html, { styleHooks: manifestStyleHooks });
+      injectCustomVizPayload(hostEl, runtimePayloadRef.current);
+      return cleanup;
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "自定义组件渲染失败");
+      return undefined;
+    }
   }, [hostEl, html, manifestStyleHooks]);
 
   useEffect(() => {

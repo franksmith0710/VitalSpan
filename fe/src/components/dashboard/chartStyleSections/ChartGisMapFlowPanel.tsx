@@ -117,6 +117,12 @@ export function ChartGisMapFlowPanel() {
               onCheckedChange={(autoFit) => patchFlow({ autoFit })}
             />
 
+            <InspectorSwitchRow
+              label="流动动画"
+              checked={resolved.animate}
+              onCheckedChange={(animate) => patchFlow({ animate })}
+            />
+
             {hasCustomFlow ? (
               <button
                 type="button"

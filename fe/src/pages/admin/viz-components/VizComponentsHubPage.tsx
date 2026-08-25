@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
 import { Boxes, Pencil, Upload } from "lucide-react";
@@ -42,12 +42,10 @@ import {
 } from "@/components/dashboard/viz-components/componentLabels";
 import {
   archiveVizComponent,
-  batchResolveVizComponents,
   deleteVizComponent,
   fetchVizComponents,
   publishVizComponent,
   type VizComponentListItem,
-  type VizComponentPayload,
   type VizSurfaceKind,
 } from "@/lib/vizComponents";
 import { hasCapability } from "@/lib/capabilities";
@@ -120,7 +118,6 @@ export function VizComponentsHubPage() {
   const [insertTarget, setInsertTarget] = useState<VizComponentListItem | null>(null);
   const [referencesTarget, setReferencesTarget] = useState<VizComponentListItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<VizComponentListItem | null>(null);
-  const previewPaused = Boolean(insertTarget || referencesTarget);
   const pagination = useListPagination(20, [surfaceTab, widgetFilter, q]);
 
   const listQuery = useQuery({
@@ -180,21 +177,6 @@ export function VizComponentsHubPage() {
     publishMutation.isPending || archiveMutation.isPending || deleteMutation.isPending;
   const items = listQuery.data?.items ?? [];
   const total = listQuery.data?.total ?? 0;
-  const itemIds = useMemo(() => items.map((item) => item.id), [items]);
-
-  const resolveQuery = useQuery({
-    queryKey: queryKeys.vizComponents.resolve(itemIds),
-    queryFn: () => batchResolveVizComponents(itemIds),
-    enabled: itemIds.length > 0,
-  });
-
-  const payloadById = useMemo(() => {
-    const map = new Map<string, VizComponentPayload>();
-    for (const detail of resolveQuery.data?.items ?? []) {
-      map.set(detail.id, detail.payloadJson);
-    }
-    return map;
-  }, [resolveQuery.data]);
 
   return (
     <AdminPageShell
@@ -282,10 +264,7 @@ export function VizComponentsHubPage() {
                 <VizComponentCard
                   key={item.id}
                   item={item}
-                    payload={payloadById.get(item.id)}
-                    payloadLoading={resolveQuery.isLoading && !payloadById.has(item.id)}
-                    previewPaused={previewPaused}
-                    canManage={canManage}
+                  canManage={canManage}
                     pending={pending}
                     onInsert={() => setInsertTarget(item)}
                     onViewReferences={() => setReferencesTarget(item)}

@@ -216,9 +216,7 @@ export function useChartInspectorState(
     autoFieldsRef.current = autoKey;
     const suggested = suggestChartFields(columns, current.chartType);
     if (current.chartType === "gis-map" && detectGisMapOdColumns(columns)) {
-      emitChartChange(
-        applyGisMapFlowConfig({ ...current, ...suggested }, current.dataSourceId, current.configId, columns),
-      );
+      emitChartChange(ensureGisMapOdFlowEnabled({ ...current, ...suggested }));
       return;
     }
     emitChartChange({ ...current, ...suggested });

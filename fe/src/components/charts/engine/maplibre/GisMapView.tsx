@@ -34,6 +34,7 @@ import {
   startGisGlobeAutoRotate,
   syncGisMapView,
 } from "@/components/charts/engine/maplibre/gisMapRuntime";
+import { mountGisFlowLineAnimation } from "@/components/charts/engine/maplibre/gisMapFlowAnimation";
 import { mountGisGlobeHaloOverlay } from "@/components/charts/engine/maplibre/gisGlobeHalo";
 import { mountGisStarfieldOverlay } from "@/components/charts/engine/maplibre/gisStarfield";
 import { registerGisMapViewLiveControl } from "@/components/charts/engine/maplibre/gisMapViewBridge";
@@ -45,7 +46,7 @@ import {
 import { gisMapTransformRequest } from "@/components/charts/engine/maplibre/gisMapTransformRequest";
 import { GeoMapOverlayHint } from "@/components/charts/engine/geo/GeoMapOverlayHint";
 import { resolveGisMapDataHint, shouldShowGisMapOverlayHint } from "@/lib/gisMapDataHint";
-import { ensureGisMapOdFlowEnabled } from "@/lib/gisMapFlow";
+import { isGisMapOdBindingComplete, ensureGisMapOdFlowEnabled } from "@/lib/gisMapFlow";
 import { resolveTileService } from "@/lib/tileServices";
 import { cn } from "@/lib/utils";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -200,8 +201,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       flavor,
       flow: project.flow,
       chartColors: styleContext.chartColors,
+      layersActive: chartConfig ? isGisMapOdBindingComplete(chartConfig) : false,
     }),
-    [flavor, project.flow, styleContext.chartColors],
+    [chartConfig, flavor, project.flow, styleContext.chartColors],
   );
   const flowLayerOptionsRef = useRef(flowLayerOptions);
   flowLayerOptionsRef.current = flowLayerOptions;
@@ -223,15 +225,18 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       flowLayerOptionsRef.current.flow,
       flowLayerOptionsRef.current.chartColors,
     );
+    const flowActive =
+      flowLayerOptionsRef.current.layersActive ||
+      flowResolved.enabled;
     const fitTargets = [
       overlayResolved.autoFit ? overlayGeoJsonRef.current : null,
-      flowResolved.autoFit && flowResolved.enabled ? flowGeoJsonRef.current : null,
+      flowResolved.autoFit && flowActive ? flowGeoJsonRef.current : null,
     ].filter(Boolean) as GeoJSON.FeatureCollection[];
     if (fitTargets.length > 0) {
       const boundsKey = buildGeoJsonBoundsKey(...fitTargets);
       if (boundsKey && overlayFitKeyRef.current !== boundsKey) {
         fitGisOverlayBounds(map, fitTargets, {
-          minZoom: flowResolved.enabled ? 1.35 : undefined,
+          minZoom: flowActive ? 1.35 : undefined,
         });
         overlayFitKeyRef.current = boundsKey;
       }
@@ -516,9 +521,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     const runFit = () => {
       const overlayResolved = resolveGisOverlayStyle(project.overlay, styleContext.chartColors);
       const flowResolved = resolveGisFlowStyle(project.flow, styleContext.chartColors);
+      const flowActive =
+        isGisMapOdBindingComplete(chartConfig ?? { chartType: "gis-map" }) || flowResolved.enabled;
       const fitTargets = [
         overlayResolved.autoFit ? overlayGeoJson : null,
-        flowResolved.autoFit && flowResolved.enabled ? flowGeoJson : null,
+        flowResolved.autoFit && flowActive ? flowGeoJson : null,
       ].filter(Boolean) as GeoJSON.FeatureCollection[];
       if (fitTargets.length === 0) {
         if (!overlayGeoJson && !flowGeoJson) overlayFitKeyRef.current = null;
@@ -527,14 +534,44 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       const boundsKey = buildGeoJsonBoundsKey(...fitTargets);
       if (boundsKey && overlayFitKeyRef.current !== boundsKey) {
         fitGisOverlayBounds(map, fitTargets, {
-          minZoom: flowResolved.enabled ? 1.35 : undefined,
+          minZoom: flowActive ? 1.35 : undefined,
         });
         overlayFitKeyRef.current = boundsKey;
       }
     };
     if (map.isStyleLoaded()) runFit();
     else map.once("load", runFit);
-  }, [flowGeoJson, overlayGeoJson, project.flow, project.overlay, styleContext.chartColors]);
+  }, [chartConfig, flowGeoJson, overlayGeoJson, project.flow, project.overlay, styleContext.chartColors]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || renderBasemap !== "pmtiles") return;
+    const flowResolved = resolveGisFlowStyle(project.flow, styleContext.chartColors);
+    const flowActive =
+      isGisMapOdBindingComplete(chartConfig ?? { chartType: "gis-map" }) || flowResolved.enabled;
+    if (!flowActive || !flowResolved.animate) return;
+
+    let dispose: (() => void) | undefined;
+    const mount = () => {
+      dispose?.();
+      dispose = mountGisFlowLineAnimation(map, flowResolved);
+    };
+    if (map.isStyleLoaded()) mount();
+    else map.once("load", mount);
+    map.on("style.load", mount);
+
+    return () => {
+      map.off("load", mount);
+      map.off("style.load", mount);
+      dispose?.();
+    };
+  }, [
+    chartConfig,
+    flowStyleKey,
+    project.flow,
+    renderBasemap,
+    styleContext.chartColors,
+  ]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -605,7 +642,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     shouldShowGisMapOverlayHint(
       dataHint,
       Boolean(overlayGeoJson) ||
-        (resolveGisFlowStyle(project.flow, styleContext.chartColors).enabled && Boolean(flowGeoJson)),
+        ((resolveGisFlowStyle(project.flow, styleContext.chartColors).enabled ||
+          (chartConfig ? isGisMapOdBindingComplete(chartConfig) : false)) &&
+          Boolean(flowGeoJson)),
     );
 
   return (

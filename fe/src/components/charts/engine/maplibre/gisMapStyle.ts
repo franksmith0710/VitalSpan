@@ -9,6 +9,7 @@ import {
   buildGisFlowLayerDefinitions,
   emptyGisFlowGeoJson,
   type GisFlowLayerOptions,
+  shouldAppendGisFlowLayers,
 } from "@/components/charts/engine/maplibre/gisMapFlowStyle";
 import {
   applyBasemapLayerVisibility,
@@ -136,7 +137,7 @@ export function appendGisFlowLayers(
   flow: GeoJSON.FeatureCollection | null,
   options: GisFlowLayerOptions,
 ): StyleSpecification {
-  if (!resolveGisFlowStyle(options.flow, options.chartColors).enabled) {
+  if (!shouldAppendGisFlowLayers(options)) {
     return style;
   }
   const data = flow ?? emptyGisFlowGeoJson();
