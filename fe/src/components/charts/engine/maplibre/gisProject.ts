@@ -239,9 +239,9 @@ const DEFAULT_GIS_OVERLAY_COLOR = "#2563eb";
 export const DEFAULT_GIS_FLOW: Required<
   Pick<GisProjectFlow, "widthMin" | "widthMax" | "opacity" | "scaleByMetric" | "autoFit">
 > = {
-  widthMin: 1,
-  widthMax: 4,
-  opacity: 0.85,
+  widthMin: 2,
+  widthMax: 6,
+  opacity: 0.9,
   scaleByMetric: true,
   autoFit: true,
 };

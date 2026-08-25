@@ -1,7 +1,12 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import type { DeAxisId } from "@/lib/chartDeAxis";
 import { ensureChartSlotCapacity } from "@/components/dashboard/chartFieldSlots";
-import { writeGisProject } from "@/components/charts/engine/maplibre/gisProject";
+import {
+  isGisFlowEnabled,
+  writeGisProject,
+} from "@/components/charts/engine/maplibre/gisProject";
+import { activeFieldRefs } from "@/lib/chartConfigState";
+import { migrateChartConfigToDeAxes, syncLegacyFieldsFromAxes } from "@/lib/resolveChartEncoding";
 
 /** sample_db · de_map_od_hubs：全球枢纽 OD（GIS 飞线官方示例） */
 export const GIS_MAP_FLOW_SAMPLE_SQL = `SELECT route_name, from_lng, from_lat, to_lng, to_lat, weight
@@ -92,6 +97,24 @@ export function applyGisMapFlowConfig(
     metrics: [{ field: "weight" }],
   });
   return writeGisProject(withSlots, { flow: { enabled: true } });
+}
+
+/** 四坐标 OD 槽位齐备时自动开启飞线（避免只绑字段未开 flow.enabled 导致无弧线） */
+export function ensureGisMapOdFlowEnabled(cfg: ChartViewConfig): ChartViewConfig {
+  if (cfg.chartType !== "gis-map" || isGisFlowEnabled(cfg.nativeBody?.gisProject)) {
+    return cfg;
+  }
+  const dims = activeFieldRefs(
+    syncLegacyFieldsFromAxes(migrateChartConfigToDeAxes(cfg)).dimensions,
+  );
+  const odReady = Boolean(
+    dims[0]?.field?.trim() &&
+      dims[1]?.field?.trim() &&
+      dims[2]?.field?.trim() &&
+      dims[3]?.field?.trim(),
+  );
+  if (!odReady) return cfg;
+  return writeGisProject(cfg, { flow: { enabled: true } });
 }
 
 export function isGisMapFlowConfig(cfg: ChartViewConfig): boolean {

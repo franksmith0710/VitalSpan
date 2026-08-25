@@ -60,6 +60,10 @@ import {
   isCardPreviewProfile,
   resolveCardPreviewQueryLimit,
 } from "@/lib/dashboardPreviewProfile";
+import {
+  resolveEditPaintMaxEdge,
+  shouldDeferEditLivePaint,
+} from "@/lib/dashboardEditChartPerf";
 
 function useWidgetAutoRefreshExecuteKey(
   chartConfig: ChartViewConfig | undefined,
@@ -329,6 +333,8 @@ export function DashboardWidget({
     () => chartPaletteDefaultsProp ?? pickChartPaletteDefaults(dashboardStyle),
     [chartPaletteDefaultsProp, chartPaletteDefaultsFingerprint(dashboardStyle)],
   );
+  const editPaintMaxEdge = resolveEditPaintMaxEdge(mode === "edit", selected);
+  const deferEditLivePaint = shouldDeferEditLivePaint(mode === "edit", selected);
   const chartCfg = resolvedWidget.type === "chart" ? resolvedWidget.chartConfig : undefined;
   const widgetExecuteKey = useWidgetAutoRefreshExecuteKey(
     chartCfg,
@@ -529,7 +535,7 @@ export function DashboardWidget({
               colorScheme={dashboardStyle?.colorScheme ?? "light"}
               widgetShellColor={shellColor}
               showLoadingHint={!isCardPreview && chrome.showChartLoadingHint}
-              suspendLiveResize={suspendLiveResize}
+              suspendLiveResize={suspendLiveResize || deferEditLivePaint}
               dashboardEditMode={mode === "edit"}
               queryEnabled={queryEnabled}
               renderEnabled={renderEnabled}
@@ -537,6 +543,7 @@ export function DashboardWidget({
               onMountReady={onMountReady}
               geo3dRenderTier={geo3dRenderTier}
               geo3dAnimationActive={!isCardPreview && (mode !== "edit" || selected)}
+              paintMaxEdge={editPaintMaxEdge}
               previewProfile={previewProfile}
               onChartConfigChange={
                 onChartConfigChange

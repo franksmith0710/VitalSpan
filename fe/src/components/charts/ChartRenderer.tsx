@@ -147,6 +147,8 @@ type ChartRendererProps = {
   onChartLinkageClick?: (payload: { parameterKey: string; value: string }) => void;
   geo3dRenderTier?: import("@/components/charts/engine/three/geo3dRuntime").Geo3dRenderTier;
   geo3dAnimationActive?: boolean;
+  /** 编辑态未选中组件：限制 D3/WebGL 绘制分辨率 */
+  paintMaxEdge?: number;
   previewProfile?: DashboardPreviewProfile;
 };
 
@@ -225,6 +227,7 @@ function chartRendererPropsAreEqual(
     prev.mountGateStatus === next.mountGateStatus &&
     prev.geo3dRenderTier === next.geo3dRenderTier &&
     prev.geo3dAnimationActive === next.geo3dAnimationActive &&
+    prev.paintMaxEdge === next.paintMaxEdge &&
     prev.previewProfile === next.previewProfile
   );
 }
@@ -259,6 +262,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   onChartLinkageClick,
   geo3dRenderTier,
   geo3dAnimationActive = true,
+  paintMaxEdge,
   previewProfile = "default",
 }: ChartRendererProps) {
   const navSuspended = useAdminHeavyRenderSuspended();
@@ -786,6 +790,8 @@ export const ChartRenderer = memo(function ChartRenderer({
       }
       geo3dRenderTier={geo3dRenderTier ?? defaultGeo3dRenderTier(embedded)}
       geo3dAnimationActive={isCardPreview ? false : geo3dAnimationActive}
+      paintMaxEdge={paintMaxEdge}
+      chartDataRevision={resolvedExecuteKey}
       instanceKey={widgetId}
       onPaintReady={deferMountReadyForPaint ? handlePaintReady : undefined}
     />

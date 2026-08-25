@@ -23,6 +23,8 @@ import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelSha
 import { useElementSize } from "@/hooks/useElementSize";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import { useChartVisualScale } from "@/hooks/useChartVisualScale";
+import { useDebouncedChartVisualScale } from "@/hooks/useDebouncedChartVisualScale";
+import { capChartPaintSize } from "@/lib/dashboardEditChartPerf";
 import { cn } from "@/lib/utils";
 
 type PaintMode = "data" | "live" | "commit";
@@ -30,7 +32,17 @@ type PaintMode = "data" | "live" | "commit";
 const LIVE_RESIZE_THROTTLE_MS = 100;
 
 function D3CanvasViewInner(props: ChartEngineViewProps) {
-  const { viewModel, style, chartConfig, fill = false, height = 180, width, ariaLabel } = props;
+  const {
+    viewModel,
+    style,
+    chartConfig,
+    fill = false,
+    height = 180,
+    width,
+    ariaLabel,
+    paintMaxEdge,
+    chartDataRevision,
+  } = props;
 
   const plan = useMemo(() => {
     const base = buildChartRenderPlan(viewModel);
@@ -43,7 +55,7 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
   );
 
   const playing = usePixelShapePlayer();
-  const visualScale = useChartVisualScale();
+  const visualScale = useDebouncedChartVisualScale();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastMeasureRef = useRef({ width: 0, height: 0 });
   const liveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -80,14 +92,15 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
           .join("|"),
         style,
         chartConfig,
+        chartDataRevision,
       }),
-    [viewModel.chartType, plan, capped, style, chartConfig],
+    [viewModel.chartType, plan, capped, style, chartConfig, chartDataRevision],
   );
 
   const readPaintSize = useCallback(() => {
     const el = containerRef.current;
     if (!el) return null;
-    return readChartPaintSize(el, {
+    const raw = readChartPaintSize(el, {
       fill,
       visualScale,
       layoutFootprint: props.layoutFootprint,
@@ -95,7 +108,9 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
       height,
       observedWidth: size.width,
     });
-  }, [fill, visualScale, props.layoutFootprint, width, height, size.width]);
+    if (!raw) return null;
+    return capChartPaintSize(raw, paintMaxEdge);
+  }, [fill, visualScale, props.layoutFootprint, width, height, size.width, paintMaxEdge]);
 
   const measureAndRender = useCallback(
     (mode: PaintMode, force = false) => {
@@ -179,6 +194,10 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
   useEffect(() => {
     measureAndRenderRef.current("data", true);
   }, [contentKey]);
+
+  useEffect(() => {
+    measureAndRenderRef.current("commit", true);
+  }, [paintMaxEdge]);
 
   useEffect(() => {
     if (!fill || plan.empty) return;

@@ -4,6 +4,7 @@ import {
   resolveGisFlowStyle,
   type ResolvedGisFlowStyle,
 } from "@/components/charts/engine/maplibre/gisProject";
+import { whenGisMapStyleReady } from "@/components/charts/engine/maplibre/gisMapRuntime";
 
 export const GIS_FLOW_SOURCE_ID = "vs-gis-flow";
 export const GIS_FLOW_LINE_LAYER_ID = "vs-gis-flow-lines";
@@ -37,6 +38,8 @@ export function buildGisFlowLinePaint(resolved: ResolvedGisFlowStyle): Record<st
     "line-opacity": resolved.opacity,
     "line-width": buildGisFlowLineWidth(resolved),
     "line-blur": 0.2,
+    /** globe 投影下避免弧线被地形深度遮挡 */
+    "line-emissive-strength": 1,
   };
 }
 
@@ -70,16 +73,8 @@ export function emptyGisFlowGeoJson(): GeoJSON.FeatureCollection {
   return { type: "FeatureCollection", features: [] };
 }
 
-function whenMapStyleReady(map: MapLibreMap, run: () => void) {
-  if (map.isStyleLoaded()) {
-    run();
-    return;
-  }
-  map.once("load", run);
-}
-
 export function syncGisFlowData(map: MapLibreMap, geoJson: GeoJSON.FeatureCollection | null) {
-  whenMapStyleReady(map, () => {
+  whenGisMapStyleReady(map, () => {
     const source = map.getSource(GIS_FLOW_SOURCE_ID) as import("maplibre-gl").GeoJSONSource | undefined;
     if (!source) return;
     source.setData(geoJson ?? emptyGisFlowGeoJson());
@@ -87,7 +82,7 @@ export function syncGisFlowData(map: MapLibreMap, geoJson: GeoJSON.FeatureCollec
 }
 
 export function syncGisFlowStyle(map: MapLibreMap, options: GisFlowLayerOptions) {
-  whenMapStyleReady(map, () => {
+  whenGisMapStyleReady(map, () => {
     if (!map.getLayer(GIS_FLOW_LINE_LAYER_ID)) return;
     const resolved = resolveGisFlowStyle(options.flow, options.chartColors);
     const paint = buildGisFlowLinePaint(resolved);

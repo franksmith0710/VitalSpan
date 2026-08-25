@@ -31,7 +31,8 @@ import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelSha
 import { useElementSize } from "@/hooks/useElementSize";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import { useGeoMapLevel, isGeoMapLevelReady } from "@/hooks/useGeoMapLevel";
-import { useChartVisualScale } from "@/hooks/useChartVisualScale";
+import { useDebouncedChartVisualScale } from "@/hooks/useDebouncedChartVisualScale";
+import { capChartPaintSize } from "@/lib/dashboardEditChartPerf";
 import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
 import { readChartDeStyle, readChartGeoStyle, readChartGeo3dStyle } from "@/lib/chartDeStyle";
 import { readChartGeoAreaMappingLookup, buildAreaMappingContentSig } from "@/lib/chartGeoAreaMapping";
@@ -76,6 +77,8 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     mapDrillError,
     drillStack = [],
     onPaintReady,
+    paintMaxEdge,
+    chartDataRevision,
   } = props;
 
   const isThreeMap = viewModel.chartType === "map-3d";
@@ -154,7 +157,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const showPlaceholderHint = capped.length === 0 && Boolean(mapPlaceholderHint);
 
   const playing = usePixelShapePlayer();
-  const visualScale = useChartVisualScale();
+  const visualScale = useDebouncedChartVisualScale();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastMeasureRef = useRef({ width: 0, height: 0 });
   const liveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -226,6 +229,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
         renderTier: props.geo3dRenderTier ?? "full",
         geo3dStyleSig: geoStyleStructureSig,
         areaMappingSig,
+        dataRevision: chartDataRevision,
       }),
     [
       viewModel.chartType,
@@ -239,6 +243,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       props.geo3dRenderTier,
       geoStyleStructureSig,
       areaMappingSig,
+      chartDataRevision,
     ],
   );
 
@@ -273,7 +278,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const readPaintSize = useCallback(() => {
     const el = containerRef.current;
     if (!el) return null;
-    return readChartPaintSize(el, {
+    const raw = readChartPaintSize(el, {
       fill,
       visualScale,
       layoutFootprint: props.layoutFootprint,
@@ -281,6 +286,8 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       height,
       observedWidth: size.width,
     });
+    if (!raw) return null;
+    return capChartPaintSize(raw, paintMaxEdge);
   }, [
     fill,
     visualScale,
@@ -288,6 +295,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     width,
     height,
     size.width,
+    paintMaxEdge,
   ]);
 
   const tryThreeResize = useCallback(
@@ -582,6 +590,10 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     mapRetryToken,
     props.geo3dRenderTier,
   ]);
+
+  useEffect(() => {
+    measureAndRenderRef.current("commit", true);
+  }, [paintMaxEdge]);
 
   useEffect(() => {
     if (!isThreeMap || !chartConfig || !geoStyleVisualSig) return;

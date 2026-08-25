@@ -57,6 +57,7 @@ export function resolveGlobeScreenBounds(map: MapLibreMap | null): GlobeScreenBo
   };
 }
 
+/** 仅用于 map 尚未挂载时的星场占位；光晕禁止用此 fallback（会与真实球缘脱节）。 */
 export function resolveGlobeScreenBoundsFallback(
   width: number,
   height: number,
@@ -95,19 +96,24 @@ export function shouldRenderGisStarfield(
 export function bindMapRenderSync(map: MapLibreMap | null, paint: () => void): () => void {
   if (!map) return () => undefined;
   const onRender = () => paint();
-  map.on("render", onRender);
-  map.on("move", onRender);
-  map.on("rotate", onRender);
-  map.on("pitch", onRender);
-  map.on("zoom", onRender);
-  map.on("resize", onRender);
+  const events = [
+    "render",
+    "move",
+    "rotate",
+    "pitch",
+    "zoom",
+    "resize",
+    "idle",
+    "moveend",
+    "style.load",
+  ] as const;
+  for (const event of events) {
+    map.on(event, onRender);
+  }
   return () => {
-    map.off("render", onRender);
-    map.off("move", onRender);
-    map.off("rotate", onRender);
-    map.off("pitch", onRender);
-    map.off("zoom", onRender);
-    map.off("resize", onRender);
+    for (const event of events) {
+      map.off(event, onRender);
+    }
   };
 }
 
@@ -284,24 +290,31 @@ function clampGlobeLimbToScreenBounds(
   return screenLimb;
 }
 
-/** 多策略解析球缘，并映射到 overlay 容器坐标（实时跟 zoom；仅探测全失败才 fallback）。 */
+/** MapLibre globe transform 是否具备球面探测能力（style 切换/首帧前为 false）。 */
+export function isGlobeTransformProbeReady(map: MapLibreMap | null): boolean {
+  if (!map || !map.isStyleLoaded()) return false;
+  const transform = (map as unknown as { transform?: SurfaceProbeTransform & MapTransform }).transform;
+  if (!transform?.centerPoint || !Number.isFinite(transform.worldSize)) return false;
+  if (transform.width <= 0 || transform.height <= 0) return false;
+  return typeof transform.isPointOnMapSurface === "function";
+}
+
+/** 多策略解析球缘，并映射到 overlay 容器坐标（实时跟 zoom；探测未就绪时返回 null，禁止 viewport fallback）。 */
 export function resolveGlobeLimbBoundsForOverlay(
   map: MapLibreMap | null,
   overlay: HTMLElement,
   width: number,
   height: number,
-): GlobeLimbBounds {
-  const fallback = resolveGlobeScreenBoundsFallback(width, height);
-  if (!map) {
-    return fallback;
+): GlobeLimbBounds | null {
+  if (!map || !isGlobeTransformProbeReady(map)) {
+    return null;
   }
 
   const screen = resolveGlobeScreenBounds(map);
-  const inMapPixels =
-    resolveGlobeLimbBoundsFromMap(map) ??
-    resolveGlobeLimbBoundsFromProject(map) ??
-    (screen ? { x: screen.x, y: screen.y, radius: screen.radius } : null) ??
-    fallback;
+  const inMapPixels = resolveGlobeLimbBoundsFromMap(map) ?? resolveGlobeLimbBoundsFromProject(map);
+  if (!inMapPixels) {
+    return null;
+  }
 
   const limbInOverlay =
     map.getContainer() === overlay

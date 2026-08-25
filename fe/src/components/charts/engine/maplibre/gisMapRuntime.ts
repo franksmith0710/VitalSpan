@@ -55,12 +55,19 @@ export type GlobeAtmosphereState = {
   atmospherePreset?: GisAtmospherePreset;
 };
 
-function whenMapStyleReady(map: MapLibreMap, run: () => void) {
+/** setStyle 后只触发 style.load；初始 mount 触发 load — 两者都监听 */
+export function whenGisMapStyleReady(map: MapLibreMap, run: () => void) {
   if (map.isStyleLoaded()) {
     run();
     return;
   }
-  map.once("load", run);
+  const onReady = () => {
+    map.off("load", onReady);
+    map.off("style.load", onReady);
+    run();
+  };
+  map.once("load", onReady);
+  map.once("style.load", onReady);
 }
 
 export function applyGlobeAtmosphere(
@@ -69,7 +76,7 @@ export function applyGlobeAtmosphere(
   options?: { preserveCamera?: boolean },
 ) {
   const camera = options?.preserveCamera ? captureGisMapCamera(map) : null;
-  whenMapStyleReady(map, () => {
+  whenGisMapStyleReady(map, () => {
     if (state.projection === "globe") {
       map.setProjection({ type: "globe" });
       map.setSky(gisFogToMapLibreSky(state.fog, state.atmospherePreset));

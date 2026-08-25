@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  isGlobeTransformProbeReady,
   isInsideGlobeDisc,
   offsetMapPixelToOverlay,
   resolveGlobeLimbBoundsForOverlay,
@@ -93,6 +94,7 @@ describe("resolveGlobeLimbBoundsForOverlay", () => {
   it("prefers live raycast radius over viewport fallback when zoomed out", () => {
     const mapHost = document.createElement("div");
     const map = {
+      isStyleLoaded: () => true,
       getContainer: () => mapHost,
       getCenter: () => ({ lng: 100, lat: 28 }),
       getPitch: () => 0,
@@ -109,14 +111,16 @@ describe("resolveGlobeLimbBoundsForOverlay", () => {
     };
 
     const limb = resolveGlobeLimbBoundsForOverlay(map as never, mapHost, 400, 300);
-    expect(limb.radius).toBeLessThan(80);
-    expect(limb.x).toBeCloseTo(200, 0);
-    expect(limb.y).toBeCloseTo(150, 0);
+    expect(limb).not.toBeNull();
+    expect(limb!.radius).toBeLessThan(80);
+    expect(limb!.x).toBeCloseTo(200, 0);
+    expect(limb!.y).toBeCloseTo(150, 0);
   });
 
   it("clamps overshoot raycast to analytical globe radius", () => {
     const mapHost = document.createElement("div");
     const map = {
+      isStyleLoaded: () => true,
       getContainer: () => mapHost,
       getCenter: () => ({ lng: 100, lat: 28 }),
       getPitch: () => 0,
@@ -132,8 +136,31 @@ describe("resolveGlobeLimbBoundsForOverlay", () => {
     };
 
     const limb = resolveGlobeLimbBoundsForOverlay(map as never, mapHost, 400, 300);
-    expect(limb.radius).toBeLessThan(120);
-    expect(limb.x).toBeCloseTo(200, 0);
-    expect(limb.y).toBeCloseTo(150, 0);
+    expect(limb).not.toBeNull();
+    expect(limb!.radius).toBeLessThan(120);
+    expect(limb!.x).toBeCloseTo(200, 0);
+    expect(limb!.y).toBeCloseTo(150, 0);
+  });
+
+  it("returns null when transform probe is unavailable instead of viewport fallback", () => {
+    const mapHost = document.createElement("div");
+    const map = {
+      isStyleLoaded: () => true,
+      getContainer: () => mapHost,
+      getCenter: () => ({ lng: 100, lat: 28 }),
+      getPitch: () => 0,
+      getBearing: () => 0,
+      project: () => ({ x: 200, y: 150 }),
+      transform: {
+        centerPoint: { x: 200, y: 150 },
+        worldSize: 512,
+        center: { lat: 28 },
+        width: 400,
+        height: 300,
+      },
+    };
+
+    expect(isGlobeTransformProbeReady(map as never)).toBe(false);
+    expect(resolveGlobeLimbBoundsForOverlay(map as never, mapHost, 400, 300)).toBeNull();
   });
 });

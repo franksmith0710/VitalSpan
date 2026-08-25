@@ -88,6 +88,10 @@ export type ChartEngineViewProps = {
   onGeoViewTransformChange?: (mapId: string, transform: import("@/lib/chartGeoViewState").ChartGeoViewTransform | undefined) => void;
   /** 3D 地图 orbit 视角写回 deStyle.geo3d.orbitViews */
   onGeo3dOrbitViewChange?: (mapId: string, view: import("@/lib/chartGeoViewState").ChartGeo3dOrbitView | undefined) => void;
+  /** 编辑态未选中时限制绘制分辨率（逻辑 px 长边） */
+  paintMaxEdge?: number;
+  /** 查询/定时刷新世代（executeKey），数据变更须触发重绘 */
+  chartDataRevision?: string;
   /** 像素画布逻辑尺寸（松手 commit 后驱动引擎 remeasure） */
   layoutFootprint?: { width: number; height: number };
   /** 3D 地图渲染档位：列表缩略图 / 内嵌 / 全屏预览 */

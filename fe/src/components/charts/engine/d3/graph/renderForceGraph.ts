@@ -262,36 +262,57 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
     persistLayout();
   };
 
-  const runUntilSettled = (maxTicks = 420) => {
-    for (let i = 0; i < maxTicks && simulation.alpha() > simulation.alphaMin(); i += 1) {
-      simulation.tick();
-    }
-    freezeLayout();
-  };
-
-  simulation.on("tick", () => {
+  const syncPaint = () => {
     link
       .attr("x1", (d) => (d.source as SimNode).x ?? 0)
       .attr("y1", (d) => (d.source as SimNode).y ?? 0)
       .attr("x2", (d) => (d.target as SimNode).x ?? 0)
       .attr("y2", (d) => (d.target as SimNode).y ?? 0);
     node.attr("transform", (d) => `translate(${d.x ?? 0},${d.y ?? 0})`);
+  };
+
+  let settleFrameId = 0;
+  const cancelSettle = () => {
+    if (settleFrameId) {
+      cancelAnimationFrame(settleFrameId);
+      settleFrameId = 0;
+    }
+  };
+
+  const runUntilSettledAsync = (maxTicks = 300, ticksPerFrame = 28) => {
+    cancelSettle();
+    let ticks = 0;
+    const step = () => {
+      settleFrameId = 0;
+      const batch = Math.min(ticksPerFrame, maxTicks - ticks);
+      for (let i = 0; i < batch && simulation.alpha() > simulation.alphaMin(); i += 1) {
+        simulation.tick();
+        ticks += 1;
+      }
+      syncPaint();
+      if (simulation.alpha() > simulation.alphaMin() && ticks < maxTicks) {
+        settleFrameId = requestAnimationFrame(step);
+        return;
+      }
+      freezeLayout();
+      syncPaint();
+    };
+    settleFrameId = requestAnimationFrame(step);
+  };
+
+  simulation.on("tick", syncPaint);
+
+  simulation.on("end", () => {
+    freezeLayout();
+    syncPaint();
   });
 
-  simulation.on("end", freezeLayout);
-
   if (restoredLayout) {
-    runUntilSettled(120);
+    freezeLayout();
+    syncPaint();
   } else {
-    runUntilSettled();
+    runUntilSettledAsync();
   }
-
-  link
-      .attr("x1", (d) => (d.source as SimNode).x ?? 0)
-      .attr("y1", (d) => (d.source as SimNode).y ?? 0)
-      .attr("x2", (d) => (d.target as SimNode).x ?? 0)
-      .attr("y2", (d) => (d.target as SimNode).y ?? 0);
-  node.attr("transform", (d) => `translate(${d.x ?? 0},${d.y ?? 0})`);
 
   const dragBehavior = d3
     .drag<SVGGElement, SimNode>()
@@ -339,6 +360,7 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
   });
 
   return () => {
+    cancelSettle();
     persistLayout();
     simulation.stop();
     svg.on(".zoom", null);

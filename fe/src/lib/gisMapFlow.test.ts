@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyGisMapFlowConfig, detectGisMapOdColumns, isGisMapFlowConfig, suggestGisMapOdFields } from "@/lib/gisMapFlow";
+import { applyGisMapFlowConfig, detectGisMapOdColumns, ensureGisMapOdFlowEnabled, isGisMapFlowConfig, suggestGisMapOdFields } from "@/lib/gisMapFlow";
 import { applyGisMapScatterConfig } from "@/lib/gisMapScatter";
 import { fieldAtSlot } from "@/lib/resolveChartEncoding";
 import { suggestChartFields } from "@/lib/chartExecuteProbe";
@@ -51,6 +51,20 @@ describe("gisMapFlow lib", () => {
     expect(next.sql).toBeUndefined();
     expect(next.nativeBody?.gisProject?.flow?.enabled).toBe(true);
     expect(isGisMapFlowConfig(next)).toBe(true);
+  });
+
+  it("auto-enables flow when four OD slots are bound", () => {
+    const cfg: ChartViewConfig = {
+      chartType: "gis-map",
+      dimensions: [
+        { field: "from_lng" },
+        { field: "from_lat" },
+        { field: "to_lng" },
+        { field: "to_lat" },
+      ],
+    };
+    const next = ensureGisMapOdFlowEnabled(cfg);
+    expect(next.nativeBody?.gisProject?.flow?.enabled).toBe(true);
   });
 
   it("replaces scatter axes when switching from scatter preset", () => {

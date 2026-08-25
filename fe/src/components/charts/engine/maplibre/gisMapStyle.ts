@@ -20,6 +20,7 @@ import type {
   GisBasemapLayerVisibility,
   GisLabelLang,
 } from "@/components/charts/engine/maplibre/gisProject";
+import { resolveGisFlowStyle } from "@/components/charts/engine/maplibre/gisProject";
 import type { TileServiceResolve } from "@/lib/tileServices";
 
 export const GIS_OVERLAY_SOURCE_ID = "vs-gis-overlay";
@@ -135,6 +136,9 @@ export function appendGisFlowLayers(
   flow: GeoJSON.FeatureCollection | null,
   options: GisFlowLayerOptions,
 ): StyleSpecification {
+  if (!resolveGisFlowStyle(options.flow, options.chartColors).enabled) {
+    return style;
+  }
   const data = flow ?? emptyGisFlowGeoJson();
   const { source, layers } = buildGisFlowLayerDefinitions(data, options);
   return {

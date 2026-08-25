@@ -16,7 +16,7 @@ import { WIDGET_CHART_LABELS } from "./widgetIcons";
 import { resolveAutoAssignTarget } from "@/lib/chartFieldAssignment";
 import { appendAxisField, writeAxisField } from "@/lib/resolveChartEncoding";
 import { isDemoPackageDataset } from "@/lib/demoPackage";
-import { applyGisMapFlowConfig, DEMO_MAP_FLOW_DATASET_ID, detectGisMapOdColumns } from "@/lib/gisMapFlow";
+import { applyGisMapFlowConfig, DEMO_MAP_FLOW_DATASET_ID, detectGisMapOdColumns, ensureGisMapOdFlowEnabled } from "@/lib/gisMapFlow";
 import { pickChartNativeBodyUi } from "@/lib/chartNativeBodyUi";
 import type { SlotTarget } from "./chartInspectorTypes";
 
@@ -39,6 +39,12 @@ export function useChartInspectorState(
   readChartConfig: () => ChartViewConfig,
   emitChange: (cfg: ChartViewConfig) => void,
 ) {
+  const emitChartChange = useCallback(
+    (next: ChartViewConfig) => {
+      emitChange(next.chartType === "gis-map" ? ensureGisMapOdFlowEnabled(next) : next);
+    },
+    [emitChange],
+  );
   const cfg = widget.chartConfig ?? defaultChartConfig("table");
   const { columns, loading: columnsLoading, ready: columnsReady, refreshColumns } = useInspectorColumns(cfg);
   const bindingSyncRef = useRef<string | null>(null);
@@ -121,13 +127,13 @@ export function useChartInspectorState(
       };
 
       if (current.chartType === "gis-map" && datasetId === DEMO_MAP_FLOW_DATASET_ID) {
-        emitChange(applyGisMapFlowConfig(nextBase, dataSourceId, boundId));
+        emitChartChange(applyGisMapFlowConfig(nextBase, dataSourceId, boundId));
         return;
       }
 
-      emitChange(nextBase);
+      emitChartChange(nextBase);
     },
-    [datasetItems, emitChange, readChartConfig],
+    [datasetItems, emitChartChange, readChartConfig],
   );
 
   useEffect(() => {
@@ -170,7 +176,7 @@ export function useChartInspectorState(
       if (cancelled) return;
 
       bindingSyncRef.current = syncKey;
-      emitChange({
+      emitChartChange({
         ...readChartConfig(),
         mode: "dataset",
         configId: boundId,
@@ -182,7 +188,7 @@ export function useChartInspectorState(
     return () => {
       cancelled = true;
     };
-  }, [dataMode, cfg, datasetItems, datasetsLoading, emitChange, readChartConfig]);
+  }, [dataMode, cfg, datasetItems, datasetsLoading, emitChartChange, readChartConfig]);
 
   const columnsKey = columns.join("|");
   useEffect(() => {
@@ -193,7 +199,7 @@ export function useChartInspectorState(
       JSON.stringify(current.dimensions) === JSON.stringify(reconciled.dimensions) &&
       JSON.stringify(current.metrics) === JSON.stringify(reconciled.metrics) &&
       JSON.stringify(current.axes) === JSON.stringify(reconciled.axes);
-    if (!same) emitChange(reconciled);
+    if (!same) emitChartChange(reconciled);
     // 仅在列集合变化时剔除无效字段，避免拖入字段时被立即清掉
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [columnsKey]);
@@ -210,11 +216,11 @@ export function useChartInspectorState(
     autoFieldsRef.current = autoKey;
     const suggested = suggestChartFields(columns, current.chartType);
     if (current.chartType === "gis-map" && detectGisMapOdColumns(columns)) {
-      emitChange(applyGisMapFlowConfig({ ...current, ...suggested }, current.dataSourceId, current.configId));
+      emitChartChange(applyGisMapFlowConfig({ ...current, ...suggested }, current.dataSourceId, current.configId));
       return;
     }
-    emitChange({ ...current, ...suggested });
-  }, [columns, columnsKey, emitChange, readChartConfig]);
+    emitChartChange({ ...current, ...suggested });
+  }, [columns, columnsKey, emitChartChange, readChartConfig]);
 
   const assignField = useCallback(
     (fieldName: string, target?: SlotTarget) => {
@@ -226,18 +232,18 @@ export function useChartInspectorState(
       }
       setFieldAssignError(null);
       if (resolved.append) {
-        emitChange(appendAxisField(current, resolved.target.axisId, fieldName));
+        emitChartChange(appendAxisField(current, resolved.target.axisId, fieldName));
       } else {
-        emitChange(writeAxisField(current, resolved.target, fieldName));
+        emitChartChange(writeAxisField(current, resolved.target, fieldName));
       }
       setActiveSlot(null);
     },
-    [activeSlot, emitChange, readChartConfig],
+    [activeSlot, emitChartChange, readChartConfig],
   );
 
   return {
     widget,
-    onChange: emitChange,
+    onChange: emitChartChange,
     cfg,
     columns,
     columnsLoading,

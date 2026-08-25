@@ -47,15 +47,22 @@ describe("renderD3ForceGraph", () => {
     document.body.removeChild(container);
   });
 
-  it("persists settled layout on dispose", () => {
+  it("persists settled layout on dispose", async () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
 
     const dispose = renderD3ForceGraph(container, baseConfig);
+    await new Promise<void>((resolve) => {
+      const wait = () => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve());
+        });
+      };
+      wait();
+    });
+
     const first = container.querySelector("g.node")?.getAttribute("transform");
-    const second = container.querySelector("g.node")?.getAttribute("transform");
     expect(first).toBeTruthy();
-    expect(second).toBe(first);
 
     dispose();
     expect(readForceGraphLayoutState("force-graph-test")?.["电话销售"]).toMatchObject({

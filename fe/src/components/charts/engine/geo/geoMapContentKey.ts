@@ -13,6 +13,8 @@ export type GeoMapContentKeyInput = {
   renderTier?: string;
   geo3dStyleSig?: string;
   areaMappingSig?: string;
+  /** 查询/定时刷新世代（executeKey） */
+  dataRevision?: string;
 };
 
 /** 判断 3D 地图是否需要全量重建（数据/下钻/样式变更），尺寸变化走 resize。 */
@@ -26,6 +28,7 @@ export function buildGeoMapContentKey(input: GeoMapContentKeyInput): string {
           .join(",")
       : "";
   return [
+    input.dataRevision ?? "",
     input.chartType,
     input.mapId,
     input.drillDepth,

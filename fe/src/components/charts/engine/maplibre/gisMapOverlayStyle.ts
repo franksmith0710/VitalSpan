@@ -14,6 +14,7 @@ import {
   resolveGisOverlayStyle,
   type ResolvedGisOverlayStyle,
 } from "@/components/charts/engine/maplibre/gisProject";
+import { whenGisMapStyleReady } from "@/components/charts/engine/maplibre/gisMapRuntime";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
@@ -195,16 +196,8 @@ export function emptyGisOverlayGeoJson(): GeoJSON.FeatureCollection {
   return { type: "FeatureCollection", features: [] };
 }
 
-function whenMapStyleReady(map: MapLibreMap, run: () => void) {
-  if (map.isStyleLoaded()) {
-    run();
-    return;
-  }
-  map.once("load", run);
-}
-
 export function syncGisOverlayData(map: MapLibreMap, geoJson: GeoJSON.FeatureCollection | null) {
-  whenMapStyleReady(map, () => {
+  whenGisMapStyleReady(map, () => {
     const source = map.getSource(GIS_OVERLAY_SOURCE_ID) as import("maplibre-gl").GeoJSONSource | undefined;
     if (!source) return;
     source.setData(geoJson ?? emptyGisOverlayGeoJson());
@@ -236,7 +229,7 @@ function applyLabelStyle(
 }
 
 export function syncGisOverlayStyle(map: MapLibreMap, options: GisOverlayLayerOptions) {
-  whenMapStyleReady(map, () => {
+  whenGisMapStyleReady(map, () => {
     if (!map.getLayer(GIS_OVERLAY_CIRCLE_LAYER_ID) && !map.getLayer(GIS_OVERLAY_CLUSTER_LAYER_ID)) {
       return;
     }

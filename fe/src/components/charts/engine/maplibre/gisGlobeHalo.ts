@@ -1,9 +1,9 @@
 import type { GisAtmospherePreset, GisProjection } from "@/components/charts/engine/maplibre/gisProject";
 import {
   bindMapRenderSync,
+  isGlobeTransformProbeReady,
   resolveGlobeLimbBoundsForOverlay,
   resolveGlobeScreenBounds,
-  resolveGlobeScreenBoundsFallback,
   shouldRenderGisStarfield,
 } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 import { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
@@ -107,22 +107,27 @@ export function mountGisGlobeHaloOverlay(
     syncCanvasSize(width, height);
 
     const map = getMap();
-    if (!map || !map.isStyleLoaded()) {
+    if (!map || !map.isStyleLoaded() || !isGlobeTransformProbeReady(map)) {
       canvas.style.display = "none";
       ctx.clearRect(0, 0, width, height);
       return;
     }
 
-    const globe =
-      resolveGlobeScreenBounds(map) ?? resolveGlobeScreenBoundsFallback(width, height);
-    if (!shouldRenderGisStarfield(globe, width, height)) {
+    const screen = resolveGlobeScreenBounds(map);
+    if (!screen || !shouldRenderGisStarfield(screen, width, height)) {
+      canvas.style.display = "none";
+      ctx.clearRect(0, 0, width, height);
+      return;
+    }
+
+    const limb = resolveGlobeLimbBoundsForOverlay(map, overlay, width, height);
+    if (!limb) {
       canvas.style.display = "none";
       ctx.clearRect(0, 0, width, height);
       return;
     }
 
     mapReady = true;
-    const limb = resolveGlobeLimbBoundsForOverlay(map, overlay, width, height);
     canvas.style.display = "block";
     drawGlobeAtmosphereHalo(ctx, width, height, limb, preset);
   };

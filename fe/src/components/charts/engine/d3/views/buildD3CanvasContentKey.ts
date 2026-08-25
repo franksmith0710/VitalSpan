@@ -36,9 +36,11 @@ export function buildD3CanvasContentKey(input: {
   rowSample?: string;
   style: ChartStyleContext;
   chartConfig?: ChartViewConfig;
+  chartDataRevision?: string;
 }): string {
   const deStyle = input.chartConfig ? readChartDeStyle(input.chartConfig) : {};
   return [
+    input.chartDataRevision ?? "",
     input.chartType,
     input.plotType,
     input.plan.error ?? "",

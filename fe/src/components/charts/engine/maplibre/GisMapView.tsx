@@ -45,6 +45,7 @@ import {
 import { gisMapTransformRequest } from "@/components/charts/engine/maplibre/gisMapTransformRequest";
 import { GeoMapOverlayHint } from "@/components/charts/engine/geo/GeoMapOverlayHint";
 import { resolveGisMapDataHint, shouldShowGisMapOverlayHint } from "@/lib/gisMapDataHint";
+import { ensureGisMapOdFlowEnabled } from "@/lib/gisMapFlow";
 import { resolveTileService } from "@/lib/tileServices";
 import { cn } from "@/lib/utils";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -56,7 +57,6 @@ const DEFAULT_AUTO_ROTATE_SPEED = GLOBE_IDLE_ROTATION_DEG_PER_SEC;
 
 function GisMapViewInner(props: ChartEngineViewProps) {
   const {
-    chartConfig,
     viewModel,
     style: styleContext,
     fill = false,
@@ -68,6 +68,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     layoutFootprint,
     onLinkageClick,
   } = props;
+  const chartConfig = useMemo(
+    () => (props.chartConfig ? ensureGisMapOdFlowEnabled(props.chartConfig) : null),
+    [props.chartConfig],
+  );
   const hostRef = useRef<HTMLDivElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
