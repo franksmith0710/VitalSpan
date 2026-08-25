@@ -32,6 +32,7 @@ import {
 } from "@/lib/vizComponents";
 import { TEMPLATE_DEMO_DATASOURCE_REF } from "@/lib/templateDemoData";
 import { queryKeys } from "@/lib/queryKeys";
+import { persistVizComponentThumbnailFromWidgetBestEffort } from "@/lib/uploadVizComponentThumbnail";
 import type { LayoutWidget } from "./layoutUtils";
 import type { DashboardStyleConfig } from "./dashboardStyleConfig";
 import { resolveLayoutWidget } from "@/lib/resolveVizComponent";
@@ -88,7 +89,9 @@ export function PublishVizComponentDialog({
         payloadJson: payload,
         visibility,
       });
-      return publishVizComponent(created.id);
+      const published = await publishVizComponent(created.id);
+      await persistVizComponentThumbnailFromWidgetBestEffort(published.id, widget.id);
+      return published;
     },
     onSuccess: (created) => {
       toast.success("已发布到组织组件库");

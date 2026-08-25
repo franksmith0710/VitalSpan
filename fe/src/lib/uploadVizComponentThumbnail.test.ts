@@ -1,6 +1,4 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { persistVizComponentThumbnail, persistVizComponentThumbnailBestEffort } from "./uploadVizComponentThumbnail";
-
 vi.mock("@/lib/apiUpload", () => ({
   apiUploadBlob: vi.fn(async () => undefined),
 }));
@@ -11,13 +9,20 @@ vi.mock("@/lib/captureDashboardThumbnail", () => ({
   },
   captureDashboardThumbnailBlob: vi.fn(),
   findVizComponentThumbnailCaptureRoot: vi.fn(),
+  findDashboardWidgetCaptureRoot: vi.fn(),
 }));
 
 import { apiUploadBlob } from "@/lib/apiUpload";
 import {
   captureDashboardThumbnailBlob,
+  findDashboardWidgetCaptureRoot,
   findVizComponentThumbnailCaptureRoot,
 } from "@/lib/captureDashboardThumbnail";
+import {
+  persistVizComponentThumbnail,
+  persistVizComponentThumbnailBestEffort,
+  persistVizComponentThumbnailFromWidget,
+} from "./uploadVizComponentThumbnail";
 
 describe("persistVizComponentThumbnail", () => {
   afterEach(() => {
@@ -49,5 +54,20 @@ describe("persistVizComponentThumbnail", () => {
     vi.mocked(findVizComponentThumbnailCaptureRoot).mockReturnValue(null);
     await expect(persistVizComponentThumbnailBestEffort("comp-1")).resolves.toBe(false);
     warn.mockRestore();
+  });
+
+  it("captures dashboard widget then uploads png", async () => {
+    const blob = new Blob([new Uint8Array(512)], { type: "image/png" });
+    vi.mocked(findDashboardWidgetCaptureRoot).mockReturnValue(document.createElement("div"));
+    vi.mocked(captureDashboardThumbnailBlob).mockResolvedValue(blob);
+
+    await persistVizComponentThumbnailFromWidget("comp-2", "widget-1");
+
+    expect(findDashboardWidgetCaptureRoot).toHaveBeenCalledWith("widget-1");
+    expect(apiUploadBlob).toHaveBeenCalledWith(
+      "/api/v1/viz-components/comp-2/thumbnail",
+      blob,
+      "image/png",
+    );
   });
 });

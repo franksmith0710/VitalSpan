@@ -27,6 +27,11 @@ export function findVizComponentThumbnailCaptureRoot(): HTMLElement | null {
   return document.querySelector<HTMLElement>(`[${VIZ_COMPONENT_THUMBNAIL_CAPTURE_ATTR}]`);
 }
 
+/** 看板/大屏编辑页：按 widget id 截取画布上的组件外形（发布到组件库用） */
+export function findDashboardWidgetCaptureRoot(widgetId: string): HTMLElement | null {
+  return document.getElementById(`shape-id-${widgetId}`);
+}
+
 export function resolveVisibleCaptureTarget(root: HTMLElement): HTMLElement {
   return root.closest<HTMLElement>(HOST_SELECTOR) ?? root;
 }
