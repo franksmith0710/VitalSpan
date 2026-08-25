@@ -72,12 +72,12 @@ Task 文档中的「沙箱内取数」= **DeepTalk 插件视图 CSP**（`connect
 
 | 组件 | 状态 | 说明 |
 |------|------|------|
-| `components.tools` | ✅ v0.2.16 已有 | Agent wf2/wf3；Phase 3 须 **smoke 回归** |
-| `workspace-templates/vitalspan.bi.default` | ⏳ Phase 3 | 「新建工作区」列表 |
-| `views/home.js` | ⏳ Phase 3 | 绑定摘要 · health · **外链** 5173 |
-| `views/workspace-setup.js` | ⏳ Phase 3 | 创建向导 |
-| `execTools` `vitalspan_health` | ⏳ Phase 3 | iframe 内 health（无 fetch） |
-| `scripts/assemble-plugin.mjs` | ⏳ Phase 3 | 校验可安装布局（与 `release.mjs` 一致） |
+| `components.tools` | ✅ v0.2.16 已有 | Agent wf2/wf3；Phase 3 **smoke 回归** ✅ |
+| `workspace-templates/vitalspan.bi.default` | ✅ v0.3.0 | 「新建工作区」列表 |
+| `views/home.js` | ✅ v0.3.0 | 绑定摘要 · health · **外链** 5173 |
+| `views/workspace-setup.js` | ✅ v0.3.0 | 创建向导 |
+| `execTools` `vitalspan_health` | ✅ v0.3.0 | iframe 内 health（无 fetch） |
+| `scripts/assemble-plugin.mjs` | ✅ v0.3.0 | 校验可安装布局（与 `release.mjs` 一致） |
 | iframe 内 list/compose | ⏸ C 轨二期 | 仍用 Agent tools + 5173 |
 
 **门控**：Phase 2 DeepTalk spike ≥8/10 通过后，才执行 Task 1–9。见 [执行评审](../../../reviews/grounded/2026-08-24-deeptalk-vitalspan-how-to-execute-adjudication.md)。

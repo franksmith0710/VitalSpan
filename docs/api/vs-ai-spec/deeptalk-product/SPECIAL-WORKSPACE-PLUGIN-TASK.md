@@ -19,7 +19,7 @@
 | 0 | 轨道决策 | ✅ B（2026-08-24） |
 | 1 | 契约 + 本文档对齐 | 契约 §3/§5 与本文一致 |
 | **2** | **DeepTalk spike** | ✅ **8/10**（#4/#10 → Phase 4） |
-| **3** | Task 1–9 | ▶ 进行中 · smoke + Task 9 |
+| **3** | Task 1–9 | ✅ 1–8 · Task 9 真机 → [Phase 4 手测](../../../reviews/grounded/2026-08-25-deeptalk-vitalspan-phase4-handtest.md) |
 | 4 | E2E | [E2E-CHECKLIST](./E2E-CHECKLIST.md) §1–§5 |
 
 **Spike 10 条（Phase 2 · 用 v0.2.16 zip 或最小 mock）**

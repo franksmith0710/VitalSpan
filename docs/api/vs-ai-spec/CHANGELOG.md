@@ -1,6 +1,11 @@
 # vs-ai-spec 变更
 
-## 2026-08-24 (Phase 2 spike 闭合 · Phase 3 启动)
+## 2026-08-25 (Phase 3 审计 · Phase 4 手测指南)
+
+- Task 1–8 + release 验收落盘；`ids-sync.test` 加入 smoke
+- Phase 4 手测指南：区分 DeepTalk 插件页 vs 5173 管理面
+
+## 2026-08-25 (Phase 2 spike 闭合 · Phase 3 启动)
 
 - Spike **8/10** 通过（DeepTalk 日志 + `spike-host-verify.mjs`）；#4/#10 延后 Phase 4
 - 插件 `npm run smoke` 回归绿
