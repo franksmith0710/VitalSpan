@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { ChartLegendIconShape, ChartLegendStyle } from "@/lib/chartDeStyle";
 import {
@@ -19,11 +19,17 @@ import { cn } from "@/lib/utils";
 
 export type ChartLegendItem = { name: string; color: string };
 
-/** 横向图例最多可见行数，超出滚动，避免挤压/遮盖绘图区 */
+/** 横向图例最多可见行数，超出分页 */
 const HORIZONTAL_LEGEND_MAX_ROWS = 3;
 
-/** 横向图例每页最多展示项数（超出分页） */
+/** 横向图例每页最多展示项数 */
 export const HORIZONTAL_LEGEND_ITEMS_PER_PAGE = 8;
+
+/** 纵向图例测量前的保守默认每页项数 */
+export const VERTICAL_LEGEND_ITEMS_PER_PAGE_FALLBACK = 8;
+
+export const LEGEND_PAGER_HEIGHT_PX = 24;
+const VERTICAL_LEGEND_LIST_PADDING_Y = 8;
 
 /** 按字号估算横向图例最大高度（px） */
 export function legendShellMaxHeightPx(fontSize: number, maxRows = HORIZONTAL_LEGEND_MAX_ROWS): number {
@@ -31,6 +37,64 @@ export function legendShellMaxHeightPx(fontSize: number, maxRows = HORIZONTAL_LE
   const rowGap = 4;
   const paddingY = 8;
   return Math.ceil(fontSize * lineHeight * maxRows + rowGap * (maxRows - 1) + paddingY);
+}
+
+export function legendRowHeightPx(fontSize: number): number {
+  return Math.ceil(fontSize * 1.35 + 2);
+}
+
+/** 根据纵向图例容器高度估算每页可展示项数 */
+export function resolveVerticalLegendPageSize(
+  containerHeight: number,
+  fontSize: number,
+  itemCount: number,
+): number {
+  if (containerHeight <= 0) return VERTICAL_LEGEND_ITEMS_PER_PAGE_FALLBACK;
+  const rowH = legendRowHeightPx(fontSize);
+  let fit = Math.max(1, Math.floor((containerHeight - VERTICAL_LEGEND_LIST_PADDING_Y) / rowH));
+  if (itemCount > fit) {
+    fit = Math.max(
+      1,
+      Math.floor(
+        (containerHeight - VERTICAL_LEGEND_LIST_PADDING_Y - LEGEND_PAGER_HEIGHT_PX) / rowH,
+      ),
+    );
+  }
+  return fit;
+}
+
+type LegendPagerProps = {
+  safePage: number;
+  pageCount: number;
+  onPageChange: (page: number) => void;
+};
+
+function LegendPager({ safePage, pageCount, onPageChange }: LegendPagerProps) {
+  return (
+    <div className="pointer-events-auto flex shrink-0 items-center justify-center gap-1 px-1.5 pb-1 text-[10px] text-gray-500 dark:text-gray-400">
+      <button
+        type="button"
+        className="inline-flex size-5 items-center justify-center rounded hover:bg-gray-100 disabled:opacity-40 dark:hover:bg-white/10"
+        disabled={safePage <= 0}
+        aria-label="上一页图例"
+        onClick={() => onPageChange(Math.max(0, safePage - 1))}
+      >
+        <ChevronLeft className="size-3" aria-hidden />
+      </button>
+      <span className="tabular-nums">
+        {safePage + 1}/{pageCount}
+      </span>
+      <button
+        type="button"
+        className="inline-flex size-5 items-center justify-center rounded hover:bg-gray-100 disabled:opacity-40 dark:hover:bg-white/10"
+        disabled={safePage >= pageCount - 1}
+        aria-label="下一页图例"
+        onClick={() => onPageChange(Math.min(pageCount - 1, safePage + 1))}
+      >
+        <ChevronRight className="size-3" aria-hidden />
+      </button>
+    </div>
+  );
 }
 
 type EmbeddedChartLegendProps = {
@@ -60,34 +124,58 @@ function EmbeddedChartLegend({
   page,
   onPageChange,
 }: EmbeddedChartLegendProps) {
-  if (items.length === 0) return null;
-
   const layoutOrient = resolveEmbeddedLegendOrient(position, orient);
   const horizontal = layoutOrient === "horizontal";
   const sideSlot = position === "left" || position === "right";
-  const pageSize = horizontal ? HORIZONTAL_LEGEND_ITEMS_PER_PAGE : items.length;
-  const pageCount = Math.max(1, Math.ceil(items.length / pageSize));
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [verticalPageSize, setVerticalPageSize] = useState(VERTICAL_LEGEND_ITEMS_PER_PAGE_FALLBACK);
+
+  useEffect(() => {
+    if (horizontal) return undefined;
+    const root = rootRef.current;
+    if (!root) return undefined;
+    const measure = () => {
+      setVerticalPageSize(resolveVerticalLegendPageSize(root.clientHeight, fontSize, items.length));
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [horizontal, fontSize, items.length]);
+
+  const pageSize = horizontal ? HORIZONTAL_LEGEND_ITEMS_PER_PAGE : verticalPageSize;
+  const pageCount = Math.max(1, Math.ceil(items.length / Math.max(1, pageSize)));
   const safePage = Math.min(page, pageCount - 1);
+
+  useEffect(() => {
+    if (page > pageCount - 1) onPageChange(Math.max(0, pageCount - 1));
+  }, [page, pageCount, onPageChange]);
+
+  if (items.length === 0) return null;
+
   const visibleItems = items.slice(safePage * pageSize, safePage * pageSize + pageSize);
 
   return (
-    <div className="flex min-w-0 flex-col">
+    <div
+      ref={rootRef}
+      className={cn("flex min-h-0 min-w-0 flex-col", sideSlot ? "h-full flex-1" : "shrink-0")}
+    >
       <ul
         className={cn(
-          "dashboard-chart-legend pointer-events-none shrink-0 gap-x-2 gap-y-0.5 px-1.5 py-1",
+          "dashboard-chart-legend pointer-events-none min-h-0 gap-x-2 gap-y-0.5 px-1.5 py-1",
           horizontal
             ? cn(
-                "flex w-full flex-row flex-wrap items-center overflow-x-auto overflow-y-auto",
+                "flex w-full shrink-0 flex-row flex-wrap items-center overflow-x-auto overflow-y-auto",
                 legendStripJustifyClass(hAlign),
               )
-            : cn("flex max-h-full w-full flex-col overflow-y-auto", sideSlot && legendSideAlignClass(vAlign)),
+            : cn("flex w-full flex-1 flex-col overflow-hidden", sideSlot && legendSideAlignClass(vAlign)),
         )}
         style={{
           fontSize: `${fontSize}px`,
           lineHeight: 1.35,
           ...(horizontal
             ? { maxHeight: `${legendShellMaxHeightPx(fontSize)}px` }
-            : { maxHeight: sideSlot ? "100%" : undefined }),
+            : undefined),
         }}
         aria-label="图例"
       >
@@ -108,30 +196,8 @@ function EmbeddedChartLegend({
           </li>
         ))}
       </ul>
-      {horizontal && pageCount > 1 ? (
-        <div className="pointer-events-auto flex items-center justify-center gap-1 px-1.5 pb-1 text-[10px] text-gray-500 dark:text-gray-400">
-          <button
-            type="button"
-            className="inline-flex size-5 items-center justify-center rounded hover:bg-gray-100 disabled:opacity-40 dark:hover:bg-white/10"
-            disabled={safePage <= 0}
-            aria-label="上一页图例"
-            onClick={() => onPageChange(Math.max(0, safePage - 1))}
-          >
-            <ChevronLeft className="size-3" aria-hidden />
-          </button>
-          <span className="tabular-nums">
-            {safePage + 1}/{pageCount}
-          </span>
-          <button
-            type="button"
-            className="inline-flex size-5 items-center justify-center rounded hover:bg-gray-100 disabled:opacity-40 dark:hover:bg-white/10"
-            disabled={safePage >= pageCount - 1}
-            aria-label="下一页图例"
-            onClick={() => onPageChange(Math.min(pageCount - 1, safePage + 1))}
-          >
-            <ChevronRight className="size-3" aria-hidden />
-          </button>
-        </div>
+      {pageCount > 1 ? (
+        <LegendPager safePage={safePage} pageCount={pageCount} onPageChange={onPageChange} />
       ) : null}
     </div>
   );

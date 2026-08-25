@@ -1,7 +1,11 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { useRef } from "react";
-import { EmbeddedChartLegendShell, legendShellMaxHeightPx } from "./EmbeddedChartLegend";
+import {
+  EmbeddedChartLegendShell,
+  legendShellMaxHeightPx,
+  resolveVerticalLegendPageSize,
+} from "./EmbeddedChartLegend";
 
 function createChartBodyProbe() {
   let instanceId = "";
@@ -129,5 +133,41 @@ describe("EmbeddedChartLegendShell", () => {
     expect(within(legend).queryByText("系列9")).not.toBeInTheDocument();
     expect(screen.getByLabelText("下一页图例")).toBeInTheDocument();
     expect(screen.getByText("1/2")).toBeInTheDocument();
+  });
+
+  it("paginates vertical side legend when items exceed visible rows", () => {
+    const manyItems = [
+      "广东省",
+      "江苏省",
+      "北京市",
+      "上海市",
+      "四川省",
+      "浙江省",
+      "山东省",
+      "河南省",
+      "湖北省",
+      "湖南省",
+    ].map((name, index) => ({ name, color: `#${(index + 1).toString(16).padStart(3, "0")}` }));
+
+    render(
+      <div className="h-[120px] w-[240px]">
+        <EmbeddedChartLegendShell position="left" orient="vertical" fontSize={12} items={manyItems}>
+          <div data-testid="chart-body">chart</div>
+        </EmbeddedChartLegendShell>
+      </div>,
+    );
+
+    const legend = screen.getByLabelText("图例");
+    expect(within(legend).getByText("广东省")).toBeInTheDocument();
+    expect(within(legend).queryByText("湖南省")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("下一页图例")).toBeInTheDocument();
+    fireEvent.click(screen.getByLabelText("下一页图例"));
+    expect(within(legend).getByText("湖南省")).toBeInTheDocument();
+  });
+
+  it("reserves pager height when estimating vertical page size", () => {
+    expect(resolveVerticalLegendPageSize(120, 12, 20)).toBeLessThan(
+      resolveVerticalLegendPageSize(120, 12, 4),
+    );
   });
 });
