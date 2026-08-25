@@ -593,8 +593,8 @@ const snapshot = await window.pluginExec("loadInstance", {
 
 - [x] assemble 产物根目录只有可安装文件
 - [x] 安装哈希一致并已重启宿主（见 [Task 9 验收](../../../reviews/grounded/2026-08-25-deeptalk-vitalspan-task9-host-acceptance.md)）
-- [x] 上面 10 条全部勾过（B 轨 #5/#7 为 N/A）
-- [x] 引擎仓无本插件业务词、路径别名、专用 IPC（未改 deeptalk）
+- [x] 上面 10 条全部勾过（B 轨 #5/#7 N/A；#1 拆 1a/1b · 证据见 `docs/TASK9-EVIDENCE.json`）
+- [x] 引擎未被补丁污染（`Programs\DeepTalk` 无 vitalspan · 插件仅 `%APPDATA%`）
 
 ---
 

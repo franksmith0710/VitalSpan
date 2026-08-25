@@ -4,7 +4,7 @@
 |------|-----|
 | 日期 | 2026-08-25 |
 | 范围 | `deeptalk-plugins/plugins/vitalspan` Task 1–9 |
-| 前置 | Phase 2 spike 8/10 ✅ |
+| 前置 | Phase 2 spike **10/10** ✅ |
 
 ---
 
@@ -21,7 +21,7 @@
 | 7 | 导航 | ✅ | 模板 navigation `id: home` → `vitalspan:home` |
 | 8 | execTool B-min | ✅ | 仅 `vitalspan_health`（无 list/compose execTools） |
 
-**回归**：`npm run smoke` 绿 · `release/vitalspan-v0.3.0.zip` 已构建
+**回归**：`npm run smoke` 绿（含 `task9:evidence`）· `release/vitalspan-v0.3.0.zip` 已构建
 
 ---
 

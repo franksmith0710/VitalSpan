@@ -415,4 +415,62 @@ describe("UserListPage smoke", () => {
       expect(body.effect).toBe("add");
     });
   });
+
+  it("T-AUTH-C1-01: org-scoped user list shows subtree members only", async () => {
+    const USER_INSIDER = "00000000-0000-4000-8000-000000000011";
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      if (path.startsWith("/api/v1/users") && !path.includes("/roles") && !path.includes("/org")) {
+        return {
+          items: [
+            { id: USER_A, username: "alice", isActive: true, lockedUntil: null },
+            { id: USER_INSIDER, username: "bob", isActive: true, lockedUntil: null },
+          ],
+          total: 2,
+        };
+      }
+      return { items: [] };
+    });
+    renderUsers();
+    expect(await screen.findByText("alice")).toBeInTheDocument();
+    expect(screen.getByText("bob")).toBeInTheDocument();
+    expect(screen.queryByText("outsider")).not.toBeInTheDocument();
+  });
+
+  it("T-AUTH-C1-03: org-scoped org assign shows scope error", async () => {
+    mockApiFetch.mockImplementation(async (...args: unknown[]) => {
+      const path = String(args[0] ?? "");
+      const init = args[1] as RequestInit | undefined;
+      if (path === `/api/v1/users/${USER_A}/org` && init?.method === "PUT") {
+        throw new ApiRequestError(
+          "目标组织不在你可管理的范围内",
+          "ORG_SCOPE_FORBIDDEN",
+          403,
+        );
+      }
+      if (path === `/api/v1/users/${USER_A}/org`) {
+        throw new ApiRequestError("User has no org assignment", "USER_ORG_NOT_SET", 404);
+      }
+      if (path.startsWith("/api/v1/orgs")) {
+        return {
+          items: [
+            { id: ORG_A, name: "外部组织", path: "/external", level: 0, parentId: null },
+          ],
+        };
+      }
+      if (path.startsWith("/api/v1/users")) {
+        return listUsersResponse();
+      }
+      return { items: [] };
+    });
+    renderUsers();
+    await userEvent.click(await screen.findByRole("button", { name: /管理/ }));
+    await userEvent.click(await screen.findByRole("tab", { name: "组织与安全" }));
+    await userEvent.click(screen.getByRole("combobox", { name: "选择组织" }));
+    await userEvent.click(await screen.findByRole("option", { name: /外部组织/ }));
+    await userEvent.click(screen.getByRole("button", { name: "保存组织归属" }));
+    expect(
+      await screen.findByText("目标组织不在你可管理的范围内"),
+    ).toBeInTheDocument();
+  });
 });

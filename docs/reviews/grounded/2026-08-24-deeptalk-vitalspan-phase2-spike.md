@@ -7,7 +7,7 @@
 | Spike 包 | `deeptalk-plugins/release/vitalspan-v0.3.0.zip`（Phase 2 最小 mock） |
 | 安装路径 | `%APPDATA%\DeepTalk\plugins\vitalspan` |
 | 通过门槛 | **≥8/10** 才进 Phase 3 |
-| **结果** | **✅ 8/10 — Phase 2 闭合，可进 Phase 3** |
+| **结果** | **✅ 10/10**（#4/#10 于 Phase 4 / Task 9 闭合） |
 
 ---
 
@@ -34,8 +34,10 @@
 
 ```bash
 # deeptalk-plugins/plugins/vitalspan
-node scripts/spike-host-verify.mjs
-# 期望 passed=8, exit 0
+node scripts/spike-host-verify.mjs    # Spike 自动 8 项
+npm run task9:evidence                # Task 9 审计 JSON → docs/TASK9-EVIDENCE.json
+# 停用分支：设置里停用 vitalspan 后
+# TASK9_EXPECT_DISABLED=1 npm run task9:evidence
 ```
 
 ---

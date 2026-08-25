@@ -63,3 +63,4 @@
 
 - [E2E-CHECKLIST.md](../../api/vs-ai-spec/deeptalk-product/E2E-CHECKLIST.md)
 - [WORKSPACE-PLUGIN-CONTRACT.md](../../api/vs-ai-spec/deeptalk-product/WORKSPACE-PLUGIN-CONTRACT.md) §3
+- [Task 9 宿主验收](./2026-08-25-deeptalk-vitalspan-task9-host-acceptance.md)

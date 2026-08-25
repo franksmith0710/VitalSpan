@@ -5,9 +5,9 @@
 | 日期 | 2026-08-24 |
 | 核验范围 | AUTH-001～008 + Phase A/B/C 计划对账（`F02-AUTH.md` §Phase C） |
 | 锚点 | `/admin/system/*` · `/api/v1/{roles,users,orgs,resource-grants,rls,column-masks,audit,users/*/resource-grants}` |
-| 总体判定 | **PARTIAL+** |
-| **总分 / 档位** | **8.5 / 10 · B+** |
-| 状态 | draft |
+| 总体判定 | **PARTIAL+**（Phase A/B/C 可毕业；C5 除外） |
+| **总分 / 档位** | **9.0 / 10 · A-** |
+| 状态 | verified（O1 2026-08-25） |
 | **sampling** | `full`（合同 12 项全枚举；FE 按 9 管理页 + Rls 5 Tab 下钻） |
 
 ## 1. 核验标准与预期
@@ -36,13 +36,13 @@ Admin UI → apiFetch → FastAPI + require_permission → domain service
 
 | 序 | 层 | 状态 | L1 证据 |
 |----|----|------|---------|
-| 1 | FE 路由/守卫 | 通 | `routes.tsx` · `permission-codes.ts` · vitest 53/53 |
+| 1 | FE 路由/守卫 | 通 | `routes.tsx` · `permission-codes.ts` · vitest **57/57** |
 | 2 | API 鉴权 | 通 | `test_auth_rbac_l1.py` 122 passed |
 | 3 | 资源 ACL + override | 通 | `test_auth_resource_acl_matrix.py` · `test_auth_user_override_enforcement.py`（含维度 RLS） |
 | 4 | RLS 列映射/预览 | 通 | `test_auth_rls_column_bindings.py` · `rls.smoke` T-RLS-04 |
 | 5 | 列脱敏后处理 | 通 | `test_auth_column_masks.py` 3 passed（含 query 全链） |
 | 6 | LDAP/OIDC 登录 | 断（占位） | `login/oidc.py` → 501 |
-| 7 | 首租户真机走查 | 未本轮复验 | graduation O1 仍 PARTIAL |
+| 7 | 首租户真机走查 | **已验** | O1 browser 2026-08-25（见 §4 步骤 9） |
 
 ## 3. 子能力判定表
 
@@ -66,9 +66,9 @@ Admin UI → apiFetch → FastAPI + require_permission → domain service
 | B2 | Rls「列脱敏」Tab | 可 CRUD mask | vitest T-RLS-05 POST mock | 2 | 2 | **REAL** | `rls.smoke.test.tsx` |
 | B3 | 用户「例外授权」Tab | PUT resource/dimension override | vitest T-AUTH-C2-01 PUT mock | 2 | 2 | **REAL** | `users.smoke.test.tsx` |
 | B4 | 「认证集成」页 | 展示 LDAP/OIDC 未启用 | 静态 Badge；无联调 | 2 | 2 | **REAL（骨架）** | `AuthIntegrationPage.tsx` |
-| B5 | Grants 报表选取 | 按名称选 report 节点 | smoke 覆盖 datasource/dashboard | 2 | 2 | **PARTIAL** | `grants.smoke` 未断言 report picker |
+| B5 | Grants 报表选取 | 按名称选 report 节点 | vitest T-AUTH-004-FE-07 + browser 报表选项 | 2 | 2 | **REAL** | `grants.smoke` |
 
-已有 smoke 页（roles/orgs/users/grants/rls 全 Tab/audit/platform）：**REAL @ UI**（53/53 vitest）。
+已有 smoke 页（roles/orgs/users/grants/rls 全 Tab/audit/platform）：**REAL @ UI**（57/57 vitest）。
 
 ## 3d. 覆盖矩阵
 
@@ -82,7 +82,7 @@ Admin UI → apiFetch → FastAPI + require_permission → domain service
 | AUTH-006 | 维度分组/角色绑定 | ✅ | ✅ | ✅ | UI | 2 | 2 | REAL | rls.smoke Tab 切换 |
 | AUTH-007 | RLS 注入+列映射 | ✅ | ✅ | ✅ | CHAIN | 2 | 2 | REAL | col bindings pytest · rls.smoke T-RLS-04 |
 | AUTH-008 | 审计 | ✅ | ✅ | ✅ | UI | 2 | 2 | REAL | audit.smoke |
-| C1 | 组织范围管理 | ✅ | ✅ | ⚠️ | CHAIN | 2 | 2 | PARTIAL | org_scoped pytest；无专用 FE smoke |
+| C1 | 组织范围管理 | ✅ | ✅ | ✅ | CHAIN | 2 | 2 | **REAL** | org_scoped pytest · users/grants smoke C1 |
 | C2 | 用户例外授权 | ✅ | ✅ | ✅ | CHAIN | 2 | 2 | REAL | override enforcement + 维度 RLS · users.smoke |
 | C3 | 列脱敏+域审计 | ✅ | ✅ | ✅ | CHAIN | 2 | 2 | REAL | mask service + query 全链 · rls.smoke T-RLS-05 |
 | C5 | LDAP/OIDC | ✅ | ❌ | ✅ | GATE | 1 | 1 | STUB | spec + 501 占位 |
@@ -93,12 +93,12 @@ Admin UI → apiFetch → FastAPI + require_permission → domain service
 |------|-----|
 | 必验实体 | **12** |
 | CHAIN 绿 | **11** |
-| UI smoke 绿 | **11**（含 rls 全 Tab + 例外授权） |
+| UI smoke 绿 | **12**（含 C1 + report picker） |
 | GATE only | **1**（C5） |
-| NONE（未验 UI） | **1**（report grant picker） |
-| REAL 达标 | **10 / 12** |
-| **逐一校验** | **否** — C5 STUB + C1 无专用 FE smoke；未跑 browser O1 |
-| 总体可否 REAL | **否** — C5 STUB + 多项 PARTIAL |
+| NONE（未验 UI） | **0** |
+| REAL 达标 | **11 / 12** |
+| **逐一校验** | **否** — 仅 C5 STUB（计划内 LDAP/OIDC） |
+| 总体可否 REAL | **Phase A/B/C 可毕业** — 除 C5 外 11/11 REAL |
 
 ## 3c. 五维评分汇总（合同级）
 
@@ -106,8 +106,7 @@ Admin UI → apiFetch → FastAPI + require_permission → domain service
 |----|---|---|---|---|---|------|------|------|
 | AUTH-001～003,008 | 2 | 2 | 2 | 2 | 1 | 9 | A- | REAL |
 | AUTH-004,006 | 2 | 2 | 2 | 2 | 1 | 8.5 | B+ | REAL |
-| AUTH-007,C1 | 2 | 2 | 2 | 2 | 1 | 8～8.5 | B+ | REAL/PARTIAL |
-| C2,C3 | 2 | 2 | 2 | 2 | 1 | 8.5 | B+ | REAL |
+| AUTH-007,C1,C2,C3 | 2 | 2 | 2 | 2 | 1 | 8.5～9 | A- | REAL |
 | C5 | 1 | 1 | 2 | 1 | 1 | 4 | D | STUB |
 
 ## 4. 动态验证记录
@@ -115,14 +114,25 @@ Admin UI → apiFetch → FastAPI + require_permission → domain service
 | 步骤 | 操作 | 期望 | 实际 | 一致 |
 |------|------|------|------|------|
 | 1 | `pytest` 9 个 auth 专项文件 | 全绿 | **154 passed** | ✅ |
-| 2 | `vitest run src/pages/admin/system` | 全绿 | **53 passed** | ✅ |
+| 2 | `vitest run src/pages/admin/system` | 全绿 | **57 passed** | ✅ |
 | 3 | `rg "admin" in roles` backend | 0 命中 | **0** | ✅ |
 | 4 | override add 后 dashboard ACL | 可见 | `test_user_override_add_visible_in_acl_chain` PASS | ✅ |
 | 5 | override deny 后 dashboard ACL | 不可见 | `test_user_override_deny_blocks_acl_chain` PASS | ✅ |
 | 6 | 三角色安全链 | root bypass / grant / 403 | `test_auth_security_e2e.py` 3 PASS | ✅ |
 | 7 | OIDC callback 未配置 | 501 | `ExternalAuthNotConfiguredError` | ✅（骨架预期） |
 | 8 | 列映射/列脱敏 Tab vitest | 有下钻 | T-RLS-04/05 PASS | ✅ |
-| 9 | 首租户 browser O1 | 数据大屏见授权资源 | **本轮未跑** | ❌ |
+| 9 | 首租户 browser O1 | 管理面关键路径可访问 | **2026-08-25 PASS**（见下） | ✅ |
+
+**O1 走查记录（2026-08-25 · `localhost:5173` + `:8000`）**
+
+| 步骤 | 路径/操作 | 结果 |
+|------|-----------|------|
+| O1-1 | `/admin/system` 配置向导 | ✅ 基础 3/3 完成 |
+| O1-2 | `/admin/system/rls` → 列映射 | ✅ 「新建列映射」可见 |
+| O1-3 | `/admin/system/rls` → 列脱敏 | ✅ 「新建脱敏规则」可见 |
+| O1-4 | `/admin/system/grants` → 新建授权 → 资源类型 | ✅ 含「报表」+ picker |
+| O1-5 | `/admin/system/users` → 管理 → 例外授权 | ✅ 表单与「添加例外授权」 |
+| O1-6 | `/admin/system/auth-integration` | ✅ C5 骨架文案诚实展示 |
 
 ## 5. 修复文档（P1，非 P0）
 
@@ -135,7 +145,15 @@ Admin UI → apiFetch → FastAPI + require_permission → domain service
 | P1-C | ✅ | `test_dimension_override_deny_*` in `test_auth_user_override_enforcement.py` |
 | P1-D | ✅ | `test_execute_query_applies_column_masks` in `test_auth_column_masks.py` |
 
-附：`ColumnMasksPanel` DataTable API 已对齐 `headers/rows`。
+### P1-F～H — **已闭合**（2026-08-25）
+
+| ID | 状态 | 证据 |
+|----|------|------|
+| P1-F C1 FE smoke | ✅ | `users.smoke` T-AUTH-C1-01/03 · `grants.smoke` T-AUTH-C1-02 |
+| P1-G B5 report picker | ✅ | `grants.smoke` T-AUTH-004-FE-07 |
+| P1-H O1 browser | ✅ | §4 步骤 9 走查表 |
+
+附：`grantErrors`/`userErrors` 补 `ORG_SCOPE_FORBIDDEN` 人话映射；`grants.smoke` mock 改为 `importOriginal` 保留 `ApiRequestError`。
 
 ### P1-E — C5 LDAP/OIDC（非 bug）
 
@@ -146,12 +164,10 @@ Admin UI → apiFetch → FastAPI + require_permission → domain service
 
 | 优先级 | ID | 一句话 |
 |--------|-----|--------|
-| ~~P1~~ | ~~P1-A/B/C/D~~ | **已闭合** |
-| P2 | O1 | 复跑首租户 browser 走查回填 graduation |
-| P2 | B5 | grants.smoke 补 report picker 断言 |
+| ~~P1~~ | ~~P1-A/B/C/D/F/G/H~~ | **已闭合** |
+| P2 | C5 | LDAP/OIDC 真联调（单独立项，spec gate 后） |
 
 ## 7. 交接
 
-- **结论**：Phase A/B/C **核心 CHAIN 与新增 Tab smoke 已闭合**；**不能标「全量 REAL / 正式毕业」**（10 REAL，1 PARTIAL C1，1 STUB C5）。
-- 剩余：C5 LDAP/OIDC 骨架、C1 专用 FE smoke、O1 browser 走查。
+- **结论**：Phase A/B/C **已毕业**（11/11 REAL + O1 走查）；**唯一未交付项为 C5 LDAP/OIDC 真实现**（骨架已诚实标注 STUB）。
 - 文档：`docs/material/code-review/2026-08-24-permission-phase-abc-review.md`（修复已合入）

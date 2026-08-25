@@ -1,5 +1,11 @@
 # vs-ai-spec 变更
 
+## 2026-08-25 (Task 9 证据 · code-reviewer 修复)
+
+- 插件：`task9-host-evidence.mjs` · `TASK9-EVIDENCE.json` · `workspace-template-contract.test` · `instanceConfig` 补测
+- 验收文档：[Task 9 宿主验收](../../../reviews/grounded/2026-08-25-deeptalk-vitalspan-task9-host-acceptance.md) · [交付评审](../../../reviews/grounded/2026-08-25-deeptalk-vitalspan-task1-9-delivery-review.md)
+- Phase 2 spike 计分更新为 **10/10**；执行评审 §11 与 Phase 3 审计对齐
+
 ## 2026-08-25 (5173 管理面 IA 对齐)
 
 - 新增 [5173 对齐评审](../../../reviews/grounded/2026-08-25-deeptalk-vitalspan-5173-admin-alignment.md)
@@ -19,9 +25,9 @@
 
 ## 2026-08-25 (Phase 2 spike 闭合 · Phase 3 启动)
 
-- Spike **8/10** 通过（DeepTalk 日志 + `spike-host-verify.mjs`）；#4/#10 延后 Phase 4
+- Spike **10/10**（#4/#10 于 Phase 4 / Task 9 闭合）
 - 插件 `npm run smoke` 回归绿
-- Phase 3 Task 1–9 正式验收进行中
+- Phase 3 Task 1–9 **已闭合**（见 Phase 3 审计 · Task 9 验收）
 
 ## 2026-08-24 (B 轨决策 · Phase 0/1)
 

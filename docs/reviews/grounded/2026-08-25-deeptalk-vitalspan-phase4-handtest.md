@@ -43,6 +43,13 @@
    - 管理面：`http://127.0.0.1:5173/admin`
 4. **完成**向导
 
+### 1b. Task 9 #1 停用分支（一次性 · 约 1 分钟）
+
+1. DeepTalk → **设置 → 插件** → **停用 vitalspan**
+2. **新建工作区** 列表应**无**「VitalSpan BI」（或该项不可选/占位）
+3. **重新启用** vitalspan → 列表恢复
+4. 可选自动化：`TASK9_EXPECT_DISABLED=1 npm run task9:evidence`（在停用状态下跑）
+
 ### 2. 打开插件 home
 
 1. 看 DeepTalk **左侧导航**
