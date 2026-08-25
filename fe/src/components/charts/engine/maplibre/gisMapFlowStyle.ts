@@ -153,7 +153,7 @@ function buildGisFlowShadowWidth(_lineWidth: ExpressionSpecification): Expressio
 
 function buildGisFlowLinePaint(resolved: ResolvedGisFlowStyle): Record<string, unknown> {
   return {
-    "line-gradient": buildGisFlowLineGradient(resolved.color),
+    "line-color": ["coalesce", ["get", "color"], resolved.color],
     "line-opacity": resolved.opacity,
     "line-width": buildGisFlowLineWidth(resolved),
     "line-blur": 0.15,
@@ -188,9 +188,91 @@ function buildGisFlowPulsePaint(resolved: ResolvedGisFlowStyle): Record<string, 
   return {
     "line-color": "#ffffff",
     "line-opacity": resolved.opacity * 0.55,
-    "line-width": buildGisFlowLineWidth(resolved, 2.5),
+    "line-width": ["interpolate", ["linear"], ["zoom"], 0, 10, 2, 14, 4, 18, 6, 22],
     "line-blur": 0.35,
   };
+}
+
+function buildGisFlowFallbackLayerDefinitions(
+  flowGeoJson: GeoJSON.FeatureCollection,
+  options: GisFlowLayerOptions,
+) {
+  const resolved = resolveGisFlowStyle(options.flow, options.chartColors);
+  return {
+    source: {
+      id: GIS_FLOW_SOURCE_ID,
+      spec: { type: "geojson" as const, data: flowGeoJson },
+    },
+    layers: [
+      {
+        id: GIS_FLOW_LINE_LAYER_ID,
+        type: "line" as const,
+        source: GIS_FLOW_SOURCE_ID,
+        filter: GIS_FLOW_LINE_FILTER,
+        layout: { "line-join": "round" as const, "line-cap": "round" as const },
+        paint: {
+          "line-color": ["coalesce", ["get", "color"], resolved.color],
+          "line-opacity": resolved.opacity,
+          "line-width": ["interpolate", ["linear"], ["zoom"], 0, 8, 2, 12, 4, 16, 6, 20],
+        },
+      },
+      {
+        id: GIS_FLOW_HUB_LAYER_ID,
+        type: "circle" as const,
+        source: GIS_FLOW_SOURCE_ID,
+        filter: GIS_FLOW_HUB_FILTER,
+        paint: {
+          "circle-color": ["coalesce", ["get", "color"], resolved.color],
+          "circle-opacity": resolved.opacity,
+          "circle-radius": 6,
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 1.5,
+        },
+      },
+    ] satisfies LayerSpecification[],
+  };
+}
+
+function markFlowSyncState(map: MapLibreMap, payload: GeoJSON.FeatureCollection, ok: boolean) {
+  if (typeof map.getContainer !== "function") return;
+  const host = map.getContainer();
+  if (!(host instanceof HTMLElement)) return;
+  host.dataset.flowSourceLen = ok ? String(payload.features.length) : "0";
+  host.dataset.flowLayerReady = map.getLayer(GIS_FLOW_LINE_LAYER_ID) ? "1" : "0";
+}
+
+function mountGisFlowStack(
+  map: MapLibreMap,
+  payload: GeoJSON.FeatureCollection,
+  options: GisFlowLayerOptions,
+): boolean {
+  try {
+    const { source, layers } = buildGisFlowLayerDefinitions(payload, options);
+    if (!map.getSource(source.id)) {
+      map.addSource(source.id, source.spec);
+    }
+    for (const layer of layers) {
+      if (!map.getLayer(layer.id)) {
+        map.addLayer(layer);
+      }
+    }
+    return Boolean(map.getLayer(GIS_FLOW_LINE_LAYER_ID));
+  } catch {
+    try {
+      const fallback = buildGisFlowFallbackLayerDefinitions(payload, options);
+      if (!map.getSource(fallback.source.id)) {
+        map.addSource(fallback.source.id, fallback.source.spec);
+      }
+      for (const layer of fallback.layers) {
+        if (!map.getLayer(layer.id)) {
+          map.addLayer(layer);
+        }
+      }
+      return Boolean(map.getLayer(GIS_FLOW_LINE_LAYER_ID));
+    } catch {
+      return false;
+    }
+  }
 }
 
 export function buildGisFlowLayerDefinitions(
@@ -288,19 +370,7 @@ export function syncGisFlowData(
     if (!options || !shouldAppendGisFlowLayers(options)) return;
     const lineLayerReady = Boolean(map.getLayer(GIS_FLOW_LINE_LAYER_ID));
     if (map.getSource(GIS_FLOW_SOURCE_ID) && lineLayerReady) return;
-    try {
-      const { source, layers } = buildGisFlowLayerDefinitions(payload, options);
-      if (!map.getSource(source.id)) {
-        map.addSource(source.id, source.spec);
-      }
-      for (const layer of layers) {
-        if (!map.getLayer(layer.id)) {
-          map.addLayer(layer);
-        }
-      }
-    } catch {
-      // 样式热更新竞态时忽略；下一帧 sync 会重试
-    }
+    mountGisFlowStack(map, payload, options);
   };
   const apply = () => {
     if (generation !== gisFlowDataSyncGeneration) return;
@@ -308,14 +378,13 @@ export function syncGisFlowData(
     const writeData = () => {
       if (generation !== gisFlowDataSyncGeneration) return false;
       const source = map.getSource(GIS_FLOW_SOURCE_ID) as import("maplibre-gl").GeoJSONSource | undefined;
-      if (!source) return false;
+      if (!source) {
+        markFlowSyncState(map, payload, false);
+        return false;
+      }
       source.setData(payload);
       moveFlowLayersToTop(map);
-      const host = map.getContainer();
-      if (host instanceof HTMLElement) {
-        host.dataset.flowSourceLen = String(payload.features.length);
-        host.dataset.flowLayerReady = map.getLayer(GIS_FLOW_LINE_LAYER_ID) ? "1" : "0";
-      }
+      markFlowSyncState(map, payload, true);
       return true;
     };
     if (writeData()) return;

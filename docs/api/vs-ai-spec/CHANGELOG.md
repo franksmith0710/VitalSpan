@@ -1,5 +1,12 @@
 # vs-ai-spec 变更
 
+## 2026-08-25 (customViz 禁止重复平台配置 · maxItems 等)
+
+- [STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md) §禁止重复平台能力：数据 Tab「结果展示」/刷新、样式六块、截断横幅等 **不得**再进 styleSchema
+- 入库 warn：`AIVIZ_WARN_PLATFORM_DUPLICATE_STYLE`（`style_compliance.py` + `aiviz-publish-hints.json`）
+- 金样修复：`custom-viz-podium-leaderboard` v1.1.2 · `custom-viz-ranking-bar-medal` 移除 `maxItems`，bundle 全量读 `payload.rows`
+- Agent 提示词 / IRON-RULES / CUSTOM-VIZ-AUTHOR 同步
+
 ## 2026-08-25 (customViz 容器自适应 · 溢出滚动通用规范)
 
 - [guides/BUNDLE-BOILERPLATE.md](./guides/BUNDLE-BOILERPLATE.md) 新增 **§4 容器自适应与溢出**：DeepTalk 组件须读 `p.layout` 缩放；内容多/widget 小 → 组件内滚动，能展示多少就多少

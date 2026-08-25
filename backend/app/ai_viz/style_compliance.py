@@ -18,6 +18,38 @@ _HOST_GET_ELEMENT_BY_ID_RE = re.compile(r"\(\s*host\s*\|\|\s*document\s*\)\s*\.\
 _DOCUMENT_GET_ELEMENT_BY_ID_RE = re.compile(r"\bdocument\s*\.\s*getElementById\b")
 _DOCUMENT_GET_ELEMENT_BY_ID_FALLBACK_RE = re.compile(r":\s*document\s*\.\s*getElementById\b")
 
+# styleSchema keys that duplicate platform inspector / payload capabilities (case-insensitive match).
+_PLATFORM_DUPLICATE_STYLE_KEYS: dict[str, str] = {
+    "maxitems": "数据 Tab「结果展示」已控制 LIMIT；bundle 直接使用 payload.rows",
+    "maxrows": "数据 Tab「结果展示」已控制 LIMIT；bundle 直接使用 payload.rows",
+    "topn": "数据 Tab「结果展示」已控制 LIMIT；bundle 直接使用 payload.rows",
+    "resultlimit": "数据 Tab「结果展示」；勿在 styleSchema 重复",
+    "querylimit": "数据 Tab「结果展示」；勿在 styleSchema 重复",
+    "rowlimit": "数据 Tab「结果展示」；勿在 styleSchema 重复",
+    "displaycount": "数据 Tab「结果展示」；勿在 styleSchema 重复",
+    "limitrows": "数据 Tab「结果展示」；勿在 styleSchema 重复",
+    "refreshmode": "数据 Tab「刷新频率」；勿在 styleSchema 重复",
+    "refreshinterval": "数据 Tab「刷新频率」；勿在 styleSchema 重复",
+    "refreshrate": "数据 Tab「刷新频率」；勿在 styleSchema 重复",
+    "autorefresh": "数据 Tab「刷新频率」；勿在 styleSchema 重复",
+    "pollinterval": "数据 Tab「刷新频率」；勿在 styleSchema 重复",
+    "titleshow": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
+    "titletext": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
+    "titlecolor": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
+    "titlefontsize": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
+    "titlefontweight": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
+    "titlealign": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
+    "remarkshow": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
+    "remarktext": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
+    "labelshow": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
+    "labelcolor": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
+    "labelfontsize": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
+    "tooltipshow": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
+    "backgroundshow": "样式 Tab 平台六块 / 高级 widgetStyle；勿在 styleSchema 重复",
+    "paletteid": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
+    "palettecolors": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
+}
+
 
 @dataclass(frozen=True, slots=True)
 class StyleComplianceWarning:
@@ -131,6 +163,22 @@ def _collect_field_slot_warnings(manifest: dict) -> list[StyleComplianceWarning]
     return []
 
 
+def _collect_platform_duplicate_style_warnings(manifest: dict) -> list[StyleComplianceWarning]:
+    properties = _style_schema_properties(manifest)
+    warnings: list[StyleComplianceWarning] = []
+    for key in properties:
+        hint = _PLATFORM_DUPLICATE_STYLE_KEYS.get(str(key).lower())
+        if not hint:
+            continue
+        warnings.append(
+            StyleComplianceWarning(
+                code="AIVIZ_WARN_PLATFORM_DUPLICATE_STYLE",
+                message=f"styleSchema.{key} 与平台已有能力重复：{hint}",
+            )
+        )
+    return warnings
+
+
 def collect_bundle_style_compliance_warnings(
     files: dict[str, str],
     entry: str,
@@ -144,6 +192,7 @@ def collect_bundle_style_compliance_warnings(
 
     warnings.extend(_collect_field_slot_warnings(manifest))
     warnings.extend(_collect_style_hook_warnings(manifest))
+    warnings.extend(_collect_platform_duplicate_style_warnings(manifest))
 
     if runtime == "html" and "vsCv.mount" not in entry_html:
         warnings.append(

@@ -200,6 +200,24 @@ def test_official_custom_viz_examples_have_no_style_warnings() -> None:
         assert warnings == [], f"{path.name}: {[item.code for item in warnings]}"
 
 
+def test_style_compliance_warns_platform_duplicate_style_keys() -> None:
+    manifest = {
+        **_MIN_MANIFEST,
+        "runtime": "html",
+        "styleSchema": {
+            "type": "object",
+            "properties": {
+                "maxItems": {"type": "number", "title": "最多显示条数"},
+            },
+        },
+        "defaultStyle": {"maxItems": 10},
+    }
+    html = "<!DOCTYPE html><html><body><script>host.vsCv.mount(function(p){var st=(p&&p.style)||{}})</script></body></html>"
+    warnings = collect_bundle_style_compliance_warnings({"index.html": html}, "index.html", manifest)
+    codes = {item.code for item in warnings}
+    assert "AIVIZ_WARN_PLATFORM_DUPLICATE_STYLE" in codes
+
+
 def test_valid_style_hooks_suppresses_style_compliance_warning() -> None:
     html = "<!DOCTYPE html><html><body><div class='fill'></div></body></html>"
     manifest = {

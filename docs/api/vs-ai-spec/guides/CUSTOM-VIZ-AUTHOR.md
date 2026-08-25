@@ -76,6 +76,7 @@ fieldSlots **随范式变化**，勿一律抄下面示例（P4 示例）：
 | `id="vs-cv-*"` | **`id="app"` · `id="root"`** |
 | 宿主内 `host.querySelector('#vs-cv-*')` 或 [BUNDLE-BOILERPLATE.md](./BUNDLE-BOILERPLATE.md) `$()` | **`document.getElementById`** · **`(host\|\|document).getElementById`** |
 | `p.layout` 驱动缩放；溢出区 `overflow-y:auto` | 固定 px 布局、忽略 resize、为塞满压扁行高 |
+| 数据条数读 `payload.rows`（平台「结果展示」已 LIMIT） | styleSchema 再声明 `maxItems`/`topN`/`resultLimit` 等 |
 | CSS 滚动 + `:hover { animation-play-state: paused }` | HTML `onclick=` · **`.onmouseenter=`** |
 | `addEventListener('mouseenter', fn)` 若必须用 JS | `<script src="https://...">` · `javascript:` |
 

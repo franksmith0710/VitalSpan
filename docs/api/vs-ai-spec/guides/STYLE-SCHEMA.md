@@ -10,6 +10,17 @@
 2. **必须成对**：`styleSchema.properties` 每个键在 `defaultStyle` 里有默认值
 3. **bundle 消费**：HTML 内读 `getComputedStyle(host).getPropertyValue('--vs-style-…')` / `--vs-palette-0` 或 `.vs-cv-payload` 的 `style` 对象；**数据**须按 Payload v1 的 `bindingStatus`（`unbound | bound | empty | error`）区分未绑定、有数、空结果与失败，见 [PROTOCOL.md](../PROTOCOL.md) §Payload v1
 4. **与内置 chart 分层对齐**：平台六块 → `displayStyle`；组件专属 → `styleSchema` + `style`；单卡外壳 → `widgetStyle`（高级 Tab）
+5. **禁止重复平台能力**：下列能力平台检查器已提供，**不得**再写入 `styleSchema`（入库 warn `AIVIZ_WARN_PLATFORM_DUPLICATE_STYLE`）
+
+| 平台已有 | 检查器位置 | bundle 做法 |
+|----------|-----------|-------------|
+| **结果展示 / 取最新 N 条** | 数据 Tab · `dataBinding.resultLimit` | 直接渲染 `payload.rows`（已 LIMIT + 排序） |
+| **刷新频率** | 数据 Tab · `dataBinding.refreshMode` | 无需 schema 项 |
+| **标题/备注/标签/提示/图表配色** | 样式 Tab 六块 · `displayStyle` | 读 `payload.style` / `--vs-style-*` / `--vs-palette-*` |
+| **截断提示** | 壳层横幅 · `truncated`/`rowCap` | 勿自写「已采样」条 |
+| **widget 外壳** | 高级 Tab · `widgetStyle` | 勿在 schema 声明 `backgroundShow` 等 |
+
+禁止键示例（非穷举）：`maxItems` · `topN` · `resultLimit` · `refreshMode` · `titleShow` · `labelShow` · `paletteId`
 
 ## 支持的 property 类型
 

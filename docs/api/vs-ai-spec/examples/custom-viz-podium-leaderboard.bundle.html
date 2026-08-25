@@ -173,10 +173,9 @@ html,body{height:100%;font-family:system-ui,-apple-system,sans-serif;background:
     }
     var showPodium=bool(st,'showPodium',true);
     var showValues=bool(st,'showValues',true);
-    var maxItems=Math.max(3,Math.min(20,num(st,'maxItems',10)));
     var anim=num(st,'animationDuration',800);
     var accent=str(st,'accentColor','#3b82f6');
-    var displayCount=Math.min(data.length,maxItems);
+    var displayCount=data.length;
     var head=showPodium?data.slice(0,Math.min(3,displayCount)):[];
     var rest=data.slice(head.length,displayCount);
     var headCount=head.length;

@@ -47,6 +47,7 @@ DeepTalk 集成项目  ──HTTP──►  VitalSpan 平台能力
 | **读 `payload.style`** | `var st = (p && p.style) || {}`；禁止依赖不存在的 `vsCv.getStyle()` / `.vs-cv-style` |
 | **读 `payload.layout`** | render 内按 `p.layout.width/height` 缩放；拖 widget 须跟着变 |
 | **溢出滚动** | 内容多于可视区 → 组件内滚动；容器小 → 能展示多少就多少；禁固定 px 无视 resize |
+| **勿重复平台配置** | 禁 styleSchema 声明 `maxItems`/`refreshMode`/六块键等；数据 Tab「结果展示」→ 用 `payload.rows` |
 | **d3 必须 mount** | `host.vsCv.mount(function (p) { ... })` |
 | **样式合规** | 引用 `p.style` 或 CSS `--vs-style-*` / `--vs-palette-*`；金样见 `examples/custom-viz-*.json` |
 | **六块 chrome** | 标题/卡片背景由平台 `CustomVizWidget` 负责，bundle 不自画标题栏 |

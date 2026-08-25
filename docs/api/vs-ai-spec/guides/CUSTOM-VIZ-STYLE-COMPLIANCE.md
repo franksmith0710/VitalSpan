@@ -24,6 +24,7 @@ POST/PUT `/api/v1/ai-viz/artifacts` 成功仍返回 `warnings[]`（不阻断入�
 | `AIVIZ_WARN_MOUNT_RECOMMENDED` | `runtime=html` 且 entry 无 `vsCv.mount` | resize/样式更新可能不稳定 |
 | `AIVIZ_WARN_STYLE_COMPLIANCE` | 全 bundle 未引用 `payload.style` / `p.style` **且** 无 `--vs-style-*` / `--vs-palette-*` | 样式面板与看板配色可能不生效 |
 | `AIVIZ_WARN_LAYOUT_FALLBACK` | 仅 `clientWidth \|\| 320` 且无 `payload.layout` | 拖放 resize 可能留白 |
+| `AIVIZ_WARN_PLATFORM_DUPLICATE_STYLE` | styleSchema 声明 `maxItems`/`refreshMode`/六块键等与平台检查器重复 | 删 schema 项；条数用数据 Tab「结果展示」→ `payload.rows` |
 | `AIVIZ_WARN_DOM_HOST_LOOKUP` | entry 含 `(host\|\|document).getElementById` | 宿主 div 上无效，预览可能空白 |
 | `AIVIZ_WARN_DOM_DOCUMENT_LOOKUP` | entry 含 `document.getElementById` | 多实例抢节点 |
 

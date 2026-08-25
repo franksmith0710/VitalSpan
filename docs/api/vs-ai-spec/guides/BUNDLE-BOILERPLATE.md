@@ -76,7 +76,7 @@ var svg = host.vsCv.d3.select(host.querySelector("#vs-cv-chart"));
 | 容器够大 | 全部可见，无滚动条 |
 | 内容多于可视区 | **组件内** `overflow-y: auto`（或等价滚动区） |
 | 容器太小 | **能展示多少就多少**，其余滚动查看 |
-| 数据量控制 | 用 styleSchema（如 `maxItems`）或平台 `truncated`；**不要**强行压缩行高塞满 |
+| 数据量控制 | **数据 Tab「结果展示」** 控制 LIMIT；bundle 用 `payload.rows` 全量渲染；溢出见 §4 滚动 |
 
 结构建议：
 

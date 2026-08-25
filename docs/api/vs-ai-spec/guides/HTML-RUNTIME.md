@@ -25,8 +25,8 @@
 
 - 读 `payload.layout.width/height` 在 render 内调整字号/间距/图表尺寸；**不要**仅依赖首次 `clientWidth`；mount 会在拖大组件后重调 render
 - **通用策略**：容器够大则全展示；内容过多或 widget 太小 → **组件内** `overflow-y: auto`（`flex:1; min-height:0`）；能展示多少就多少，其余滚动
-- 数据条数用 styleSchema（如 `maxItems`）或平台 `truncated` 控制；**不要**为塞满而压扁行高
-- 详见 [BUNDLE-BOILERPLATE.md](./BUNDLE-BOILERPLATE.md) §4
+- 数据条数由 **数据 Tab「结果展示」** 控制（`payload.rows` 已是 LIMIT 后结果）；**不要**在 styleSchema 再声明 `maxItems`/`topN` 等
+- 详见 [BUNDLE-BOILERPLATE.md](./BUNDLE-BOILERPLATE.md) §4 · [STYLE-SCHEMA.md](./STYLE-SCHEMA.md) §禁止重复平台能力
 
 ## 参考
 

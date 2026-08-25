@@ -532,7 +532,20 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     if (!map) return;
     syncGisOverlayData(map, overlayGeoJson);
     syncGisFlowData(map, flowGeoJson, flowLayerOptions);
-  }, [flowGeoJson, flowLayerOptions, mapBootstrapKey, mapRuntimeEpoch, overlayGeoJson, styleKey]);
+    if (
+      !flowGeoJson?.features.length ||
+      !style ||
+      !isGisMapOdBindingComplete(chartConfig ?? { chartType: "gis-map" })
+    ) {
+      return;
+    }
+    if (map.isStyleLoaded() && !map.getSource("vs-gis-flow")) {
+      applyGisMapStylePreservingCamera(map, style, () => {
+        syncOverlayRuntime(map);
+        setMapRuntimeEpoch((epoch) => epoch + 1);
+      });
+    }
+  }, [chartConfig, flowGeoJson, flowLayerOptions, mapBootstrapKey, mapRuntimeEpoch, overlayGeoJson, style, styleKey, syncOverlayRuntime]);
 
   useEffect(() => {
     const map = mapRef.current;
