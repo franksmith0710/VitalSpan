@@ -12,9 +12,11 @@ import {
 import {
   buildGisFlowStyleKey,
   emptyGisFlowGeoJson,
+  GIS_FLOW_HUB_LAYER_ID,
   GIS_FLOW_LINE_LAYER_ID,
   GIS_FLOW_LINE_SOURCE_ID,
   GIS_FLOW_HUB_SOURCE_ID,
+  splitFlowGeoJsonByGeometry,
   syncGisFlowData,
   syncGisFlowStyle,
 } from "@/components/charts/engine/maplibre/gisMapFlowStyle";
@@ -520,31 +522,58 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     mapRef.current?.resize();
   }, []);
 
-  const annotateFlowSyncState = useCallback(
-    (map: MapLibreMap) => {
-      const host = hostRef.current;
-      if (!host) return;
-      const featureCount = flowGeoJsonRef.current?.features.length ?? 0;
-      const source = map.getSource(GIS_FLOW_LINE_SOURCE_ID);
-      host.dataset.flowSourceLen =
-        source && flowGeoJsonRef.current?.features.length
-          ? String(flowGeoJsonRef.current.features.length)
-          : "missing";
-      host.dataset.flowLayerReady = map.getLayer(GIS_FLOW_LINE_LAYER_ID) ? "1" : "0";
-    },
-    [],
-  );
+  const pushFlowGeoJsonToMap = useCallback((map: MapLibreMap) => {
+    const payload = flowGeoJsonRef.current;
+    if (!payload?.features.length) return false;
+    const lineSource = map.getSource(GIS_FLOW_LINE_SOURCE_ID) as
+      | import("maplibre-gl").GeoJSONSource
+      | undefined;
+    const hubSource = map.getSource(GIS_FLOW_HUB_SOURCE_ID) as
+      | import("maplibre-gl").GeoJSONSource
+      | undefined;
+    if (!lineSource || !hubSource) return false;
+    const { lines, hubs } = splitFlowGeoJsonByGeometry(payload);
+    lineSource.setData(lines);
+    hubSource.setData(hubs);
+    return lines.features.length > 0 || hubs.features.length > 0;
+  }, []);
+
+  const annotateFlowSyncState = useCallback((map: MapLibreMap) => {
+    const host = hostRef.current;
+    if (!host) return;
+    host.dataset.flowLineSourceReady = map.getSource(GIS_FLOW_LINE_SOURCE_ID) ? "1" : "0";
+    host.dataset.flowHubSourceReady = map.getSource(GIS_FLOW_HUB_SOURCE_ID) ? "1" : "0";
+    host.dataset.flowLayerReady = map.getLayer(GIS_FLOW_LINE_LAYER_ID) ? "1" : "0";
+    host.dataset.flowReactFeatures = String(flowGeoJsonRef.current?.features.length ?? 0);
+    try {
+      const rendered = map.queryRenderedFeatures(undefined, {
+        layers: [GIS_FLOW_LINE_LAYER_ID, GIS_FLOW_HUB_LAYER_ID],
+      }).length;
+      host.dataset.flowRendered = String(rendered);
+    } catch {
+      host.dataset.flowRendered = "0";
+    }
+    if (import.meta.env.DEV) {
+      (host as HTMLDivElement & { __vsMap?: MapLibreMap }).__vsMap = map;
+    }
+  }, []);
 
   const resyncFlowLayers = useCallback(
     (map: MapLibreMap) => {
       syncGisOverlayData(map, overlayGeoJsonRef.current);
       syncGisFlowData(map, flowGeoJsonRef.current, flowLayerOptionsRef.current);
       syncGisFlowStyle(map, flowLayerOptionsRef.current);
+      if (!pushFlowGeoJsonToMap(map)) {
+        map.once("idle", () => {
+          pushFlowGeoJsonToMap(map);
+          annotateFlowSyncState(map);
+        });
+      }
       annotateFlowSyncState(map);
       const featureCount = flowGeoJsonRef.current?.features.length ?? 0;
       if (
         featureCount > 0 &&
-        !map.getSource(GIS_FLOW_LINE_SOURCE_ID) &&
+        (!map.getSource(GIS_FLOW_LINE_SOURCE_ID) || !map.getSource(GIS_FLOW_HUB_SOURCE_ID)) &&
         style &&
         isGisMapOdBindingComplete(chartConfig ?? { chartType: "gis-map" })
       ) {
@@ -554,7 +583,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         });
       }
     },
-    [annotateFlowSyncState, chartConfig, style, syncOverlayRuntime],
+    [annotateFlowSyncState, chartConfig, pushFlowGeoJsonToMap, style, syncOverlayRuntime],
   );
 
   useEffect(() => {
@@ -580,7 +609,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     const map = mapRef.current;
     if (!map || !style || renderBasemap !== "pmtiles") return;
     if (!chartConfig || !isGisMapOdBindingComplete(chartConfig)) return;
-    if (map.getSource(GIS_FLOW_LINE_SOURCE_ID)) return;
+    if (map.getSource(GIS_FLOW_LINE_SOURCE_ID) && map.getSource(GIS_FLOW_HUB_SOURCE_ID)) return;
     applyGisMapStylePreservingCamera(map, style, () => {
       syncOverlayRuntime(map);
       setMapRuntimeEpoch((epoch) => epoch + 1);

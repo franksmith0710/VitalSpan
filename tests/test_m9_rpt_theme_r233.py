@@ -361,8 +361,8 @@ def test_r233_standard_empty_roles_rejected(client):
     payload = {
         "packKey": "bind-empty-r233",
         "displayName": "bad",
-        "businessObjectCode": "equipment",
-        "physicalTableFqn": "ops.equipment",
+        "datasetId": "std-pack-bind-empty-r233",
+        "boundConfigId": str(uuid.uuid4()),
         "dataSourceId": str(uuid.uuid4()),
         "fieldMapping": {"status": "status"},
         "enabledThemes": ["lifecycle"],
@@ -383,8 +383,8 @@ def test_r233_standard_viewer_cannot_manage(client, viewer_user):
         json={
             "packKey": "viewer-blocked",
             "displayName": "x",
-            "businessObjectCode": "equipment",
-            "physicalTableFqn": "ops.equipment",
+            "datasetId": "std-pack-viewer-blocked",
+            "boundConfigId": str(uuid.uuid4()),
             "dataSourceId": str(uuid.uuid4()),
             "fieldMapping": {"status": "status"},
             "enabledThemes": ["lifecycle"],

@@ -20,16 +20,17 @@ import {
 } from "@/components/charts/engine/maplibre/gisMapFlowStyle";
 
 describe("gisMapFlowStyle", () => {
-  it("adds flow source with lineMetrics and stacked layers", () => {
-    const { source, layers } = buildGisFlowLayerDefinitions(emptyGisFlowGeoJson(), {
+  it("adds split flow sources with lineMetrics and stacked layers", () => {
+    const { sources, layers } = buildGisFlowLayerDefinitions(emptyGisFlowGeoJson(), {
       flavor: "light",
       flow: { enabled: true, color: "#112233", opacity: 0.6 },
     });
-    expect(source.id).toBe("vs-gis-flow");
-    expect(source.spec.lineMetrics).toBe(true);
+    expect(sources).toHaveLength(2);
+    expect(sources[0]?.id).toBe(GIS_FLOW_LINE_SOURCE_ID);
+    expect(sources[0]?.spec.lineMetrics).toBe(true);
+    expect(sources[1]?.id).toBe(GIS_FLOW_HUB_SOURCE_ID);
     expect(layers).toHaveLength(5);
-    expect(layers[0]?.filter).toEqual(["==", "$type", "LineString"]);
-    expect(layers[4]?.filter).toEqual(["==", "$type", "Point"]);
+    expect(layers.every((layer) => layer.filter == null)).toBe(true);
     expect(layers[0]?.id).toBe(GIS_FLOW_SHADOW_LAYER_ID);
     expect(layers[1]?.id).toBe(GIS_FLOW_GLOW_LAYER_ID);
     expect(layers[2]?.id).toBe(GIS_FLOW_LINE_LAYER_ID);
@@ -38,6 +39,27 @@ describe("gisMapFlowStyle", () => {
     expect(layers[2]?.paint?.["line-color"]).toBeDefined();
     expect(layers[3]?.paint?.["line-width"]).toBeDefined();
     expect(layers[3]?.paint?.["line-dasharray"]).toBeUndefined();
+  });
+
+  it("splits mixed geojson into dedicated line and hub sources", () => {
+    const mixed: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          geometry: { type: "LineString", coordinates: [[0, 0], [1, 1]] },
+          properties: {},
+        },
+        {
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [2, 2] },
+          properties: {},
+        },
+      ],
+    };
+    const split = splitFlowGeoJsonByGeometry(mixed);
+    expect(split.lines.features).toHaveLength(1);
+    expect(split.hubs.features).toHaveLength(1);
   });
 
   it("builds crest highlight gradient", () => {
@@ -71,13 +93,13 @@ describe("gisMapFlowStyle", () => {
     expect(width[4]).toBeCloseTo(16.8);
   });
 
-  it("embeds safe layers with $type filters for geojson-vt", () => {
-    const { layers } = buildGisFlowStyleEmbedDefinitions(emptyGisFlowGeoJson(), {
+  it("embeds split sources without geometry filters", () => {
+    const { sources, layers } = buildGisFlowStyleEmbedDefinitions(emptyGisFlowGeoJson(), {
       flavor: "light",
       flow: { enabled: true, color: "#f97316" },
     });
-    expect(layers[0]?.filter).toEqual(["==", "$type", "LineString"]);
-    expect(layers[1]?.filter).toEqual(["==", "$type", "Point"]);
+    expect(sources).toHaveLength(2);
+    expect(layers.every((layer) => layer.filter == null)).toBe(true);
   });
 
   it("avoids nested zoom arithmetic when scaling by metric", () => {
@@ -107,8 +129,9 @@ describe("syncGisFlowData", () => {
     resetGisFlowDataSyncGenerationForTests();
   });
 
-  it("calls setData on flow source when style is loaded", () => {
-    const setData = vi.fn();
+  it("calls setData on split flow sources when style is loaded", () => {
+    const lineSetData = vi.fn();
+    const hubSetData = vi.fn();
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
       features: [
@@ -127,35 +150,49 @@ describe("syncGisFlowData", () => {
     };
     const map = {
       isStyleLoaded: () => true,
-      getSource: (id: string) => (id === GIS_FLOW_SOURCE_ID ? { setData } : undefined),
+      getSource: (id: string) => {
+        if (id === GIS_FLOW_LINE_SOURCE_ID) return { setData: lineSetData };
+        if (id === GIS_FLOW_HUB_SOURCE_ID) return { setData: hubSetData };
+        return undefined;
+      },
       getLayer: () => ({}),
       moveLayer: vi.fn(),
       once: vi.fn(),
     };
 
     syncGisFlowData(map as never, geojson);
-    expect(setData).toHaveBeenCalledWith(geojson);
+    expect(lineSetData).toHaveBeenCalledWith(
+      expect.objectContaining({ features: geojson.features }),
+    );
+    expect(hubSetData).toHaveBeenCalledWith({ type: "FeatureCollection", features: [] });
   });
 
-  it("writes empty collection when geojson is null", () => {
-    const setData = vi.fn();
+  it("writes empty collections when geojson is null", () => {
+    const lineSetData = vi.fn();
+    const hubSetData = vi.fn();
     const map = {
       isStyleLoaded: () => true,
-      getSource: (id: string) => (id === GIS_FLOW_SOURCE_ID ? { setData } : undefined),
+      getSource: (id: string) => {
+        if (id === GIS_FLOW_LINE_SOURCE_ID) return { setData: lineSetData };
+        if (id === GIS_FLOW_HUB_SOURCE_ID) return { setData: hubSetData };
+        return undefined;
+      },
       getLayer: () => ({}),
       moveLayer: vi.fn(),
       once: vi.fn(),
     };
 
     syncGisFlowData(map as never, null);
-    expect(setData).toHaveBeenCalledWith({ type: "FeatureCollection", features: [] });
+    expect(lineSetData).toHaveBeenCalledWith({ type: "FeatureCollection", features: [] });
+    expect(hubSetData).toHaveBeenCalledWith({ type: "FeatureCollection", features: [] });
   });
 
-  it("adds flow source at runtime when style omits flow layers", () => {
-    const setData = vi.fn();
+  it("adds flow sources at runtime when style omits flow layers", () => {
+    const lineSetData = vi.fn();
+    const hubSetData = vi.fn();
     const addSource = vi.fn();
     const addLayer = vi.fn();
-    const sources = new Map<string, { setData: typeof setData }>();
+    const sources = new Map<string, { setData: ReturnType<typeof vi.fn> }>();
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
       features: [
@@ -172,7 +209,7 @@ describe("syncGisFlowData", () => {
       getLayer: () => undefined,
       addSource: (id: string, spec: unknown) => {
         addSource(id, spec);
-        sources.set(id, { setData });
+        sources.set(id, { setData: id === GIS_FLOW_LINE_SOURCE_ID ? lineSetData : hubSetData });
       },
       addLayer,
       moveLayer: vi.fn(),
@@ -185,13 +222,22 @@ describe("syncGisFlowData", () => {
       flow: { enabled: true, color: "#f97316" },
     });
 
-    expect(addSource).toHaveBeenCalledWith(GIS_FLOW_SOURCE_ID, expect.objectContaining({ type: "geojson" }));
+    expect(addSource).toHaveBeenCalledWith(
+      GIS_FLOW_LINE_SOURCE_ID,
+      expect.objectContaining({ type: "geojson" }),
+    );
+    expect(addSource).toHaveBeenCalledWith(
+      GIS_FLOW_HUB_SOURCE_ID,
+      expect.objectContaining({ type: "geojson" }),
+    );
     expect(addLayer).toHaveBeenCalled();
-    expect(setData).toHaveBeenCalledWith(geojson);
+    expect(lineSetData).toHaveBeenCalled();
+    expect(hubSetData).toHaveBeenCalled();
   });
 
   it("does not register idle callback that can overwrite newer flow data", () => {
-    const setData = vi.fn();
+    const lineSetData = vi.fn();
+    const hubSetData = vi.fn();
     const once = vi.fn();
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
@@ -205,7 +251,11 @@ describe("syncGisFlowData", () => {
     };
     const map = {
       isStyleLoaded: () => true,
-      getSource: (id: string) => (id === GIS_FLOW_SOURCE_ID ? { setData } : undefined),
+      getSource: (id: string) => {
+        if (id === GIS_FLOW_LINE_SOURCE_ID) return { setData: lineSetData };
+        if (id === GIS_FLOW_HUB_SOURCE_ID) return { setData: hubSetData };
+        return undefined;
+      },
       getLayer: () => ({}),
       moveLayer: vi.fn(),
       once,
@@ -213,11 +263,13 @@ describe("syncGisFlowData", () => {
 
     syncGisFlowData(map as never, geojson);
     expect(once).not.toHaveBeenCalled();
-    expect(setData).toHaveBeenCalledWith(geojson);
+    expect(lineSetData).toHaveBeenCalled();
+    expect(hubSetData).toHaveBeenCalled();
   });
 
   it("ignores stale style.load callbacks after a newer sync", () => {
-    const setData = vi.fn();
+    const lineSetData = vi.fn();
+    const hubSetData = vi.fn();
     const queued: Array<() => void> = [];
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
@@ -233,7 +285,11 @@ describe("syncGisFlowData", () => {
     const map = {
       isStyleLoaded: () => styleLoaded,
       loaded: () => false,
-      getSource: (id: string) => (id === GIS_FLOW_SOURCE_ID ? { setData } : undefined),
+      getSource: (id: string) => {
+        if (id === GIS_FLOW_LINE_SOURCE_ID) return { setData: lineSetData };
+        if (id === GIS_FLOW_HUB_SOURCE_ID) return { setData: hubSetData };
+        return undefined;
+      },
       getLayer: () => ({}),
       moveLayer: vi.fn(),
       once: (_event: string, cb: () => void) => {
@@ -247,8 +303,10 @@ describe("syncGisFlowData", () => {
     styleLoaded = true;
     for (const run of queued) run();
 
-    expect(setData).not.toHaveBeenCalledWith({ type: "FeatureCollection", features: [] });
-    expect(setData).toHaveBeenCalledWith(geojson);
+    expect(lineSetData).not.toHaveBeenCalledWith({ type: "FeatureCollection", features: [] });
+    expect(lineSetData).toHaveBeenCalledWith(
+      expect.objectContaining({ features: geojson.features }),
+    );
   });
 });
 

@@ -16,11 +16,12 @@ export const GIS_FLOW_LINE_LAYER_ID = "vs-gis-flow-lines";
 export const GIS_FLOW_PULSE_LAYER_ID = "vs-gis-flow-lines-pulse";
 export const GIS_FLOW_HUB_LAYER_ID = "vs-gis-flow-hubs";
 
+/** 光晕/脉冲在下、主飞线与枢纽在最上，避免宽描边盖住主线。 */
 const FLOW_LAYER_STACK = [
   GIS_FLOW_SHADOW_LAYER_ID,
   GIS_FLOW_GLOW_LAYER_ID,
-  GIS_FLOW_LINE_LAYER_ID,
   GIS_FLOW_PULSE_LAYER_ID,
+  GIS_FLOW_LINE_LAYER_ID,
   GIS_FLOW_HUB_LAYER_ID,
 ] as const;
 
@@ -172,7 +173,8 @@ function buildGisFlowLinePaint(resolved: ResolvedGisFlowStyle): Record<string, u
   return {
     "line-color": ["coalesce", ["get", "color"], resolved.color],
     "line-opacity": resolved.opacity,
-    "line-width": buildGisFlowLineWidth(resolved),
+    // Globe 下 metric×zoom 嵌套插值可能导致零像素；主线用与 embed 一致的展宽 zoom 停点
+    "line-width": ["interpolate", ["linear"], ["zoom"], 0, 10, 1, 12, 2, 14, 4, 18, 6, 22],
     "line-blur": 0.15,
   };
 }
@@ -237,7 +239,7 @@ export function buildGisFlowStyleEmbedDefinitions(
         paint: {
           "line-color": ["coalesce", ["get", "color"], resolved.color],
           "line-opacity": resolved.opacity,
-          "line-width": ["interpolate", ["linear"], ["zoom"], 0, 8, 2, 12, 4, 16, 6, 20],
+          "line-width": ["interpolate", ["linear"], ["zoom"], 0, 10, 1, 12, 2, 14, 4, 18, 6, 22],
         },
       },
       {
@@ -247,7 +249,7 @@ export function buildGisFlowStyleEmbedDefinitions(
         paint: {
           "circle-color": ["coalesce", ["get", "color"], resolved.color],
           "circle-opacity": resolved.opacity,
-          "circle-radius": 6,
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 0, 5, 2, 7, 4, 9, 6, 11],
           "circle-stroke-color": "#ffffff",
           "circle-stroke-width": 1.5,
         },
@@ -260,7 +262,9 @@ function markFlowSyncState(map: MapLibreMap, payload: GeoJSON.FeatureCollection,
   if (typeof map.getContainer !== "function") return;
   const host = map.getContainer();
   if (!(host instanceof HTMLElement)) return;
-  host.dataset.flowSourceLen = ok ? String(payload.features.length) : "0";
+  const { lines, hubs } = splitFlowGeoJsonByGeometry(payload);
+  host.dataset.flowLineSourceLen = ok ? String(lines.features.length) : "0";
+  host.dataset.flowHubSourceLen = ok ? String(hubs.features.length) : "0";
   host.dataset.flowLayerReady = map.getLayer(GIS_FLOW_LINE_LAYER_ID) ? "1" : "0";
 }
 
@@ -328,13 +332,13 @@ function mountGisFlowStack(
   options: GisFlowLayerOptions,
 ): boolean {
   try {
-    const embed = buildGisFlowStyleEmbedDefinitions(payload, options);
-    for (const source of embed.sources) {
+    const { sources, layers } = buildGisFlowLayerDefinitions(payload, options);
+    for (const source of sources) {
       if (!map.getSource(source.id)) {
         map.addSource(source.id, source.spec);
       }
     }
-    for (const layer of embed.layers) {
+    for (const layer of layers) {
       if (!map.getLayer(layer.id)) {
         map.addLayer(layer);
       }
@@ -342,6 +346,7 @@ function mountGisFlowStack(
     if (!map.getLayer(GIS_FLOW_LINE_LAYER_ID)) return false;
     writeFlowGeoJsonSources(map, payload);
     ensureGisFlowVisualLayers(map, options);
+    moveFlowLayersToTop(map);
     return true;
   } catch {
     return false;
@@ -480,20 +485,27 @@ function syncGisFlowLinePaint(map: MapLibreMap, options: GisFlowLayerOptions) {
   if (!map.getLayer(GIS_FLOW_LINE_LAYER_ID)) return;
   const resolved = resolveGisFlowStyle(options.flow, options.chartColors);
   const lineWidth = buildGisFlowLineWidth(resolved);
-  const paintByLayer: Record<string, Record<string, unknown>> = {
+  const mainLinePaint = buildGisFlowLinePaint(resolved);
+  const effectPaintByLayer: Record<string, Record<string, unknown>> = {
     [GIS_FLOW_SHADOW_LAYER_ID]: buildGisFlowShadowPaint(resolved, lineWidth),
     [GIS_FLOW_GLOW_LAYER_ID]: buildGisFlowGlowPaint(resolved, lineWidth),
-    [GIS_FLOW_LINE_LAYER_ID]: buildGisFlowLinePaint(resolved),
     [GIS_FLOW_PULSE_LAYER_ID]: buildGisFlowPulsePaint(resolved),
   };
-  for (const [layerId, paint] of Object.entries(paintByLayer)) {
+  for (const [layerId, paint] of Object.entries(effectPaintByLayer)) {
     if (!map.getLayer(layerId)) continue;
     for (const [key, value] of Object.entries(paint)) {
       try {
         map.setPaintProperty(layerId, key, value);
       } catch {
-        // 单层样式失败不阻断主飞线
+        // 光晕层失败不影响主飞线
       }
+    }
+  }
+  for (const [key, value] of Object.entries(mainLinePaint)) {
+    try {
+      map.setPaintProperty(GIS_FLOW_LINE_LAYER_ID, key, value);
+    } catch {
+      // 主飞线样式失败不阻断
     }
   }
   if (map.getLayer(GIS_FLOW_HUB_LAYER_ID)) {

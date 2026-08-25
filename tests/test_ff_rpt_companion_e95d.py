@@ -62,6 +62,18 @@ def _sqlite():
 
 
 @pytest.fixture(autouse=True)
+def _mock_pack_columns(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.reports.standard.service._load_pack_columns",
+        lambda _pack: [
+            {"name": "status"},
+            {"name": "region"},
+            {"name": "created_at"},
+        ],
+    )
+
+
+@pytest.fixture(autouse=True)
 def _reset_stores():
     from app.reports.persistence.store import reset_metadata_for_tests
 

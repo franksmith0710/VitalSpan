@@ -220,11 +220,13 @@ def test_standard_schedule_execute_with_mock_delivery(mock_export, client: TestC
     assert history.json()["total"] >= 1
 
 
+@patch("app.reports.standard.dataset_binding.ensure_analysis_pack_dataset_binding")
 @patch("app.reports.standard.service.engine_execute.execute_dataset_section")
-def test_export_standard_attachments_pdf_bytes(mock_section, client: TestClient):
+def test_export_standard_attachments_pdf_bytes(mock_section, mock_binding, client: TestClient):
     """DG3: non-mock export returns real PDF bytes."""
     from app.reports.scheduler.standard_export import export_standard_attachments
 
+    mock_binding.return_value = uuid.uuid4()
     _seed_physical_equipment()
     client.put(f"/api/v1/reports/standard/packs/{_PACK_KEY}", headers=AUTH, json=_pack_payload_lifecycle_only())
     mock_section.return_value = {
@@ -242,9 +244,15 @@ def test_export_standard_attachments_pdf_bytes(mock_section, client: TestClient)
     assert len(pdf_bytes) > 100
 
 
+@patch("app.reports.standard.dataset_binding.ensure_analysis_pack_dataset_binding")
 @patch("app.reports.standard.service.engine_execute.execute_dataset_section")
-def test_standard_schedule_execute_no_fake_deliver_without_delivery_mock(mock_section, client: TestClient):
+def test_standard_schedule_execute_no_fake_deliver_without_delivery_mock(
+    mock_section,
+    mock_binding,
+    client: TestClient,
+):
     """DG5: without X-Rpt-Delivery-Mock, standard schedule must not report delivered."""
+    mock_binding.return_value = uuid.uuid4()
     _seed_physical_equipment()
     client.put(f"/api/v1/reports/standard/packs/{_PACK_KEY}", headers=AUTH, json=_pack_payload_lifecycle_only())
     mock_section.return_value = {
