@@ -30,7 +30,8 @@ describe("gisMapFlowStyle", () => {
     expect(layers[3]?.id).toBe(GIS_FLOW_PULSE_LAYER_ID);
     expect(layers[4]?.id).toBe(GIS_FLOW_HUB_LAYER_ID);
     expect(layers[2]?.paint?.["line-gradient"]).toBeDefined();
-    expect(layers[3]?.paint?.["line-trim-offset"]).toEqual([0, 0.08]);
+    expect(layers[3]?.paint?.["line-width"]).toBeDefined();
+    expect(layers[3]?.paint?.["line-dasharray"]).toBeUndefined();
   });
 
   it("builds crest highlight gradient", () => {

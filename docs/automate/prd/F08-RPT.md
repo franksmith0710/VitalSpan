@@ -39,7 +39,7 @@
   - [x] **M-RPT F-B**：Hub 与结果页均展示口径/最近快照/下次节奏/投递状态可观测条；实时与对比模式信息一致（G UI）（完成于 2026-08-20 · `StandardAnalysisSnapshotStrip` · `standard-analysis-observability.smoke.test.tsx`）
   - [ ] **M-RPT F-B**〔可选〕：主题聚合可走库内 GROUP BY；未启用时 API meta 诚实标注 M1 样本聚合上限，不得假称全量聚合（C 失败诚实）
 - **代码锚点**：`backend/app/reports/standard/` · `backend/app/api/v1/reports/standard.py` · `backend/app/reports/standard/snapshot.py` · `backend/app/reports/persistence/standard_repo.py` · `fe/src/pages/admin/reports/StandardAnalysisPage.tsx` · `fe/src/pages/admin/reports/StandardAnalysisConfigPage.tsx` · `fe/src/pages/admin/reports/components/StandardAnalysisSnapshotStrip.tsx` · `backend/tests/test_standard_snapshot_retention.py` · `fe/src/pages/admin/reports/standard-analysis-observability.smoke.test.tsx`
-- **演化建议**：M-RPT F-C 字典 lookup；库内 GROUP BY 留 F-B 可选
+- **演化建议**：M-RPT F-C 字典 lookup；库内 GROUP BY 留 F-B 可选；消费端两期对比与多期并排图主表辅（`StandardAnalysisCompareChart` · `StandardAnalysisCompareMatrixChart`）已落地
 - **里程碑对齐**：M9 · 已完成 · 2026-08-11；**M-RPT F-A · 已闭合 · 2026-08-20**；**M-RPT F-B · 已闭合 · 2026-08-20**
 ### [RPT-003] Word/Excel/PDF 模板定义
 

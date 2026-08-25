@@ -23,7 +23,7 @@ import { StandardAnalysisCompareMatrixView } from "./StandardAnalysisCompareMatr
 import { StandardAnalysisCompareView } from "./StandardAnalysisCompareView";
 import type { CompareLayout } from "../standardAnalysisComparePrefs";
 import { compareVolumeHint, themeAggregationHint } from "./standardAnalysisCompareUi";
-import { StandardAnalysisMetaRow, THEME_META } from "./standardAnalysisUi";
+import { sortThemesForDisplay, StandardAnalysisMetaRow, THEME_META } from "./standardAnalysisUi";
 import { StandardAnalysisLiveView } from "./StandardAnalysisLiveView";
 import { StandardAnalysisSnapshotStrip } from "./StandardAnalysisSnapshotStrip";
 
@@ -134,7 +134,7 @@ export function StandardAnalysisResultPanel({
         <ListPageToolbar
           filters={
             <TabsList variant="enclosed" size="sm" className="h-auto max-w-full flex-wrap">
-              {(pack.enabledThemes as AnalysisTheme[]).map((theme) => {
+              {sortThemesForDisplay(pack.enabledThemes as AnalysisTheme[]).map((theme) => {
                 const Icon = THEME_META[theme]?.icon;
                 const available = isThemeAvailable(theme, themeCapabilities);
                 const reason = themeCapabilityReason(theme, themeCapabilities);
@@ -257,6 +257,8 @@ export function StandardAnalysisResultPanel({
             ) : null}
             {compareLayout === "matrix" ? (
               <StandardAnalysisCompareMatrixView
+                pack={pack}
+                activeTheme={activeTheme}
                 matrixData={matrixQuery.data}
                 isLoading={matrixQuery.isLoading}
               />

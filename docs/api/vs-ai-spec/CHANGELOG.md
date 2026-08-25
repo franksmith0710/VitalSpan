@@ -1,5 +1,12 @@
 # vs-ai-spec 变更
 
+## 2026-08-25 (政企内置大屏 compose 参考 · gov-*)
+
+- 新增 6 套 **5173 内置大屏** DeepTalk compose 参考：`gov-eco-monitor` · `gov-industrial-park` · `gov-smart-city` · `gov-digital-cockpit` · `gov-emergency-command` · `gov-community`
+- 导出脚本：`tools/export-gov-compose-templates.py`（源：`backend/.../templates/layouts/*.json`）
+- `assets/layout-templates/index.json` → `version: 3` · `recommendedGovDataScreen` · catalog **21** 套（5 de + 6 gov + 10 dash）
+- 指南：[guides/COMPOSE-TEMPLATES-GOV.md](./guides/COMPOSE-TEMPLATES-GOV.md)
+
 ## 2026-08-25 (customViz DOM 查找通用规范)
 
 - 新增 [guides/BUNDLE-BOILERPLATE.md](./guides/BUNDLE-BOILERPLATE.md)：entry 脚本外壳、`$()` 查节点、`vsCv.mount` 模板

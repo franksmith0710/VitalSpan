@@ -1,9 +1,16 @@
+import { useEffect, useState } from "react";
 import { Camera, Timer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataTable, ListPageFooter, ListPageTableFrame } from "@/components/layout/list-page-kit";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { cn } from "@/lib/utils";
 import type { AnalysisPack, AnalysisTheme, CompareResult } from "../useStandardAnalysis";
+import type { PresentationMode } from "../standardAnalysisPrefs";
+import {
+  defaultComparePresentationMode,
+  readStoredCompareViewMode,
+  writeStoredCompareViewMode,
+} from "../standardAnalysisComparePresentation";
 import {
   compareDeltaClassName,
   formatCompareDelta,
@@ -17,6 +24,8 @@ import {
   STANDARD_COMPARE_TABLE_MAX_HEIGHT,
   standardCompareTableScrollHint,
 } from "./standardAnalysisTableUi";
+import { StandardAnalysisCompareChart } from "./StandardAnalysisCompareChart";
+import { StandardAnalysisPresentationToggle } from "./StandardAnalysisPresentationToggle";
 
 type Props = {
   pack: AnalysisPack;
@@ -105,12 +114,38 @@ export function StandardAnalysisCompareView({
   const ready = compareData && hasPreviousSnapshot(compareData);
   const deltaRows = compareData?.deltas ?? [];
   const scrollHint = standardCompareTableScrollHint(deltaRows.length);
+  const showChartToggle = Boolean(ready && deltaRows.length > 0);
+
+  const [presentationMode, setPresentationMode] = useState<PresentationMode>(() => {
+    const stored = readStoredCompareViewMode(pack.packKey);
+    return stored ?? defaultComparePresentationMode();
+  });
+
+  useEffect(() => {
+    const stored = readStoredCompareViewMode(pack.packKey);
+    setPresentationMode(stored ?? defaultComparePresentationMode());
+  }, [activeTheme, pack.packKey]);
+
+  const handlePresentationModeChange = (mode: PresentationMode) => {
+    setPresentationMode(mode);
+    writeStoredCompareViewMode(pack.packKey, mode);
+  };
 
   return (
     <ListPageTableFrame className="flex min-h-0 flex-1 flex-col px-5 pb-5 pt-0">
       {compareData && !isLoading ? (
         <div className="px-5 pt-4">
           <CompareSemanticsBanner activeTheme={activeTheme} compareData={compareData} />
+        </div>
+      ) : null}
+
+      {showChartToggle ? (
+        <div className="flex shrink-0 items-center justify-end px-5 pb-2">
+          <StandardAnalysisPresentationToggle
+            mode={presentationMode}
+            onChange={handlePresentationModeChange}
+            testId="standard-analysis-compare-chart-toggle"
+          />
         </div>
       ) : null}
 
@@ -123,6 +158,10 @@ export function StandardAnalysisCompareView({
             capturePending={capturePending}
             onCapturePreviousBaseline={onCapturePreviousBaseline}
           />
+        </div>
+      ) : presentationMode === "chart" && ready && compareData ? (
+        <div className="flex min-h-0 flex-1 flex-col px-5 pb-2">
+          <StandardAnalysisCompareChart theme={activeTheme} compareData={compareData} />
         </div>
       ) : (
         <DataTable

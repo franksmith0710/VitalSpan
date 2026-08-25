@@ -465,14 +465,22 @@ ALL_TEMPLATES = TEMPLATES + DASH_TEMPLATES
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     catalog = {
-        "version": 2,
-        "description": "DeepTalk compose：5 套 DE 大屏 + 10 套仪表板（旧大屏 id 已移除）",
+        "version": 3,
+        "description": "DeepTalk compose：5 套 DE 大屏 + 6 套政企内置参考 + 10 套仪表板",
         "recommendedDataScreen": [
             "de-classic-cockpit",
             "de-sales-command",
             "de-balanced-four",
             "de-map-command",
             "de-kpi-flow-wall",
+        ],
+        "recommendedGovDataScreen": [
+            "gov-eco-monitor",
+            "gov-industrial-park",
+            "gov-smart-city",
+            "gov-digital-cockpit",
+            "gov-emergency-command",
+            "gov-community",
         ],
         "removedDataScreenIds": [
             "gov-cockpit",
@@ -489,10 +497,11 @@ def main() -> None:
         "templates": [],
     }
     allowed_ids = {t["id"] for t in ALL_TEMPLATES}
+    gov_paths = sorted(p for p in OUT.glob("gov-*.json"))
     for stale in OUT.glob("*.json"):
         if stale.name == "index.json":
             continue
-        if stale.stem not in allowed_ids:
+        if stale.stem not in allowed_ids and not stale.name.startswith("gov-"):
             stale.unlink()
             print(f"removed stale {stale.name}")
     for tpl in ALL_TEMPLATES:
@@ -513,6 +522,23 @@ def main() -> None:
             }
         )
         print(f"ok {path.name} slots={len(tpl['slots'])} surface={tpl['surfaceKind']}")
+    for gov_path in gov_paths:
+        tpl = json.loads(gov_path.read_text(encoding="utf-8"))
+        chart_slots = sum(1 for s in tpl["slots"] if s["type"] == "chart")
+        cv_slots = sum(1 for s in tpl["slots"] if s["type"] == "customViz")
+        catalog["templates"].append(
+            {
+                "id": tpl["id"],
+                "name": tpl["name"],
+                "description": tpl.get("description", ""),
+                "surfaceKind": tpl["surfaceKind"],
+                "tags": tpl.get("tags", []),
+                "chartSlots": chart_slots,
+                "customVizSlots": cv_slots,
+                "platformTemplateKey": tpl.get("platformTemplateKey"),
+            }
+        )
+        print(f"ok {gov_path.name} (gov reference) slots={len(tpl['slots'])}")
     index_path = OUT / "index.json"
     index_path.write_text(json.dumps(catalog, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"ok index.json templates={len(catalog['templates'])}")

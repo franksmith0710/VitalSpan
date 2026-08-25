@@ -88,7 +88,7 @@
     {
       "name": "vitalspan_list_layout_templates",
       "runtime": "plugin",
-      "description": "Workflow 3: list 15 layout templates (5 de-* data-screen + 10 dash-*)",
+      "description": "Workflow 3: list 21 layout templates (5 de-* + 6 gov-* data-screen + 10 dash-*)",
       "parameters": {
         "type": "object",
         "properties": {

@@ -22,7 +22,13 @@ export const SNAPSHOT_LABELS: Record<string, string> = {
   monthly: "每月快照",
 };
 
-export const ALL_ANALYSIS_THEMES: AnalysisTheme[] = ["lifecycle", "distribution", "activity", "trend"];
+export const ALL_ANALYSIS_THEMES: AnalysisTheme[] = ["trend", "activity", "distribution", "lifecycle"];
+
+export function sortThemesForDisplay(themes: AnalysisTheme[]): AnalysisTheme[] {
+  return [...themes].sort(
+    (left, right) => ALL_ANALYSIS_THEMES.indexOf(left) - ALL_ANALYSIS_THEMES.indexOf(right),
+  );
+}
 
 export const SNAPSHOT_RETENTION_OPTIONS = [
   { value: 6, label: "保留最近 6 期" },

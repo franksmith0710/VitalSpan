@@ -89,7 +89,10 @@ function metricWidthExpr(resolved: ResolvedGisFlowStyle): number | ExpressionSpe
   return (resolved.widthMin + resolved.widthMax) / 2;
 }
 
-export function buildGisFlowLineWidth(resolved: ResolvedGisFlowStyle): ExpressionSpecification {
+export function buildGisFlowLineWidth(
+  resolved: ResolvedGisFlowStyle,
+  extraPx = 0,
+): ExpressionSpecification {
   const base = metricWidthExpr(resolved);
   if (typeof base === "number") {
     return [
@@ -97,15 +100,15 @@ export function buildGisFlowLineWidth(resolved: ResolvedGisFlowStyle): Expressio
       ["linear"],
       ["zoom"],
       0,
-      base * 1.2,
+      base * 1.2 + extraPx,
       1,
-      base * 1.8,
+      base * 1.8 + extraPx,
       2,
-      base * 2.4,
+      base * 2.4 + extraPx,
       4,
-      base * 3.2,
+      base * 3.2 + extraPx,
       6,
-      base * 4,
+      base * 4 + extraPx,
     ];
   }
   return [
@@ -113,15 +116,15 @@ export function buildGisFlowLineWidth(resolved: ResolvedGisFlowStyle): Expressio
     ["linear"],
     ["zoom"],
     0,
-    ["*", base, 1.2],
+    ["+", ["*", base, 1.2], extraPx],
     1,
-    ["*", base, 1.8],
+    ["+", ["*", base, 1.8], extraPx],
     2,
-    ["*", base, 2.4],
+    ["+", ["*", base, 2.4], extraPx],
     4,
-    ["*", base, 3.2],
+    ["+", ["*", base, 3.2], extraPx],
     6,
-    ["*", base, 4],
+    ["+", ["*", base, 4], extraPx],
   ];
 }
 
@@ -129,15 +132,8 @@ function buildGisFlowGlowWidth(lineWidth: ExpressionSpecification): ExpressionSp
   return ["interpolate", ["linear"], ["zoom"], 0, 8, 1, 11, 2, 14, 4, 18, 6, 22];
 }
 
-function buildGisFlowShadowWidth(lineWidth: ExpressionSpecification): ExpressionSpecification {
+function buildGisFlowShadowWidth(_lineWidth: ExpressionSpecification): ExpressionSpecification {
   return ["interpolate", ["linear"], ["zoom"], 0, 12, 1, 16, 2, 20, 4, 26, 6, 32];
-}
-
-function buildGisFlowPulseWidth(lineWidth: ExpressionSpecification): ExpressionSpecification {
-  if (typeof lineWidth === "number") {
-    return lineWidth + 2.5;
-  }
-  return ["+", lineWidth, 2.5];
 }
 
 function buildGisFlowLinePaint(resolved: ResolvedGisFlowStyle): Record<string, unknown> {
@@ -173,16 +169,12 @@ function buildGisFlowShadowPaint(
   };
 }
 
-function buildGisFlowPulsePaint(
-  resolved: ResolvedGisFlowStyle,
-  lineWidth: ExpressionSpecification,
-): Record<string, unknown> {
+function buildGisFlowPulsePaint(resolved: ResolvedGisFlowStyle): Record<string, unknown> {
   return {
     "line-color": "#ffffff",
-    "line-opacity": resolved.opacity * 0.85,
-    "line-width": buildGisFlowPulseWidth(lineWidth),
+    "line-opacity": resolved.opacity * 0.55,
+    "line-width": buildGisFlowLineWidth(resolved, 2.5),
     "line-blur": 0.35,
-    "line-trim-offset": [0, 0.08],
   };
 }
 
@@ -227,7 +219,7 @@ export function buildGisFlowLayerDefinitions(
       source: GIS_FLOW_SOURCE_ID,
       filter: GIS_FLOW_LINE_FILTER,
       layout: lineLayout,
-      paint: buildGisFlowPulsePaint(resolved, lineWidth),
+      paint: buildGisFlowPulsePaint(resolved),
     },
     {
       id: GIS_FLOW_HUB_LAYER_ID,
@@ -285,7 +277,7 @@ export function syncGisFlowStyle(map: MapLibreMap, options: GisFlowLayerOptions)
       [GIS_FLOW_SHADOW_LAYER_ID]: buildGisFlowShadowPaint(resolved, lineWidth),
       [GIS_FLOW_GLOW_LAYER_ID]: buildGisFlowGlowPaint(resolved, lineWidth),
       [GIS_FLOW_LINE_LAYER_ID]: buildGisFlowLinePaint(resolved),
-      [GIS_FLOW_PULSE_LAYER_ID]: buildGisFlowPulsePaint(resolved, lineWidth),
+      [GIS_FLOW_PULSE_LAYER_ID]: buildGisFlowPulsePaint(resolved),
     };
     for (const [layerId, paint] of Object.entries(paintByLayer)) {
       if (!map.getLayer(layerId)) continue;

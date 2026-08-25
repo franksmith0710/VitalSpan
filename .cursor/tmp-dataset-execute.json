@@ -1,0 +1,11 @@
+{
+  "dataSourceId": "00e7438c-33ac-4239-88a5-af28ecdece19",
+  "configId": "ccbe7d77-777c-436a-aaf6-ea3454a241cb",
+  "encoding": {
+    "chartType": "gis-map",
+    "dimensions": ["from_lng", "from_lat", "to_lng", "to_lat"],
+    "metrics": [],
+    "filters": [],
+    "limit": 1000
+  }
+}

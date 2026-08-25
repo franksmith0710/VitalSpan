@@ -1,4 +1,5 @@
 import {
+  GIS_FLOW_GLOW_LAYER_ID,
   GIS_FLOW_HUB_LAYER_ID,
   GIS_FLOW_PULSE_LAYER_ID,
 } from "@/components/charts/engine/maplibre/gisMapFlowStyle";
@@ -7,7 +8,6 @@ import type { ResolvedGisFlowStyle } from "@/components/charts/engine/maplibre/g
 type MapLibreMap = import("maplibre-gl").Map;
 
 const PULSE_CYCLE_MS = 2800;
-const PULSE_SPAN = 0.14;
 const HUB_PULSE_CYCLE_MS = 2200;
 
 function prefersReducedMotion(): boolean {
@@ -15,7 +15,16 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-/** 飞线流动光点 + 枢纽呼吸灯（rAF；尊重 prefers-reduced-motion） */
+function setPaintSafe(map: MapLibreMap, layerId: string, key: string, value: unknown) {
+  if (!map.getLayer(layerId)) return;
+  try {
+    map.setPaintProperty(layerId, key, value);
+  } catch {
+    // 样式热更新竞态时忽略单帧失败
+  }
+}
+
+/** 飞线流动感：pulse 层 + 外发光 + 枢纽呼吸（rAF；兼容 MapLibre 6.x） */
 export function mountGisFlowLineAnimation(
   map: MapLibreMap,
   resolved: ResolvedGisFlowStyle,
@@ -30,24 +39,31 @@ export function mountGisFlowLineAnimation(
       frameId = requestAnimationFrame(tick);
       return;
     }
-    const pulseLayer = map.getLayer(GIS_FLOW_PULSE_LAYER_ID);
-    if (pulseLayer) {
-      const phase = ((now - start) % PULSE_CYCLE_MS) / PULSE_CYCLE_MS;
-      const head = phase;
-      const tail = Math.min(1, head + PULSE_SPAN);
-      map.setPaintProperty(GIS_FLOW_PULSE_LAYER_ID, "line-trim-offset", [head, tail]);
-      map.setPaintProperty(
+    const phase = ((now - start) % PULSE_CYCLE_MS) / PULSE_CYCLE_MS;
+    const wave = 0.5 + 0.5 * Math.sin(phase * Math.PI * 2);
+
+    if (map.getLayer(GIS_FLOW_PULSE_LAYER_ID)) {
+      setPaintSafe(
+        map,
         GIS_FLOW_PULSE_LAYER_ID,
         "line-opacity",
-        resolved.opacity * (0.65 + 0.35 * Math.sin(phase * Math.PI * 2)),
+        resolved.opacity * (0.35 + 0.5 * wave),
+      );
+      setPaintSafe(map, GIS_FLOW_PULSE_LAYER_ID, "line-blur", 0.2 + 0.8 * wave);
+    }
+    if (map.getLayer(GIS_FLOW_GLOW_LAYER_ID)) {
+      setPaintSafe(
+        map,
+        GIS_FLOW_GLOW_LAYER_ID,
+        "line-opacity",
+        Math.min(1, resolved.opacity * (0.32 + 0.18 * wave)),
       );
     }
-    const hubLayer = map.getLayer(GIS_FLOW_HUB_LAYER_ID);
-    if (hubLayer) {
+    if (map.getLayer(GIS_FLOW_HUB_LAYER_ID)) {
       const hubPhase = ((now - start) % HUB_PULSE_CYCLE_MS) / HUB_PULSE_CYCLE_MS;
       const pulse = 0.72 + 0.28 * Math.sin(hubPhase * Math.PI * 2);
-      map.setPaintProperty(GIS_FLOW_HUB_LAYER_ID, "circle-opacity", resolved.opacity * pulse);
-      map.setPaintProperty(GIS_FLOW_HUB_LAYER_ID, "circle-blur", 0.15 + 0.35 * pulse);
+      setPaintSafe(map, GIS_FLOW_HUB_LAYER_ID, "circle-opacity", resolved.opacity * pulse);
+      setPaintSafe(map, GIS_FLOW_HUB_LAYER_ID, "circle-blur", 0.15 + 0.35 * pulse);
     }
     frameId = requestAnimationFrame(tick);
   };

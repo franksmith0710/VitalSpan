@@ -3,7 +3,7 @@ import type { AnalysisTheme } from "./useStandardAnalysis";
 const THEME_STORAGE_PREFIX = "vs.std.theme.";
 const VIEW_STORAGE_PREFIX = "vs.std.view.";
 
-const ANALYSIS_THEMES: AnalysisTheme[] = ["lifecycle", "distribution", "activity", "trend"];
+const ANALYSIS_THEMES: AnalysisTheme[] = ["trend", "activity", "distribution", "lifecycle"];
 
 export function isAnalysisTheme(value: string | null): value is AnalysisTheme {
   return value != null && ANALYSIS_THEMES.includes(value as AnalysisTheme);

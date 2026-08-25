@@ -20,7 +20,8 @@ DeepTalk **workflow ③** 拼大屏时，优先用带 **`de-recommended`** 标�
 
 清单：`vitalspan_list_layout_templates` · 索引 `assets/layout-templates/index.json` 的 `recommendedDataScreen`。
 
-> **已移除**旧大屏 id（`gov-cockpit`、`kpi-flow-banner` 等 10 套无 DE 壳层模板）；请只用上表 **`de-*`**。
+> **已移除**旧大屏 id（`gov-cockpit`、`kpi-flow-banner` 等 10 套无 DE 壳层模板）；请只用上表 **`de-*`**。  
+> **5173 政企内置参考**（生态环境/智慧城市等 6 套）→ [COMPOSE-TEMPLATES-GOV.md](./COMPOSE-TEMPLATES-GOV.md) 的 **`gov-*`**。
 
 ## Agent 最小调用
 

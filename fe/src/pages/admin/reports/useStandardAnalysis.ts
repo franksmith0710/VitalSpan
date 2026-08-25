@@ -106,13 +106,21 @@ export type CapabilitiesResult = {
   columns: string[];
 };
 
+const THEME_PRIORITY: AnalysisTheme[] = ["trend", "activity", "distribution", "lifecycle"];
+
+export function themePriorityOrder(themes: AnalysisTheme[]): AnalysisTheme[] {
+  const prioritized = THEME_PRIORITY.filter((theme) => themes.includes(theme));
+  const remainder = themes.filter((theme) => !THEME_PRIORITY.includes(theme));
+  return [...prioritized, ...remainder];
+}
+
 export function resolveFirstAvailableTheme(
   pack: AnalysisPack | null | undefined,
   capabilities: ThemeCapability[] | undefined,
 ): AnalysisTheme | null {
   if (!pack) return null;
   const capMap = new Map(capabilities?.map((item) => [item.theme, item]) ?? []);
-  for (const theme of pack.enabledThemes) {
+  for (const theme of themePriorityOrder(pack.enabledThemes)) {
     const cap = capMap.get(theme);
     if (!cap || cap.available) return theme;
   }

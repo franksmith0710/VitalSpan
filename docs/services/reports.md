@@ -46,7 +46,7 @@
 | 侧栏子项 | 路由 | 权限 | 职责（一句话） |
 |----------|------|------|----------------|
 | 工作台 | `/admin/reports/center` | `report:read` | 最近访问、失败告警、各模块快捷入口卡片 |
-| 标准分析 | `/admin/reports/standard/results` | `report:read` | 选包看数、对比上期快照（消费端；图主表辅 + 数据口径说明） |
+| 标准分析 | `/admin/reports/standard/results` | `report:read` | 选包看数、对比上期快照（消费端；**两期对比与多期并排默认图表**，表为明细） |
 | 文档模板 | `/admin/reports/templates` | `report:manage` | 目录树、模板块、扩展配置、手动运行 |
 | 调度与投递 | `/admin/reports/schedules` | `report:manage` | 跨看板/模板/标准分析的 cron、历史、重试 |
 
@@ -178,4 +178,4 @@
 
 ### r68 companion 质量推分（RPT-002）
 
-- **RPT-002**：`standard/compare.py` — 本期 vs 上期；`standard/snapshot.py` — 周期快照 capture/list；`GET /api/v1/reports/standard/packs/{pack_key}/compare`
+- **RPT-002**：`standard/compare.py` — 本期 vs 上期；`standard/snapshot.py` — 周期快照 capture/list；`GET /api/v1/reports/standard/packs/{pack_key}/compare`；FE 两期对比默认分组柱图（`StandardAnalysisCompareChart`）、多期并排默认折线图（`StandardAnalysisCompareMatrixChart` · `standard-analysis-compare-matrix-chart.smoke.test.tsx`）
