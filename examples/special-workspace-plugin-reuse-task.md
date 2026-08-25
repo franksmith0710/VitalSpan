@@ -489,40 +489,24 @@ navigateWorkspace({ target: "experts" });
 
 iframe 不能 `fetch` 外部地址。外连 VitalSpan 须声明 `execTools` + `pluginExec`。
 
-### B 轨最小集（本期必做）
+### 必做 execTools（SOP 对齐）
 
-在 `plugin.json` 增加 **仅**：
+| 名称 | 模块 | 用途 |
+|------|------|------|
+| `vitalspan_health` | `exec-tools/vitalspan-health.cjs` | home 检测 `/health` |
+| `loadInstance` | `exec-tools/load-instance.cjs` | resources 只读快照 |
 
-```json
-{
-  "name": "vitalspan_health",
-  "runtime": "js-worker",
-  "module": "exec-tools/vitalspan-health.cjs",
-  "export": "run",
-  "load": "lazy",
-  "keepAlive": "plugin",
-  "concurrency": "serial"
-}
-```
-
-视图调用：
-
-```ts
-await window.pluginExec("vitalspan_health", { apiBaseUrl: binding.apiBaseUrl });
-```
-
-凭据：`VITALSPAN_USERNAME` · `VITALSPAN_DEV_ADMIN_PASSWORD` 由 worker 读 env；**不进** instanceConfig。
-
-### C 轨扩展（二期 · 本期不做）
-
-list artifacts / list dashboards / compose 等 execTools — 见 [WORKSPACE-PLUGIN-CONTRACT](../docs/api/vs-ai-spec/deeptalk-product/WORKSPACE-PLUGIN-CONTRACT.md) C 轨。
+compose / upload / publish — **仍 Agent tools**，不在 iframe execTools 范围。
 
 ```json
 {
   "name": "loadInstance",
   "runtime": "js-worker",
   "module": "exec-tools/load-instance.cjs",
-  "export": "run"
+  "export": "run",
+  "load": "lazy",
+  "keepAlive": "plugin",
+  "concurrency": "serial"
 }
 ```
 
@@ -539,10 +523,14 @@ exports.run = async function run(params, ctx) {
 
 ```ts
 const snapshot = await window.pluginExec("loadInstance", {
-  instanceId: binding.instanceId,
-  baseUrl: binding.service.baseUrl,
+  instanceId: binding.mode,
+  baseUrl: binding.apiBaseUrl,
+  apiBaseUrl: binding.apiBaseUrl,
+  feAdminUrl: binding.feAdminUrl,
 });
 ```
+
+凭据：`VITALSPAN_USERNAME` · `VITALSPAN_DEV_ADMIN_PASSWORD` 由 worker 读 env；**不进** instanceConfig。
 
 规则：
 
@@ -562,9 +550,9 @@ const snapshot = await window.pluginExec("loadInstance", {
 不要用 `components.mcp` 冒充必须常驻、与插件装卸无关的独立服务器。  
 不要把 `workspace-objects` 当成外部权威库。
 
-- [x] 业务页取数只走 `pluginExec`（home 检测 API）
+- [x] 业务页取数只走 `pluginExec`（home health · resources loadInstance）
 - [x] iframe 视图无外部 `fetch`（`views/*.js` 探针）
-- [x] 失败态可见、可重试（health 错误行 + 可再次点击）
+- [x] 失败态可见、可重试（health / resources 错误行 + 重试）
 - [x] Agent 工具不接受模型传入的地址和凭据（`shared.ts` 读工作区 binding / env）
 
 ---
@@ -606,7 +594,7 @@ const snapshot = await window.pluginExec("loadInstance", {
 
 - [x] assemble 产物根目录只有可安装文件
 - [x] 安装哈希一致并已重启宿主（见 [Task 9 验收](../docs/reviews/grounded/2026-08-25-deeptalk-vitalspan-task9-host-acceptance.md)）
-- [x] 上面 10 条全部勾过（B 轨 #5/#7 N/A；#1 拆 1a/1b · 证据见 `docs/TASK9-EVIDENCE.json`）
+- [x] 上面 10 条全部勾过（含 #5/#7 · 证据见 `docs/TASK9-EVIDENCE.json`）
 - [x] 引擎未被补丁污染（`Programs\DeepTalk` 无 vitalspan · 插件仅 `%APPDATA%`）
 
 ---
