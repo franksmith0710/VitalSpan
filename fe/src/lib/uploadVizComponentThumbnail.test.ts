@@ -10,6 +10,11 @@ vi.mock("@/lib/captureDashboardThumbnail", () => ({
   captureDashboardThumbnailBlob: vi.fn(),
   findVizComponentThumbnailCaptureRoot: vi.fn(),
   findDashboardWidgetCaptureRoot: vi.fn(),
+  waitForThumbnailCaptureReady: vi.fn(async (resolve: () => HTMLElement | null) => {
+    const root = resolve();
+    if (!root) throw new Error("未找到可截图的组件预览区域");
+    return root;
+  }),
 }));
 
 import { apiUploadBlob } from "@/lib/apiUpload";

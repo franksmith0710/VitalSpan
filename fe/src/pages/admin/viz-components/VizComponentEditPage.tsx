@@ -124,6 +124,8 @@ export function VizComponentEditPage() {
     error,
     refetch,
     save,
+    refreshThumbnail,
+    refreshingThumbnail,
     patchWidget,
   } = useVizComponentEditor(id);
 
@@ -160,9 +162,18 @@ export function VizComponentEditPage() {
           />
           <Button
             type="button"
+            variant="outline"
+            size="sm"
+            disabled={saving || refreshingThumbnail}
+            onClick={() => void refreshThumbnail()}
+          >
+            {refreshingThumbnail ? "生成中…" : "更新封面"}
+          </Button>
+          <Button
+            type="button"
             variant="primary"
             size="sm"
-            disabled={saving || !isDirty}
+            disabled={saving || refreshingThumbnail || !isDirty}
             onClick={() => void save()}
           >
             {saving ? "保存中…" : "保存"}

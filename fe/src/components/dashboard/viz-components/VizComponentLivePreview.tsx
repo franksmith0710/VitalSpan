@@ -16,6 +16,7 @@ import { useInViewport } from "@/hooks/useInViewport";
 import { useAdminHeavyRenderSuspended } from "@/hooks/useAdminHeavyRenderSuspended";
 import { isGeoMapChartType, type ChartViewConfig } from "@/lib/chartViewConfig";
 import { cn } from "@/lib/utils";
+import { VIZ_COMPONENT_THUMBNAIL_CAPTURE_ATTR } from "@/lib/captureDashboardThumbnail";
 import type { DashboardPreviewProfile } from "@/lib/dashboardPreviewProfile";
 
 type VizComponentLivePreviewProps = {
@@ -81,6 +82,7 @@ export function VizComponentLivePreview({
       className={cn("relative h-full min-h-0 w-full", className)}
       data-testid="viz-component-live-preview"
       data-live={active ? "true" : "false"}
+      {...(!compact && !lazy ? { [VIZ_COMPONENT_THUMBNAIL_CAPTURE_ATTR]: "" } : {})}
     >
       {widget.type === "chart" && widget.chartConfig ? (
         <VizComponentChartPreviewShell

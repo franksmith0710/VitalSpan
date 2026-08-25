@@ -83,6 +83,28 @@ async function nextPaint(): Promise<void> {
   });
 }
 
+/** 等待截图区域完成布局（图表/WebGL 首帧） */
+export async function waitForThumbnailCaptureReady(
+  resolveRoot: () => HTMLElement | null,
+  timeoutMs = 5000,
+): Promise<HTMLElement> {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const root = resolveRoot();
+    if (root) {
+      const box = measureCaptureBox(root);
+      if (box.width >= 8 && box.height >= 8) {
+        await nextPaint();
+        return root;
+      }
+    }
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 80);
+    });
+  }
+  throw new Error("画布尚未完成布局，无法截取封面");
+}
+
 function shouldIncludeNode(node: Node): boolean {
   if (!(node instanceof HTMLElement)) return true;
   if (node.closest("[data-thumbnail-ignore]")) return false;

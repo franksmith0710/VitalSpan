@@ -16,12 +16,22 @@ import {
   updateVizComponent,
   type VizComponentDetail,
 } from "@/lib/vizComponents";
-import { persistVizComponentThumbnailBestEffort } from "@/lib/uploadVizComponentThumbnail";
+import {
+  captureVizComponentEditThumbnailBlob,
+  persistVizComponentThumbnailBestEffort,
+  uploadVizComponentThumbnailBlob,
+} from "@/lib/uploadVizComponentThumbnail";
+
+function invalidateVizComponentCaches(queryClient: ReturnType<typeof useQueryClient>, id: string) {
+  void queryClient.invalidateQueries({ queryKey: queryKeys.vizComponents.all });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.vizComponents.detail(id) });
+}
 
 export function useVizComponentEditor(componentId: string | undefined) {
   const queryClient = useQueryClient();
   const [widget, setWidget] = useState<LayoutWidget | null>(null);
   const [saving, setSaving] = useState(false);
+  const [refreshingThumbnail, setRefreshingThumbnail] = useState(false);
   const hydratedRevisionRef = useRef<number | null>(null);
 
   const detailQuery = useQuery({
@@ -50,26 +60,75 @@ export function useVizComponentEditor(componentId: string | undefined) {
   const applyDetail = useCallback(
     (detail: VizComponentDetail) => {
       queryClient.setQueryData(queryKeys.vizComponents.detail(detail.id), detail);
-      void queryClient.invalidateQueries({ queryKey: queryKeys.vizComponents.all });
+      invalidateVizComponentCaches(queryClient, detail.id);
       hydratedRevisionRef.current = detail.contentRevision;
       setWidget(componentDetailToLayoutWidget(detail));
     },
     [queryClient],
   );
 
+  const uploadThumbnail = useCallback(async (id: string): Promise<boolean> => {
+    const uploaded = await persistVizComponentThumbnailBestEffort(id);
+    if (uploaded) {
+      invalidateVizComponentCaches(queryClient, id);
+      return true;
+    }
+    toast.warning("封面截图失败", {
+      description: "请确认左侧预览已加载完成，再点「更新封面」重试。",
+    });
+    return false;
+  }, [queryClient]);
+
+  const refreshThumbnail = useCallback(async (): Promise<boolean> => {
+    if (!component) return false;
+    setRefreshingThumbnail(true);
+    try {
+      const uploaded = await uploadThumbnail(component.id);
+      if (uploaded) toast.success("封面已更新");
+      return uploaded;
+    } finally {
+      setRefreshingThumbnail(false);
+    }
+  }, [component, uploadThumbnail]);
+
   const save = useCallback(async (): Promise<boolean> => {
-    if (!component || !widget || !isDirty) return true;
+    if (!component || !widget) return false;
     setSaving(true);
     try {
-      const updated = await updateVizComponent(component.id, {
-        name: widget.title?.trim() || component.name,
-        payloadJson: extractWidgetPayload(widget),
-        contentRevision: component.contentRevision,
-      });
-      applyDetail(updated);
-      await persistVizComponentThumbnailBestEffort(component.id);
-      void queryClient.invalidateQueries({ queryKey: queryKeys.vizComponents.all });
-      toast.success("组件已保存");
+      let thumbnailBlob: Blob | null = null;
+      try {
+        thumbnailBlob = await captureVizComponentEditThumbnailBlob();
+      } catch (err) {
+        console.warn("[viz-component-save] thumbnail capture failed", err);
+      }
+
+      if (isDirty) {
+        const updated = await updateVizComponent(component.id, {
+          name: widget.title?.trim() || component.name,
+          payloadJson: extractWidgetPayload(widget),
+          contentRevision: component.contentRevision,
+        });
+        applyDetail(updated);
+      }
+
+      let thumbnailUploaded = false;
+      if (thumbnailBlob) {
+        try {
+          await uploadVizComponentThumbnailBlob(component.id, thumbnailBlob);
+          thumbnailUploaded = true;
+          invalidateVizComponentCaches(queryClient, component.id);
+        } catch (err) {
+          console.warn("[viz-component-save] thumbnail upload failed", err);
+        }
+      }
+
+      if (!thumbnailUploaded) {
+        toast.warning(isDirty ? "组件已保存，但封面截图失败" : "封面截图失败", {
+          description: "请确认左侧预览已加载完成，再点「更新封面」重试。",
+        });
+      } else if (isDirty) {
+        toast.success("组件已保存");
+      }
       return true;
     } catch (err) {
       const message = mapApiError(err);
@@ -92,12 +151,14 @@ export function useVizComponentEditor(componentId: string | undefined) {
     widget,
     componentMap,
     saving,
+    refreshingThumbnail,
     isDirty,
     isLoading: detailQuery.isLoading,
     isError: detailQuery.isError,
     error: detailQuery.error,
     refetch: detailQuery.refetch,
     save,
+    refreshThumbnail,
     patchWidget,
   };
 }

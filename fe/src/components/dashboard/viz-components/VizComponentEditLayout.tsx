@@ -24,7 +24,6 @@ export function VizComponentEditLayout({ preview, rail }: VizComponentEditLayout
         <div
           className="dashboard-canvas-surface min-h-0 flex-1 overflow-hidden p-1"
           data-dashboard-color-scheme="light"
-          data-viz-component-thumbnail-capture=""
         >
           {preview}
         </div>
