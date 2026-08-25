@@ -172,7 +172,7 @@ describe("official customViz examples", () => {
         ["乙", 60],
         ["丁", 10],
       ],
-      style: { showAnimation: false, maxItems: 4 },
+      style: { showAnimation: false },
     });
     const labels = Array.from(host.querySelectorAll("#vs-cv-root .lbl")).map((node) => node.textContent);
     expect(labels).toEqual(["甲", "乙", "丙", "丁"]);
@@ -189,7 +189,7 @@ describe("official customViz examples", () => {
       bindingStatus: "bound",
       columns: ["category", "value"],
       rows: [["份额", 0.25]],
-      style: { showAnimation: false, maxItems: 1, valueFormatter: "percent" },
+      style: { showAnimation: false, valueFormatter: "percent" },
     });
     expect(host.querySelector("#vs-cv-root .val")?.textContent).toBe("25.0%");
 
@@ -198,7 +198,7 @@ describe("official customViz examples", () => {
       bindingStatus: "bound",
       columns: ["category", "value"],
       rows: [["销量", 1500]],
-      style: { showAnimation: false, maxItems: 1, valueFormatter: "thousands" },
+      style: { showAnimation: false, valueFormatter: "thousands" },
     });
     expect(host.querySelector("#vs-cv-root .val")?.textContent).toBe("1.5k");
   });
@@ -213,27 +213,27 @@ describe("official customViz examples", () => {
         ["甲", 100],
         ["乙", 60],
       ],
-      style: { showAnimation: false, showRankBadge: false, maxItems: 2 },
+      style: { showAnimation: false, showRankBadge: false },
     });
     expect(host.querySelectorAll("#vs-cv-root .badge")).toHaveLength(0);
     expect(host.querySelectorAll("#vs-cv-root .row")).toHaveLength(2);
   });
 
-  it("ranking bar medal caps visible rows with maxItems", () => {
+  it("ranking bar medal renders all payload rows", () => {
     const host = mountExample((medalBundle as ExampleBundle).files["index.html"]);
-    const rows = Array.from({ length: 12 }, (_, index) => [`项${index}`, index + 1]);
+    const rows = Array.from({ length: 5 }, (_, index) => [`项${index}`, index + 1]);
     injectCustomVizPayload(host, {
       protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
       bindingStatus: "bound",
       columns: ["category", "value"],
       rows,
       layout: { width: 480, height: 320 },
-      style: { showAnimation: false, maxItems: 5 },
+      style: { showAnimation: false },
     });
     expect(host.querySelectorAll("#vs-cv-root .row")).toHaveLength(5);
   });
 
-  it("ranking bar medal fits row count to layout height", () => {
+  it("ranking bar medal keeps all rows and uses scroll container", () => {
     const host = mountExample((medalBundle as ExampleBundle).files["index.html"]);
     const rows = Array.from({ length: 12 }, (_, index) => [`项${index}`, index + 1]);
     injectCustomVizPayload(host, {
@@ -242,10 +242,14 @@ describe("official customViz examples", () => {
       columns: ["category", "value"],
       rows,
       layout: { width: 480, height: 200 },
-      style: { showAnimation: false, maxItems: 10, barHeight: 28, gap: 12 },
+      style: { showAnimation: false, barHeight: 28, gap: 12 },
     });
-    expect(host.querySelectorAll("#vs-cv-root .row").length).toBeLessThan(10);
-    expect(host.querySelectorAll("#vs-cv-root .row").length).toBeGreaterThanOrEqual(3);
+    expect(host.querySelectorAll("#vs-cv-root .row")).toHaveLength(12);
+    const root = host.querySelector("#vs-cv-root");
+    expect(root).not.toBeNull();
+    if (root) {
+      expect(window.getComputedStyle(root).overflowY).toBe("auto");
+    }
   });
 
   it("ranking bar medal scales bar width by max value", () => {
@@ -258,7 +262,7 @@ describe("official customViz examples", () => {
         ["低", 10],
         ["高", 100],
       ],
-      style: { showAnimation: false, maxItems: 2 },
+      style: { showAnimation: false },
     });
     const widths = Array.from(host.querySelectorAll("#vs-cv-root .fill")).map(
       (node) => parseFloat((node as HTMLElement).style.width),

@@ -12,6 +12,8 @@ import {
 import {
   buildGisFlowStyleKey,
   emptyGisFlowGeoJson,
+  GIS_FLOW_LINE_LAYER_ID,
+  GIS_FLOW_SOURCE_ID,
   syncGisFlowData,
   syncGisFlowStyle,
 } from "@/components/charts/engine/maplibre/gisMapFlowStyle";
@@ -517,6 +519,40 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     mapRef.current?.resize();
   }, []);
 
+  const annotateFlowSyncState = useCallback(
+    (map: MapLibreMap) => {
+      const host = hostRef.current;
+      if (!host) return;
+      const featureCount = flowGeoJsonRef.current?.features.length ?? 0;
+      const source = map.getSource(GIS_FLOW_SOURCE_ID);
+      host.dataset.flowSourceLen = source ? String(featureCount) : "missing";
+      host.dataset.flowLayerReady = map.getLayer(GIS_FLOW_LINE_LAYER_ID) ? "1" : "0";
+    },
+    [],
+  );
+
+  const resyncFlowLayers = useCallback(
+    (map: MapLibreMap) => {
+      syncGisOverlayData(map, overlayGeoJsonRef.current);
+      syncGisFlowData(map, flowGeoJsonRef.current, flowLayerOptionsRef.current);
+      syncGisFlowStyle(map, flowLayerOptionsRef.current);
+      annotateFlowSyncState(map);
+      const featureCount = flowGeoJsonRef.current?.features.length ?? 0;
+      if (
+        featureCount > 0 &&
+        !map.getSource(GIS_FLOW_SOURCE_ID) &&
+        style &&
+        isGisMapOdBindingComplete(chartConfig ?? { chartType: "gis-map" })
+      ) {
+        applyGisMapStylePreservingCamera(map, style, () => {
+          syncOverlayRuntime(map);
+          setMapRuntimeEpoch((epoch) => epoch + 1);
+        });
+      }
+    },
+    [annotateFlowSyncState, chartConfig, style, syncOverlayRuntime],
+  );
+
   useEffect(() => {
     const shell = shellRef.current;
     if (!shell) return;
@@ -530,22 +566,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   useLayoutEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    syncGisOverlayData(map, overlayGeoJson);
-    syncGisFlowData(map, flowGeoJson, flowLayerOptions);
-    if (
-      !flowGeoJson?.features.length ||
-      !style ||
-      !isGisMapOdBindingComplete(chartConfig ?? { chartType: "gis-map" })
-    ) {
-      return;
+    resyncFlowLayers(map);
+    if (map.isStyleLoaded()) {
+      map.once("idle", () => resyncFlowLayers(map));
     }
-    if (map.isStyleLoaded() && !map.getSource("vs-gis-flow")) {
-      applyGisMapStylePreservingCamera(map, style, () => {
-        syncOverlayRuntime(map);
-        setMapRuntimeEpoch((epoch) => epoch + 1);
-      });
-    }
-  }, [chartConfig, flowGeoJson, flowLayerOptions, mapBootstrapKey, mapRuntimeEpoch, overlayGeoJson, style, styleKey, syncOverlayRuntime]);
+  }, [chartConfig, flowGeoJson, flowLayerOptions, mapBootstrapKey, mapRuntimeEpoch, overlayGeoJson, resyncFlowLayers, style, styleKey]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -561,9 +586,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    syncGisOverlayData(map, overlayGeoJson);
-    syncGisFlowData(map, flowGeoJson, flowLayerOptions);
-  }, [flowGeoJson, flowLayerOptions, mapRuntimeEpoch, overlayGeoJson]);
+    resyncFlowLayers(map);
+  }, [flowGeoJson, flowLayerOptions, mapRuntimeEpoch, overlayGeoJson, resyncFlowLayers]);
 
   useEffect(() => {
     const map = mapRef.current;

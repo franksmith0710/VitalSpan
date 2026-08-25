@@ -193,7 +193,8 @@ function buildGisFlowPulsePaint(resolved: ResolvedGisFlowStyle): Record<string, 
   };
 }
 
-function buildGisFlowFallbackLayerDefinitions(
+/** 写入 style JSON 的安全图层（无嵌套表达式）；完整视觉效果由 runtime sync 叠加。 */
+export function buildGisFlowStyleEmbedDefinitions(
   flowGeoJson: GeoJSON.FeatureCollection,
   options: GisFlowLayerOptions,
 ) {
@@ -241,37 +242,66 @@ function markFlowSyncState(map: MapLibreMap, payload: GeoJSON.FeatureCollection,
   host.dataset.flowLayerReady = map.getLayer(GIS_FLOW_LINE_LAYER_ID) ? "1" : "0";
 }
 
+function ensureGisFlowVisualLayers(map: MapLibreMap, options: GisFlowLayerOptions) {
+  const resolved = resolveGisFlowStyle(options.flow, options.chartColors);
+  const lineWidth = buildGisFlowLineWidth(resolved);
+  const lineLayout = { "line-join": "round" as const, "line-cap": "round" as const };
+  const extras: LayerSpecification[] = [
+    {
+      id: GIS_FLOW_SHADOW_LAYER_ID,
+      type: "line",
+      source: GIS_FLOW_SOURCE_ID,
+      filter: GIS_FLOW_LINE_FILTER,
+      layout: lineLayout,
+      paint: buildGisFlowShadowPaint(resolved, lineWidth),
+    },
+    {
+      id: GIS_FLOW_GLOW_LAYER_ID,
+      type: "line",
+      source: GIS_FLOW_SOURCE_ID,
+      filter: GIS_FLOW_LINE_FILTER,
+      layout: lineLayout,
+      paint: buildGisFlowGlowPaint(resolved, lineWidth),
+    },
+    {
+      id: GIS_FLOW_PULSE_LAYER_ID,
+      type: "line",
+      source: GIS_FLOW_SOURCE_ID,
+      filter: GIS_FLOW_LINE_FILTER,
+      layout: lineLayout,
+      paint: buildGisFlowPulsePaint(resolved),
+    },
+  ];
+  for (const layer of extras) {
+    if (map.getLayer(layer.id)) continue;
+    try {
+      map.addLayer(layer);
+    } catch {
+      // 光晕/脉冲失败不影响主飞线
+    }
+  }
+}
+
 function mountGisFlowStack(
   map: MapLibreMap,
   payload: GeoJSON.FeatureCollection,
   options: GisFlowLayerOptions,
 ): boolean {
   try {
-    const { source, layers } = buildGisFlowLayerDefinitions(payload, options);
-    if (!map.getSource(source.id)) {
-      map.addSource(source.id, source.spec);
+    const embed = buildGisFlowStyleEmbedDefinitions(payload, options);
+    if (!map.getSource(embed.source.id)) {
+      map.addSource(embed.source.id, embed.source.spec);
     }
-    for (const layer of layers) {
+    for (const layer of embed.layers) {
       if (!map.getLayer(layer.id)) {
         map.addLayer(layer);
       }
     }
-    return Boolean(map.getLayer(GIS_FLOW_LINE_LAYER_ID));
+    if (!map.getLayer(GIS_FLOW_LINE_LAYER_ID)) return false;
+    ensureGisFlowVisualLayers(map, options);
+    return true;
   } catch {
-    try {
-      const fallback = buildGisFlowFallbackLayerDefinitions(payload, options);
-      if (!map.getSource(fallback.source.id)) {
-        map.addSource(fallback.source.id, fallback.source.spec);
-      }
-      for (const layer of fallback.layers) {
-        if (!map.getLayer(layer.id)) {
-          map.addLayer(layer);
-        }
-      }
-      return Boolean(map.getLayer(GIS_FLOW_LINE_LAYER_ID));
-    } catch {
-      return false;
-    }
+    return false;
   }
 }
 
@@ -383,6 +413,10 @@ export function syncGisFlowData(
         return false;
       }
       source.setData(payload);
+      if (options && shouldAppendGisFlowLayers(options)) {
+        ensureGisFlowVisualLayers(map, options);
+        syncGisFlowLinePaint(map, options);
+      }
       moveFlowLayersToTop(map);
       markFlowSyncState(map, payload, true);
       return true;
@@ -400,31 +434,45 @@ export function syncGisFlowData(
   whenGisMapStyleReady(map, apply);
 }
 
-export function syncGisFlowStyle(map: MapLibreMap, options: GisFlowLayerOptions) {
-  whenGisMapStyleReady(map, () => {
-    if (!map.getLayer(GIS_FLOW_LINE_LAYER_ID)) return;
-    const resolved = resolveGisFlowStyle(options.flow, options.chartColors);
-    const lineWidth = buildGisFlowLineWidth(resolved);
-    const paintByLayer: Record<string, Record<string, unknown>> = {
-      [GIS_FLOW_SHADOW_LAYER_ID]: buildGisFlowShadowPaint(resolved, lineWidth),
-      [GIS_FLOW_GLOW_LAYER_ID]: buildGisFlowGlowPaint(resolved, lineWidth),
-      [GIS_FLOW_LINE_LAYER_ID]: buildGisFlowLinePaint(resolved),
-      [GIS_FLOW_PULSE_LAYER_ID]: buildGisFlowPulsePaint(resolved),
-    };
-    for (const [layerId, paint] of Object.entries(paintByLayer)) {
-      if (!map.getLayer(layerId)) continue;
-      for (const [key, value] of Object.entries(paint)) {
+function syncGisFlowLinePaint(map: MapLibreMap, options: GisFlowLayerOptions) {
+  if (!map.getLayer(GIS_FLOW_LINE_LAYER_ID)) return;
+  const resolved = resolveGisFlowStyle(options.flow, options.chartColors);
+  const lineWidth = buildGisFlowLineWidth(resolved);
+  const paintByLayer: Record<string, Record<string, unknown>> = {
+    [GIS_FLOW_SHADOW_LAYER_ID]: buildGisFlowShadowPaint(resolved, lineWidth),
+    [GIS_FLOW_GLOW_LAYER_ID]: buildGisFlowGlowPaint(resolved, lineWidth),
+    [GIS_FLOW_LINE_LAYER_ID]: buildGisFlowLinePaint(resolved),
+    [GIS_FLOW_PULSE_LAYER_ID]: buildGisFlowPulsePaint(resolved),
+  };
+  for (const [layerId, paint] of Object.entries(paintByLayer)) {
+    if (!map.getLayer(layerId)) continue;
+    for (const [key, value] of Object.entries(paint)) {
+      try {
         map.setPaintProperty(layerId, key, value);
+      } catch {
+        // 单层样式失败不阻断主飞线
       }
     }
-    if (map.getLayer(GIS_FLOW_HUB_LAYER_ID)) {
+  }
+  if (map.getLayer(GIS_FLOW_HUB_LAYER_ID)) {
+    try {
       map.setPaintProperty(GIS_FLOW_HUB_LAYER_ID, "circle-color", [
         "coalesce",
         ["get", "color"],
         resolved.color,
       ]);
       map.setPaintProperty(GIS_FLOW_HUB_LAYER_ID, "circle-opacity", resolved.opacity);
+    } catch {
+      // ignore
     }
+  }
+}
+
+export function syncGisFlowStyle(map: MapLibreMap, options: GisFlowLayerOptions) {
+  whenGisMapStyleReady(map, () => {
+    if (!map.getLayer(GIS_FLOW_LINE_LAYER_ID)) return;
+    ensureGisFlowVisualLayers(map, options);
+    syncGisFlowLinePaint(map, options);
     moveFlowLayersToTop(map);
   });
 }

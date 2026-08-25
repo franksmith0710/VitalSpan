@@ -6,7 +6,7 @@ import {
   type GisOverlayLayerOptions,
 } from "@/components/charts/engine/maplibre/gisMapOverlayStyle";
 import {
-  buildGisFlowLayerDefinitions,
+  buildGisFlowStyleEmbedDefinitions,
   emptyGisFlowGeoJson,
   type GisFlowLayerOptions,
   shouldAppendGisFlowLayers,
@@ -141,7 +141,7 @@ export function appendGisFlowLayers(
     return style;
   }
   const data = flow ?? emptyGisFlowGeoJson();
-  const { source, layers } = buildGisFlowLayerDefinitions(data, options);
+  const { source, layers } = buildGisFlowStyleEmbedDefinitions(data, options);
   return {
     ...style,
     sources: {
