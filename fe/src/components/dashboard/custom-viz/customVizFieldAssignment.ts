@@ -2,6 +2,7 @@ import { classifyDatasetField, groupDatasetFields } from "../datasetFieldClassif
 import type { CustomVizDataBinding, CustomVizMetricRef } from "../layoutUtils";
 import {
   expandCustomVizFieldSlotsForUi,
+  isCustomVizDetailTableFieldSlots,
   parseCustomVizFieldSlotGroupsForUi,
   type CustomVizFieldTarget,
 } from "./customVizFieldSlots";
@@ -56,7 +57,7 @@ export function suggestCustomVizFields(
   const metrics: CustomVizMetricRef[] = [];
 
   if (dimGroup) {
-    const detailTable = dimGroup.uiMode === "multi" && (!metricGroup || metricGroup.min === 0);
+    const detailTable = isCustomVizDetailTableFieldSlots(fieldSlots);
     if (detailTable) {
       const fields = dimCols.length > 0 ? [...dimCols, ...metricCols] : columns;
       const seen = new Set<string>();
@@ -71,7 +72,7 @@ export function suggestCustomVizFields(
     }
   }
 
-  if (metricGroup && metricGroup.min > 0) {
+  if (metricGroup && metricGroup.min > 0 && !isCustomVizDetailTableFieldSlots(fieldSlots)) {
     const field =
       metricCols[0] ?? columns.find((col) => !dimensions.some((d) => d.field === col));
     if (field) metrics.push({ field, agg: "sum" });
@@ -103,7 +104,7 @@ export function validateCustomVizFieldAssignment(
   const fieldKind = classifyDatasetField(trimmed);
   const dimGroup = resolveCustomVizFieldGroup(fieldSlots, "dimension");
   const metricGroup = resolveCustomVizFieldGroup(fieldSlots, "metric");
-  const detailTable = dimGroup?.uiMode === "multi" && (!metricGroup || metricGroup.min === 0);
+  const detailTable = isCustomVizDetailTableFieldSlots(fieldSlots);
 
   if (target.kind === "dimension" && fieldKind === "metric" && !detailTable) {
     return {

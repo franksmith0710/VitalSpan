@@ -46,6 +46,7 @@ import {
   captureGeo3dOrbitSnapshot,
 } from "@/components/charts/engine/three/threeGeoOrbit";
 import {
+  GEO3D_ORBIT_STATE_VERSION,
   readGeo3dOrbitState,
   writeGeo3dOrbitState,
 } from "@/components/charts/engine/three/geo3dOrbitState";
@@ -227,6 +228,7 @@ export async function renderThreeChoroplethChart(
     renderTier = "full",
     instanceKey,
     areaMapping,
+    onOrbitViewChange,
   } = config;
 
   if (width <= 0 || height <= 0) {
@@ -612,11 +614,23 @@ export async function renderThreeChoroplethChart(
       enableDamping: orbitDamping,
     });
     const savedOrbit = readGeo3dOrbitState(orbitStateKey);
-    if (savedOrbit) {
+    const persistedOrbitView = geo3dStyle.orbitViews?.[resolvedMapId];
+    if (persistedOrbitView) {
+      applyGeo3dOrbitSnapshot(camera, controls, {
+        v: GEO3D_ORBIT_STATE_VERSION,
+        target: persistedOrbitView.target,
+        position: persistedOrbitView.position,
+      });
+    } else if (savedOrbit) {
       applyGeo3dOrbitSnapshot(camera, controls, savedOrbit);
     }
     const persistOrbit = () => {
-      writeGeo3dOrbitState(orbitStateKey, captureGeo3dOrbitSnapshot(camera, controls));
+      const snapshot = captureGeo3dOrbitSnapshot(camera, controls);
+      writeGeo3dOrbitState(orbitStateKey, snapshot);
+      onOrbitViewChange?.({
+        target: snapshot.target,
+        position: snapshot.position,
+      });
     };
     const detachGrabCursor = attachOrbitGrabCursor(renderer.domElement, controls, roam);
 

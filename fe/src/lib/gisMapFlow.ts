@@ -1,4 +1,5 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
+import type { DeAxisId } from "@/lib/chartDeAxis";
 import { ensureChartSlotCapacity } from "@/components/dashboard/chartFieldSlots";
 import { writeGisProject } from "@/components/charts/engine/maplibre/gisProject";
 
@@ -7,6 +8,64 @@ export const GIS_MAP_FLOW_SAMPLE_SQL = `SELECT route_name, from_lng, from_lat, t
 FROM de_map_od_hubs`;
 
 export const DEMO_MAP_FLOW_DATASET_ID = "demo-map-flow";
+
+export const GIS_MAP_OD_CORE_COLUMNS = ["from_lng", "from_lat", "to_lng", "to_lat"] as const;
+
+const LNG_NAME_PATTERN = /(?:^|_)(lng|lon|longitude|经度|x_coord)(?:$|_)/i;
+const LAT_NAME_PATTERN = /(?:^|_)(lat|latitude|纬度|y_coord)(?:$|_)/i;
+const GEO_NAME_PATTERN =
+  /(?:^|_)(region|province|city|district|area|country|state|county|name|route|地区|省份|城市|区县|国家)(?:$|_)/i;
+
+export type GisMapOdFieldSlot = { axisId: DeAxisId; index: number };
+
+const GIS_MAP_OD_FIELD_SLOTS: Record<string, GisMapOdFieldSlot> = {
+  from_lng: { axisId: "xAxis", index: 0 },
+  from_lat: { axisId: "xAxisExt", index: 0 },
+  to_lng: { axisId: "drill", index: 0 },
+  to_lat: { axisId: "drill", index: 1 },
+  route_name: { axisId: "drill", index: 2 },
+  weight: { axisId: "yAxis", index: 0 },
+};
+
+export function looksLikeGisLngField(field: string): boolean {
+  return LNG_NAME_PATTERN.test(field.trim());
+}
+
+export function looksLikeGisLatField(field: string): boolean {
+  return LAT_NAME_PATTERN.test(field.trim());
+}
+
+export function looksLikeGisGeoLabelField(field: string): boolean {
+  const trimmed = field.trim();
+  return GEO_NAME_PATTERN.test(trimmed) && !looksLikeGisLngField(trimmed) && !looksLikeGisLatField(trimmed);
+}
+
+export function detectGisMapOdColumns(columns: string[]): boolean {
+  const set = new Set(columns.map((c) => c.trim()));
+  return GIS_MAP_OD_CORE_COLUMNS.every((name) => set.has(name));
+}
+
+export function resolveGisMapOdFieldSlot(field: string): GisMapOdFieldSlot | null {
+  return GIS_MAP_OD_FIELD_SLOTS[field.trim()] ?? null;
+}
+
+export function suggestGisMapOdFields(columns: string[]): {
+  dimensions: ChartViewConfig["dimensions"];
+  metrics: ChartViewConfig["metrics"];
+} | null {
+  if (!detectGisMapOdColumns(columns)) return null;
+  const set = new Set(columns.map((c) => c.trim()));
+  return {
+    dimensions: [
+      { field: "from_lng" },
+      { field: "from_lat" },
+      { field: "to_lng" },
+      { field: "to_lat" },
+      ...(set.has("route_name") ? [{ field: "route_name" }] : []),
+    ],
+    metrics: set.has("weight") ? [{ field: "weight" }] : [],
+  };
+}
 
 export function applyGisMapFlowConfig(
   cfg: ChartViewConfig,

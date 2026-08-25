@@ -84,6 +84,10 @@ export type ChartEngineViewProps = {
   onLinkageClick?: (payload: { name: string; value: string }) => void;
   /** 表格行列拖拽结果写回 deTableStyle（看板编辑态） */
   onTableStylePatch?: (patch: Partial<import("@/lib/chartDeTableStyle").ChartDeTableStyle>) => void;
+  /** 2D 地图缩放平移写回 deStyle.geo.viewTransforms */
+  onGeoViewTransformChange?: (mapId: string, transform: import("@/lib/chartGeoViewState").ChartGeoViewTransform | undefined) => void;
+  /** 3D 地图 orbit 视角写回 deStyle.geo3d.orbitViews */
+  onGeo3dOrbitViewChange?: (mapId: string, view: import("@/lib/chartGeoViewState").ChartGeo3dOrbitView | undefined) => void;
   /** 像素画布逻辑尺寸（松手 commit 后驱动引擎 remeasure） */
   layoutFootprint?: { width: number; height: number };
   /** 3D 地图渲染档位：列表缩略图 / 内嵌 / 全屏预览 */

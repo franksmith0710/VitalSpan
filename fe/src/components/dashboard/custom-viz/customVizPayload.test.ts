@@ -9,7 +9,7 @@ import {
 } from "@/components/dashboard/custom-viz/customVizPayload";
 
 describe("resolveCustomVizBindingStatus", () => {
-  it("returns unbound when execute is not ready", () => {
+  it("returns unbound when execute is not ready and no slot hint", () => {
     expect(
       resolveCustomVizBindingStatus({
         executeReady: false,
@@ -18,6 +18,18 @@ describe("resolveCustomVizBindingStatus", () => {
         rows: [[1]],
       }),
     ).toBe("unbound");
+  });
+
+  it("returns error with slot hint when dataset is connected but fields are incomplete", () => {
+    expect(
+      resolveCustomVizBindingStatus({
+        executeReady: false,
+        loading: false,
+        error: null,
+        rows: [],
+        slotBindingHint: "至少绑定 1 个数值列",
+      }),
+    ).toBe("error");
   });
 
   it("returns error when execute fails", () => {
@@ -67,6 +79,20 @@ describe("buildCustomVizRuntimePayload", () => {
     expect(payload.protocolVersion).toBe(CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION);
     expect(payload.bindingStatus).toBe("error");
     expect(payload.error).toBe("查询失败");
+  });
+
+  it("surfaces slot binding hint as payload error when execute is blocked", () => {
+    const payload = buildCustomVizRuntimePayload({
+      executeReady: false,
+      loading: false,
+      error: null,
+      columns: [],
+      rows: [],
+      style: {},
+      slotBindingHint: "至少绑定 1 个数值列",
+    });
+    expect(payload.bindingStatus).toBe("error");
+    expect(payload.error).toBe("至少绑定 1 个数值列");
   });
 
   it("includes encoding when bound fields provided", () => {

@@ -64,6 +64,32 @@ describe("validateCustomVizFieldAssignment", () => {
     ).toBe(true);
   });
 
+  it("accepts numeric columns in dimension slots when manifest wrongly requires metrics", () => {
+    expect(
+      validateCustomVizFieldAssignment(
+        "amount",
+        { kind: "dimension", index: 1 },
+        {
+          dimensions: { min: 1, max: 6, label: "明细列" },
+          metrics: { min: 1, max: 1, label: "数值列" },
+        },
+        "明细列",
+      ).ok,
+    ).toBe(true);
+  });
+
+  it("suggestCustomVizFields fills detail-table columns even when metrics.min is wrongly set", () => {
+    const { dimensions, metrics } = suggestCustomVizFields(
+      ["flow_id", "flow_name", "amount"],
+      {
+        dimensions: { min: 1, max: 6, label: "明细列" },
+        metrics: { min: 1, max: 1, label: "数值列" },
+      },
+    );
+    expect(dimensions?.map((d) => d.field)).toEqual(["flow_id", "flow_name", "amount"]);
+    expect(metrics).toEqual([]);
+  });
+
   it("suggestCustomVizFields fills detail-table columns", () => {
     const { dimensions, metrics } = suggestCustomVizFields(
       ["province", "city", "district", "amount"],

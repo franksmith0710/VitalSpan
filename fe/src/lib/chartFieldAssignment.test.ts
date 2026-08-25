@@ -88,4 +88,29 @@ describe("chartFieldAssignment", () => {
       expect(result.error).toContain("已在");
     }
   });
+
+  it("gis-map routes OD columns to correct slots", () => {
+    const cfg = { chartType: "gis-map" as const, dimensions: [], metrics: [] };
+    expect(resolveAutoAssignTarget(cfg, "gis-map", "from_lng")).toEqual({
+      target: { axisId: "xAxis", index: 0 },
+    });
+    expect(resolveAutoAssignTarget(cfg, "gis-map", "to_lat")).toEqual({
+      target: { axisId: "drill", index: 1 },
+    });
+    expect(resolveAutoAssignTarget(cfg, "gis-map", "route_name")).toEqual({
+      target: { axisId: "drill", index: 2 },
+    });
+  });
+
+  it("gis-map rejects route_name in start longitude slot", () => {
+    const result = validateFieldAssignment(
+      "route_name",
+      { axisId: "xAxis", index: 0 },
+      "gis-map",
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain("起点经度");
+    }
+  });
 });

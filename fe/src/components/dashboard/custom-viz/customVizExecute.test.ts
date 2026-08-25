@@ -46,6 +46,25 @@ describe("customVizExecute", () => {
     ).toBe(true);
   });
 
+  it("is execute-ready when manifest wrongly requires metrics but detail table columns are bound", () => {
+    expect(
+      isCustomVizExecuteReady(
+        {
+          status: "connected",
+          dataSourceId: "ds-1",
+          datasetId: "set-1",
+          configId: "cfg-1",
+          dimensions: [{ field: "flow_id" }, { field: "flow_name" }, { field: "status" }],
+          metrics: [],
+        },
+        {
+          dimensions: { min: 1, max: 6, label: "明细列" },
+          metrics: { min: 1, max: 1, label: "数值列" },
+        },
+      ),
+    ).toBe(true);
+  });
+
   it("is not execute-ready when fields are empty", () => {
     expect(
       isCustomVizExecuteReady({

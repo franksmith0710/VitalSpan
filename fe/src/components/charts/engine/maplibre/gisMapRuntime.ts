@@ -152,10 +152,29 @@ export function startGisGlobeAutoRotate(
 ): () => void {
   let frameId = 0;
   let last = performance.now();
+  let pausedByInteraction = false;
+
+  const pauseForInteraction = () => {
+    pausedByInteraction = true;
+  };
+  const resumeAfterInteraction = () => {
+    pausedByInteraction = false;
+    last = performance.now();
+  };
+
+  map.on("dragstart", pauseForInteraction);
+  map.on("dragend", resumeAfterInteraction);
+  map.on("zoomstart", pauseForInteraction);
+  map.on("zoomend", resumeAfterInteraction);
+  map.on("rotatestart", pauseForInteraction);
+  map.on("rotateend", resumeAfterInteraction);
+  map.on("pitchstart", pauseForInteraction);
+  map.on("pitchend", resumeAfterInteraction);
+
   const tick = (now: number) => {
     const deltaSec = Math.min((now - last) / 1000, 0.1);
     last = now;
-    if (map.isStyleLoaded()) {
+    if (!pausedByInteraction && map.isStyleLoaded()) {
       const center = map.getCenter();
       const lng = advanceGlobeLongitude(center.lng, speedDegPerSec, deltaSec);
       if (lng !== center.lng) {
@@ -165,5 +184,15 @@ export function startGisGlobeAutoRotate(
     frameId = requestAnimationFrame(tick);
   };
   frameId = requestAnimationFrame(tick);
-  return () => cancelAnimationFrame(frameId);
+  return () => {
+    cancelAnimationFrame(frameId);
+    map.off("dragstart", pauseForInteraction);
+    map.off("dragend", resumeAfterInteraction);
+    map.off("zoomstart", pauseForInteraction);
+    map.off("zoomend", resumeAfterInteraction);
+    map.off("rotatestart", pauseForInteraction);
+    map.off("rotateend", resumeAfterInteraction);
+    map.off("pitchstart", pauseForInteraction);
+    map.off("pitchend", resumeAfterInteraction);
+  };
 }

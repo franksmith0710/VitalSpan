@@ -130,6 +130,24 @@ def test_style_compliance_warns_html_without_mount_or_style() -> None:
     assert "AIVIZ_WARN_STYLE_COMPLIANCE" in codes
 
 
+def test_style_compliance_warns_detail_table_with_required_metrics() -> None:
+    manifest = {
+        **_MIN_MANIFEST,
+        "runtime": "html",
+        "fieldSlots": {
+            "dimensions": {"min": 1, "max": 6, "label": "明细列"},
+            "metrics": {"min": 1, "max": 1, "label": "数值列"},
+        },
+    }
+    warnings = collect_bundle_style_compliance_warnings(
+        {"index.html": "<html><script>host.vsCv.mount(function(){});</script></html>"},
+        "index.html",
+        manifest,
+    )
+    codes = {item.code for item in warnings}
+    assert "AIVIZ_WARN_DETAIL_TABLE_METRICS" in codes
+
+
 def test_style_compliance_accepts_payload_style_only() -> None:
     html = (
         "<!DOCTYPE html><html><body><script>"

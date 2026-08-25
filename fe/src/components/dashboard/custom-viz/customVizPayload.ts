@@ -41,8 +41,12 @@ export function resolveCustomVizBindingStatus(args: {
   loading: boolean;
   error: string | null;
   rows: (string | number | boolean | null)[][];
+  slotBindingHint?: string | null;
 }): CustomVizBindingStatus {
-  if (!args.executeReady) return "unbound";
+  if (!args.executeReady) {
+    if (args.slotBindingHint) return "error";
+    return "unbound";
+  }
   if (args.error) return "error";
   if (args.loading && args.rows.length === 0) return "unbound";
   if (args.rows.length === 0) return "empty";
@@ -63,8 +67,15 @@ export function buildCustomVizRuntimePayload(args: {
   layout?: CustomVizRuntimeLayout;
   truncated?: boolean;
   rowCap?: number;
+  slotBindingHint?: string | null;
 }): CustomVizRuntimePayload {
-  const bindingStatus = resolveCustomVizBindingStatus(args);
+  const bindingStatus = resolveCustomVizBindingStatus({
+    executeReady: args.executeReady,
+    loading: args.loading,
+    error: args.error,
+    rows: args.rows,
+    slotBindingHint: args.slotBindingHint,
+  });
   const payload: CustomVizRuntimePayload = {
     protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
     bindingStatus,
@@ -88,6 +99,8 @@ export function buildCustomVizRuntimePayload(args: {
   }
   if (bindingStatus === "error" && args.error) {
     payload.error = args.error;
+  } else if (bindingStatus === "error" && args.slotBindingHint) {
+    payload.error = args.slotBindingHint;
   }
   return payload;
 }

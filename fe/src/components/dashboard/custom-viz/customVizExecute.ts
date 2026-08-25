@@ -2,7 +2,10 @@ import { patchChartDeDisplay } from "@/lib/chartDeDisplay";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
 import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import type { CustomVizDataBinding, CustomVizMetricRef, CustomVizWidgetConfig } from "../layoutUtils";
-import { parseCustomVizFieldSlotGroupsForUi, parseCustomVizFieldSlots } from "./customVizFieldSlots";
+import {
+  countBoundCustomVizFields,
+  resolveCustomVizFieldMinimums,
+} from "./customVizFieldMinimums";
 
 function metricsAsChartFields(metrics: CustomVizMetricRef[] | undefined): ChartFieldRef[] {
   return (metrics ?? []).filter((m) => m.field?.trim());
@@ -33,13 +36,12 @@ export function isCustomVizExecuteReady(
 ): boolean {
   const cfg = customVizBindingToChartConfig(binding);
   if (!isChartExecuteReady(cfg)) return false;
-  const dims = binding?.dimensions?.filter((d) => d.field?.trim()).length ?? 0;
-  const metrics = binding?.metrics?.filter((m) => m.field?.trim()).length ?? 0;
-  const slotDefs = parseCustomVizFieldSlots(fieldSlots);
-  const dimMin = slotDefs.find((g) => g.kind === "dimension")?.min ?? 1;
-  const metricMin = slotDefs.find((g) => g.kind === "metric")?.min ?? 1;
+  const { dimensions: dims, metrics } = countBoundCustomVizFields(binding);
+  const { dimMin, metricMin } = resolveCustomVizFieldMinimums(fieldSlots, binding);
   return dims >= dimMin && metrics >= metricMin;
 }
+
+export { resolveCustomVizSlotBindingHint } from "./customVizFieldMinimums";
 
 export function resolveCustomVizStyle(
   manifestDefault: Record<string, unknown> | undefined,

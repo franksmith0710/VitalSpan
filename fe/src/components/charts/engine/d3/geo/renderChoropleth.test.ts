@@ -340,4 +340,43 @@ describe("renderD3ChoroplethChart", () => {
     dispose();
     document.body.removeChild(container);
   });
+
+  it("restores saved view transform and notifies on zoom end", async () => {
+    vi.useFakeTimers();
+    const container = document.createElement("div");
+    container.style.width = "400px";
+    container.style.height = "320px";
+    document.body.appendChild(container);
+    const onViewTransformChange = vi.fn();
+
+    const dispose = renderD3ChoroplethChart(container, {
+      width: 400,
+      height: 320,
+      rows: [["广东省", 320]],
+      columns: ["province", "value"],
+      regionField: "province",
+      metricField: "value",
+      theme: resolveD3Theme("light"),
+      showTooltip: false,
+      colors: ["#1653a9"],
+      geoStyle: {
+        viewTransform: { x: 20, y: 10, k: 1.5 },
+      },
+      onViewTransformChange,
+    });
+
+    const zoomRoot = container.querySelector("g.map-zoom-root");
+    expect(zoomRoot?.getAttribute("transform")).toContain("translate(20,10)");
+    expect(zoomRoot?.getAttribute("transform")).toContain("scale(1.5)");
+
+    const svg = container.querySelector("svg");
+    expect(svg).toBeTruthy();
+    svg?.dispatchEvent(new WheelEvent("wheel", { bubbles: true, cancelable: true }));
+    await vi.runAllTimersAsync();
+    expect(onViewTransformChange).toHaveBeenCalled();
+
+    dispose();
+    document.body.removeChild(container);
+    vi.useRealTimers();
+  });
 });

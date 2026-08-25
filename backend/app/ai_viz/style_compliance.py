@@ -104,6 +104,30 @@ def resolve_style_compliance_tier(
     return "partial"
 
 
+def _collect_field_slot_warnings(manifest: dict) -> list[StyleComplianceWarning]:
+    field_slots = manifest.get("fieldSlots")
+    if not isinstance(field_slots, dict):
+        return []
+    dim_rule = field_slots.get("dimensions")
+    metric_rule = field_slots.get("metrics")
+    if not isinstance(dim_rule, dict) or not isinstance(metric_rule, dict):
+        return []
+    dim_max = dim_rule.get("max") if isinstance(dim_rule.get("max"), int) else 1
+    metric_min = metric_rule.get("min") if isinstance(metric_rule.get("min"), int) else 1
+    metric_max = metric_rule.get("max") if isinstance(metric_rule.get("max"), int) else 1
+    if dim_max > 1 and metric_min >= 1 and metric_max > 0:
+        return [
+            StyleComplianceWarning(
+                code="AIVIZ_WARN_DETAIL_TABLE_METRICS",
+                message=(
+                    "明细表/流动表应设 metrics.min=0, max=0；"
+                    "当前 dimensions.max>1 且 metrics.min>=1 会导致仅绑维度列时无法出数"
+                ),
+            )
+        ]
+    return []
+
+
 def collect_bundle_style_compliance_warnings(
     files: dict[str, str],
     entry: str,
@@ -115,6 +139,7 @@ def collect_bundle_style_compliance_warnings(
     runtime = _resolve_runtime(manifest)
     warnings: list[StyleComplianceWarning] = []
 
+    warnings.extend(_collect_field_slot_warnings(manifest))
     warnings.extend(_collect_style_hook_warnings(manifest))
 
     if runtime == "html" and "vsCv.mount" not in entry_html:

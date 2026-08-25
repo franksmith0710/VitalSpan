@@ -165,6 +165,11 @@ export function buildGisFlowGeoJson(
 
 export function gisFlowFieldsReady(config: ChartViewConfig): boolean {
   if (!isGisFlowEnabled(config.nativeBody?.gisProject)) return false;
-  const dims = activeFieldRefs(config.dimensions);
-  return Boolean(dims[0]?.field?.trim() && dims[1]?.field?.trim() && dims[2]?.field?.trim() && dims[3]?.field?.trim());
+  const dims = resolveGisMapFlowDimensions(config);
+  return Boolean(
+    dims[0]?.field?.trim() &&
+      dims[1]?.field?.trim() &&
+      dims[2]?.field?.trim() &&
+      dims[3]?.field?.trim(),
+  );
 }

@@ -2,6 +2,7 @@ import type { AntvThemeTokens } from "@/components/charts/engine/antv/theme";
 import type { ChartConditionalRule, ChartMarkLine } from "@/lib/chartDeFeatures";
 import type { NumberFormatConfig } from "@/components/dashboard/dashboardStyleConfig";
 import type { ChartGeoStyle, ChartGeo3dStyle } from "@/lib/chartDeStyle";
+import type { ChartGeo3dOrbitView, ChartGeoViewTransform } from "@/lib/chartGeoViewState";
 import type { Geo3dRenderTier } from "@/components/charts/engine/three/geo3dRuntime";
 import type { D3LegendPresentation, D3TooltipPresentation } from "@/components/charts/engine/d3/core/presentation";
 import type { DataLabelContentOptions } from "@/lib/chartDataLabelFormat";
@@ -131,6 +132,7 @@ export type D3GeoStyleProps = {
   regionLabelColor?: string;
   regionLabelFontSize?: number;
   regionBorderWidth?: number;
+  viewTransform?: ChartGeoViewTransform;
 };
 
 export type D3GeoRenderConfig = D3RenderConfigBase & {
@@ -153,6 +155,8 @@ export type D3GeoRenderConfig = D3RenderConfigBase & {
   onPointClick?: (datum: { name: string; value: number; adcode?: number }) => void;
   /** 地图双击下钻（与单击跳转/联动分离） */
   onDrillClick?: (datum: { name: string; value: number; adcode?: number }) => void;
+  onViewTransformChange?: (transform: ChartGeoViewTransform | undefined) => void;
+  onOrbitViewChange?: (view: ChartGeo3dOrbitView | undefined) => void;
 };
 
 export type D3MatrixCell = { x: string; y: string; value: number };

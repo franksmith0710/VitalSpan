@@ -16,6 +16,7 @@ import { WIDGET_CHART_LABELS } from "./widgetIcons";
 import { resolveAutoAssignTarget } from "@/lib/chartFieldAssignment";
 import { appendAxisField, writeAxisField } from "@/lib/resolveChartEncoding";
 import { isDemoPackageDataset } from "@/lib/demoPackage";
+import { applyGisMapFlowConfig, DEMO_MAP_FLOW_DATASET_ID, detectGisMapOdColumns } from "@/lib/gisMapFlow";
 import { pickChartNativeBodyUi } from "@/lib/chartNativeBodyUi";
 import type { SlotTarget } from "./chartInspectorTypes";
 
@@ -109,15 +110,22 @@ export function useChartInspectorState(
         setDatasetBindingError("该 Dataset 尚未绑定查询配置，请先在数据集管理中绑定");
       }
 
-      emitChange({
+      const nextBase = {
         ...current,
-        mode: "dataset",
+        mode: "dataset" as const,
         datasetId,
         configId: boundId,
         dataSourceId,
         sql: undefined,
         nativeBody: pickChartNativeBodyUi(current.nativeBody),
-      });
+      };
+
+      if (current.chartType === "gis-map" && datasetId === DEMO_MAP_FLOW_DATASET_ID) {
+        emitChange(applyGisMapFlowConfig(nextBase, dataSourceId, boundId));
+        return;
+      }
+
+      emitChange(nextBase);
     },
     [datasetItems, emitChange, readChartConfig],
   );
@@ -201,6 +209,10 @@ export function useChartInspectorState(
     if (autoFieldsRef.current === autoKey) return;
     autoFieldsRef.current = autoKey;
     const suggested = suggestChartFields(columns, current.chartType);
+    if (current.chartType === "gis-map" && detectGisMapOdColumns(columns)) {
+      emitChange(applyGisMapFlowConfig({ ...current, ...suggested }, current.dataSourceId, current.configId));
+      return;
+    }
     emitChange({ ...current, ...suggested });
   }, [columns, columnsKey, emitChange, readChartConfig]);
 

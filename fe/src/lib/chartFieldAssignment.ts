@@ -4,6 +4,12 @@ import {
 } from "@/components/dashboard/chartFieldSlots";
 import { classifyDatasetField } from "@/components/dashboard/datasetFieldClassification";
 import type { SlotTarget } from "@/components/dashboard/chartInspectorTypes";
+import {
+  looksLikeGisGeoLabelField,
+  looksLikeGisLatField,
+  looksLikeGisLngField,
+  resolveGisMapOdFieldSlot,
+} from "@/lib/gisMapFlow";
 import { axisFieldList, fieldAtSlot } from "@/lib/resolveChartEncoding";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
@@ -38,6 +44,13 @@ export function validateFieldAssignment(
   }
 
   const fieldKind = classifyDatasetField(trimmed);
+
+  if (chartType === "gis-map") {
+    const odSlot = resolveGisMapOdFieldSlot(trimmed);
+    if (odSlot && odSlot.axisId === target.axisId && odSlot.index === target.index) {
+      return { ok: true };
+    }
+  }
 
   if (slot.kind === "dimension" && fieldKind === "metric") {
     return {
@@ -88,6 +101,41 @@ export function validateFieldAssignment(
       ok: false,
       message: `热力图横纵轴须为维度字段，「${trimmed}」是指标字段`,
     };
+  }
+
+  if (chartType === "gis-map") {
+    if (target.axisId === "xAxis" && target.index === 0) {
+      if (looksLikeGisGeoLabelField(trimmed) || (!looksLikeGisLngField(trimmed) && fieldKind === "dimension")) {
+        return {
+          ok: false,
+          message: `「${trimmed}」不能作为起点经度。请绑定 from_lng 等数值型经度列，或点「接入 demo-map-flow」一键配置`,
+        };
+      }
+    }
+    if (target.axisId === "xAxisExt" && target.index === 0) {
+      if (looksLikeGisGeoLabelField(trimmed) || (!looksLikeGisLatField(trimmed) && fieldKind === "dimension")) {
+        return {
+          ok: false,
+          message: `「${trimmed}」不能作为起点纬度。请绑定 from_lat 等数值型纬度列`,
+        };
+      }
+    }
+    if (target.axisId === "drill" && target.index === 0) {
+      if (looksLikeGisGeoLabelField(trimmed) || (!looksLikeGisLngField(trimmed) && fieldKind === "dimension")) {
+        return {
+          ok: false,
+          message: `「${trimmed}」不能作为终点经度。请绑定 to_lng 等数值型经度列`,
+        };
+      }
+    }
+    if (target.axisId === "drill" && target.index === 1) {
+      if (looksLikeGisGeoLabelField(trimmed) || (!looksLikeGisLatField(trimmed) && fieldKind === "dimension")) {
+        return {
+          ok: false,
+          message: `「${trimmed}」不能作为终点纬度。请绑定 to_lat 等数值型纬度列`,
+        };
+      }
+    }
   }
 
   return { ok: true };
@@ -151,6 +199,15 @@ export function resolveAutoAssignTarget(
     const check = validateFieldAssignment(field, preferred, chartType);
     if (!check.ok) return { error: check.message };
     return { target: preferred };
+  }
+
+  if (chartType === "gis-map") {
+    const odSlot = resolveGisMapOdFieldSlot(field);
+    if (odSlot) {
+      const check = validateFieldAssignment(field, odSlot, chartType);
+      if (!check.ok) return { error: check.message };
+      if (!fieldAtSlot(cfg, odSlot)) return { target: odSlot };
+    }
   }
 
   for (const slot of chartDataSlotBlueprint(chartType)) {

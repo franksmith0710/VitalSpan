@@ -126,6 +126,8 @@ export type ChartGeoAreaMappingEntry = {
   to: string;
 };
 
+export type { ChartGeo3dOrbitView, ChartGeoViewTransform } from "@/lib/chartGeoViewState";
+
 export type ChartGeoStyle = {
   /** 对标 DE「地区」：离线中国省级底图（GEO-IRON-01 仅 china） */
   mapArea?: "china";
@@ -161,6 +163,8 @@ export type ChartGeoStyle = {
   regionBorderWidth?: number;
   /** 高级 · 地名映射：业务值 → 标准地名（map / map-3d 共用） */
   areaMapping?: ChartGeoAreaMappingEntry[];
+  /** 2D 地图缩放平移（按 mapId 分桶，编辑态交互后写回） */
+  viewTransforms?: Record<string, import("@/lib/chartGeoViewState").ChartGeoViewTransform>;
 };
 
 export type ChartGeo3dStyle = {
@@ -236,6 +240,8 @@ export type ChartGeo3dStyle = {
   platformSweepSpeed?: number;
   /** 环/高光尺寸倍率 0.4–1.6（相对地图） */
   platformSizeScale?: number;
+  /** 3D 地图 orbit 视角（按 mapId 分桶，编辑态交互后写回） */
+  orbitViews?: Record<string, import("@/lib/chartGeoViewState").ChartGeo3dOrbitView>;
   /** 点位特效（热力 blob / 光柱 / 浮动标签；科技预设默认开启） */
   pointEffects?: boolean;
   /** 贴地热力 blob */

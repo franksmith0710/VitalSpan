@@ -23,6 +23,7 @@ import {
   buildCustomVizRuntimeEncoding,
   customVizBindingToChartConfig,
   isCustomVizExecuteReady,
+  resolveCustomVizSlotBindingHint,
 } from "./custom-viz/customVizExecute";
 import { resolveCustomVizRuntimeStyle } from "./custom-viz/customVizDisplayStyle";
 import { buildCustomVizRuntimePayload, injectCustomVizPayload } from "./custom-viz/customVizPayload";
@@ -202,6 +203,11 @@ export function CustomVizWidget({
     [cfg.dataBinding],
   );
 
+  const slotBindingHint = useMemo(
+    () => resolveCustomVizSlotBindingHint(cfg.dataBinding, manifestFieldSlots),
+    [cfg.dataBinding, manifestFieldSlots],
+  );
+
   useEffect(() => {
     const host = hostRef.current;
     if (!host || !html) return;
@@ -218,6 +224,7 @@ export function CustomVizWidget({
         layout: hostLayout,
         truncated: rowsTruncated,
         rowCap: rowsTruncated ? ADVANCED_CHART_ROW_CAP : undefined,
+        slotBindingHint,
       }),
     );
   }, [
@@ -231,6 +238,7 @@ export function CustomVizWidget({
     executeReady,
     runtimeStyle,
     runtimeEncoding,
+    slotBindingHint,
   ]);
 
   const body = loadError ? (

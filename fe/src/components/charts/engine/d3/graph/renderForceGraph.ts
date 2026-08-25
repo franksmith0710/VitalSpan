@@ -2,6 +2,7 @@ import * as d3 from "d3";
 import { resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
+import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
 
 type GraphNodeInput = { id: string; data?: { label?: string } };
 type GraphEdgeInput = { source: string; target: string };
@@ -22,6 +23,39 @@ function positionTooltip(
     .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
 }
 
+function seedNodesInRing(nodes: SimNode[], width: number, height: number): void {
+  const cx = width / 2;
+  const cy = height / 2;
+  const radius = Math.min(width, height) * 0.28;
+  nodes.forEach((node, index) => {
+    const angle = (2 * Math.PI * index) / Math.max(nodes.length, 1) - Math.PI / 2;
+    node.x = cx + radius * Math.cos(angle);
+    node.y = cy + radius * Math.sin(angle);
+  });
+}
+
+function resolveRepulsion(
+  span: number,
+  nodeCount: number,
+  layoutType: string,
+  override: unknown,
+): number {
+  if (Number.isFinite(Number(override))) {
+    return Math.max(80, Math.abs(Number(override)));
+  }
+  const base =
+    layoutType === "dagre"
+      ? span < 280
+        ? 120
+        : 180
+      : span < 280
+        ? 160
+        : span < 420
+          ? 220
+          : 280;
+  return Math.max(base, Math.min(520, base * Math.sqrt(nodeCount / 6)));
+}
+
 export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
   const { width, height, colors, theme, showLabel, showTooltip, options, onPointClick, depthVisual, labelFontSize } =
@@ -33,6 +67,8 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
   const styleLayout = String(options.__graphLayout ?? "");
   if (width <= 0 || height <= 0 || nodesInput.length === 0) return () => undefined;
 
+  container.setAttribute(VIZ_WHEEL_ZOOM_SURFACE_ATTR, "true");
+
   const simNodes: SimNode[] = nodesInput.map((n) => ({
     id: n.id,
     label: n.data?.label ?? n.id,
@@ -41,6 +77,8 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
   const simLinks: SimLink[] = edgesInput
     .filter((e) => nodeById.has(e.source) && nodeById.has(e.target))
     .map((e) => ({ source: e.source, target: e.target }));
+
+  seedNodesInRing(simNodes, width, height);
 
   const colorScale = d3
     .scaleOrdinal<string>()
@@ -52,11 +90,13 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
     .append("svg")
     .attr("width", width)
     .attr("height", height)
-    .attr("role", "img");
+    .attr("role", "img")
+    .style("cursor", "grab");
 
-  const linkLayer = svg.append("g").attr("class", "links");
-  const nodeLayer = svg.append("g").attr("class", "nodes");
-  const defs = depthLevel !== "off" ? svg.append("defs") : null;
+  const zoomRoot = svg.append("g").attr("class", "graph-zoom-root");
+  const linkLayer = zoomRoot.append("g").attr("class", "links");
+  const nodeLayer = zoomRoot.append("g").attr("class", "nodes");
+  const defs = depthLevel !== "off" ? zoomRoot.append("defs") : null;
 
   const nodeFill = (id: string): string => {
     const color = colorScale(id) ?? colors[0] ?? "#465fff";
@@ -90,7 +130,7 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
     .data(simNodes)
     .join("g")
     .attr("class", "node")
-    .style("cursor", onPointClick ? "pointer" : "default");
+    .style("cursor", onPointClick ? "pointer" : "grab");
 
   node
     .append("circle")
@@ -127,25 +167,16 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
 
   const layoutType = styleLayout || layout.type || "force";
   const span = Math.min(width, height);
-  const repulsionBase =
-    layoutType === "dagre"
-      ? span < 280
-        ? 80
-        : 120
-      : span < 280
-        ? 90
-        : span < 420
-          ? 140
-          : 220;
-  const repulsion = Number.isFinite(Number(options.__graphRepulsion))
-    ? Math.abs(Number(options.__graphRepulsion))
-    : repulsionBase;
+  const cx = width / 2;
+  const cy = height / 2;
+  const repulsion = resolveRepulsion(span, simNodes.length, layoutType, options.__graphRepulsion);
   const edgeLength = Number.isFinite(Number(options.__graphEdgeLength))
     ? Math.abs(Number(options.__graphEdgeLength))
     : layoutType === "dagre"
       ? 56
-      : 72;
-  const chargeStrength = -repulsion;
+      : Math.max(48, Math.min(120, span * 0.18));
+  const collideRadius = showLabel ? 22 : 16;
+
   const simulation = d3
     .forceSimulation(simNodes)
     .force(
@@ -155,17 +186,16 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
         .id((d) => d.id)
         .distance(edgeLength),
     )
-    .force("charge", d3.forceManyBody().strength(chargeStrength))
-    .force("center", d3.forceCenter(width / 2, height / 2))
-    .force("collide", d3.forceCollide(18));
-
-  const boundMargin = showLabel ? Math.max(22, labelFontSize + 12) : 14;
+    .force("charge", d3.forceManyBody().strength(-repulsion))
+    .force("center", d3.forceCenter(cx, cy))
+    .force("x", d3.forceX(cx).strength(0.06))
+    .force("y", d3.forceY(cy).strength(0.06))
+    .force("collide", d3.forceCollide(collideRadius))
+    .alpha(0.9)
+    .alphaDecay(0.028)
+    .velocityDecay(0.35);
 
   simulation.on("tick", () => {
-    for (const d of simNodes) {
-      d.x = Math.max(boundMargin, Math.min(width - boundMargin, d.x ?? width / 2));
-      d.y = Math.max(boundMargin, Math.min(height - boundMargin, d.y ?? height / 2));
-    }
     link
       .attr("x1", (d) => (d.source as SimNode).x ?? 0)
       .attr("y1", (d) => (d.source as SimNode).y ?? 0)
@@ -174,8 +204,54 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
     node.attr("transform", (d) => `translate(${d.x ?? 0},${d.y ?? 0})`);
   });
 
+  const dragBehavior = d3
+    .drag<SVGGElement, SimNode>()
+    .on("start", (event, d) => {
+      event.sourceEvent.stopPropagation();
+      if (!event.active) simulation.alphaTarget(0.25).restart();
+      d.fx = d.x;
+      d.fy = d.y;
+    })
+    .on("drag", (event, d) => {
+      d.fx = event.x;
+      d.fy = event.y;
+    })
+    .on("end", (event, d) => {
+      if (!event.active) simulation.alphaTarget(0);
+      d.fx = null;
+      d.fy = null;
+    });
+  node.call(dragBehavior);
+
+  const zoomBehavior = d3
+    .zoom<SVGSVGElement, unknown>()
+    .scaleExtent([0.35, 4])
+    .filter((event) => {
+      if (event.type === "wheel") return true;
+      const target = event.target as Element | null;
+      if (!target) return false;
+      return target === svg.node() || target.tagName === "line";
+    })
+    .on("zoom", (event) => {
+      zoomRoot.attr("transform", event.transform);
+    });
+
+  svg.call(zoomBehavior).on("dblclick.zoom", null);
+  svg.on("dblclick", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    svg.transition().duration(250).call(zoomBehavior.transform, d3.zoomIdentity);
+  });
+  svg.on("wheel", (event) => {
+    event.stopPropagation();
+  });
+
   return () => {
     simulation.stop();
+    svg.on(".zoom", null);
+    svg.on("dblclick", null);
+    svg.on("wheel", null);
+    container.removeAttribute(VIZ_WHEEL_ZOOM_SURFACE_ATTR);
     container.replaceChildren();
   };
 }

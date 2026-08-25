@@ -60,6 +60,7 @@ REM 必须看到: ok artifactId=... styleComplianceTier=full warnings: none
 
 - 时间轴维度可加 `"expect": "date"`（编辑器会拒绝 province 等非日期字段）
 - 每个 `properties.*` 必须有中文 `"title"`
+- **流动/明细表**（只展示多列文本、不做聚合）：复制 `scrolling-table` 模板，设 **`metrics.min=0, max=0`**；勿对纯表格误设 `metrics.min>=1`（预检会 `[warn] AIVIZ_WARN_DETAIL_TABLE_METRICS`）
 
 ## 4. entry HTML 硬规则
 

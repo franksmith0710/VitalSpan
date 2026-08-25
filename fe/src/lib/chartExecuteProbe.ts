@@ -12,6 +12,7 @@ import { migrateChartConfigToDeAxes, resolveChartEncoding, deAxisRenderReady } f
 import { groupDatasetFields } from "@/components/dashboard/datasetFieldClassification";
 import { nativeBodyHasLegacySqlBinding } from "@/lib/chartNativeBodyUi";
 import { isDemoPackageDataset } from "@/lib/demoPackage";
+import { suggestGisMapOdFields } from "@/lib/gisMapFlow";
 
 function activeFieldRefs(refs: ChartFieldRef[] | undefined): ChartFieldRef[] {
   return (refs ?? []).filter((r) => Boolean(r.field?.trim()));
@@ -352,6 +353,8 @@ export function suggestChartFields(columns: string[], chartType: ChartType) {
   if (columns.length === 0) return { dimensions: [], metrics: [] };
   const { dimensions, metrics } = groupDatasetFields(columns);
   if (isGisMapChartType(chartType)) {
+    const odFields = suggestGisMapOdFields(columns);
+    if (odFields) return odFields;
     const lng = columns.find((c) => /(?:^|_)(lng|lon|longitude|经度)(?:$|_)/i.test(c));
     const lat = columns.find((c) => /(?:^|_)(lat|latitude|纬度)(?:$|_)/i.test(c));
     if (lng && lat) {

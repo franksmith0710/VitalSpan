@@ -91,6 +91,8 @@ export function buildD3DispatchPayload(
       ...geo3dStyleRaw,
       terrainTexture: resolveTerrainTextureEnabled(renderTier, geo3dStyleRaw),
     };
+    const mapId = (options.mapId as string | undefined) ?? VS_REGIONS_MAP_ID;
+    const viewTransform = geoStyle.viewTransforms?.[mapId];
     return {
       kind: "geo",
       config: {
@@ -122,6 +124,7 @@ export function buildD3DispatchPayload(
           regionLabelColor: geoStyle.regionLabelColor,
           regionLabelFontSize: geoStyle.regionLabelFontSize,
           regionBorderWidth: geoStyle.regionBorderWidth,
+          viewTransform,
         },
         geo3dStyle,
         renderTier,
@@ -167,6 +170,12 @@ export function buildD3DispatchPayload(
                 : datum.name;
               props.onInteraction?.({ kind: "drill", value, label: datum.name });
             }
+          : undefined,
+        onViewTransformChange: props.onGeoViewTransformChange
+          ? (transform) => props.onGeoViewTransformChange?.(mapId, transform)
+          : undefined,
+        onOrbitViewChange: props.onGeo3dOrbitViewChange
+          ? (view) => props.onGeo3dOrbitViewChange?.(mapId, view)
           : undefined,
         depthVisual: styleProps.depthVisual,
       },

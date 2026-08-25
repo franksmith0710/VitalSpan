@@ -102,6 +102,18 @@ export function parseCustomVizFieldSlotGroupsForUi(
     }));
 }
 
+/** 流动/明细表：多列 dimensions；metrics 可为 0，或 manifest 误设 min>=1 时仍按明细表处理。 */
+export function isCustomVizDetailTableFieldSlots(
+  fieldSlots: Record<string, unknown> | undefined,
+): boolean {
+  const groups = parseCustomVizFieldSlotGroupsForUi(fieldSlots);
+  const dimGroup = groups.find((g) => g.kind === "dimension");
+  const metricGroup = groups.find((g) => g.kind === "metric");
+  if (!dimGroup || dimGroup.uiMode !== "multi") return false;
+  if (!metricGroup || metricGroup.min === 0 || metricGroup.max === 0) return true;
+  return dimGroup.max > 1;
+}
+
 /** @deprecated 仅 resolveCustomVizUiSlot 等旧路径；UI 请用 parseCustomVizFieldSlotGroupsForUi */
 export function expandCustomVizFieldSlotsForUi(
   fieldSlots: Record<string, unknown> | undefined,

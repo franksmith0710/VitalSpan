@@ -28,6 +28,18 @@ import { createTooltipLayer, hideTooltip, showMergedTooltip } from "@/components
 import { resolveAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
 import { chartTransition, prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import type { D3GeoRenderConfig } from "@/components/charts/engine/d3/types";
+import {
+  isIdentityGeoViewTransform,
+  type ChartGeoViewTransform,
+} from "@/lib/chartGeoViewState";
+
+function toZoomTransform(transform: ChartGeoViewTransform): d3.ZoomTransform {
+  return d3.zoomIdentity.translate(transform.x, transform.y).scale(transform.k);
+}
+
+function fromZoomTransform(transform: d3.ZoomTransform): ChartGeoViewTransform {
+  return { x: transform.x, y: transform.y, k: transform.k };
+}
 
 export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRenderConfig): () => void {
   const {
@@ -49,6 +61,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     onDrillClick,
     drillDepth = 0,
     areaMapping,
+    onViewTransformChange,
   } = config;
 
   const mapId = mapIdRaw?.trim() || VS_REGIONS_MAP_ID;
@@ -345,6 +358,27 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   let detachZoom = () => undefined;
   let detachZoomControls = () => undefined;
   if (roam || showZoomControl) {
+    const savedTransform = geoStyle.viewTransform;
+    const initialTransform = savedTransform && !isIdentityGeoViewTransform(savedTransform)
+      ? toZoomTransform(savedTransform)
+      : d3.zoomIdentity;
+    let persistTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const notifyViewTransform = (transform: d3.ZoomTransform) => {
+      if (!onViewTransformChange) return;
+      const next = fromZoomTransform(transform);
+      onViewTransformChange(isIdentityGeoViewTransform(next) ? undefined : next);
+    };
+
+    const schedulePersistViewTransform = (transform: d3.ZoomTransform) => {
+      if (!onViewTransformChange) return;
+      if (persistTimer) clearTimeout(persistTimer);
+      persistTimer = setTimeout(() => {
+        persistTimer = null;
+        notifyViewTransform(transform);
+      }, 150);
+    };
+
     const zoom = d3
       .zoom<SVGSVGElement, unknown>()
       .scaleExtent([GEO_MAP_SCALE_LIMIT.min, GEO_MAP_SCALE_LIMIT.max])
@@ -360,17 +394,29 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
       })
       .on("zoom", (event) => {
         g.attr("transform", event.transform.toString());
+      })
+      .on("end", (event) => {
+        schedulePersistViewTransform(event.transform);
       });
     root.call(zoom);
-    if (roam) {
+    if (roam || savedTransform) {
       try {
-        root.call(zoom.transform, d3.zoomIdentity);
+        root.call(zoom.transform, initialTransform);
+        g.attr("transform", initialTransform.toString());
       } catch {
         // jsdom 无 layout，跳过初始 transform
       }
-      root.on("dblclick.zoom", () => {
-        root.transition().duration(300).call(zoom.transform, d3.zoomIdentity);
-      });
+      if (roam) {
+        root.on("dblclick.zoom", () => {
+          root
+            .transition()
+            .duration(300)
+            .call(zoom.transform, d3.zoomIdentity)
+            .on("end", () => {
+              notifyViewTransform(d3.zoomIdentity);
+            });
+        });
+      }
     }
     if (showZoomControl) {
       detachZoomControls = mountGeoZoomControls({
@@ -381,6 +427,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
       });
     }
     detachZoom = () => {
+      if (persistTimer) clearTimeout(persistTimer);
       root.on(".zoom", null);
       root.on("dblclick.zoom", null);
       detachZoomControls();

@@ -27,6 +27,12 @@ import type { ColorScheme, DashboardStyleConfig, NumberFormatConfig } from "@/co
 import { chartPaletteDefaultsFingerprint } from "@/components/dashboard/dashboardStyleConfig";
 import { readChartGeoAreaMappingLookup } from "@/lib/chartGeoAreaMapping";
 import {
+  patchChartGeo3dOrbitView,
+  patchChartGeoViewTransform,
+  type ChartGeo3dOrbitView,
+  type ChartGeoViewTransform,
+} from "@/lib/chartGeoViewState";
+import {
   readChartLegendIcon,
   readChartLegendIconSize,
   readChartLegendOrient,
@@ -725,6 +731,26 @@ export const ChartRenderer = memo(function ChartRenderer({
     [localConfig, onChartConfigChange],
   );
 
+  const handleGeoViewTransformChange = useCallback(
+    (mapId: string, transform: ChartGeoViewTransform | undefined) => {
+      if (!onChartConfigChange || !isGeoMapChart) return;
+      const next = patchChartGeoViewTransform(localConfig, mapId, transform);
+      setLocalConfig(next);
+      onChartConfigChange(next);
+    },
+    [isGeoMapChart, localConfig, onChartConfigChange],
+  );
+
+  const handleGeo3dOrbitViewChange = useCallback(
+    (mapId: string, view: ChartGeo3dOrbitView | undefined) => {
+      if (!onChartConfigChange || localConfig.chartType !== "map-3d") return;
+      const next = patchChartGeo3dOrbitView(localConfig, mapId, view);
+      setLocalConfig(next);
+      onChartConfigChange(next);
+    },
+    [localConfig, onChartConfigChange],
+  );
+
   const canvasChart = () => (
     <CanvasChartHost
       viewModel={chartViewModel}
@@ -747,6 +773,12 @@ export const ChartRenderer = memo(function ChartRenderer({
       onInteraction={activeDrillInteraction ? handleChartInteraction : undefined}
       onLinkageClick={linkageInteraction ? handleLinkageClick : undefined}
       onTableStylePatch={dashboardEditMode ? handleTableStylePatch : undefined}
+      onGeoViewTransformChange={
+        dashboardEditMode && isGeoMapChart ? handleGeoViewTransformChange : undefined
+      }
+      onGeo3dOrbitViewChange={
+        dashboardEditMode && localConfig.chartType === "map-3d" ? handleGeo3dOrbitViewChange : undefined
+      }
       layoutFootprint={
         embedded && pixelSize && pixelSize.width > 0 && pixelSize.height > 0
           ? pixelSize
