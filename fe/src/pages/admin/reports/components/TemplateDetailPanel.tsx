@@ -39,7 +39,6 @@ import type { ReportCatalogNode } from "@/lib/reportCatalogUtils";
 const KIND_LABELS: Record<string, string> = {
   excel: "Excel",
   pdf: "PDF",
-  word: "Word（已停用）",
 };
 
 const TEMPLATE_TABS = [
@@ -92,15 +91,9 @@ export function TemplateDetailPanel({
   };
 
   const templateKind = node.templateKind as string | null;
-  const isLegacyWordTemplate = templateKind === "word";
   const exportDisabled =
-    isLegacyWordTemplate ||
-    extensionLoading ||
-    !extensionData ||
-    (extensionData.metrics?.length ?? 0) === 0;
-  const exportDisabledHint = isLegacyWordTemplate
-    ? "Word 模板已停用，请删除后新建 PDF 或 Excel 模板"
-    : "请先配置扩展指标";
+    extensionLoading || !extensionData || (extensionData.metrics?.length ?? 0) === 0;
+  const exportDisabledHint = "请先配置扩展指标";
 
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -119,7 +112,7 @@ export function TemplateDetailPanel({
             <ReportExportCard
               variant="toolbar"
               defaultTemplateId={node.id}
-              defaultFormat={templateKind === "word" ? "pdf" : (node.templateKind ?? "pdf")}
+              defaultFormat={node.templateKind ?? "pdf"}
               disabled={exportDisabled}
               disabledHint={exportDisabledHint}
             />

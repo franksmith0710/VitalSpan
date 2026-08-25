@@ -179,8 +179,8 @@ def test_rpt002_standard_pack_put(client: TestClient):
     payload = {
         "packKey": "equipment-custom",
         "displayName": "自定义标准分析",
-        "businessObjectCode": "equipment",
-        "physicalTableFqn": fqn,
+        "datasetId": "std-pack-equipment-custom",
+        "boundConfigId": str(uuid.uuid4()),
         "dataSourceId": ds_id,
         "fieldMapping": {"status": "status", "region": "region", "createdAt": "created_at"},
         "enabledThemes": ["lifecycle"],

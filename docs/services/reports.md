@@ -174,7 +174,7 @@
 
 ### r65 companion 质量推分（RPT-002）
 
-- **RPT-002**：`standard/capabilities.py` — 按物理表列推荐/禁用主题；`allowedRoles` 非空；显式 `physical_table_fqn` 绑定；`GET /api/v1/reports/standard/packs/{pack_key}/capabilities`
+- **RPT-002**：`standard/capabilities.py` — 按数据集列推荐/禁用主题；`allowedRoles` 非空；分析包须绑定 `datasetId` + `boundConfigId`；遗留 `physicalTableFqn` 由迁移 `0055` 自动转为 `std-pack-*` 数据集
 
 ### r68 companion 质量推分（RPT-002）
 

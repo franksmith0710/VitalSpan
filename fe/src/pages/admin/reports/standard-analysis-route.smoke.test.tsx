@@ -27,8 +27,8 @@ vi.mock("@/lib/api", () => ({
           {
             packKey: "s1",
             displayName: "sss1",
-            businessObjectCode: "equipment",
-            physicalTableFqn: "ops.equipment",
+            datasetId: "std-pack-equipment-overview",
+            boundConfigId: "00000000-0000-4000-8000-000000000099",
             dataSourceId: "00000000-0000-4000-8000-000000000001",
             fieldMapping: { status: "province", region: "city", createdAt: "amount" },
             enabledThemes: ["lifecycle", "distribution"],

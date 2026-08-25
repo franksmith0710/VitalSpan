@@ -115,7 +115,6 @@ const GIS_MAP_OD_BINDABLE_FIELDS = [
   "weight",
 ] as const;
 
-/** 仅 applyGisMapFlowConfig / 一键接入时调用，禁止在 emitChange/validate 中自动补字段 */
 function applyGisMapOdFieldBindings(
   cfg: ChartViewConfig,
   columns: string[],
@@ -129,6 +128,27 @@ function applyGisMapOdFieldBindings(
     next = writeAxisField(next, slot, name);
   }
   return next;
+}
+
+function hasPartialGisMapOdBinding(cfg: ChartViewConfig): boolean {
+  const synced = syncLegacyFieldsFromAxes(migrateChartConfigToDeAxes(cfg));
+  const dims = activeFieldRefs(synced.dimensions);
+  const boundCore = GIS_MAP_OD_CORE_COLUMNS.filter((name, index) =>
+    Boolean(dims[index]?.field?.trim()),
+  ).length;
+  return boundCore > 0 && boundCore < GIS_MAP_OD_CORE_COLUMNS.length;
+}
+
+/** 列签名匹配 OD 且已绑部分 from/to 槽位时，补齐缺失槽位（不覆盖已有字段） */
+export function completeGisMapOdFieldBindingsFromColumns(
+  cfg: ChartViewConfig,
+  columns: string[],
+): ChartViewConfig {
+  if (cfg.chartType !== "gis-map") return cfg;
+  if (!detectGisMapOdColumns(columns)) return cfg;
+  if (isGisMapOdBindingComplete(cfg)) return cfg;
+  if (!hasPartialGisMapOdBinding(cfg)) return cfg;
+  return ensureGisMapOdFlowEnabled(applyGisMapOdFieldBindings(cfg, columns));
 }
 
 export function isGisMapOdBindingComplete(cfg: ChartViewConfig): boolean {

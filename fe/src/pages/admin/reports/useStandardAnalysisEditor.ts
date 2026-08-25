@@ -17,27 +17,17 @@ import {
 } from "./standardAnalysisValidation";
 
 export function buildStandardAnalysisSaveBody(draft: AnalysisPack): AnalysisPack {
-  const base = {
+  return {
     packKey: draft.packKey,
     displayName: draft.displayName,
+    datasetId: draft.datasetId,
+    boundConfigId: draft.boundConfigId || undefined,
     dataSourceId: draft.dataSourceId,
     fieldMapping: draft.fieldMapping,
     enabledThemes: draft.enabledThemes,
     allowedRoles: draft.allowedRoles,
     snapshotCronPreset: draft.snapshotCronPreset,
     snapshotRetentionPeriods: draft.snapshotRetentionPeriods ?? 12,
-  };
-  if (draft.datasetId) {
-    return {
-      ...base,
-      datasetId: draft.datasetId,
-      boundConfigId: draft.boundConfigId || undefined,
-    };
-  }
-  return {
-    ...base,
-    businessObjectCode: draft.businessObjectCode,
-    physicalTableFqn: draft.physicalTableFqn,
   };
 }
 
@@ -129,7 +119,7 @@ export function useStandardAnalysisEditor() {
       toast.error("请填写显示名称", { id: "std-pack-save" });
       return false;
     }
-    if (!draft.datasetId && !draft.physicalTableFqn) {
+    if (!draft.datasetId) {
       toast.error("请选择数据集", { id: "std-pack-save" });
       return false;
     }

@@ -43,10 +43,10 @@ class AnalysisPackIn(BaseModel):
 
     @model_validator(mode="after")
     def _binding_mode(self) -> AnalysisPackIn:
-        if self.dataset_id:
-            return self
-        if not self.physical_table_fqn or not self.business_object_code:
-            raise ValueError("physicalTableFqn and businessObjectCode required when datasetId is absent")
+        if not self.dataset_id:
+            raise ValueError("datasetId is required")
+        if not self.bound_config_id:
+            raise ValueError("boundConfigId is required")
         return self
 
 

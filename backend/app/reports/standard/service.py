@@ -6,20 +6,15 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
-from app.metadata.physical import service as physical_service
-from app.metadata.physical.errors import PhysicalTableError
 from app.reports.engine import execute as engine_execute
 from app.reports.standard.errors import (
     RPT_STD_DATASET_NOT_FOUND,
     RPT_STD_DATASET_UNBOUND,
     RPT_STD_EMPTY_ROLES,
-    RPT_STD_FIELD_MAPPING,
     RPT_STD_FORBIDDEN,
     RPT_STD_KEY_MISMATCH,
     RPT_STD_NOT_FOUND,
-    RPT_STD_TABLE_NOT_FOUND,
     RPT_STD_THEME_DISABLED,
-    RPT_STD_THEME_UNSUPPORTED,
     StandardAnalysisError,
 )
 from app.reports.standard.schemas import (
@@ -27,10 +22,8 @@ from app.reports.standard.schemas import (
     AnalysisPackListResponse,
     AnalysisPackOut,
     CapabilitiesOut,
-    FieldMapping,
     RunIn,
     RunOut,
-    ThemeType,
 )
 from app.reports.standard.capabilities import evaluate_capabilities
 from app.reports.persistence import standard_repo
@@ -45,11 +38,6 @@ def _assert_read_access(user: UserContext, allowed_roles: list[str]) -> None:
 def _assert_write_access(user: UserContext) -> None:
     if set(user.roles) <= {"viewer"}:
         raise StandardAnalysisError(RPT_STD_FORBIDDEN, "viewer cannot manage analysis packs", 403)
-
-
-def _load_columns(table_fqn: str) -> list[dict]:
-    pt = physical_service.get_physical_table(table_fqn)
-    return [c.model_dump(by_alias=True) for c in pt.columns]
 
 
 def _load_columns_from_dataset(dataset_id: str, bound_config_id: uuid.UUID | None) -> list[dict]:
@@ -76,23 +64,13 @@ def _load_columns_from_dataset(dataset_id: str, bound_config_id: uuid.UUID | Non
 
 
 def _load_pack_columns(pack: AnalysisPackIn) -> list[dict]:
-    if pack.dataset_id:
-        return _load_columns_from_dataset(pack.dataset_id, pack.bound_config_id)
-    assert pack.physical_table_fqn
-    return _load_columns(pack.physical_table_fqn)
+    return _load_columns_from_dataset(pack.dataset_id or "", pack.bound_config_id)
 
 
 def _validate_pack(payload: AnalysisPackIn) -> AnalysisPackIn:
     if not payload.allowed_roles:
         raise StandardAnalysisError(RPT_STD_EMPTY_ROLES, "allowedRoles must not be empty", 422)
-    if payload.dataset_id:
-        columns = _load_pack_columns(payload)
-    else:
-        try:
-            physical_service.get_physical_table(payload.physical_table_fqn or "")
-        except PhysicalTableError as exc:
-            raise StandardAnalysisError(RPT_STD_TABLE_NOT_FOUND, exc.message, 404) from exc
-        columns = _load_pack_columns(payload)
+    columns = _load_pack_columns(payload)
     caps = evaluate_capabilities(payload.field_mapping, columns)
     for theme in payload.enabled_themes:
         cap = next((c for c in caps if c.theme == theme), None)
@@ -154,37 +132,6 @@ def get_capabilities(key: str, user: UserContext) -> CapabilitiesOut:
         themes=themes,
         columns=[c.get("name", "") for c in columns],
     )
-
-
-def _resolve_table_ref(table_fqn: str) -> str:
-    pt = physical_service.get_physical_table(table_fqn)
-    if pt.source_schema and pt.source_table:
-        return f"{pt.source_schema}.{pt.source_table}"
-    return table_fqn.split(".", 1)[-1]
-
-
-def _build_sql(theme: ThemeType, table_ref: str, mapping: FieldMapping) -> str:
-    if theme == "lifecycle":
-        col = mapping.status
-        if not col:
-            raise StandardAnalysisError(RPT_STD_FIELD_MAPPING, "status mapping required", 422)
-        return f"SELECT {col} AS dim, COUNT(*) AS cnt FROM {table_ref} GROUP BY {col}"
-    if theme == "distribution":
-        col = mapping.region
-        if not col:
-            raise StandardAnalysisError(RPT_STD_FIELD_MAPPING, "region mapping required", 422)
-        return f"SELECT {col} AS dim, COUNT(*) AS cnt FROM {table_ref} GROUP BY {col}"
-    col = mapping.created_at
-    if not col:
-        raise StandardAnalysisError(RPT_STD_FIELD_MAPPING, "createdAt mapping required", 422)
-    if theme == "activity":
-        return f"SELECT DATE({col}) AS d, COUNT(*) AS cnt FROM {table_ref} GROUP BY 1 ORDER BY 1"
-    if theme == "trend":
-        return (
-            f"SELECT DATE({col}) AS d, COUNT(*) AS cnt FROM {table_ref} "
-            f"GROUP BY 1 ORDER BY 1 LIMIT 30"
-        )
-    raise StandardAnalysisError(RPT_STD_THEME_UNSUPPORTED, f"unsupported theme={theme}", 422)
 
 
 def run_pack(db: Session, key: str, payload: RunIn, user: UserContext) -> RunOut:

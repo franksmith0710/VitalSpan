@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { Link } from "react-router";
-import { CalendarClock, ChevronDown, ChevronRight, Database, Table2 } from "lucide-react";
+import { CalendarClock, ChevronDown, ChevronRight, Database } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -89,17 +89,9 @@ function BindingStatusBadge({ draft }: { draft: AnalysisPack }) {
       </Badge>
     );
   }
-  if (draft.physicalTableFqn) {
-    return (
-      <Badge variant="light" color="warning" size="sm" className="gap-1">
-        <Table2 className="size-3" aria-hidden />
-        物理表（兼容）
-      </Badge>
-    );
-  }
   return (
     <Badge variant="light" color="light" size="sm">
-      未绑定数据源
+      未绑定数据集
     </Badge>
   );
 }
@@ -128,8 +120,6 @@ export function StandardAnalysisConfigForm({
     () => evaluateDraftThemeCapabilities(draft, columnOptions, columnKinds),
     [draft, columnOptions, columnKinds],
   );
-
-  const legacyBinding = !draft.datasetId && draft.physicalTableFqn;
 
   return (
     <form
@@ -209,21 +199,8 @@ export function StandardAnalysisConfigForm({
 
           <ConfigSection
             title="数据源与字段"
-            description="推荐绑定已发布数据集；物理表仅用于兼容旧分析包。"
+            description="绑定已发布数据集并配置字段映射，供标准分析出数。"
           >
-            {legacyBinding ? (
-              <Alert severity="warning" appearance="soft">
-                <AlertTitle>建议迁移到数据集</AlertTitle>
-                <AlertDescription className="space-y-2">
-                  <p>
-                    当前仍使用物理表「{draft.physicalTableFqn}」。请选择下方数据集并保存，以使用语义层取数。
-                  </p>
-                  <Button type="button" variant="outline" size="sm" className="w-fit" asChild>
-                    <Link to="/admin/datasets">前往数据集管理</Link>
-                  </Button>
-                </AlertDescription>
-              </Alert>
-            ) : null}
             <ReportMetricDatasetFields
               datasetId={draft.datasetId ?? ""}
               boundConfigId={draft.boundConfigId ?? ""}

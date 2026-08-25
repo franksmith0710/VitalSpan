@@ -16,7 +16,7 @@ import { WIDGET_CHART_LABELS } from "./widgetIcons";
 import { resolveAutoAssignTarget } from "@/lib/chartFieldAssignment";
 import { appendAxisField, writeAxisField } from "@/lib/resolveChartEncoding";
 import { isDemoPackageDataset } from "@/lib/demoPackage";
-import { applyGisMapFlowConfig, DEMO_MAP_FLOW_DATASET_ID, detectGisMapOdColumns, ensureGisMapOdFlowEnabled } from "@/lib/gisMapFlow";
+import { applyGisMapFlowConfig, completeGisMapOdFieldBindingsFromColumns, DEMO_MAP_FLOW_DATASET_ID, detectGisMapOdColumns, ensureGisMapOdFlowEnabled } from "@/lib/gisMapFlow";
 import { pickChartNativeBodyUi } from "@/lib/chartNativeBodyUi";
 import type { SlotTarget } from "./chartInspectorTypes";
 
@@ -195,11 +195,17 @@ export function useChartInspectorState(
     if (!columns.length) return;
     const current = readChartConfig();
     const reconciled = reconcileChartFields(current, columns);
+    const withOdBindings =
+      current.chartType === "gis-map"
+        ? completeGisMapOdFieldBindingsFromColumns(reconciled, columns)
+        : reconciled;
     const same =
-      JSON.stringify(current.dimensions) === JSON.stringify(reconciled.dimensions) &&
-      JSON.stringify(current.metrics) === JSON.stringify(reconciled.metrics) &&
-      JSON.stringify(current.axes) === JSON.stringify(reconciled.axes);
-    if (!same) emitChartChange(reconciled);
+      JSON.stringify(current.dimensions) === JSON.stringify(withOdBindings.dimensions) &&
+      JSON.stringify(current.metrics) === JSON.stringify(withOdBindings.metrics) &&
+      JSON.stringify(current.axes) === JSON.stringify(withOdBindings.axes) &&
+      JSON.stringify(current.nativeBody?.gisProject?.flow) ===
+        JSON.stringify(withOdBindings.nativeBody?.gisProject?.flow);
+    if (!same) emitChartChange(withOdBindings);
     // 仅在列集合变化时剔除无效字段，避免拖入字段时被立即清掉
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [columnsKey]);

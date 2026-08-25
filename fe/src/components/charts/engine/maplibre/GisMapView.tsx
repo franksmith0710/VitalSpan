@@ -13,7 +13,8 @@ import {
   buildGisFlowStyleKey,
   emptyGisFlowGeoJson,
   GIS_FLOW_LINE_LAYER_ID,
-  GIS_FLOW_SOURCE_ID,
+  GIS_FLOW_LINE_SOURCE_ID,
+  GIS_FLOW_HUB_SOURCE_ID,
   syncGisFlowData,
   syncGisFlowStyle,
 } from "@/components/charts/engine/maplibre/gisMapFlowStyle";
@@ -524,8 +525,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       const host = hostRef.current;
       if (!host) return;
       const featureCount = flowGeoJsonRef.current?.features.length ?? 0;
-      const source = map.getSource(GIS_FLOW_SOURCE_ID);
-      host.dataset.flowSourceLen = source ? String(featureCount) : "missing";
+      const source = map.getSource(GIS_FLOW_LINE_SOURCE_ID);
+      host.dataset.flowSourceLen =
+        source && flowGeoJsonRef.current?.features.length
+          ? String(flowGeoJsonRef.current.features.length)
+          : "missing";
       host.dataset.flowLayerReady = map.getLayer(GIS_FLOW_LINE_LAYER_ID) ? "1" : "0";
     },
     [],
@@ -540,7 +544,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       const featureCount = flowGeoJsonRef.current?.features.length ?? 0;
       if (
         featureCount > 0 &&
-        !map.getSource(GIS_FLOW_SOURCE_ID) &&
+        !map.getSource(GIS_FLOW_LINE_SOURCE_ID) &&
         style &&
         isGisMapOdBindingComplete(chartConfig ?? { chartType: "gis-map" })
       ) {
@@ -576,7 +580,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     const map = mapRef.current;
     if (!map || !style || renderBasemap !== "pmtiles") return;
     if (!chartConfig || !isGisMapOdBindingComplete(chartConfig)) return;
-    if (map.getSource("vs-gis-flow")) return;
+    if (map.getSource(GIS_FLOW_LINE_SOURCE_ID)) return;
     applyGisMapStylePreservingCamera(map, style, () => {
       syncOverlayRuntime(map);
       setMapRuntimeEpoch((epoch) => epoch + 1);

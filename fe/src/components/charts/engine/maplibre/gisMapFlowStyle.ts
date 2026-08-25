@@ -6,15 +6,15 @@ import {
 } from "@/components/charts/engine/maplibre/gisProject";
 import { whenGisMapStyleReady } from "@/components/charts/engine/maplibre/gisMapRuntime";
 
-export const GIS_FLOW_SOURCE_ID = "vs-gis-flow";
+export const GIS_FLOW_LINE_SOURCE_ID = "vs-gis-flow-lines-src";
+export const GIS_FLOW_HUB_SOURCE_ID = "vs-gis-flow-hubs-src";
+/** @deprecated 单源 + geometry 过滤在 MapLibre 6 下会全灭；保留常量供旧检测逻辑迁移 */
+export const GIS_FLOW_SOURCE_ID = GIS_FLOW_LINE_SOURCE_ID;
 export const GIS_FLOW_SHADOW_LAYER_ID = "vs-gis-flow-lines-shadow";
 export const GIS_FLOW_GLOW_LAYER_ID = "vs-gis-flow-lines-glow";
 export const GIS_FLOW_LINE_LAYER_ID = "vs-gis-flow-lines";
 export const GIS_FLOW_PULSE_LAYER_ID = "vs-gis-flow-lines-pulse";
 export const GIS_FLOW_HUB_LAYER_ID = "vs-gis-flow-hubs";
-
-const GIS_FLOW_LINE_FILTER = ["==", ["geometry-type"], "LineString"] as const;
-const GIS_FLOW_HUB_FILTER = ["==", ["geometry-type"], "Point"] as const;
 
 const FLOW_LAYER_STACK = [
   GIS_FLOW_SHADOW_LAYER_ID,
@@ -32,6 +32,23 @@ export type GisFlowLayerOptions = {
   chartColors?: string[];
   layersActive?: boolean;
 };
+
+/** 线/点分源，避免 geojson-vt 下 geometry-type / $type 过滤全灭（MapLibre #5103）。 */
+export function splitFlowGeoJsonByGeometry(
+  geoJson: GeoJSON.FeatureCollection | null,
+): { lines: GeoJSON.FeatureCollection; hubs: GeoJSON.FeatureCollection } {
+  const features = geoJson?.features ?? [];
+  return {
+    lines: {
+      type: "FeatureCollection",
+      features: features.filter((feature) => feature.geometry?.type === "LineString"),
+    },
+    hubs: {
+      type: "FeatureCollection",
+      features: features.filter((feature) => feature.geometry?.type === "Point"),
+    },
+  };
+}
 
 function parseHexRgb(hex: string): [number, number, number] | null {
   const normalized = hex.trim().replace(/^#/, "");
@@ -199,17 +216,23 @@ export function buildGisFlowStyleEmbedDefinitions(
   options: GisFlowLayerOptions,
 ) {
   const resolved = resolveGisFlowStyle(options.flow, options.chartColors);
+  const { lines, hubs } = splitFlowGeoJsonByGeometry(flowGeoJson);
   return {
-    source: {
-      id: GIS_FLOW_SOURCE_ID,
-      spec: { type: "geojson" as const, data: flowGeoJson },
-    },
+    sources: [
+      {
+        id: GIS_FLOW_LINE_SOURCE_ID,
+        spec: { type: "geojson" as const, data: lines },
+      },
+      {
+        id: GIS_FLOW_HUB_SOURCE_ID,
+        spec: { type: "geojson" as const, data: hubs },
+      },
+    ],
     layers: [
       {
         id: GIS_FLOW_LINE_LAYER_ID,
         type: "line" as const,
-        source: GIS_FLOW_SOURCE_ID,
-        filter: GIS_FLOW_LINE_FILTER,
+        source: GIS_FLOW_LINE_SOURCE_ID,
         layout: { "line-join": "round" as const, "line-cap": "round" as const },
         paint: {
           "line-color": ["coalesce", ["get", "color"], resolved.color],
@@ -220,8 +243,7 @@ export function buildGisFlowStyleEmbedDefinitions(
       {
         id: GIS_FLOW_HUB_LAYER_ID,
         type: "circle" as const,
-        source: GIS_FLOW_SOURCE_ID,
-        filter: GIS_FLOW_HUB_FILTER,
+        source: GIS_FLOW_HUB_SOURCE_ID,
         paint: {
           "circle-color": ["coalesce", ["get", "color"], resolved.color],
           "circle-opacity": resolved.opacity,
@@ -250,24 +272,21 @@ function ensureGisFlowVisualLayers(map: MapLibreMap, options: GisFlowLayerOption
     {
       id: GIS_FLOW_SHADOW_LAYER_ID,
       type: "line",
-      source: GIS_FLOW_SOURCE_ID,
-      filter: GIS_FLOW_LINE_FILTER,
+      source: GIS_FLOW_LINE_SOURCE_ID,
       layout: lineLayout,
       paint: buildGisFlowShadowPaint(resolved, lineWidth),
     },
     {
       id: GIS_FLOW_GLOW_LAYER_ID,
       type: "line",
-      source: GIS_FLOW_SOURCE_ID,
-      filter: GIS_FLOW_LINE_FILTER,
+      source: GIS_FLOW_LINE_SOURCE_ID,
       layout: lineLayout,
       paint: buildGisFlowGlowPaint(resolved, lineWidth),
     },
     {
       id: GIS_FLOW_PULSE_LAYER_ID,
       type: "line",
-      source: GIS_FLOW_SOURCE_ID,
-      filter: GIS_FLOW_LINE_FILTER,
+      source: GIS_FLOW_LINE_SOURCE_ID,
       layout: lineLayout,
       paint: buildGisFlowPulsePaint(resolved),
     },
@@ -282,6 +301,27 @@ function ensureGisFlowVisualLayers(map: MapLibreMap, options: GisFlowLayerOption
   }
 }
 
+function flowSourcesReady(map: MapLibreMap): boolean {
+  return Boolean(map.getSource(GIS_FLOW_LINE_SOURCE_ID) && map.getSource(GIS_FLOW_HUB_SOURCE_ID));
+}
+
+function writeFlowGeoJsonSources(
+  map: MapLibreMap,
+  payload: GeoJSON.FeatureCollection,
+): boolean {
+  const lineSource = map.getSource(GIS_FLOW_LINE_SOURCE_ID) as
+    | import("maplibre-gl").GeoJSONSource
+    | undefined;
+  const hubSource = map.getSource(GIS_FLOW_HUB_SOURCE_ID) as
+    | import("maplibre-gl").GeoJSONSource
+    | undefined;
+  if (!lineSource || !hubSource) return false;
+  const { lines, hubs } = splitFlowGeoJsonByGeometry(payload);
+  lineSource.setData(lines);
+  hubSource.setData(hubs);
+  return true;
+}
+
 function mountGisFlowStack(
   map: MapLibreMap,
   payload: GeoJSON.FeatureCollection,
@@ -289,8 +329,10 @@ function mountGisFlowStack(
 ): boolean {
   try {
     const embed = buildGisFlowStyleEmbedDefinitions(payload, options);
-    if (!map.getSource(embed.source.id)) {
-      map.addSource(embed.source.id, embed.source.spec);
+    for (const source of embed.sources) {
+      if (!map.getSource(source.id)) {
+        map.addSource(source.id, source.spec);
+      }
     }
     for (const layer of embed.layers) {
       if (!map.getLayer(layer.id)) {
@@ -298,6 +340,7 @@ function mountGisFlowStack(
       }
     }
     if (!map.getLayer(GIS_FLOW_LINE_LAYER_ID)) return false;
+    writeFlowGeoJsonSources(map, payload);
     ensureGisFlowVisualLayers(map, options);
     return true;
   } catch {
@@ -315,44 +358,40 @@ export function buildGisFlowLayerDefinitions(
     "line-join": "round" as const,
     "line-cap": "round" as const,
   };
+  const { lines, hubs } = splitFlowGeoJsonByGeometry(flowGeoJson);
   const layers: LayerSpecification[] = [
     {
       id: GIS_FLOW_SHADOW_LAYER_ID,
       type: "line",
-      source: GIS_FLOW_SOURCE_ID,
-      filter: GIS_FLOW_LINE_FILTER,
+      source: GIS_FLOW_LINE_SOURCE_ID,
       layout: lineLayout,
       paint: buildGisFlowShadowPaint(resolved, lineWidth),
     },
     {
       id: GIS_FLOW_GLOW_LAYER_ID,
       type: "line",
-      source: GIS_FLOW_SOURCE_ID,
-      filter: GIS_FLOW_LINE_FILTER,
+      source: GIS_FLOW_LINE_SOURCE_ID,
       layout: lineLayout,
       paint: buildGisFlowGlowPaint(resolved, lineWidth),
     },
     {
       id: GIS_FLOW_LINE_LAYER_ID,
       type: "line",
-      source: GIS_FLOW_SOURCE_ID,
-      filter: GIS_FLOW_LINE_FILTER,
+      source: GIS_FLOW_LINE_SOURCE_ID,
       layout: lineLayout,
       paint: buildGisFlowLinePaint(resolved),
     },
     {
       id: GIS_FLOW_PULSE_LAYER_ID,
       type: "line",
-      source: GIS_FLOW_SOURCE_ID,
-      filter: GIS_FLOW_LINE_FILTER,
+      source: GIS_FLOW_LINE_SOURCE_ID,
       layout: lineLayout,
       paint: buildGisFlowPulsePaint(resolved),
     },
     {
       id: GIS_FLOW_HUB_LAYER_ID,
       type: "circle",
-      source: GIS_FLOW_SOURCE_ID,
-      filter: GIS_FLOW_HUB_FILTER,
+      source: GIS_FLOW_HUB_SOURCE_ID,
       paint: {
         "circle-color": ["coalesce", ["get", "color"], resolved.color],
         "circle-opacity": resolved.opacity,
@@ -364,10 +403,16 @@ export function buildGisFlowLayerDefinitions(
     },
   ];
   return {
-    source: {
-      id: GIS_FLOW_SOURCE_ID,
-      spec: { type: "geojson" as const, data: flowGeoJson, lineMetrics: true },
-    },
+    sources: [
+      {
+        id: GIS_FLOW_LINE_SOURCE_ID,
+        spec: { type: "geojson" as const, data: lines, lineMetrics: true },
+      },
+      {
+        id: GIS_FLOW_HUB_SOURCE_ID,
+        spec: { type: "geojson" as const, data: hubs },
+      },
+    ],
     layers,
   };
 }
@@ -399,7 +444,7 @@ export function syncGisFlowData(
   const ensureLayers = () => {
     if (!options || !shouldAppendGisFlowLayers(options)) return;
     const lineLayerReady = Boolean(map.getLayer(GIS_FLOW_LINE_LAYER_ID));
-    if (map.getSource(GIS_FLOW_SOURCE_ID) && lineLayerReady) return;
+    if (flowSourcesReady(map) && lineLayerReady) return;
     mountGisFlowStack(map, payload, options);
   };
   const apply = () => {
@@ -407,15 +452,12 @@ export function syncGisFlowData(
     ensureLayers();
     const writeData = () => {
       if (generation !== gisFlowDataSyncGeneration) return false;
-      const source = map.getSource(GIS_FLOW_SOURCE_ID) as import("maplibre-gl").GeoJSONSource | undefined;
-      if (!source) {
+      if (!writeFlowGeoJsonSources(map, payload)) {
         markFlowSyncState(map, payload, false);
         return false;
       }
-      source.setData(payload);
       if (options && shouldAppendGisFlowLayers(options)) {
         ensureGisFlowVisualLayers(map, options);
-        syncGisFlowLinePaint(map, options);
       }
       moveFlowLayersToTop(map);
       markFlowSyncState(map, payload, true);

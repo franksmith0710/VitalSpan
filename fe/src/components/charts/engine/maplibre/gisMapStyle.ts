@@ -141,12 +141,12 @@ export function appendGisFlowLayers(
     return style;
   }
   const data = flow ?? emptyGisFlowGeoJson();
-  const { source, layers } = buildGisFlowStyleEmbedDefinitions(data, options);
+  const { sources, layers } = buildGisFlowStyleEmbedDefinitions(data, options);
   return {
     ...style,
     sources: {
       ...style.sources,
-      [source.id]: source.spec,
+      ...Object.fromEntries(sources.map((source) => [source.id, source.spec])),
     },
     layers: [...(style.layers ?? []), ...layers],
   };

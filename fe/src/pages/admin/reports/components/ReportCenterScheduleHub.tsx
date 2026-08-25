@@ -221,26 +221,6 @@ export function ReportCenterScheduleList({ schedules, loading, canManage }: HubP
   );
 }
 
-/** @deprecated 兼容旧引用，请用 ReportCenterScheduleList + ReportCenterQuickAside */
-export function ReportCenterScheduleHub(props: HubProps) {
-  return (
-    <div className="grid min-w-0 gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
-      <ReportCenterScheduleList {...props} />
-      <ReportCenterQuickAside {...props} />
-    </div>
-  );
-}
-
-export function ReportCenterMetricsSkeleton() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <Skeleton key={i} className="h-[72px] rounded-xl" />
-      ))}
-    </div>
-  );
-}
-
 /** 页头主操作 */
 export function ReportCenterHeaderActions({ canManage }: { canManage: boolean }) {
   if (!canManage) return null;

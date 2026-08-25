@@ -3,12 +3,15 @@ import {
   buildGisFlowLayerDefinitions,
   buildGisFlowLineGradient,
   buildGisFlowLineWidth,
+  buildGisFlowStyleEmbedDefinitions,
   buildGisFlowStyleKey,
   emptyGisFlowGeoJson,
   resetGisFlowDataSyncGenerationForTests,
+  splitFlowGeoJsonByGeometry,
   syncGisFlowData,
   syncGisFlowStyle,
-  GIS_FLOW_SOURCE_ID,
+  GIS_FLOW_LINE_SOURCE_ID,
+  GIS_FLOW_HUB_SOURCE_ID,
   GIS_FLOW_SHADOW_LAYER_ID,
   GIS_FLOW_GLOW_LAYER_ID,
   GIS_FLOW_LINE_LAYER_ID,
@@ -25,6 +28,8 @@ describe("gisMapFlowStyle", () => {
     expect(source.id).toBe("vs-gis-flow");
     expect(source.spec.lineMetrics).toBe(true);
     expect(layers).toHaveLength(5);
+    expect(layers[0]?.filter).toEqual(["==", "$type", "LineString"]);
+    expect(layers[4]?.filter).toEqual(["==", "$type", "Point"]);
     expect(layers[0]?.id).toBe(GIS_FLOW_SHADOW_LAYER_ID);
     expect(layers[1]?.id).toBe(GIS_FLOW_GLOW_LAYER_ID);
     expect(layers[2]?.id).toBe(GIS_FLOW_LINE_LAYER_ID);
@@ -64,6 +69,15 @@ describe("gisMapFlowStyle", () => {
     expect(width[2]).toEqual(["zoom"]);
     expect(width[3]).toBe(0);
     expect(width[4]).toBeCloseTo(16.8);
+  });
+
+  it("embeds safe layers with $type filters for geojson-vt", () => {
+    const { layers } = buildGisFlowStyleEmbedDefinitions(emptyGisFlowGeoJson(), {
+      flavor: "light",
+      flow: { enabled: true, color: "#f97316" },
+    });
+    expect(layers[0]?.filter).toEqual(["==", "$type", "LineString"]);
+    expect(layers[1]?.filter).toEqual(["==", "$type", "Point"]);
   });
 
   it("avoids nested zoom arithmetic when scaling by metric", () => {

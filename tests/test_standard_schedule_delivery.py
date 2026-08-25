@@ -105,14 +105,26 @@ def _pack_payload() -> dict:
     return {
         "packKey": _PACK_KEY,
         "displayName": "设备标准分析",
-        "businessObjectCode": "equipment",
-        "physicalTableFqn": _EQUIPMENT_FQN,
+        "datasetId": f"std-pack-{_PACK_KEY}",
+        "boundConfigId": str(uuid.uuid4()),
         "dataSourceId": str(_DS_ID),
         "fieldMapping": {"status": "status", "region": "region", "createdAt": "created_at"},
         "enabledThemes": ["lifecycle", "distribution"],
         "allowedRoles": ["analyst", "admin"],
         "snapshotCronPreset": "daily",
     }
+
+
+@pytest.fixture(autouse=True)
+def _mock_pack_columns(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.reports.standard.service._load_pack_columns",
+        lambda _pack: [
+            {"name": "status"},
+            {"name": "region"},
+            {"name": "created_at"},
+        ],
+    )
 
 
 def _pack_payload_lifecycle_only() -> dict:

@@ -55,6 +55,18 @@ def r233_sqlite_env():
 
 
 @pytest.fixture(autouse=True)
+def _mock_pack_columns(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(
+        "app.reports.standard.service._load_pack_columns",
+        lambda _pack: [
+            {"name": "status"},
+            {"name": "region"},
+            {"name": "created_at"},
+        ],
+    )
+
+
+@pytest.fixture(autouse=True)
 def clear_stores():
     from app.reports.persistence.store import reset_metadata_for_tests
 
@@ -316,23 +328,16 @@ def test_r233_standard_not_found_404(client):
 
 def test_r233_standard_theme_disabled(client, monkeypatch):
     """R233-RPT-002-04: disabled theme → 422。"""
-    from app.metadata.physical.schemas import PhysicalTableOut, PhysicalColumn
-
     monkeypatch.setattr(
-        "app.reports.standard.service.physical_service.get_physical_table",
-        lambda fqn: PhysicalTableOut(
-            tableFqn=fqn,
-            dataSourceId=uuid.uuid4(),
-            displayName="t",
-            columns=[PhysicalColumn(name="status", dataType="varchar")],
-        ),
+        "app.reports.standard.service._load_pack_columns",
+        lambda _pack: [{"name": "status"}],
     )
     _seed_physical_equipment()
     payload = {
         "packKey": "bind-dist-r233",
         "displayName": "bad",
-        "businessObjectCode": "equipment",
-        "physicalTableFqn": "ops.equipment",
+        "datasetId": "std-pack-bind-dist-r233",
+        "boundConfigId": str(uuid.uuid4()),
         "dataSourceId": str(uuid.uuid4()),
         "fieldMapping": {"status": "status", "region": "region", "createdAt": "created_at"},
         "enabledThemes": ["lifecycle"],

@@ -65,11 +65,7 @@ export function StandardAnalysisPackList({
                 const active = pack.packKey === activePackKey;
                 const snapshotLabel = SNAPSHOT_LABELS[pack.snapshotCronPreset] ?? pack.snapshotCronPreset;
                 const delivery = summarizePackDelivery(deliveryByPackKey?.get(pack.packKey));
-                const dataLabel = pack.businessObjectCode
-                  ? pack.businessObjectCode
-                  : pack.datasetId
-                    ? "数据集"
-                    : "未绑定";
+                const dataLabel = pack.datasetId ? "数据集" : "未绑定";
 
                 return (
                   <li key={pack.packKey}>

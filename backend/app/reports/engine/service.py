@@ -205,10 +205,10 @@ def export_template_bytes(
     if fmt not in _EXPORT_KINDS:
         raise ReportEngineError("RPT_ENGINE_FORMAT_NOT_SUPPORTED", "Unsupported export format", 422)
     node = catalog_service.get_node(template_id)
-    if node.template_kind == "word":
+    if node.template_kind not in ("excel", "pdf", None):
         raise ReportEngineError(
             "RPT_ENGINE_FORMAT_NOT_SUPPORTED",
-            "Word 模板已停用，请新建 PDF 或 Excel 模板",
+            "仅支持 PDF 或 Excel 模板",
             422,
         )
     run_out = run_template(

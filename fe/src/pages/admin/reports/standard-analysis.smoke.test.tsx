@@ -13,8 +13,8 @@ vi.mock("@/lib/api", () => ({
           {
             packKey: "equipment-overview",
             displayName: "设备标准分析",
-            businessObjectCode: "equipment",
-            physicalTableFqn: "ops.equipment",
+            datasetId: "std-pack-equipment-overview",
+            boundConfigId: "00000000-0000-4000-8000-000000000099",
             dataSourceId: "00000000-0000-4000-8000-000000000001",
             fieldMapping: { status: "status", region: "region", createdAt: "created_at" },
             enabledThemes: ["lifecycle", "distribution"],

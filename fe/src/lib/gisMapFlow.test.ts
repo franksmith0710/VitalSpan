@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   applyGisMapFlowConfig,
+  completeGisMapOdFieldBindingsFromColumns,
   detectGisMapOdColumns,
   ensureGisMapOdFlowEnabled,
   isGisMapFlowConfig,
@@ -107,6 +108,23 @@ describe("gisMapFlow lib", () => {
     expect(isGisMapOdBindingComplete(next)).toBe(false);
     expect(next.axes?.drill?.map((d) => d.field)).toEqual(["to_lng"]);
     expect(next.metrics?.[0]?.field).toBeUndefined();
+  });
+
+  it("completes partial OD bindings when de_map_od_hubs columns are loaded", () => {
+    const cfg: ChartViewConfig = {
+      chartType: "gis-map",
+      nativeBody: { gisProject: { flow: { enabled: true } } },
+      axes: {
+        xAxis: [{ field: "from_lng" }],
+        xAxisExt: [{ field: "from_lat" }],
+        drill: [{ field: "to_lng" }],
+      },
+    };
+    const next = completeGisMapOdFieldBindingsFromColumns(cfg, OD_COLUMNS);
+    expect(isGisMapOdBindingComplete(next)).toBe(true);
+    expect(next.axes?.drill?.map((d) => d.field)).toEqual(["to_lng", "to_lat", "route_name"]);
+    expect(next.metrics?.[0]?.field).toBe("weight");
+    expect(next.nativeBody?.gisProject?.flow?.enabled).toBe(true);
   });
 
   it("replaces scatter axes when switching from scatter preset", () => {
