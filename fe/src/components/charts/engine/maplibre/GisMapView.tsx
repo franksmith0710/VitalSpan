@@ -11,12 +11,12 @@ import {
 } from "@/components/charts/engine/maplibre/gisMapStyle";
 import {
   buildGisFlowStyleKey,
+  commitGisFlowGeoJsonToMap,
   emptyGisFlowGeoJson,
   GIS_FLOW_HUB_LAYER_ID,
   GIS_FLOW_LINE_LAYER_ID,
   GIS_FLOW_LINE_SOURCE_ID,
   GIS_FLOW_HUB_SOURCE_ID,
-  splitFlowGeoJsonByGeometry,
   syncGisFlowData,
   syncGisFlowStyle,
 } from "@/components/charts/engine/maplibre/gisMapFlowStyle";
@@ -223,6 +223,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     syncGisOverlayStyle(map, overlayLayerOptionsRef.current);
     syncGisFlowData(map, flowGeoJsonRef.current, flowLayerOptionsRef.current);
     syncGisFlowStyle(map, flowLayerOptionsRef.current);
+    if (!commitGisFlowGeoJsonToMap(map, flowGeoJsonRef.current)) {
+      map.once("idle", () => {
+        commitGisFlowGeoJsonToMap(map, flowGeoJsonRef.current);
+      });
+    }
     const overlayResolved = resolveGisOverlayStyle(
       overlayLayerOptionsRef.current.overlay,
       overlayLayerOptionsRef.current.chartColors,
@@ -522,22 +527,6 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     mapRef.current?.resize();
   }, []);
 
-  const pushFlowGeoJsonToMap = useCallback((map: MapLibreMap) => {
-    const payload = flowGeoJsonRef.current;
-    if (!payload?.features.length) return false;
-    const lineSource = map.getSource(GIS_FLOW_LINE_SOURCE_ID) as
-      | import("maplibre-gl").GeoJSONSource
-      | undefined;
-    const hubSource = map.getSource(GIS_FLOW_HUB_SOURCE_ID) as
-      | import("maplibre-gl").GeoJSONSource
-      | undefined;
-    if (!lineSource || !hubSource) return false;
-    const { lines, hubs } = splitFlowGeoJsonByGeometry(payload);
-    lineSource.setData(lines);
-    hubSource.setData(hubs);
-    return lines.features.length > 0 || hubs.features.length > 0;
-  }, []);
-
   const annotateFlowSyncState = useCallback((map: MapLibreMap) => {
     const host = hostRef.current;
     if (!host) return;
@@ -563,12 +552,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       syncGisOverlayData(map, overlayGeoJsonRef.current);
       syncGisFlowData(map, flowGeoJsonRef.current, flowLayerOptionsRef.current);
       syncGisFlowStyle(map, flowLayerOptionsRef.current);
-      if (!pushFlowGeoJsonToMap(map)) {
-        map.once("idle", () => {
-          pushFlowGeoJsonToMap(map);
-          annotateFlowSyncState(map);
-        });
-      }
+      commitGisFlowGeoJsonToMap(map, flowGeoJsonRef.current);
       annotateFlowSyncState(map);
       const featureCount = flowGeoJsonRef.current?.features.length ?? 0;
       if (
@@ -583,7 +567,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         });
       }
     },
-    [annotateFlowSyncState, chartConfig, pushFlowGeoJsonToMap, style, syncOverlayRuntime],
+    [annotateFlowSyncState, chartConfig, style, syncOverlayRuntime],
   );
 
   useEffect(() => {

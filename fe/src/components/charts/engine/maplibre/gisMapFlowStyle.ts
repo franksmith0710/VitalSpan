@@ -326,6 +326,60 @@ function writeFlowGeoJsonSources(
   return true;
 }
 
+/** style.setStyle 会重建空源；在 style.load / idle 后显式写入 React 侧 GeoJSON。 */
+export function commitGisFlowGeoJsonToMap(
+  map: MapLibreMap,
+  geoJson: GeoJSON.FeatureCollection | null,
+): boolean {
+  const payload = geoJson ?? emptyGisFlowGeoJson();
+  if (!payload.features.length) return false;
+  return writeFlowGeoJsonSources(map, payload);
+}
+
+type FlowSyncRequest = {
+  payload: GeoJSON.FeatureCollection;
+  options?: GisFlowLayerOptions;
+};
+
+let latestFlowSyncRequest: FlowSyncRequest | null = null;
+
+function readLatestFlowPayload(): GeoJSON.FeatureCollection {
+  return latestFlowSyncRequest?.payload ?? emptyGisFlowGeoJson();
+}
+
+function readLatestFlowOptions(): GisFlowLayerOptions | undefined {
+  return latestFlowSyncRequest?.options;
+}
+
+function scheduleFlowGeoJsonCommit(map: MapLibreMap, generation: number) {
+  let attempts = 0;
+  const maxAttempts = 4;
+  const tryCommit = (): boolean => {
+    if (generation !== gisFlowDataSyncGeneration) return true;
+    const payload = readLatestFlowPayload();
+    const options = readLatestFlowOptions();
+    if (!writeFlowGeoJsonSources(map, payload)) {
+      markFlowSyncState(map, payload, false);
+      return false;
+    }
+    if (options && shouldAppendGisFlowLayers(options)) {
+      ensureGisFlowVisualLayers(map, options);
+    }
+    moveFlowLayersToTop(map);
+    markFlowSyncState(map, payload, true);
+    return true;
+  };
+  const retry = () => {
+    if (generation !== gisFlowDataSyncGeneration) return;
+    if (tryCommit()) return;
+    attempts += 1;
+    if (attempts >= maxAttempts) return;
+    map.once("idle", retry);
+  };
+  if (tryCommit()) return;
+  map.once("idle", retry);
+}
+
 function mountGisFlowStack(
   map: MapLibreMap,
   payload: GeoJSON.FeatureCollection,
@@ -437,6 +491,7 @@ let gisFlowDataSyncGeneration = 0;
 /** @internal vitest only */
 export function resetGisFlowDataSyncGenerationForTests() {
   gisFlowDataSyncGeneration = 0;
+  latestFlowSyncRequest = null;
 }
 
 export function syncGisFlowData(
@@ -444,35 +499,23 @@ export function syncGisFlowData(
   geoJson: GeoJSON.FeatureCollection | null,
   options?: GisFlowLayerOptions,
 ) {
+  latestFlowSyncRequest = {
+    payload: geoJson ?? emptyGisFlowGeoJson(),
+    options,
+  };
   const generation = ++gisFlowDataSyncGeneration;
-  const payload = geoJson ?? emptyGisFlowGeoJson();
   const ensureLayers = () => {
-    if (!options || !shouldAppendGisFlowLayers(options)) return;
+    const layerOptions = readLatestFlowOptions();
+    const payload = readLatestFlowPayload();
+    if (!layerOptions || !shouldAppendGisFlowLayers(layerOptions)) return;
     const lineLayerReady = Boolean(map.getLayer(GIS_FLOW_LINE_LAYER_ID));
     if (flowSourcesReady(map) && lineLayerReady) return;
-    mountGisFlowStack(map, payload, options);
+    mountGisFlowStack(map, payload, layerOptions);
   };
   const apply = () => {
     if (generation !== gisFlowDataSyncGeneration) return;
     ensureLayers();
-    const writeData = () => {
-      if (generation !== gisFlowDataSyncGeneration) return false;
-      if (!writeFlowGeoJsonSources(map, payload)) {
-        markFlowSyncState(map, payload, false);
-        return false;
-      }
-      if (options && shouldAppendGisFlowLayers(options)) {
-        ensureGisFlowVisualLayers(map, options);
-      }
-      moveFlowLayersToTop(map);
-      markFlowSyncState(map, payload, true);
-      return true;
-    };
-    if (writeData()) return;
-    map.once("idle", () => {
-      if (writeData()) return;
-      map.once("idle", writeData);
-    });
+    scheduleFlowGeoJsonCommit(map, generation);
   };
   if (map.isStyleLoaded()) {
     apply();
