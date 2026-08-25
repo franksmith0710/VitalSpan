@@ -18,15 +18,15 @@
 | 1 | 插件 settings loaded | ✅ | `config.json` installedVersion **0.3.0**；`main.log` 18:33:12 PluginInstaller Successfully installed |
 | 2 | 新建工作区列表有 **VitalSpan BI** | ✅ | `WorkspaceTemplateLoader` loaded `vitalspan.bi.default` |
 | 3 | 向导 `vitalspan:workspace-setup` 可加载 | ✅ | `ViewLoader` registered `vitalspan:workspace-setup` |
-| 4 | `workspaceSetup.complete` → 磁盘 `instanceConfig.vitalspan` | ⏳ **Phase 4 手测** | 尚未创建工作区；首次 E2E §1 时验收 |
+| 4 | `workspaceSetup.complete` → 磁盘 `instanceConfig.vitalspan` | ✅ | Phase 4 手测 · Task 9 #2 |
 | 5 | 导航打开 `vitalspan:home` | ✅ | `ViewLoader` registered `vitalspan:home`（宿主注册通过） |
 | 6 | iframe 无对 `:8000` 的 `fetch` | ✅ | `views/*.js` 无 `fetch(`；health 走 `pluginExec` |
 | 7 | `pluginExec('vitalspan_health')` 成功 | ✅ | execTool Node 探针 → `http://127.0.0.1:8000/health` |
 | 8 | 外链 5173 正常 | ✅ | `GET http://127.0.0.1:5173/admin` → 200 |
 | 9 | 未绑定显示横幅 | ✅ | `readDomainBinding(undefined)` → reason「未绑定 VitalSpan…」 |
-| 10 | 连续切视图 20 次稳定 | ⏳ **Phase 4 手测** | 需真实工作区 + home 导航 |
+| 10 | 连续切视图 20 次稳定 | ✅ | Phase 4 手测 · Task 9 #6 |
 
-**计分：8/10**（#4、#10 延后至 Phase 4 E2E §1 / Task 9，不阻塞 Phase 3 施工）
+**计分：10/10**（#4、#10 于 Phase 4 补验完成）
 
 ---
 
@@ -46,7 +46,7 @@ node scripts/spike-host-verify.mjs
 |----|-----|
 | **Phase 2** | ✅ **闭合**（2026-08-24 18:33+ DeepTalk 重装 zip + 日志 + 探针） |
 | **Phase 3** | ▶ **可开始** Task 1–9 正式验收与 release |
-| **#4 / #10** | Phase 4 首次建工作区时补验 |
+| **#4 / #10** | ✅ Phase 4 / Task 9 已闭合 |
 
 ---
 

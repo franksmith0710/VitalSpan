@@ -40,6 +40,10 @@ _DEMO_DATASET_BINDING_SPECS: dict[str, dict[str, object]] = {
         "table": "de_map_heat",
         "columns": ["point_name", "lng", "lat", "amount", "province", "city"],
     },
+    "demo-map-flow": {
+        "table": "de_map_od_hubs",
+        "columns": ["route_name", "from_lng", "from_lat", "to_lng", "to_lat", "weight"],
+    },
 }
 
 

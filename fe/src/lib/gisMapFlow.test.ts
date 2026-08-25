@@ -16,6 +16,9 @@ describe("gisMapFlow lib", () => {
       "route_name",
     ]);
     expect(next.metrics?.[0]?.field).toBe("weight");
+    expect(next.mode).toBe("dataset");
+    expect(next.datasetId).toBe("demo-map-flow");
+    expect(next.sql).toBeUndefined();
     expect(next.nativeBody?.gisProject?.flow?.enabled).toBe(true);
     expect(isGisMapFlowConfig(next)).toBe(true);
   });

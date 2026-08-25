@@ -53,7 +53,7 @@ describe("resolveGisMapDataHint", () => {
       nativeBody: { gisProject: { flow: { enabled: true } } },
     };
     const hint = resolveGisMapDataHint(config, []);
-    expect(hint.sampleSql).toContain("from_lng");
+    expect(hint.sampleSql).toContain("de_map_od_hubs");
     expect(hint.message).toContain("OD 飞线");
   });
 

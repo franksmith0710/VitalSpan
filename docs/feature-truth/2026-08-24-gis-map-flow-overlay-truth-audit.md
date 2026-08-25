@@ -206,7 +206,9 @@ ChartGisMapFlowPanel
 
 同会话 **初始视角两位小数**（T10）：✅ 已实现且有单测/面板测。
 
-**未做（非 plan 范围）**：飞线动画 · map-3d 飞线 · F06-VIZ 验收条 · `demo-map-flow` Dataset（用的是 SQL 常量，符合 plan 决策）。
+**未做（非 plan 范围）**：飞线动画 · map-3d 飞线 · F06-VIZ 验收条。
+
+**2026-08-25 补齐**：官方 Dataset **`demo-map-flow`**（`sample_db.de_map_od_hubs`，6 条全球枢纽 OD）；一键接入改 **Dataset 模式**，解决 `CHART_DATASET_REQUIRED` 阻塞。新环境须 `seed-demo-package.py` + MySQL 视图（见 `docker/demo-mysql/tables.sql`）。
 
 ## 8. 交接
 

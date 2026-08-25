@@ -159,7 +159,7 @@ function resolveGisMapFlowDataHint(config: ChartViewConfig, columns: string[]): 
     return {
       tone: "info",
       message:
-        "OD 飞线模式：绑定起点经/纬、终点经/纬（流向槽）与可选流量指标。可一键接入全球枢纽示例。",
+        "OD 飞线模式：绑定起点经/纬、终点经/纬（流向槽）与可选流量指标。可一键接入官方 de_map_od_hubs 示例。",
       sampleSql: GIS_MAP_FLOW_SAMPLE_SQL,
     };
   }

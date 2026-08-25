@@ -25,16 +25,11 @@
 
 ---
 
-## Task 9（DeepTalk 真机 · 与 Phase 4 合并手测）
+## Task 9（DeepTalk 真机）
 
 | # | 项 | 状态 | 说明 |
 |---|-----|------|------|
-| 1 | 插件 loaded | ✅ | config + main.log |
-| 2 | 模板新建工作区 | ⏳ | 需在 DeepTalk **新建 VitalSpan BI** |
-| 3 | home 内容正确 | ⏳ | DeepTalk 左侧 **VitalSpan**（非 5173） |
-| 4–10 | 导航/稳定性/pluginExec | ⏳ | 见 [Phase 4 手测指南](./2026-08-25-deeptalk-vitalspan-phase4-handtest.md) |
-
-> **常见误区**：「检测 API 连接」在 **DeepTalk 插件页**，不在 5173 管理面。
+| 1–10 | 宿主十条 | ✅ | [Task 9 验收](./2026-08-25-deeptalk-vitalspan-task9-host-acceptance.md) |
 
 ---
 
@@ -43,8 +38,8 @@
 | 项 | 值 |
 |----|-----|
 | **Phase 3 代码/构建** | ✅ Task 1–8 + assemble/release |
-| **Phase 3 Task 9 真机** | ⏳ 并入 Phase 4 |
-| **可否宣称 v0.3 已交付** | **否** — 待 Phase 4 E2E 全过 |
+| **Phase 3 Task 9 真机** | ✅ 与 Phase 4 手测合并闭合 |
+| **v0.3.0 交付** | ✅ 见 [Phase 4 E2E](./2026-08-25-deeptalk-vitalspan-phase4-e2e.md) |
 
 ---
 

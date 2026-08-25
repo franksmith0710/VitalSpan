@@ -3,7 +3,7 @@ import { useChartInspector } from "./chartInspectorContext";
 import { applyGisMapFlowConfig, isGisMapFlowConfig } from "@/lib/gisMapFlow";
 import { resolveSampleDbDatasource } from "@/lib/gisMapScatter";
 
-const GIS_FLOW_SETUP_LABEL = "接入全球枢纽 OD 示例（from/to 飞线）";
+const GIS_FLOW_SETUP_LABEL = "接入 demo-map-flow · de_map_od_hubs（全球枢纽 OD）";
 
 export function ChartGisMapFlowSetup() {
   const { cfg, onChange, datasourceItems } = useChartInspector();

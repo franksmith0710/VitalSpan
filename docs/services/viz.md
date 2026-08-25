@@ -68,7 +68,7 @@
 
 - r42 L1 kickoff：注册表驱动 `chart_view` 校验；注册 `pie` 后 r28/r30「非法 type」样例改用未注册 `radar`
 - **GEO-IRON-01**（ADR-12）：`map`/`map-3d` 仅离线中国 GeoJSON；`gis-map` 允许同页 MapLibre（默认禁公网底图）；见 `.cursor/rules/geo-map-offline-china.mdc`
-- **`gis-map` 散点叠加**（FE `fe/src/components/charts/engine/maplibre/gisMapOverlay*.ts`）：经/纬 + 可选指标 → MapLibre GeoJSON `setData`；官方示例 Dataset **`demo-map-scatter`**（`sample_db.de_map_heat`）；**OD 飞线**见 `gisMapFlow*.ts`（起点/终点四维 + 可选流量，大圆弧线）；区域着色仍用 `map`/`map-3d` + `demo-v-sales-geo`
+- **`gis-map` 散点叠加**（FE `fe/src/components/charts/engine/maplibre/gisMapOverlay*.ts`）：经/纬 + 可选指标 → MapLibre GeoJSON `setData`；官方示例 Dataset **`demo-map-scatter`**（`sample_db.de_map_heat`）；**OD 飞线**见 `gisMapFlow*.ts`（起点/终点四维 + 可选流量，大圆弧线；官方 Dataset **`demo-map-flow`** / `de_map_od_hubs`）；区域着色仍用 `map`/`map-3d` + `demo-v-sales-geo`
 - `schemas/chart_view` 校验查 registry 用函数内惰性 import，`app.viz` 包内为 submodule-only import，无循环依赖
 
 ### DE 命名轴字段模型（2026-07-30）

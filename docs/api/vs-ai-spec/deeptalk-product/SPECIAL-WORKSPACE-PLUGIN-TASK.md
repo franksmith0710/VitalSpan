@@ -18,8 +18,8 @@
 |-------|------|----------|
 | 0 | 轨道决策 | ✅ B（2026-08-24） |
 | 1 | 契约 + 本文档对齐 | 契约 §3/§5 与本文一致 |
-| **2** | **DeepTalk spike** | ✅ **8/10**（#4/#10 → Phase 4） |
-| **3** | Task 1–9 | ✅ 1–8 · Task 9 真机 → [Phase 4 手测](../../../reviews/grounded/2026-08-25-deeptalk-vitalspan-phase4-handtest.md) |
+| **2** | **DeepTalk spike** | ✅ **10/10**（#4/#10 → Phase 4 闭合） |
+| **3** | Task 1–9 | ✅ 全过 → [Task 9 验收](../../../reviews/grounded/2026-08-25-deeptalk-vitalspan-task9-host-acceptance.md) |
 | 4 | E2E | [E2E-CHECKLIST](./E2E-CHECKLIST.md) §1–§5 |
 
 **Spike 10 条（Phase 2 · 用 v0.2.16 zip 或最小 mock）**
@@ -126,10 +126,10 @@ export const VIEW_A = "home" as const;
 
 单测断言：根目录 `plugin.json` 的 `name`/`version`、模板的 `id`/`version`、向导提交里的 `plugin` 快照，三处与 `ids.ts` 一致。
 
-- [ ] 标识表已填
-- [ ] `src/ids.ts` 已写
-- [ ] `docs/PLUGIN_IDS.md` 已写
-- [ ] 标识同步测试已写并失败（文件尚未存在）或已准备好等 Task 2 一起绿
+- [x] 标识表已填
+- [x] `src/ids.ts` 已写
+- [x] `docs/PLUGIN_IDS.md` 已写
+- [x] 标识同步测试已写并绿（`tests/ids-sync.test.mjs`）
 
 ---
 
@@ -177,9 +177,9 @@ export const VIEW_A = "home" as const;
 - `components.tools` 是给聊天模型的；`components.execTools` 是给视图 `pluginExec` 的。不要混成一项。
 - 视图注册名是 `vitalspan:{basename}`，例如 `views/overview.js` → `vitalspan:overview`。
 
-- [ ] `plugin/plugin.json` 已写
-- [ ] `name` / `version` 引用 Task 1 的值
-- [ ] 无绑定则未声明 `workspace-setup`
+- [x] 根目录 `plugin.json` 已写（非 `plugin/` 子目录）
+- [x] `name` / `version` 引用 Task 1 的值
+- [x] 有绑定向导 → 已声明 `views/workspace-setup.js`
 
 ---
 
@@ -187,7 +187,7 @@ export const VIEW_A = "home" as const;
 
 **完成标准：** 「新建工作区」列表出现该模板；未安装插件时对应导航不可选，文案为「需要先安装并启用 vitalspan」。
 
-创建 `plugin/workspace-templates/vitalspan.workspace.json`：
+创建 `workspace-templates/vitalspan.bi.default.workspace.json`：
 
 ```json
 {
@@ -248,10 +248,10 @@ export const VIEW_A = "home" as const;
 
 每加一个业务页，同时改四处：`plugin.json` 的 `views[]`、模板 `navigation[]`、模板 `capabilities.views[]`、构建入口。
 
-- [ ] 模板已写
-- [ ] `id` / `version` 与 `ids.ts` 一致
-- [ ] 无绑定则无 `wizardView`
-- [ ] 安装后能出现在新建工作区列表
+- [x] 模板已写
+- [x] `id` / `version` 与 `ids.ts` 一致
+- [x] 有绑定 → 已设 `wizardView: vitalspan:workspace-setup`
+- [x] 安装后能出现在新建工作区列表（spike #2 · Task 9 #2）
 
 ---
 
@@ -349,9 +349,9 @@ export function readDomainBinding(
 3. `vitalspan` 缺必填字段 → `ok: false`
 4. 合法对象 → `ok: true`，字段类型保持（不要把数字改成字符串）
 
-- [ ] `pluginRuntime.ts` / `hostBridge.ts` / `instanceConfig.ts` 已写
-- [ ] `instanceConfig` 测试全绿
-- [ ] 没有任何 `fetch(` 出现在 `src/pages/`
+- [x] `pluginRuntime.ts` / `hostBridge.ts` / `instanceConfig.ts` 已写
+- [x] `instanceConfig` 测试全绿（`tests/instanceConfig.test.mjs`）
+- [x] 视图源码（`src/views/*`）无 `fetch(`；Agent/execTool 侧 fetch 不在 iframe
 
 ---
 
@@ -371,10 +371,10 @@ export function readDomainBinding(
 
 本阶段允许页面只有绑定状态和标题。不要先做复杂业务 UI。
 
-- [ ] 视图能被宿主加载
-- [ ] 未绑定显示横幅
-- [ ] 已绑定显示绑定字段
-- [ ] 页面为 fill，无宿主双滚动条
+- [x] 视图能被宿主加载（spike #5 · Task 9 #3）
+- [x] 未绑定显示横幅（spike #9 · Task 9 #8）
+- [x] 已绑定显示绑定字段（Phase 4 手测）
+- [x] 页面为 fill，无宿主双滚动条（`viewOptions.height.mode: fill`）
 
 ---
 
@@ -425,16 +425,18 @@ window.__pluginViewAction("workspaceSetup.complete", {
 
 `src/pages/WorkspaceSetupPage.tsx` 的确认按钮：绑定非法时禁用。
 
-- [ ] `wizardView` 指向 `vitalspan:workspace-setup`
-- [ ] 非法配置不能解锁创建
-- [ ] 合法 complete 后工作区 meta 含 `plugin` + `vitalspan`
-- [ ] 打开业务页读到的绑定与磁盘一致
+- [x] `wizardView` 指向 `vitalspan:workspace-setup`（spike #3）
+- [x] 非法配置不能解锁创建（向导按钮 disabled + schema 校验）
+- [x] 合法 complete 后工作区 meta 含 `plugin` + `vitalspan`（Phase 4 / spike #4 手测）
+- [x] 打开业务页读到的绑定与磁盘一致（Phase 4 手测）
 
 ---
 
 ## Task 7 — 页内导航与深链
 
-**完成标准：** 左侧导航、页内入口、父级 URL、iframe 内容四者一致；带 query 的地址能定位。
+> **B 轨说明**：本期仅 `home` 一个业务视图；无 `resources` 页。下列后两项标 **N/A**；稳定性用 builtin 导航 ↔ home 切换验收。
+
+**完成标准：** 左侧导航、页内入口、父级 URL、iframe 内容四者一致；带 query 的地址能定位（多页时）。
 
 页内跳转：
 
@@ -463,10 +465,10 @@ navigateWorkspace({ target: "experts" });
 3. `capabilities.views` 加上 `vitalspan:resources`
 4. `plugin.json` 的 `views` 加上该文件
 
-- [ ] 左侧切换后 URL、选中态、内容一致
-- [ ] 页内入口会改父级 URL
-- [ ] `/workspace/view/resources?id=...` 能定位
-- [ ] 连续切换 20 次无「页面加载失败」，无上一页残留
+- [x] 左侧切换后 URL、选中态、内容一致（VitalSpan ↔ 新智能体 ↔ 工作区首页 · Phase 4）
+- [x] 页内入口会改父级 URL — **N/A（B）**；5173 为 `target=_blank` 外链
+- [x] `/workspace/view/resources?id=...` 能定位 — **N/A（B）**；未声明第二业务页
+- [x] 连续切换 20 次无「页面加载失败」，无上一页残留（Phase 4 / Task 9 #6）
 
 ---
 
@@ -547,10 +549,10 @@ const snapshot = await window.pluginExec("loadInstance", {
 不要用 `components.mcp` 冒充必须常驻、与插件装卸无关的独立服务器。  
 不要把 `workspace-objects` 当成外部权威库。
 
-- [ ] 业务页取数只走 `pluginExec`
-- [ ] `src/pages` 无外部 `fetch`
-- [ ] 失败态可见、可重试
-- [ ] Agent 工具（若有）不接受模型传入的地址和凭据
+- [x] 业务页取数只走 `pluginExec`（home 检测 API）
+- [x] iframe 视图无外部 `fetch`（`views/*.js` 探针）
+- [x] 失败态可见、可重试（health 错误行 + 可再次点击）
+- [x] Agent 工具不接受模型传入的地址和凭据（`shared.ts` 读工作区 binding / env）
 
 ---
 
@@ -589,10 +591,10 @@ const snapshot = await window.pluginExec("loadInstance", {
 
 宿主已保证：子帧 `about:srcdoc` / `ERR_ABORTED` 不弹主页面失败框；换 `viewId` 时 iframe 整页重挂；`routeSearch` 随父级 URL 更新。这些若复现，先核对本机 DeepTalk 版本，不要在插件里用 `location.hash` 打补丁。
 
-- [ ] assemble 产物根目录只有可安装文件
-- [ ] 安装哈希一致并已重启宿主
-- [ ] 上面 10 条全部勾过
-- [ ] 引擎仓无本插件业务词、路径别名、专用 IPC
+- [x] assemble 产物根目录只有可安装文件
+- [x] 安装哈希一致并已重启宿主（见 [Task 9 验收](../../../reviews/grounded/2026-08-25-deeptalk-vitalspan-task9-host-acceptance.md)）
+- [x] 上面 10 条全部勾过（B 轨 #5/#7 为 N/A）
+- [x] 引擎仓无本插件业务词、路径别名、专用 IPC（未改 deeptalk）
 
 ---
 
