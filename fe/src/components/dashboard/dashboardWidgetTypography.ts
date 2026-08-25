@@ -21,10 +21,10 @@ export const PIXEL_SCREEN_TITLE_HEIGHT_PX = 36;
  */
 export function resolveShapeTitleCanvasScale(
   canvasScale: number,
-  _designViewportLocked: boolean,
+  designViewportLocked: boolean,
   mode: "edit" | "view" = "view",
 ): number {
-  if (mode !== "edit") return 1;
+  if (mode !== "edit" || designViewportLocked) return 1;
   return canvasScale > 0 ? canvasScale : 1;
 }
 

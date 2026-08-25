@@ -20,6 +20,12 @@ import {
 } from "../layoutUtils";
 import { WidgetErrorBoundary } from "../WidgetErrorBoundary";
 import { resolveDashboardChrome } from "../dashboardChromeConfig";
+import { resolveComponentGapRuntime } from "../componentGapRuntime";
+import { readChartTitleVisible } from "@/lib/chartDeStyle";
+import { pixelViewTitleHeightPx } from "../dashboardWidgetTypography";
+import { usePixelChromeScale } from "../pixelCanvas/PixelCanvasScaleContext";
+import { resolveEmbeddedLayoutFootprint } from "@/components/charts/engine/embeddedContainerSize";
+import { resolveWidgetChromeInset } from "../pixelCanvas/shapeVisualInset";
 import {
   DashboardWidgetContextMenu,
   type DashboardWidgetActions,
@@ -166,12 +172,41 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
     sourceWidget.height > 0;
   const pixelWidth = "width" in sourceWidget ? sourceWidget.width : 0;
   const pixelHeight = "height" in sourceWidget ? sourceWidget.height : 0;
+  const chromeScale = usePixelChromeScale();
+  const gapRuntime = resolveComponentGapRuntime(dashboardStyle ?? {}, {
+    pixel: shell === "shape",
+  });
+  const chromeInset = resolveWidgetChromeInset(dashboardStyle?.widgetStyle);
+  const titleChromePx =
+    shell === "shape" &&
+    widget.type === "chart" &&
+    widget.chartConfig &&
+    readChartTitleVisible(widget.chartConfig, dashboardStyle?.titleStyle)
+      ? pixelViewTitleHeightPx(chromeScale)
+      : 0;
   const pixelSize = useMemo(
     () =>
       hasPixelFootprint
-        ? { width: pixelWidth, height: pixelHeight }
+        ? resolveEmbeddedLayoutFootprint(
+            { width: pixelWidth, height: pixelHeight },
+            {
+              gapPx: gapRuntime.shellPaddingPx,
+              chromeInset,
+              titleChromePx,
+            },
+          )
         : undefined,
-    [hasPixelFootprint, pixelWidth, pixelHeight],
+    [
+      hasPixelFootprint,
+      pixelWidth,
+      pixelHeight,
+      gapRuntime.shellPaddingPx,
+      chromeInset.top,
+      chromeInset.right,
+      chromeInset.bottom,
+      chromeInset.left,
+      titleChromePx,
+    ],
   );
   const effectiveGridSize =
     gridSize ??

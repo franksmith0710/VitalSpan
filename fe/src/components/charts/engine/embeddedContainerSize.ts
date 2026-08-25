@@ -1,3 +1,23 @@
+import type { ShapeEdgeInset } from "@/components/dashboard/pixelCanvas/shapeVisualInset";
+
+/** 外框 layout 坐标 → 内容区可用 footprint（扣 gap 壳层、边框 padding、顶栏标题） */
+export function resolveEmbeddedLayoutFootprint(
+  outer: { width: number; height: number },
+  options: {
+    gapPx?: number;
+    chromeInset?: ShapeEdgeInset;
+    titleChromePx?: number;
+  } = {},
+): { width: number; height: number } {
+  const gap = Math.max(0, options.gapPx ?? 0);
+  const inset = options.chromeInset ?? { top: 0, right: 0, bottom: 0, left: 0 };
+  const title = Math.max(0, options.titleChromePx ?? 0);
+  return {
+    width: Math.max(48, outer.width - gap * 2 - inset.left - inset.right),
+    height: Math.max(48, outer.height - gap * 2 - inset.top - inset.bottom - title),
+  };
+}
+
 /** 嵌入图表容器测量（看板/大屏 widget 内） */
 export function readEmbeddedContainerSize(
   el: HTMLElement | null | undefined,

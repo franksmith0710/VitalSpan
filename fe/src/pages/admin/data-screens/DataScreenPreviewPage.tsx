@@ -10,6 +10,7 @@ import { DataScreenPresenter } from "@/components/dashboard/screen/DataScreenPre
 import { ScreenPreviewChrome } from "@/components/dashboard/screen/ScreenPreviewChrome";
 import { useScreenAutoRefresh } from "@/components/dashboard/screen/useScreenAutoRefresh";
 import type { PresentationMode } from "@/components/dashboard/screen/presentationScale";
+import { DATA_SCREEN_EDIT_PRESENTATION_DEFAULT } from "@/components/dashboard/screen/presentationScale";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -24,7 +25,9 @@ export function DataScreenPreviewPage() {
   const [detail, setDetail] = useState<DashboardDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [presentationMode, setPresentationMode] = useState<PresentationMode>("fit");
+  const [presentationMode, setPresentationMode] = useState<PresentationMode>(
+    DATA_SCREEN_EDIT_PRESENTATION_DEFAULT,
+  );
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
   const { isFullscreen, toggleFullscreen } = useDocumentFullscreen();
 

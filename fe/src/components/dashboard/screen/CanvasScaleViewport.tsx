@@ -2,6 +2,8 @@ import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 
 import { cn } from "@/lib/utils";
 import {
   computePresentationTransform,
+  DATA_SCREEN_EDIT_PRESENTATION_DEFAULT,
+  resolveDataScreenEditViewportOffsets,
   type PresentationMode,
 } from "./presentationScale";
 
@@ -9,6 +11,8 @@ export type CanvasScaleViewportProps = {
   canvasWidth: number;
   canvasHeight: number;
   mode?: PresentationMode;
+  /** 与数据大屏编辑视口一致：画布贴齐左上，不做等比居中留白 */
+  pinTopLeft?: boolean;
   className?: string;
   children: ReactNode;
 };
@@ -16,7 +20,8 @@ export type CanvasScaleViewportProps = {
 export function CanvasScaleViewport({
   canvasWidth,
   canvasHeight,
-  mode = "fit",
+  mode = DATA_SCREEN_EDIT_PRESENTATION_DEFAULT,
+  pinTopLeft = false,
   className,
   children,
 }: CanvasScaleViewportProps) {
@@ -41,11 +46,14 @@ export function CanvasScaleViewport({
     canvasHeight,
     mode,
   );
+  const { offsetX, offsetY } = pinTopLeft
+    ? resolveDataScreenEditViewportOffsets()
+    : { offsetX: transform.translateX, offsetY: transform.translateY };
 
   const stageStyle: CSSProperties = {
     width: canvasWidth,
     height: canvasHeight,
-    transform: `translate(${transform.translateX}px, ${transform.translateY}px) scale(${transform.scaleX}, ${transform.scaleY})`,
+    transform: `translate(${offsetX}px, ${offsetY}px) scale(${transform.scaleX}, ${transform.scaleY})`,
     transformOrigin: "top left",
   };
 

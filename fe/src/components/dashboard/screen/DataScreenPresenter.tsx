@@ -5,6 +5,7 @@ import type { DashboardLayout } from "@/components/dashboard/layoutUtils";
 import type { DashboardPreviewProfile } from "@/lib/dashboardPreviewProfile";
 import { CanvasScaleViewport } from "./CanvasScaleViewport";
 import type { PresentationMode } from "./presentationScale";
+import { DATA_SCREEN_EDIT_PRESENTATION_DEFAULT } from "./presentationScale";
 
 export type DataScreenPresenterProps = {
   layout: DashboardLayout;
@@ -21,7 +22,7 @@ export type DataScreenPresenterProps = {
 
 export function DataScreenPresenter({
   layout,
-  presentationMode = "fit",
+  presentationMode = DATA_SCREEN_EDIT_PRESENTATION_DEFAULT,
   linkage = null,
   filterValues = {},
   onFilterValueChange,
@@ -53,6 +54,7 @@ export function DataScreenPresenter({
       canvasWidth={width}
       canvasHeight={height}
       mode={presentationMode}
+      pinTopLeft
       className={className}
     >
       <div className="h-full w-full" style={{ width, height }}>

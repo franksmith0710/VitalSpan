@@ -126,7 +126,17 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
   }
 
   const layoutType = styleLayout || layout.type || "force";
-  const repulsionBase = layoutType === "dagre" ? 120 : 220;
+  const span = Math.min(width, height);
+  const repulsionBase =
+    layoutType === "dagre"
+      ? span < 280
+        ? 80
+        : 120
+      : span < 280
+        ? 90
+        : span < 420
+          ? 140
+          : 220;
   const repulsion = Number.isFinite(Number(options.__graphRepulsion))
     ? Math.abs(Number(options.__graphRepulsion))
     : repulsionBase;
@@ -149,7 +159,13 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
     .force("center", d3.forceCenter(width / 2, height / 2))
     .force("collide", d3.forceCollide(18));
 
+  const boundMargin = showLabel ? Math.max(22, labelFontSize + 12) : 14;
+
   simulation.on("tick", () => {
+    for (const d of simNodes) {
+      d.x = Math.max(boundMargin, Math.min(width - boundMargin, d.x ?? width / 2));
+      d.y = Math.max(boundMargin, Math.min(height - boundMargin, d.y ?? height / 2));
+    }
     link
       .attr("x1", (d) => (d.source as SimNode).x ?? 0)
       .attr("y1", (d) => (d.source as SimNode).y ?? 0)

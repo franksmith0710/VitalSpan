@@ -100,7 +100,7 @@ def execute_dataset_from_config(
         raise QueryError("RLS_CONFIG_INVALID", "Disabling RLS is only allowed in development", 400)
 
     rls_config = {"table_alias": req.rls.table_alias, "org_column": req.rls.org_column}
-    table_name = payload.tables[0].name if payload.tables else None
+    table_name = payload.table or None
     dataset_id = bound.dataset_id if bound is not None else None
     from app.auth.rls.resolve_config import enrich_rls_config
 

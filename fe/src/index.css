@@ -432,7 +432,7 @@ html.dark {
   padding-right: 20px;
 }
 
-.pixel-canvas-host[data-pixel-canvas-mode="edit"] {
+.pixel-canvas-host[data-pixel-canvas-mode="edit"]:not([data-pixel-canvas-design-locked="true"]) {
   --pixel-canvas-chrome-scale: max(var(--pixel-canvas-scale), 0.5);
 }
 

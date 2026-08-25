@@ -17,6 +17,10 @@ describe("resolveShapeTitleCanvasScale", () => {
   it("uses canvas scale in edit mode when viewport is not locked", () => {
     expect(resolveShapeTitleCanvasScale(0.5, false, "edit")).toBe(0.5);
   });
+
+  it("skips compensation in edit mode when design viewport is locked", () => {
+    expect(resolveShapeTitleCanvasScale(0.5, true, "edit")).toBe(1);
+  });
 });
 
 describe("shapeTitlePresentationStyle", () => {

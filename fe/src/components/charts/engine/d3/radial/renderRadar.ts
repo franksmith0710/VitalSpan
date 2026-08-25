@@ -54,7 +54,11 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
   if (width <= 0 || height <= 0 || data.length === 0) return () => undefined;
 
   const axisTexts = data.map((row) => String(row[xField] ?? ""));
-  const layout = computeRadarLayout(width, height, false, radarRadiusPercent);
+  const compact = Math.min(width, height) < 320;
+  const effectiveRadiusPercent = compact
+    ? Math.min(radarRadiusPercent, 52)
+    : radarRadiusPercent;
+  const layout = computeRadarLayout(width, height, false, effectiveRadiusPercent);
   const { cx, cy, radius, axisLabelGap } = layout;
   const maxValue = d3.max(data, (d) => Number(d[yField] ?? 0)) ?? 1;
   const baseColor = colors[0] ?? "#465fff";

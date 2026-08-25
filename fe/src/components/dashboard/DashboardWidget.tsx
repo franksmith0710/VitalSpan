@@ -453,12 +453,14 @@ export function DashboardWidget({
     inShapeShell && pixelSize
       ? `${Math.round(pixelSize.width)}×${Math.round(pixelSize.height)}`
       : `${sizeW}×${sizeH}`;
-  const shapeContentChromePx =
-    inShapeShell && mode === "edit" && selected
-      ? pixelDragRailHeightPx(chromeScale)
-      : inShapeShell && mode === "view" && readChartTitleVisible(resolvedWidget.chartConfig, dashboardStyle?.titleStyle)
-        ? pixelViewTitleHeightPx(chromeScale)
-        : 0;
+  const chartTitleVisibleInShell =
+    inShapeShell &&
+    resolvedWidget.chartConfig &&
+    readChartTitleVisible(resolvedWidget.chartConfig, dashboardStyle?.titleStyle);
+  const titleChromePx = chartTitleVisibleInShell ? pixelViewTitleHeightPx(chromeScale) : 0;
+  const dragRailPx =
+    inShapeShell && mode === "edit" && selected ? pixelDragRailHeightPx(chromeScale) : 0;
+  const shapeContentChromePx = titleChromePx + dragRailPx;
   const effectiveScheme = resolveWidgetEffectiveScheme(dashboardStyle);
   const shellResolved = resolvedWidget.chartConfig
     ? resolveChartContentShellStyle(
@@ -478,7 +480,7 @@ export function DashboardWidget({
   const shellColor = resolveWidgetShellPaintColor(dashboardStyle);
   const chrome = resolveDashboardChrome(dashboardStyle);
   const chartTitleVisible =
-    inShapeShell && mode === "view" && readChartTitleVisible(resolvedWidget.chartConfig, dashboardStyle?.titleStyle);
+    inShapeShell && chartTitleVisibleInShell && mode === "view";
   const titleStyle =
     resolvedWidget.chartConfig
       ? mergeChartTitleStyle(
