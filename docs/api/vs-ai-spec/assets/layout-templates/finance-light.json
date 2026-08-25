@@ -40,7 +40,7 @@
       "type": "chart",
       "title": "核心 KPI",
       "x": 48,
-      "y": 48,
+      "y": 136,
       "width": 580,
       "height": 140,
       "defaultChartType": "kpi"
@@ -49,15 +49,16 @@
       "type": "chart",
       "title": "收益趋势",
       "x": 652,
-      "y": 48,
+      "y": 136,
       "width": 1220,
-      "height": 340
+      "height": 340,
+      "defaultChartType": "line"
     },
     {
       "type": "chart",
       "title": "资产结构",
       "x": 48,
-      "y": 212,
+      "y": 300,
       "width": 580,
       "height": 340,
       "defaultChartType": "pie-donut"
@@ -66,7 +67,7 @@
       "type": "customViz",
       "title": "AI 解读",
       "x": 652,
-      "y": 412,
+      "y": 500,
       "width": 1220,
       "height": 140
     },
@@ -74,19 +75,27 @@
       "type": "chart",
       "title": "风险雷达",
       "x": 48,
-      "y": 580,
+      "y": 668,
       "width": 900,
-      "height": 452,
+      "height": 412,
       "defaultChartType": "radar"
     },
     {
       "type": "chart",
       "title": "明细表",
       "x": 972,
-      "y": 580,
+      "y": 668,
       "width": 900,
-      "height": 452,
+      "height": 412,
       "defaultChartType": "table-info"
     }
+  ],
+  "shell": {
+    "title": "金融浅色看板风",
+    "clock": true,
+    "accent": "#e4e7ec"
+  },
+  "tags": [
+    "de-style"
   ]
 }

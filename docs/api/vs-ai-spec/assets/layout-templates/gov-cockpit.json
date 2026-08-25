@@ -28,7 +28,7 @@
     },
     "titleStyle": {
       "color": "#e2e8f0",
-      "fontSize": 13,
+      "fontSize": 14,
       "fontWeight": 600
     },
     "chartLabelStyle": {
@@ -40,77 +40,89 @@
       "type": "chart",
       "title": "核心指标 A",
       "x": 48,
-      "y": 56,
+      "y": 144,
       "width": 438,
-      "height": 136,
+      "height": 120,
       "defaultChartType": "kpi"
     },
     {
       "type": "chart",
       "title": "核心指标 B",
       "x": 510,
-      "y": 56,
+      "y": 144,
       "width": 438,
-      "height": 136,
+      "height": 120,
       "defaultChartType": "kpi"
     },
     {
       "type": "chart",
       "title": "核心指标 C",
       "x": 972,
-      "y": 56,
+      "y": 144,
       "width": 438,
-      "height": 136,
+      "height": 120,
       "defaultChartType": "kpi"
     },
     {
       "type": "chart",
       "title": "核心指标 D",
       "x": 1434,
-      "y": 56,
+      "y": 144,
       "width": 438,
-      "height": 136,
+      "height": 120,
       "defaultChartType": "kpi"
     },
     {
       "type": "chart",
       "title": "趋势分析",
       "x": 48,
-      "y": 200,
+      "y": 288,
       "width": 900,
-      "height": 320
+      "height": 320,
+      "defaultChartType": "line"
     },
     {
       "type": "chart",
       "title": "结构占比",
       "x": 972,
-      "y": 200,
+      "y": 288,
       "width": 900,
-      "height": 320
+      "height": 320,
+      "defaultChartType": "pie-donut"
     },
     {
       "type": "chart",
       "title": "区域对比",
       "x": 48,
-      "y": 556,
+      "y": 644,
       "width": 900,
-      "height": 320
+      "height": 320,
+      "defaultChartType": "bar"
     },
     {
       "type": "chart",
-      "title": "多维雷达",
+      "title": "区域地图",
       "x": 972,
-      "y": 556,
+      "y": 644,
       "width": 900,
-      "height": 320
+      "height": 320,
+      "defaultChartType": "map"
     },
     {
       "type": "customViz",
       "title": "AI 洞察",
       "x": 48,
-      "y": 888,
+      "y": 1000,
       "width": 1824,
-      "height": 144
+      "height": 80
     }
+  ],
+  "shell": {
+    "title": "政务 KPI 驾驶舱",
+    "clock": true,
+    "accent": "#22d3ee"
+  },
+  "tags": [
+    "de-style"
   ]
 }

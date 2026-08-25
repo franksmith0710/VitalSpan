@@ -48,7 +48,8 @@
       "x": 732,
       "y": 48,
       "width": 660,
-      "height": 140
+      "height": 140,
+      "defaultChartType": "line"
     },
     {
       "type": "chart",
@@ -74,7 +75,9 @@
       "x": 732,
       "y": 756,
       "width": 660,
-      "height": 276
+      "height": 276,
+      "defaultChartType": "bar"
     }
-  ]
+  ],
+  "tags": []
 }

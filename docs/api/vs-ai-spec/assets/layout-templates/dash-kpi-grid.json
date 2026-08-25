@@ -75,7 +75,8 @@
       "x": 48,
       "y": 172,
       "width": 660,
-      "height": 320
+      "height": 320,
+      "defaultChartType": "line"
     },
     {
       "type": "chart",
@@ -83,7 +84,8 @@
       "x": 732,
       "y": 172,
       "width": 660,
-      "height": 320
+      "height": 320,
+      "defaultChartType": "bar"
     },
     {
       "type": "chart",
@@ -91,7 +93,8 @@
       "x": 48,
       "y": 516,
       "width": 660,
-      "height": 516
+      "height": 516,
+      "defaultChartType": "pie-donut"
     },
     {
       "type": "chart",
@@ -102,5 +105,6 @@
       "height": 516,
       "defaultChartType": "table-info"
     }
-  ]
+  ],
+  "tags": []
 }

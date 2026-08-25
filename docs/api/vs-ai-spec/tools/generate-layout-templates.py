@@ -99,6 +99,109 @@ def slot(kind: str, title: str, x: int, y: int, w: int, h: int, *, chart_type: s
     return s
 
 
+SHELL_H = 88
+
+CHART_TITLE_DEFAULTS: list[tuple[str, str]] = [
+    ("趋势", "line"),
+    ("占比", "pie-donut"),
+    ("结构", "pie-donut"),
+    ("雷达", "radar"),
+    ("地图", "map"),
+    ("明细", "table-info"),
+    ("漏斗", "funnel"),
+    ("关系", "graph"),
+    ("物流", "sankey"),
+    ("仪表", "gauge"),
+    ("对比", "bar"),
+    ("排名", "bar-horizontal"),
+    ("KPI", "kpi"),
+    ("指标", "kpi"),
+    ("GMV", "kpi"),
+    ("订单", "kpi"),
+    ("访客", "kpi"),
+    ("转化", "kpi"),
+    ("面板", "bar"),
+    ("区块", "bar"),
+    ("主趋势", "line"),
+    ("主图表", "line"),
+    ("辅图", "bar"),
+    ("柱状", "bar"),
+    ("折线", "line"),
+    ("饼", "pie"),
+    ("环形", "pie-donut"),
+    ("核心", "kpi"),
+    ("销售", "kpi"),
+    ("品类", "pie-donut"),
+    ("省区", "sankey"),
+    ("分布", "bar"),
+    ("内置图", "bar"),
+]
+
+
+def infer_chart_type(title: str, existing: str | None = None) -> str:
+    if existing:
+        return existing
+    for key, chart_type in CHART_TITLE_DEFAULTS:
+        if key in title:
+            return chart_type
+    return "bar"
+
+
+def shell_accent(style: dict) -> str:
+    border = (style.get("widgetStyle") or {}).get("borderColor") or ""
+    if isinstance(border, str) and border.startswith("#") and len(border) >= 7:
+        return border[:7]
+    return "#22d3ee"
+
+
+def clamp_slots_to_canvas(slots: list[dict], canvas_h: int = 1080) -> None:
+    if not slots:
+        return
+    for _ in range(48):
+        max_bottom = max(int(s["y"]) + int(s["height"]) for s in slots)
+        if max_bottom <= canvas_h:
+            return
+        overflow = max_bottom - canvas_h
+        bottom = max(slots, key=lambda x: int(x["y"]) + int(x["height"]))
+        min_h = 88 if bottom["type"] == "chart" else 64
+        shrink = min(overflow, max(0, int(bottom["height"]) - min_h))
+        if shrink > 0:
+            bottom["height"] = int(bottom["height"]) - shrink
+            continue
+        min_y = SHELL_H if int(bottom["y"]) >= SHELL_H else 0
+        move = min(overflow, int(bottom["y"]) - min_y)
+        if move > 0:
+            bottom["y"] = int(bottom["y"]) - move
+            continue
+        for s in slots:
+            if int(s["height"]) > min_h:
+                s["height"] = int(s["height"]) - 1
+        else:
+            break
+
+
+def finalize_template(tpl: dict) -> dict:
+    if tpl["surfaceKind"] == "data-screen":
+        accent = shell_accent(tpl.get("styleConfig") or {})
+        tpl.setdefault(
+            "shell",
+            {"title": tpl["name"], "clock": True, "accent": accent},
+        )
+        if tpl["slots"]:
+            min_y = min(int(s["y"]) for s in tpl["slots"])
+            if min_y < SHELL_H:
+                for s in tpl["slots"]:
+                    s["y"] = int(s["y"]) + SHELL_H
+                clamp_slots_to_canvas(tpl["slots"], int(tpl.get("canvas", {}).get("height", 1080)))
+    for s in tpl["slots"]:
+        if s["type"] == "chart":
+            s["defaultChartType"] = infer_chart_type(s["title"], s.get("defaultChartType"))
+    tpl.setdefault("tags", [])
+    if tpl["surfaceKind"] == "data-screen" and "de-style" not in tpl["tags"]:
+        tpl["tags"].append("de-style")
+    return tpl
+
+
 TEMPLATES: list[dict] = [
     {
         "id": "gov-cockpit",
@@ -112,10 +215,10 @@ TEMPLATES: list[dict] = [
             slot("chart", "核心指标 B", 510, 56, 438, 120, chart_type="kpi"),
             slot("chart", "核心指标 C", 972, 56, 438, 120, chart_type="kpi"),
             slot("chart", "核心指标 D", 1434, 56, 438, 120, chart_type="kpi"),
-            slot("chart", "趋势分析", 48, 200, 900, 320),
-            slot("chart", "结构占比", 972, 200, 900, 320),
-            slot("chart", "区域对比", 48, 556, 900, 320),
-            slot("chart", "多维雷达", 972, 556, 900, 320),
+            slot("chart", "趋势分析", 48, 200, 900, 320, chart_type="line"),
+            slot("chart", "结构占比", 972, 200, 900, 320, chart_type="pie-donut"),
+            slot("chart", "区域对比", 48, 556, 900, 320, chart_type="bar"),
+            slot("chart", "区域地图", 972, 556, 900, 320, chart_type="map"),
             slot("customViz", "AI 洞察", 48, 912, 1824, 120),
         ],
     },
@@ -264,6 +367,102 @@ TEMPLATES: list[dict] = [
             slot("chart", "辅图", 760, 700, 400, 160),
             slot("customViz", "AI 组件 A", 360, 880, 580, 152),
             slot("customViz", "AI 组件 B", 980, 880, 580, 152),
+        ],
+    },
+    {
+        "id": "de-classic-cockpit",
+        "name": "DE 经典驾驶舱",
+        "description": "对标 DataEase：顶栏+时钟+四 KPI+双行图+地图+洞察带；推荐默认",
+        "surfaceKind": "data-screen",
+        "tags": ["de-recommended", "de-style"],
+        "canvas": {"width": 1920, "height": 1080},
+        "styleConfig": dark_style("#22d3ee"),
+        "shell": {"title": "数据分析驾驶舱", "accent": "#22d3ee", "clock": True},
+        "slots": [
+            slot("chart", "核心指标 A", 48, 144, 438, 120, chart_type="kpi"),
+            slot("chart", "核心指标 B", 510, 144, 438, 120, chart_type="kpi"),
+            slot("chart", "核心指标 C", 972, 144, 438, 120, chart_type="kpi"),
+            slot("chart", "核心指标 D", 1434, 144, 438, 120, chart_type="kpi"),
+            slot("chart", "趋势分析", 48, 288, 900, 300, chart_type="line"),
+            slot("chart", "结构占比", 972, 288, 900, 300, chart_type="pie-donut"),
+            slot("chart", "区域对比", 48, 612, 900, 300, chart_type="bar"),
+            slot("chart", "区域地图", 972, 612, 900, 300, chart_type="map"),
+            slot("customViz", "AI 洞察", 48, 936, 1824, 112),
+        ],
+    },
+    {
+        "id": "de-sales-command",
+        "name": "DE 销售指挥墙",
+        "description": "四 KPI + 宽趋势 + 饼图/地图 + 明细表；政企销售场景",
+        "surfaceKind": "data-screen",
+        "tags": ["de-recommended", "de-style", "sales"],
+        "canvas": {"width": 1920, "height": 1080},
+        "styleConfig": dark_style("#38bdf8", "#0c1222"),
+        "shell": {"title": "销售指挥中枢", "accent": "#38bdf8", "clock": True},
+        "slots": [
+            slot("chart", "销售额 KPI", 48, 144, 438, 112, chart_type="kpi"),
+            slot("chart", "订单量 KPI", 510, 144, 438, 112, chart_type="kpi"),
+            slot("chart", "客单价 KPI", 972, 144, 438, 112, chart_type="kpi"),
+            slot("chart", "转化率 KPI", 1434, 144, 438, 112, chart_type="kpi"),
+            slot("chart", "销售趋势", 48, 280, 1824, 260, chart_type="line"),
+            slot("chart", "渠道占比", 48, 564, 900, 280, chart_type="pie-donut"),
+            slot("chart", "区域地图", 972, 564, 900, 280, chart_type="map"),
+            slot("chart", "TOP 明细", 48, 868, 1824, 180, chart_type="table-info"),
+        ],
+    },
+    {
+        "id": "de-balanced-four",
+        "name": "DE 四象限均衡",
+        "description": "2×2 等分 + 固定柱/线/饼/雷达；最工整的通用样例",
+        "surfaceKind": "data-screen",
+        "tags": ["de-recommended", "de-style", "balanced"],
+        "canvas": {"width": 1920, "height": 1080},
+        "styleConfig": dark_style("#6366f1"),
+        "shell": {"title": "运营分析大屏", "accent": "#6366f1", "clock": True},
+        "slots": [
+            slot("chart", "柱状对比", 48, 144, 900, 420, chart_type="bar"),
+            slot("chart", "趋势折线", 972, 144, 900, 420, chart_type="line"),
+            slot("chart", "结构占比", 48, 588, 900, 420, chart_type="pie-donut"),
+            slot("chart", "多维雷达", 972, 588, 900, 420, chart_type="radar"),
+        ],
+    },
+    {
+        "id": "de-map-command",
+        "name": "DE 地图指挥",
+        "description": "居中大地图 + 侧栏 KPI/排名/占比；地理分析场景",
+        "surfaceKind": "data-screen",
+        "tags": ["de-recommended", "de-style", "map"],
+        "canvas": {"width": 1920, "height": 1080},
+        "styleConfig": dark_style("#34d399", "#020617"),
+        "shell": {"title": "区域指挥地图", "accent": "#34d399", "clock": True},
+        "slots": [
+            slot("chart", "总览 KPI", 48, 144, 360, 120, chart_type="kpi"),
+            slot("chart", "城市排名", 48, 288, 360, 360, chart_type="bar-horizontal"),
+            slot("chart", "区域地图", 432, 144, 1056, 864, chart_type="map"),
+            slot("chart", "品类占比", 1512, 144, 360, 360, chart_type="pie-donut"),
+            slot("chart", "趋势迷你", 1512, 528, 360, 240, chart_type="line"),
+            slot("customViz", "AI 洞察", 1512, 792, 360, 216),
+        ],
+    },
+    {
+        "id": "de-kpi-flow-wall",
+        "name": "DE KPI 流向墙",
+        "description": "四 KPI + 全宽 sankey + 四象限；流向/链路场景",
+        "surfaceKind": "data-screen",
+        "tags": ["de-recommended", "de-style", "flow"],
+        "canvas": {"width": 1920, "height": 1080},
+        "styleConfig": dark_style("#fbbf24", "#0f172a"),
+        "shell": {"title": "业务流向大屏", "accent": "#fbbf24", "clock": True},
+        "slots": [
+            slot("chart", "GMV", 48, 144, 438, 100, chart_type="kpi"),
+            slot("chart", "订单", 510, 144, 438, 100, chart_type="kpi"),
+            slot("chart", "访客", 972, 144, 438, 100, chart_type="kpi"),
+            slot("chart", "转化", 1434, 144, 438, 100, chart_type="kpi"),
+            slot("chart", "省区物流关系", 48, 268, 1824, 240, chart_type="sankey"),
+            slot("chart", "品类占比", 48, 532, 900, 260, chart_type="pie-donut"),
+            slot("chart", "区域地图", 972, 532, 900, 260, chart_type="map"),
+            slot("chart", "转化漏斗", 48, 816, 900, 232, chart_type="funnel"),
+            slot("chart", "关系网络", 972, 816, 900, 232, chart_type="graph"),
         ],
     },
 ]
@@ -431,8 +630,20 @@ ALL_TEMPLATES = TEMPLATES + DASH_TEMPLATES
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    catalog = {"version": 1, "description": "DeepTalk compose 排布样例（大屏 + 仪表板）", "templates": []}
+    catalog = {
+        "version": 2,
+        "description": "DeepTalk compose 排布样例（大屏 DE 壳层 + 仪表板）",
+        "recommendedDataScreen": [
+            "de-classic-cockpit",
+            "de-sales-command",
+            "de-balanced-four",
+            "de-map-command",
+            "gov-cockpit",
+        ],
+        "templates": [],
+    }
     for tpl in ALL_TEMPLATES:
+        finalize_template(tpl)
         path = OUT / f"{tpl['id']}.json"
         path.write_text(json.dumps(tpl, ensure_ascii=False, indent=2), encoding="utf-8")
         chart_slots = sum(1 for s in tpl["slots"] if s["type"] == "chart")

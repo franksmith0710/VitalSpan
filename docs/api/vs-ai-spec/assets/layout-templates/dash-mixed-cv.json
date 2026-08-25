@@ -55,7 +55,8 @@
       "x": 48,
       "y": 392,
       "width": 432,
-      "height": 640
+      "height": 640,
+      "defaultChartType": "bar"
     },
     {
       "type": "chart",
@@ -63,7 +64,8 @@
       "x": 504,
       "y": 392,
       "width": 432,
-      "height": 640
+      "height": 640,
+      "defaultChartType": "line"
     },
     {
       "type": "chart",
@@ -74,5 +76,6 @@
       "height": 640,
       "defaultChartType": "pie-donut"
     }
-  ]
+  ],
+  "tags": []
 }

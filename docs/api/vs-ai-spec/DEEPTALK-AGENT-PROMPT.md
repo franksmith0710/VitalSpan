@@ -41,7 +41,7 @@
 | `vitalspan_validate_artifact` | ② 预检 + stamp |
 | `vitalspan_publish_artifact` | **② 主交付** |
 | `vitalspan_list_artifacts` | 核对组件库 |
-| `vitalspan_list_layout_templates` | ③ 选 20 套排布模板 |
+| `vitalspan_list_layout_templates` | ③ 选 **25** 套排布模板（5 套 DE 推荐大屏） |
 | `vitalspan_compose_dashboard` | **③ 一键创建+编排**（`template=` + chart_types） |
 | `vitalspan_get_dashboard_layout` | **③ 导出 layout** → 改样式 → upload |
 | `vitalspan_upload_dashboard` | **③ 保存 layout**（`--file` 或 chart_types） |
@@ -96,10 +96,12 @@ d3 必须 `host.vsCv.mount(`；render 读 `(p && p.style) || {}`。
 
 **推荐两段式**：compose 搭骨架 → get 导出 → **只改样式** → upload。
 
-**素材**：① 内置 chartType + ② DeepTalk 已 publish 的 customViz（`artifact_ids` 逗号分隔；模板有 customViz 槽时必须传入，否则槽位会跳过）。
+**素材**：① 内置 chartType（模板槽位可省略 `chart_types`）+ ② 已 publish 的 customViz（`artifact_ids` 可选；缺省为占位文案，非空槽）
 
 1. 确认用户要 **仪表板** 还是 **数据大屏**
-2. `vitalspan_list_layout_templates` 选 `template=`（与 `surface_kind` 一致）
+2. `vitalspan_list_layout_templates` 选 `template=`（与 `surface_kind` 一致）  
+   **数据大屏首选**：`de-classic-cockpit` · `de-sales-command` · `de-balanced-four` · `de-map-command`（见 [guides/COMPOSE-TEMPLATES-DE.md](./guides/COMPOSE-TEMPLATES-DE.md)）  
+   compose 会自动加 **DE 顶栏+时钟**；`chart_types` 可省略（槽位有 `defaultChartType`）；无 `artifact_ids` 时 AI 槽为占位文案
 3. **`vitalspan_compose_dashboard`** `surface_kind=...` `template=...` `chart_types=...` `artifact_ids=...`  
    → 终端 **`ok dashboardId=<uuid>`**
 4. 需改颜色/圆角/标题时：`vitalspan_get_dashboard_layout dashboard_id=<uuid> file=examples/my-screen.json`

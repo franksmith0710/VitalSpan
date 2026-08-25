@@ -40,49 +40,63 @@
       "type": "chart",
       "title": "面板 1",
       "x": 48,
-      "y": 48,
+      "y": 136,
       "width": 592,
-      "height": 480
+      "height": 480,
+      "defaultChartType": "bar"
     },
     {
       "type": "chart",
       "title": "面板 2",
       "x": 664,
-      "y": 48,
+      "y": 136,
       "width": 592,
-      "height": 480
+      "height": 480,
+      "defaultChartType": "bar"
     },
     {
       "type": "chart",
       "title": "面板 3",
       "x": 1280,
-      "y": 48,
+      "y": 136,
       "width": 592,
-      "height": 480
+      "height": 480,
+      "defaultChartType": "bar"
     },
     {
       "type": "chart",
       "title": "面板 4",
       "x": 48,
-      "y": 552,
+      "y": 640,
       "width": 592,
-      "height": 480
+      "height": 440,
+      "defaultChartType": "bar"
     },
     {
       "type": "chart",
       "title": "面板 5",
       "x": 664,
-      "y": 552,
+      "y": 640,
       "width": 592,
-      "height": 480
+      "height": 440,
+      "defaultChartType": "bar"
     },
     {
       "type": "chart",
       "title": "面板 6",
       "x": 1280,
-      "y": 552,
+      "y": 640,
       "width": 592,
-      "height": 480
+      "height": 440,
+      "defaultChartType": "bar"
     }
+  ],
+  "shell": {
+    "title": "工业监控六宫格",
+    "clock": true,
+    "accent": "#34d399"
+  },
+  "tags": [
+    "de-style"
   ]
 }

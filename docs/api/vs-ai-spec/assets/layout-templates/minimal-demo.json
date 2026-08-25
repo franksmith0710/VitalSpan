@@ -51,7 +51,8 @@
       "x": 360,
       "y": 320,
       "width": 1200,
-      "height": 360
+      "height": 360,
+      "defaultChartType": "line"
     },
     {
       "type": "chart",
@@ -59,7 +60,8 @@
       "x": 760,
       "y": 700,
       "width": 400,
-      "height": 160
+      "height": 160,
+      "defaultChartType": "bar"
     },
     {
       "type": "customViz",
@@ -77,5 +79,13 @@
       "width": 580,
       "height": 152
     }
+  ],
+  "shell": {
+    "title": "极简演示",
+    "clock": true,
+    "accent": "#818cf8"
+  },
+  "tags": [
+    "de-style"
   ]
 }

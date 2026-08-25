@@ -42,7 +42,8 @@
       "x": 48,
       "y": 48,
       "width": 432,
-      "height": 480
+      "height": 480,
+      "defaultChartType": "bar"
     },
     {
       "type": "chart",
@@ -50,7 +51,8 @@
       "x": 504,
       "y": 48,
       "width": 432,
-      "height": 480
+      "height": 480,
+      "defaultChartType": "bar"
     },
     {
       "type": "chart",
@@ -58,7 +60,8 @@
       "x": 960,
       "y": 48,
       "width": 432,
-      "height": 480
+      "height": 480,
+      "defaultChartType": "bar"
     },
     {
       "type": "chart",
@@ -66,7 +69,8 @@
       "x": 48,
       "y": 552,
       "width": 432,
-      "height": 480
+      "height": 480,
+      "defaultChartType": "bar"
     },
     {
       "type": "chart",
@@ -74,7 +78,8 @@
       "x": 504,
       "y": 552,
       "width": 432,
-      "height": 480
+      "height": 480,
+      "defaultChartType": "bar"
     },
     {
       "type": "chart",
@@ -82,7 +87,9 @@
       "x": 960,
       "y": 552,
       "width": 432,
-      "height": 480
+      "height": 480,
+      "defaultChartType": "bar"
     }
-  ]
+  ],
+  "tags": []
 }

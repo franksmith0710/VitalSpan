@@ -1,8 +1,13 @@
 {
-  "id": "asymmetric-editorial",
-  "name": "不对称编辑排版",
-  "description": "左侧主图 62%，右侧竖栈",
+  "id": "de-balanced-four",
+  "name": "DE 四象限均衡",
+  "description": "2×2 等分 + 固定柱/线/饼/雷达；最工整的通用样例",
   "surfaceKind": "data-screen",
+  "tags": [
+    "de-recommended",
+    "de-style",
+    "balanced"
+  ],
   "canvas": {
     "width": 1920,
     "height": 1080
@@ -20,7 +25,7 @@
     "refreshIntervalSec": 60,
     "widgetStyle": {
       "background": "rgba(15, 23, 42, 0.78)",
-      "borderColor": "#a78bfa59",
+      "borderColor": "#6366f159",
       "borderWidth": 1,
       "borderEnabled": true,
       "borderStyle": "solid",
@@ -35,58 +40,47 @@
       "color": "#cbd5e1"
     }
   },
+  "shell": {
+    "title": "运营分析大屏",
+    "accent": "#6366f1",
+    "clock": true
+  },
   "slots": [
     {
       "type": "chart",
-      "title": "主趋势",
+      "title": "柱状对比",
       "x": 48,
-      "y": 136,
-      "width": 1152,
-      "height": 944,
+      "y": 144,
+      "width": 900,
+      "height": 420,
+      "defaultChartType": "bar"
+    },
+    {
+      "type": "chart",
+      "title": "趋势折线",
+      "x": 972,
+      "y": 144,
+      "width": 900,
+      "height": 420,
       "defaultChartType": "line"
     },
     {
       "type": "chart",
-      "title": "右上 KPI",
-      "x": 1224,
-      "y": 136,
-      "width": 648,
-      "height": 200,
-      "defaultChartType": "kpi"
-    },
-    {
-      "type": "chart",
-      "title": "右中占比",
-      "x": 1224,
-      "y": 360,
-      "width": 648,
-      "height": 280,
+      "title": "结构占比",
+      "x": 48,
+      "y": 588,
+      "width": 900,
+      "height": 420,
       "defaultChartType": "pie-donut"
     },
     {
-      "type": "customViz",
-      "title": "AI 排名",
-      "x": 1224,
-      "y": 664,
-      "width": 648,
-      "height": 220
-    },
-    {
       "type": "chart",
-      "title": "右下仪表",
-      "x": 1224,
-      "y": 908,
-      "width": 648,
-      "height": 172,
-      "defaultChartType": "gauge"
+      "title": "多维雷达",
+      "x": 972,
+      "y": 588,
+      "width": 900,
+      "height": 420,
+      "defaultChartType": "radar"
     }
-  ],
-  "shell": {
-    "title": "不对称编辑排版",
-    "clock": true,
-    "accent": "#a78bfa"
-  },
-  "tags": [
-    "de-style"
   ]
 }

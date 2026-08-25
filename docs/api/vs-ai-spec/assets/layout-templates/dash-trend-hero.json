@@ -39,7 +39,8 @@
       "x": 48,
       "y": 48,
       "width": 900,
-      "height": 720
+      "height": 720,
+      "defaultChartType": "line"
     },
     {
       "type": "chart",
@@ -76,5 +77,6 @@
       "width": 1344,
       "height": 240
     }
-  ]
+  ],
+  "tags": []
 }

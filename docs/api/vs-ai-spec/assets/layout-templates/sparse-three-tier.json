@@ -1,7 +1,7 @@
 {
   "id": "sparse-three-tier",
   "name": "三阶疏朗",
-  "description": "KPI 带 + 中行三列 + 底行双图 + 仪表带（v2 加高 KPI/底行，避免标题挡数值）",
+  "description": "KPI 带 + 中行三列 + 底行双图 + 仪表带",
   "surfaceKind": "data-screen",
   "canvas": {
     "width": 1920,
@@ -28,7 +28,7 @@
     },
     "titleStyle": {
       "color": "#e2e8f0",
-      "fontSize": 13,
+      "fontSize": 14,
       "fontWeight": 600
     },
     "chartLabelStyle": {
@@ -40,84 +40,97 @@
       "type": "chart",
       "title": "指标一",
       "x": 48,
-      "y": 48,
+      "y": 136,
       "width": 592,
-      "height": 128,
+      "height": 100,
       "defaultChartType": "kpi"
     },
     {
       "type": "chart",
       "title": "指标二",
       "x": 664,
-      "y": 48,
+      "y": 136,
       "width": 592,
-      "height": 128,
+      "height": 100,
       "defaultChartType": "kpi"
     },
     {
       "type": "chart",
       "title": "指标三",
       "x": 1280,
-      "y": 48,
+      "y": 136,
       "width": 592,
-      "height": 128,
+      "height": 100,
       "defaultChartType": "kpi"
     },
     {
       "type": "chart",
       "title": "左栏图表",
       "x": 48,
-      "y": 200,
+      "y": 260,
       "width": 592,
-      "height": 304
+      "height": 340,
+      "defaultChartType": "bar"
     },
     {
       "type": "chart",
       "title": "中栏图表",
       "x": 664,
-      "y": 200,
+      "y": 260,
       "width": 592,
-      "height": 304
+      "height": 340,
+      "defaultChartType": "bar"
     },
     {
       "type": "chart",
       "title": "右栏图表",
       "x": 1280,
-      "y": 200,
+      "y": 260,
       "width": 592,
-      "height": 304
+      "height": 340,
+      "defaultChartType": "bar"
     },
     {
       "type": "customViz",
       "title": "AI 趋势",
       "x": 48,
-      "y": 520,
+      "y": 624,
       "width": 900,
-      "height": 296
+      "height": 300
     },
     {
       "type": "customViz",
       "title": "AI 排名",
       "x": 972,
-      "y": 520,
+      "y": 624,
       "width": 900,
-      "height": 296
+      "height": 300
     },
     {
       "type": "chart",
       "title": "对比图",
       "x": 48,
-      "y": 832,
+      "y": 948,
       "width": 900,
-      "height": 200
+      "height": 132,
+      "defaultChartType": "bar"
     },
     {
       "type": "chart",
       "title": "分布图",
       "x": 972,
-      "y": 832,
+      "y": 948,
       "width": 900,
-      "height": 200
+      "height": 132,
+      "defaultChartType": "bar"
     }
+  ],
+  "shell": {
+    "title": "三阶疏朗",
+    "clock": true,
+    "accent": "#38bdf8"
+  },
+  "tags": [
+    "de-style"
   ]
 }
