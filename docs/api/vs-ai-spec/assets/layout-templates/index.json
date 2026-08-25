@@ -1,124 +1,26 @@
 {
   "version": 2,
-  "description": "DeepTalk compose 排布样例（大屏 DE 壳层 + 仪表板）",
+  "description": "DeepTalk compose：5 套 DE 大屏 + 10 套仪表板（旧大屏 id 已移除）",
   "recommendedDataScreen": [
     "de-classic-cockpit",
     "de-sales-command",
     "de-balanced-four",
     "de-map-command",
-    "gov-cockpit"
+    "de-kpi-flow-wall"
+  ],
+  "removedDataScreenIds": [
+    "gov-cockpit",
+    "sparse-three-tier",
+    "map-hero",
+    "quad-spacious",
+    "asymmetric-editorial",
+    "kpi-flow-banner",
+    "customviz-stage",
+    "industrial-monitor",
+    "finance-light",
+    "minimal-demo"
   ],
   "templates": [
-    {
-      "id": "gov-cockpit",
-      "name": "政务 KPI 驾驶舱",
-      "description": "四 KPI + 双行图表 + 全宽关系带；深色 cyan，48px 边距",
-      "surfaceKind": "data-screen",
-      "tags": [
-        "de-style"
-      ],
-      "chartSlots": 8,
-      "customVizSlots": 1
-    },
-    {
-      "id": "sparse-three-tier",
-      "name": "三阶疏朗",
-      "description": "KPI 带 + 中行三列 + 底行双图 + 仪表带",
-      "surfaceKind": "data-screen",
-      "tags": [
-        "de-style"
-      ],
-      "chartSlots": 8,
-      "customVizSlots": 2
-    },
-    {
-      "id": "map-hero",
-      "name": "地图主角",
-      "description": "居中大地图，左右辅图 + customViz",
-      "surfaceKind": "data-screen",
-      "tags": [
-        "de-style"
-      ],
-      "chartSlots": 4,
-      "customVizSlots": 1
-    },
-    {
-      "id": "quad-spacious",
-      "name": "四宫格留白",
-      "description": "2×2 等大区块，56px 边距 + 32px 缝",
-      "surfaceKind": "data-screen",
-      "tags": [
-        "de-style"
-      ],
-      "chartSlots": 4,
-      "customVizSlots": 0
-    },
-    {
-      "id": "asymmetric-editorial",
-      "name": "不对称编辑排版",
-      "description": "左侧主图 62%，右侧竖栈",
-      "surfaceKind": "data-screen",
-      "tags": [
-        "de-style"
-      ],
-      "chartSlots": 4,
-      "customVizSlots": 1
-    },
-    {
-      "id": "kpi-flow-banner",
-      "name": "KPI 顶带 + 流向带",
-      "description": "四 KPI + 全宽 sankey/graph + 四象限",
-      "surfaceKind": "data-screen",
-      "tags": [
-        "de-style"
-      ],
-      "chartSlots": 9,
-      "customVizSlots": 0
-    },
-    {
-      "id": "customviz-stage",
-      "name": "CustomViz 舞台",
-      "description": "上方双大 customViz + 下方四内置图",
-      "surfaceKind": "data-screen",
-      "tags": [
-        "de-style"
-      ],
-      "chartSlots": 4,
-      "customVizSlots": 3
-    },
-    {
-      "id": "industrial-monitor",
-      "name": "工业监控六宫格",
-      "description": "3×2 等分面板，绿色工业 accent",
-      "surfaceKind": "data-screen",
-      "tags": [
-        "de-style"
-      ],
-      "chartSlots": 6,
-      "customVizSlots": 0
-    },
-    {
-      "id": "finance-light",
-      "name": "金融浅色看板风",
-      "description": "浅色背景 + 疏朗五区",
-      "surfaceKind": "data-screen",
-      "tags": [
-        "de-style"
-      ],
-      "chartSlots": 5,
-      "customVizSlots": 1
-    },
-    {
-      "id": "minimal-demo",
-      "name": "极简演示",
-      "description": "仅 5 块，大留白，适合 POC",
-      "surfaceKind": "data-screen",
-      "tags": [
-        "de-style"
-      ],
-      "chartSlots": 3,
-      "customVizSlots": 2
-    },
     {
       "id": "de-classic-cockpit",
       "name": "DE 经典驾驶舱",

@@ -21,10 +21,10 @@
 ```
 vitalspan_compose_dashboard
   surface_kind=data-screen
-  template=gov-cockpit
-  chart_types=kpi,kpi,kpi,kpi,line,pie,bar,radar
+  template=de-classic-cockpit
+  chart_types=kpi,kpi,kpi,kpi,line,pie-donut,bar,map
   artifact_ids=<uuid>
-  name=政务驾驶舱
+  name=数据分析驾驶舱
 ```
 
 记下输出的 `dashboardId=...`。

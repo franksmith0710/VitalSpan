@@ -17,9 +17,10 @@ DeepTalk **workflow ③** 拼大屏时，优先用带 **`de-recommended`** 标�
 | `de-balanced-four` | 最工整四象限 | 2×2 柱/线/饼/雷达 |
 | `de-map-command` | 地理分析 | 居中大地图 + 侧栏 KPI/排名/占比 |
 | `de-kpi-flow-wall` | 链路/流向 | 四 KPI + sankey + 四象限 |
-| `gov-cockpit` | 政务风（同经典布局） | 与 de-classic 同类，cyan accent |
 
 清单：`vitalspan_list_layout_templates` · 索引 `assets/layout-templates/index.json` 的 `recommendedDataScreen`。
+
+> **已移除**旧大屏 id（`gov-cockpit`、`kpi-flow-banner` 等 10 套无 DE 壳层模板）；请只用上表 **`de-*`**。
 
 ## Agent 最小调用
 

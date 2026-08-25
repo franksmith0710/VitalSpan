@@ -1,10 +1,15 @@
 # vs-ai-spec 变更
 
+## 2026-08-25 (移除旧 compose 大屏模板)
+
+- **删除** 10 套无 DE 壳层的 data-screen 模板（`gov-cockpit`、`kpi-flow-banner` 等）；catalog 现为 **5 DE + 10 dash = 15**
+- `index.json` 增加 `removedDataScreenIds`；生成脚本自动清理 orphan JSON
+- Agent/文档/Skill 示例统一为 **`de-classic-cockpit`** 等 5 套 `de-*`
+
 ## 2026-08-25 (compose 大屏 DE 工整模板 + 壳层)
 
-- 新增 4 套 **DE 推荐** compose 模板：`de-classic-cockpit` · `de-sales-command` · `de-balanced-four` · `de-map-command` · `de-kpi-flow-wall`
+- 新增 5 套 **DE 推荐** compose 模板：`de-classic-cockpit` · `de-sales-command` · `de-balanced-four` · `de-map-command` · `de-kpi-flow-wall`
 - compose 自动：**顶栏标题 + 时钟** · 槽位 `defaultChartType` · customViz 空槽 → 富文本占位
-- 现有 10 套 data-screen 模板统一 +88px 壳层偏移与 chart 默认类型
 - 指南：[guides/COMPOSE-TEMPLATES-DE.md](./guides/COMPOSE-TEMPLATES-DE.md) · Agent 提示词已更新
 
 ## 2026-08-25 (SOP 全量对齐 · resources + loadInstance)
