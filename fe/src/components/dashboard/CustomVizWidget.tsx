@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { GripVertical } from "lucide-react";
 import { fetchWithTimeout, getAuthHeaders } from "@/lib/api";
 import { resolveApiBaseUrl } from "@/lib/appBasePath";
@@ -27,6 +27,7 @@ import {
 } from "./custom-viz/customVizExecute";
 import { resolveCustomVizRuntimeStyle } from "./custom-viz/customVizDisplayStyle";
 import { buildCustomVizRuntimePayload, injectCustomVizPayload } from "./custom-viz/customVizPayload";
+import type { CustomVizHostElement } from "./custom-viz/customVizRuntime";
 import { resolveDashboardChrome } from "./dashboardChromeConfig";
 import { Skeleton } from "@/components/ui/skeleton";
 import { gridWidgetShellClassName, GridWidgetShellFrame, resolveGridWidgetShell } from "./widgetRailStyleSections";
@@ -93,6 +94,7 @@ export function CustomVizWidget({
 }: CustomVizWidgetProps) {
   const cfg = widget.customVizConfig;
   const hostRef = useRef<HTMLDivElement | null>(null);
+  const [hostEl, setHostEl] = useState<HTMLDivElement | null>(null);
   const [html, setHtml] = useState<string | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [manifestDefaultStyle, setManifestDefaultStyle] = useState<Record<string, unknown>>({});
@@ -135,10 +137,14 @@ export function CustomVizWidget({
     [hostSize.width, hostSize.height],
   );
 
-  const setHostRef = (node: HTMLDivElement | null) => {
-    hostRef.current = node;
-    hostSizeRef(node);
-  };
+  const setHostRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      hostRef.current = node;
+      hostSizeRef(node);
+      setHostEl(node);
+    },
+    [hostSizeRef],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -182,12 +188,6 @@ export function CustomVizWidget({
     };
   }, [cfg.artifactId]);
 
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host || !html) return undefined;
-    return mountCustomVizHtml(host, html, { styleHooks: manifestStyleHooks });
-  }, [html, manifestStyleHooks]);
-
   const runtimeStyle = useMemo(
     () =>
       resolveCustomVizRuntimeStyle({
@@ -208,11 +208,8 @@ export function CustomVizWidget({
     [cfg.dataBinding, manifestFieldSlots],
   );
 
-  useEffect(() => {
-    const host = hostRef.current;
-    if (!host || !html) return;
-    injectCustomVizPayload(
-      host,
+  const runtimePayload = useMemo(
+    () =>
       buildCustomVizRuntimePayload({
         executeReady,
         loading,
@@ -226,20 +223,35 @@ export function CustomVizWidget({
         rowCap: rowsTruncated ? ADVANCED_CHART_ROW_CAP : undefined,
         slotBindingHint,
       }),
-    );
-  }, [
-    html,
-    columns,
-    cappedRows,
-    rowsTruncated,
-    hostLayout,
-    loading,
-    executeError,
-    executeReady,
-    runtimeStyle,
-    runtimeEncoding,
-    slotBindingHint,
-  ]);
+    [
+      cappedRows,
+      columns,
+      executeError,
+      executeReady,
+      hostLayout,
+      loading,
+      rowsTruncated,
+      runtimeEncoding,
+      runtimeStyle,
+      slotBindingHint,
+    ],
+  );
+
+  const runtimePayloadRef = useRef(runtimePayload);
+  runtimePayloadRef.current = runtimePayload;
+
+  useEffect(() => {
+    if (!hostEl || !html) return undefined;
+    const cleanup = mountCustomVizHtml(hostEl, html, { styleHooks: manifestStyleHooks });
+    injectCustomVizPayload(hostEl, runtimePayloadRef.current);
+    return cleanup;
+  }, [hostEl, html, manifestStyleHooks]);
+
+  useEffect(() => {
+    if (!hostEl || !html) return;
+    if (!(hostEl as CustomVizHostElement).vsCv) return;
+    injectCustomVizPayload(hostEl, runtimePayload);
+  }, [hostEl, html, runtimePayload]);
 
   const body = loadError ? (
     <div className="flex h-full min-h-[64px] flex-col items-center justify-center gap-1 px-3 text-center text-theme-xs text-gray-500 dark:text-gray-400">

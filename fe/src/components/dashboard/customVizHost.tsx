@@ -10,6 +10,15 @@ export const CUSTOM_VIZ_HOST_CLASS = "vs-custom-viz-host";
 
 const HOST_SEL = `.${CUSTOM_VIZ_HOST_CLASS}`;
 
+/** 兼容 bundle 内 `(host||document).getElementById`：宿主是 div 时没有原生 getElementById。 */
+export function ensureCustomVizHostElementLookup(host: HTMLElement): void {
+  const patched = host as HTMLElement & { getElementById?: (id: string) => Element | null };
+  if (typeof patched.getElementById === "function") return;
+  patched.getElementById = function getElementById(id: string) {
+    return this.querySelector(`#${CSS.escape(id)}`);
+  };
+}
+
 /** 把 bundle 里的 html/body/:root 收到宿主，避免污染整页看板。 */
 export function rewriteBundleCss(css: string): string {
   return css.replace(/(^|})([^{}]+)\{/g, (_match, lead: string, selectors: string) => {
@@ -71,6 +80,7 @@ export function mountCustomVizHtml(
   options?: { styleHooks?: import("@/lib/customVizStyleHooks").CustomVizStyleHooks | null },
 ): () => void {
   host.replaceChildren();
+  ensureCustomVizHostElementLookup(host);
   const styleHooks = options?.styleHooks ?? null;
   const detachRuntime = attachCustomVizRuntime(host, { styleHooks });
   const parsed = new DOMParser().parseFromString(html, "text/html");

@@ -6,7 +6,12 @@ import {
   writeGisProject,
 } from "@/components/charts/engine/maplibre/gisProject";
 import { activeFieldRefs } from "@/lib/chartConfigState";
-import { migrateChartConfigToDeAxes, syncLegacyFieldsFromAxes } from "@/lib/resolveChartEncoding";
+import {
+  fieldAtSlot,
+  migrateChartConfigToDeAxes,
+  syncLegacyFieldsFromAxes,
+  writeAxisField,
+} from "@/lib/resolveChartEncoding";
 
 /** sample_db · de_map_od_hubs：全球枢纽 OD（GIS 飞线官方示例） */
 export const GIS_MAP_FLOW_SAMPLE_SQL = `SELECT route_name, from_lng, from_lat, to_lng, to_lat, weight
@@ -76,6 +81,7 @@ export function applyGisMapFlowConfig(
   cfg: ChartViewConfig,
   dataSourceId?: string,
   configId?: string,
+  columns?: string[],
 ): ChartViewConfig {
   const withSlots = ensureChartSlotCapacity({
     ...cfg,
@@ -96,7 +102,45 @@ export function applyGisMapFlowConfig(
     ],
     metrics: [{ field: "weight" }],
   });
-  return writeGisProject(withSlots, { flow: { enabled: true } });
+  const bound =
+    columns?.length && detectGisMapOdColumns(columns)
+      ? applyGisMapOdFieldBindings(withSlots, columns)
+      : withSlots;
+  return writeGisProject(bound, { flow: { enabled: true } });
+}
+
+const GIS_MAP_OD_BINDABLE_FIELDS = [
+  ...GIS_MAP_OD_CORE_COLUMNS,
+  "route_name",
+  "weight",
+] as const;
+
+/** 仅 applyGisMapFlowConfig / 一键接入时调用，禁止在 emitChange/validate 中自动补字段 */
+function applyGisMapOdFieldBindings(
+  cfg: ChartViewConfig,
+  columns: string[],
+): ChartViewConfig {
+  const columnSet = new Set(columns.map((c) => c.trim()));
+  let next = syncLegacyFieldsFromAxes(migrateChartConfigToDeAxes(cfg));
+  for (const name of GIS_MAP_OD_BINDABLE_FIELDS) {
+    if (!columnSet.has(name)) continue;
+    const slot = GIS_MAP_OD_FIELD_SLOTS[name];
+    if (!slot || fieldAtSlot(next, slot)) continue;
+    next = writeAxisField(next, slot, name);
+  }
+  return next;
+}
+
+export function isGisMapOdBindingComplete(cfg: ChartViewConfig): boolean {
+  const dims = activeFieldRefs(
+    syncLegacyFieldsFromAxes(migrateChartConfigToDeAxes(cfg)).dimensions,
+  );
+  return Boolean(
+    dims[0]?.field?.trim() &&
+      dims[1]?.field?.trim() &&
+      dims[2]?.field?.trim() &&
+      dims[3]?.field?.trim(),
+  );
 }
 
 /** 四坐标 OD 槽位齐备时自动开启飞线（避免只绑字段未开 flow.enabled 导致无弧线） */

@@ -22,6 +22,7 @@ import {
 } from "../custom-viz/customVizDisplayStyle";
 import type { DashboardCanvas, PixelLayoutWidget } from "../layoutUtils";
 import { mergeTitleStyle } from "../dashboardStyleConfig";
+import { shapeInnerShellChromeStyle, shapeTitleStackStyle } from "../dashboardWidgetTypography";
 import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
 import { shapeTitlePresentationStyle } from "../dashboardWidgetTypography";
 import { mergeWidgetOverrideStyle } from "../widgetRailStyleSections";
@@ -295,7 +296,10 @@ function PixelShapeInnerChrome({
   return (
     <>
       <WidgetShellBackgroundLayers layers={innerShell} prefix={`pixel-shell-${widget.id}`} />
-      <div className={cn("relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col", overflowClass)}>
+      <div
+        className={cn("relative z-[1] flex min-h-0 min-w-0 flex-1 flex-col", overflowClass)}
+        style={showTitle ? shapeTitleStackStyle(titleStyle, chromeScale) : undefined}
+      >
         <WidgetShapeChrome
           title={widget.title}
           titleStyle={shapeTitlePresentationStyle(titleStyle, chromeScale)}
@@ -381,6 +385,7 @@ export function PixelShape({
   onCycleStackSelect,
 }: PixelShapeProps) {
   const bindDocumentDrag = usePixelShapeDocumentDrag();
+  const chromeScale = usePixelChromeScale();
   const paletteDragActive = usePaletteDragActive();
   const { showTitle, titleStyle, remark } = resolveShapeTitleState(widget, styleConfig, mode);
   const onTitleChange = widgetActions?.onTitleChange;
@@ -684,7 +689,10 @@ export function PixelShape({
               "pixel-shape-inner dashboard-widget-surface relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden",
               selectedInEdit && "pixel-shape-selected",
             )}
-            style={innerShell.style}
+            style={{
+              ...innerShell.style,
+              ...(showTitle ? shapeInnerShellChromeStyle(titleStyle, chromeScale) : {}),
+            }}
             data-pixel-no-drag
             data-screen-border-asset={isBorderAsset ? "" : undefined}
             onPointerDown={(event) => {

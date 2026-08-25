@@ -16,22 +16,33 @@ export const PIXEL_SCREEN_TITLE_HEIGHT_PX = 36;
 /** 无配置字号时的设计稿标题字号（px），对齐 --dw-screen-body */
 export const DEFAULT_WIDGET_TITLE_FONT_PX = 16;
 
-/** 标题行高下限（px），对齐 --dw-screen-title-height 2rem */
-export const WIDGET_TITLE_MIN_ROW_PX = 32;
+/** 标题与内容区固定间隙（不随字号变化） */
+export const WIDGET_TITLE_CONTENT_GAP_PX = 2;
 
-/** 标题与内容区间隙 = 字号 × 比例（字号越大间隙越大） */
-export const WIDGET_TITLE_CONTENT_GAP_RATIO = 0.25;
+/** 标题上方内边距 = 字号 × 比例（仅顶边随字号缩放） */
+export const WIDGET_TITLE_TOP_PAD_RATIO = 0.25;
 
 /** 默认标题行高倍率，对齐 shape-title 1.375rem line-height */
 export const WIDGET_TITLE_LINE_HEIGHT_RATIO = 1.375;
 
+export function scaledChromeLength(px: number, canvasScale = 1): string {
+  const scale = canvasScale > 0 ? canvasScale : 1;
+  return `calc(${px}px / var(--pixel-canvas-chrome-scale, ${scale}))`;
+}
+
 export type WidgetTitleChromeMetrics = {
   fontSizePx: number;
   lineHeightPx: number;
+  topPadPx: number;
   gapPx: number;
-  /** 标题区占用高度：max(行高, 最小行高) + 下间隙 */
+  /** 标题区占用高度：顶边距 + 行高 + 固定下间隙 */
   blockHeightPx: number;
 };
+
+export function resolveWidgetTitleTopPadPx(titleStyle: CSSProperties = {}): number {
+  const fontSizePx = resolveWidgetTitleFontSizePx(titleStyle);
+  return Math.max(0, Math.round(fontSizePx * WIDGET_TITLE_TOP_PAD_RATIO));
+}
 
 export function resolveWidgetTitleFontSizePx(titleStyle: CSSProperties = {}): number {
   return parseCssPx(titleStyle.fontSize) ?? DEFAULT_WIDGET_TITLE_FONT_PX;
@@ -54,29 +65,53 @@ export function resolveWidgetTitleChromeMetrics(
 ): WidgetTitleChromeMetrics {
   const fontSizePx = resolveWidgetTitleFontSizePx(titleStyle);
   const lineHeightPx = resolveWidgetTitleLineHeightPx(titleStyle, fontSizePx);
-  const gapPx = Math.max(2, Math.round(fontSizePx * WIDGET_TITLE_CONTENT_GAP_RATIO));
-  const minRowPx = Math.max(lineHeightPx, WIDGET_TITLE_MIN_ROW_PX);
+  const topPadPx = resolveWidgetTitleTopPadPx(titleStyle);
+  const gapPx = WIDGET_TITLE_CONTENT_GAP_PX;
   return {
     fontSizePx,
     lineHeightPx,
+    topPadPx,
     gapPx,
-    blockHeightPx: minRowPx + gapPx,
+    blockHeightPx: topPadPx + lineHeightPx + gapPx,
   };
 }
 
-/** shape-title 行高/下间隙 CSS 变量（含 edit 态 chrome-scale 补偿） */
+/** shape-title 行高（内联，覆盖 CSS 固定值） */
 export function shapeTitleChromeStyle(
   titleStyle: CSSProperties,
   canvasScale = 1,
 ): CSSProperties {
-  const scale = canvasScale > 0 ? canvasScale : 1;
   const metrics = resolveWidgetTitleChromeMetrics(titleStyle);
-  const minRowPx = Math.max(metrics.lineHeightPx, WIDGET_TITLE_MIN_ROW_PX);
-  const scaled = (px: number) => `calc(${px}px / var(--pixel-canvas-chrome-scale, ${scale}))`;
   return {
-    ["--widget-title-min-row" as string]: scaled(minRowPx),
-    ["--widget-title-content-gap" as string]: scaled(metrics.gapPx),
+    minHeight: scaledChromeLength(metrics.lineHeightPx, canvasScale),
+    paddingTop: 0,
+    paddingBottom: 0,
+    margin: 0,
   };
+}
+
+/** 标题区与图表内容区之间的 flex gap（固定，不随字号变化） */
+export function shapeTitleStackStyle(_titleStyle?: CSSProperties, canvasScale = 1): CSSProperties {
+  return { gap: scaledChromeLength(WIDGET_TITLE_CONTENT_GAP_PX, canvasScale) };
+}
+
+/** pixel-shape-inner：仅顶边距随标题字号缩放 */
+export function shapeInnerShellChromeStyle(
+  titleStyle: CSSProperties,
+  canvasScale = 1,
+): CSSProperties {
+  return {
+    paddingTop: scaledChromeLength(resolveWidgetTitleTopPadPx(titleStyle), canvasScale),
+  };
+}
+
+export function shapeRemarkChromeStyle(
+  titleStyle: CSSProperties,
+  canvasScale = 1,
+): CSSProperties {
+  const fontSizePx = resolveWidgetTitleFontSizePx(titleStyle);
+  const remarkGapPx = Math.max(3, Math.round(fontSizePx * 0.375));
+  return { paddingBottom: scaledChromeLength(remarkGapPx, canvasScale) };
 }
 
 /**

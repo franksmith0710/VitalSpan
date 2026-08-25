@@ -487,8 +487,8 @@ html.dark {
 .pixel-canvas-host .pixel-shape-inner .shape-title {
   display: flex;
   align-items: center;
-  min-height: var(--widget-title-min-row, calc(var(--dw-screen-title-height) / var(--pixel-canvas-chrome-scale)));
-  padding: 0 0 var(--widget-title-content-gap, calc(0.25rem / var(--pixel-canvas-chrome-scale)));
+  min-height: auto;
+  padding: 0;
   background: transparent;
 }
 
@@ -501,9 +501,9 @@ html.dark {
   padding: 0 0 calc(0.375rem / var(--pixel-canvas-chrome-scale));
 }
 
-/* DE 默认 inner padding（无 widgetStyle 配置时） */
+/* DE 默认 inner padding（无 widgetStyle 配置时）：0 */
 .pixel-canvas-host .pixel-shape-inner.dashboard-widget-surface:not([style*="padding"]) {
-  padding: calc(0.6rem / var(--pixel-canvas-chrome-scale));
+  padding: 0;
 }
 
 /* 兼容旧选择器：栅格模式仍用 body 级标题 */

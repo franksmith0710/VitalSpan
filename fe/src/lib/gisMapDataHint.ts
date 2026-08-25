@@ -1,7 +1,7 @@
 import { classifyDatasetField } from "@/components/dashboard/datasetFieldClassification";
 import { activeFieldRefs } from "@/lib/chartConfigState";
 import { isGisFlowEnabled } from "@/components/charts/engine/maplibre/gisProject";
-import { ensureGisMapOdFlowEnabled, GIS_MAP_FLOW_SAMPLE_SQL } from "@/lib/gisMapFlow";
+import { ensureGisMapOdFlowEnabled, GIS_MAP_FLOW_SAMPLE_SQL, isGisMapOdBindingComplete } from "@/lib/gisMapFlow";
 import { resolveGisMapFlowDimensions } from "@/components/charts/engine/maplibre/gisMapFlow";
 import { GIS_MAP_SCATTER_SAMPLE_SQL } from "@/lib/gisMapScatter";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";

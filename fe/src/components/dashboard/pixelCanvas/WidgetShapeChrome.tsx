@@ -1,7 +1,7 @@
 import { GripVertical } from "lucide-react";
 import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
 import { cn } from "@/lib/utils";
-import { dwShapeTitle, shapeTitleChromeStyle } from "../dashboardWidgetTypography";
+import { dwShapeTitle, shapeRemarkChromeStyle, shapeTitleChromeStyle } from "../dashboardWidgetTypography";
 import { WidgetInlineTitle } from "../WidgetInlineTitle";
 
 export type WidgetShapeChromeProps = {
@@ -100,6 +100,7 @@ export function WidgetShapeChrome({
         <p
           className="shape-remark dw-hint shrink-0 text-[var(--dashboard-text-muted,#667085)]"
           data-testid={`pixel-shape-remark-${widgetId}`}
+          style={shapeRemarkChromeStyle(titleMetricsStyle ?? titleStyle, canvasScale)}
         >
           {remark!.text}
         </p>

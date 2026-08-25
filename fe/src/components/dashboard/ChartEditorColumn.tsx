@@ -37,10 +37,26 @@ import { chartHasAdvancedTab } from "@/lib/chartInspectorCapabilities";
 import { filterVisibleCatalogItems } from "@/lib/chartPaletteTaxonomy";
 import { isGeoMapChartType, isGisMapChartType } from "@/lib/chartViewConfig";
 import { resolveMapChartTypeGuide } from "@/lib/mapChartTypeGuide";
+import { isGisFlowEnabled } from "@/components/charts/engine/maplibre/gisProject";
+import { isGisMapOdBindingComplete } from "@/lib/gisMapFlow";
+import { syncLegacyFieldsFromAxes, migrateChartConfigToDeAxes } from "@/lib/resolveChartEncoding";
 
-function buildValidateSuccessMessage(cfg: ReturnType<typeof useChartInspector>["cfg"]): string {
-  const dims = [...new Set(activeFieldRefs(cfg.dimensions).map((d) => d.field))];
-  const metrics = [...new Set(activeFieldRefs(cfg.metrics).map((m) => m.field))];
+function buildValidateSuccessMessage(
+  cfg: ReturnType<typeof useChartInspector>["cfg"],
+): string {
+  if (
+    cfg.chartType === "gis-map" &&
+    isGisFlowEnabled(cfg.nativeBody?.gisProject) &&
+    !isGisMapOdBindingComplete(cfg)
+  ) {
+    return "OD 飞线未就绪：请绑定完整的 from/to 经纬度（含 to_lat 终点纬度）";
+  }
+  const synced =
+    cfg.chartType === "gis-map"
+      ? syncLegacyFieldsFromAxes(migrateChartConfigToDeAxes(cfg))
+      : cfg;
+  const dims = [...new Set(activeFieldRefs(synced.dimensions).map((d) => d.field))];
+  const metrics = [...new Set(activeFieldRefs(synced.metrics).map((m) => m.field))];
   const parts = [
     `维度 ${dims.join("、") || "—"}`,
     `指标 ${metrics.join("、") || "—"}`,
@@ -75,6 +91,14 @@ export function ChartEditorColumn({
     setRefreshOk(false);
     setValidating(true);
     try {
+      if (
+        cfg.chartType === "gis-map" &&
+        isGisFlowEnabled(cfg.nativeBody?.gisProject) &&
+        !isGisMapOdBindingComplete(cfg)
+      ) {
+        setFieldError("OD 飞线需同时绑定 from_lng、from_lat、to_lng、to_lat 四个字段");
+        return;
+      }
       await apiFetch("/api/v1/charts/validate", {
         method: "POST",
         body: JSON.stringify(sanitizeChartFieldsForValidate(cfg)),

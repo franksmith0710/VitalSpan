@@ -87,6 +87,7 @@ describe("CustomVizWidget payload injection", () => {
           ["华北", 80],
         ],
         style: { accentColor: "#336699" },
+        encoding: { dimensions: ["region"], metrics: ["amount"] },
         layout: { width: 480, height: 240 },
         axisPlan: { categoryCount: 2, categoryTickIndices: [0, 1] },
       });

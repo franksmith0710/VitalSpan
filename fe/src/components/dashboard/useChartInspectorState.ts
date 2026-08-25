@@ -39,14 +39,14 @@ export function useChartInspectorState(
   readChartConfig: () => ChartViewConfig,
   emitChange: (cfg: ChartViewConfig) => void,
 ) {
+  const cfg = widget.chartConfig ?? defaultChartConfig("table");
+  const { columns, loading: columnsLoading, ready: columnsReady, refreshColumns } = useInspectorColumns(cfg);
   const emitChartChange = useCallback(
     (next: ChartViewConfig) => {
       emitChange(next.chartType === "gis-map" ? ensureGisMapOdFlowEnabled(next) : next);
     },
     [emitChange],
   );
-  const cfg = widget.chartConfig ?? defaultChartConfig("table");
-  const { columns, loading: columnsLoading, ready: columnsReady, refreshColumns } = useInspectorColumns(cfg);
   const bindingSyncRef = useRef<string | null>(null);
   const autoFieldsRef = useRef<string | null>(null);
   const [catalog, setCatalog] = useState<ChartTypeCatalogItem[]>([]);
@@ -127,7 +127,7 @@ export function useChartInspectorState(
       };
 
       if (current.chartType === "gis-map" && datasetId === DEMO_MAP_FLOW_DATASET_ID) {
-        emitChartChange(applyGisMapFlowConfig(nextBase, dataSourceId, boundId));
+        emitChartChange(applyGisMapFlowConfig(nextBase, dataSourceId, boundId, columns));
         return;
       }
 
@@ -216,7 +216,9 @@ export function useChartInspectorState(
     autoFieldsRef.current = autoKey;
     const suggested = suggestChartFields(columns, current.chartType);
     if (current.chartType === "gis-map" && detectGisMapOdColumns(columns)) {
-      emitChartChange(applyGisMapFlowConfig({ ...current, ...suggested }, current.dataSourceId, current.configId));
+      emitChartChange(
+        applyGisMapFlowConfig({ ...current, ...suggested }, current.dataSourceId, current.configId, columns),
+      );
       return;
     }
     emitChartChange({ ...current, ...suggested });

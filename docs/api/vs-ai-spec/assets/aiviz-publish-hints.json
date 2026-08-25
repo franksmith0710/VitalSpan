@@ -8,5 +8,7 @@
   "AIVIZ_FICTION_API": "禁止 getStyle()、vs-cv-style-update、.vs-cv-style；样式只读 (p&&p.style)||{}，变化由 mount 回调重绘",
   "AIVIZ_WARN_MOUNT_RECOMMENDED": "html runtime 也应 host.vsCv.mount(render)，否则 resize/样式可能不同步",
   "AIVIZ_WARN_STYLE_COMPLIANCE": "render 读 (p&&p.style)||{}；styleSchema 每项加中文 title",
-  "AIVIZ_WARN_DETAIL_TABLE_METRICS": "fieldSlots 与 P2 多维明细范式不符：dimensions.max>1 时须 metrics.min=0,max=0；换 scrolling-table 金样或改 manifest"
+  "AIVIZ_WARN_DETAIL_TABLE_METRICS": "fieldSlots 与 P2 多维明细范式不符：dimensions.max>1 时须 metrics.min=0,max=0；换 scrolling-table 金样或改 manifest",
+  "AIVIZ_WARN_DOM_HOST_LOOKUP": "禁止 (host||document).getElementById；用 host.querySelector('#vs-cv-*') 或 BUNDLE-BOILERPLATE.md 的 $()",
+  "AIVIZ_WARN_DOM_DOCUMENT_LOOKUP": "禁止 document.getElementById；节点须在宿主内 querySelector，id 前缀 vs-cv-"
 }

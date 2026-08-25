@@ -67,7 +67,7 @@ Base 在跑 bundle 脚本前给宿主挂 `host.vsCv`：`getPayload()`、`onPaylo
 | runtime | `html` 或 `d3`（见上表） |
 | 数据槽位 | **必填** `manifest.fieldSlots`：`dimensions` 与 `metrics` 均须 `min >= 1` |
 | 样式声明 | **必填** `manifest.styleSchema.properties`（至少 1 项）；推荐同时提供 `defaultStyle`；**可声明平台从未出现过的样式键**，见 [guides/STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md) |
-| 节点查找 | 禁止 `document.getElementById`（同页多实例会抢节点）。画图节点用宿主内 `querySelector`。禁止 `id="root"` / `id="app"`（与平台 SPA 冲突） |
+| 节点查找 | **仅**宿主内 `querySelector('#vs-cv-…')` 或 [BUNDLE-BOILERPLATE.md](./guides/BUNDLE-BOILERPLATE.md) 的 `$()`；**禁止** `document.getElementById`；**禁止** `(host\|\|document).getElementById`（宿主为 `div` 时无效）。禁止 `id="root"` / `id="app"` |
 | CSS 作用域 | 挂载时选择器会收到 `.vs-custom-viz-host`；宿主已注入 `--dashboard-*`，不必再用 `:root` 改全局 |
 
 ## 注册与更新 API

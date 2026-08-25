@@ -32,7 +32,7 @@ canvas{display:block;width:100%;height:100%}
   var canvas,ctx,container,tooltip,ttValue,ttLabel,dpr=1,W=0,H=0;
   var padding={top:30,right:40,bottom:45,left:55},chartW=0,chartH=0,chartX=0,chartY=0,initialized=false;
 
-  function $$(id){return document.getElementById(id)}
+  function $$(id){return host?host.querySelector('#'+id):document.getElementById(id)}
   function hostVar(name,fallback){
     if(!host)return fallback;
     var v=getComputedStyle(host).getPropertyValue(name).trim();

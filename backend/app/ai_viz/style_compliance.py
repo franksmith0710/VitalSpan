@@ -14,6 +14,9 @@ _STYLE_PAYLOAD_RE = re.compile(
 )
 _STYLE_TOKEN_RE = re.compile(r"--vs-(?:style|palette)-", re.IGNORECASE)
 _LAYOUT_FALLBACK_RE = re.compile(r"clientWidth\s*\|\|\s*320")
+_HOST_GET_ELEMENT_BY_ID_RE = re.compile(r"\(\s*host\s*\|\|\s*document\s*\)\s*\.\s*getElementById\b")
+_DOCUMENT_GET_ELEMENT_BY_ID_RE = re.compile(r"\bdocument\s*\.\s*getElementById\b")
+_DOCUMENT_GET_ELEMENT_BY_ID_FALLBACK_RE = re.compile(r":\s*document\s*\.\s*getElementById\b")
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,5 +173,29 @@ def collect_bundle_style_compliance_warnings(
                 message="检测到 clientWidth || 320 作为尺寸兜底；建议优先读取 payload.layout",
             )
         )
+
+    if _HOST_GET_ELEMENT_BY_ID_RE.search(entry_html):
+        warnings.append(
+            StyleComplianceWarning(
+                code="AIVIZ_WARN_DOM_HOST_LOOKUP",
+                message=(
+                    "entry 使用了 (host||document).getElementById；宿主为 div 时无效。"
+                    "请改用 host.querySelector('#vs-cv-*')，见 vs-ai-spec/guides/BUNDLE-BOILERPLATE.md"
+                ),
+            )
+        )
+
+    if _DOCUMENT_GET_ELEMENT_BY_ID_RE.search(entry_html):
+        stripped = _DOCUMENT_GET_ELEMENT_BY_ID_FALLBACK_RE.sub("", entry_html)
+        if _DOCUMENT_GET_ELEMENT_BY_ID_RE.search(stripped):
+            warnings.append(
+                StyleComplianceWarning(
+                    code="AIVIZ_WARN_DOM_DOCUMENT_LOOKUP",
+                    message=(
+                        "entry 使用了 document.getElementById；同页多 customViz 会抢节点。"
+                        "请改用 host.querySelector('#vs-cv-*')，见 vs-ai-spec/guides/BUNDLE-BOILERPLATE.md"
+                    ),
+                )
+            )
 
     return warnings

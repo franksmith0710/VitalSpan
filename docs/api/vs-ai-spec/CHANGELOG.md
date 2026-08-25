@@ -1,5 +1,13 @@
 # vs-ai-spec 变更
 
+## 2026-08-25 (customViz DOM 查找通用规范)
+
+- 新增 [guides/BUNDLE-BOILERPLATE.md](./guides/BUNDLE-BOILERPLATE.md)：entry 脚本外壳、`$()` 查节点、`vsCv.mount` 模板
+- **PROTOCOL / HTML-RUNTIME / CUSTOM-VIZ-AUTHOR**：明确禁止 `document.getElementById` 与 `(host||document).getElementById`
+- 入库 warn：`AIVIZ_WARN_DOM_HOST_LOOKUP` · `AIVIZ_WARN_DOM_DOCUMENT_LOOKUP`（`style_compliance.py` + `aiviz-publish-hints.json`）
+- 金样 `*.bundle.html` 与 `scrolling-table` / `html-minimal` / `dynamic-scroll-chart*` JSON 内联 HTML 统一为 `host.querySelector('#…')`
+- 平台 FE：`CustomVizWidget` 宿主挂载时序 + `ensureCustomVizHostElementLookup` 兼容旧 bundle
+
 ## 2026-08-25 (移除旧 compose 大屏模板)
 
 - **删除** 10 套无 DE 壳层的 data-screen 模板（`gov-cockpit`、`kpi-flow-banner` 等）；catalog 现为 **5 DE + 10 dash = 15**

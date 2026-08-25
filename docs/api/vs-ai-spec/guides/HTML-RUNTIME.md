@@ -11,7 +11,7 @@
 | `fieldSlots` | dimensions + metrics 均 `min >= 1` |
 | `styleSchema.properties` | 至少 1 项（可仅扩展项；平台六块走 displayStyle） |
 | Payload 状态机 | unbound → 绑定引导；empty/error → 人话提示 |
-| 节点查找 | 宿主内 `querySelector`；禁 `document.getElementById` |
+| 节点查找 | 宿主内 `querySelector('#vs-cv-*')` 或 [BUNDLE-BOILERPLATE.md](./BUNDLE-BOILERPLATE.md) `$()`；**禁** `document.getElementById` · **禁** `(host\|\|document).getElementById` |
 | 禁 `id="root"` / `id="app"` | 入库 lint |
 | 安全 | 禁 CDN script、内联事件、`javascript:` |
 

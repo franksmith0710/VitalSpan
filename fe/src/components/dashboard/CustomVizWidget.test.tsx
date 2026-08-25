@@ -3,6 +3,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { useChartExecute } from "@/components/charts/useChartExecute";
 import { ADVANCED_CHART_ROW_CAP } from "@/components/charts/engine/buildDatasetEncoding";
 import { CustomVizWidget } from "./CustomVizWidget";
+import type { CustomVizHostElement } from "./custom-viz/customVizRuntime";
 import { rewriteBundleCss } from "./customVizHost";
 import { coerceLayoutWidget } from "./layoutUtils";
 
@@ -87,7 +88,8 @@ describe("CustomVizWidget", () => {
     await waitFor(() => {
       expect(screen.getByText("custom")).toBeInTheDocument();
     });
-    expect(screen.queryByTitle("AI")).not.toBeInTheDocument();
+    const host = screen.getByTestId("custom-viz-host") as CustomVizHostElement;
+    expect(host.vsCv).toBeTruthy();
     expect(screen.getByTestId("custom-viz-host")).toHaveClass("vs-custom-viz-host");
   });
 

@@ -70,6 +70,7 @@ def main() -> None:
     print("  next: edit bundle if needed, then:")
     print(f"  python tools/validate-ai-viz-bundle.py --file {out.relative_to(ROOT)}")
     print(f"  python tools/publish-ai-viz-artifact.py --file {out.relative_to(ROOT)}")
+    print("  DOM/mount 模板: guides/BUNDLE-BOILERPLATE.md")
 
     bundle_html = EXAMPLES / f"{args.id}.bundle.html"
     src_html = EXAMPLES / src_name.replace(".json", ".bundle.html")

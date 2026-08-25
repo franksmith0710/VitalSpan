@@ -74,6 +74,7 @@ fieldSlots **随范式变化**，勿一律抄下面示例（P4 示例）：
 | `var st = (p && p.style) \|\| {}` | `getStyle()` · `vs-cv-style-update` |
 | `p.rows` / `p.columns` / `p.encoding` | 写死 `columns[0]` 当维度（应用 helpers） |
 | `id="vs-cv-*"` | **`id="app"` · `id="root"`** |
+| 宿主内 `host.querySelector('#vs-cv-*')` 或 [BUNDLE-BOILERPLATE.md](./BUNDLE-BOILERPLATE.md) `$()` | **`document.getElementById`** · **`(host\|\|document).getElementById`** |
 | CSS 滚动 + `:hover { animation-play-state: paused }` | HTML `onclick=` · **`.onmouseenter=`** |
 | `addEventListener('mouseenter', fn)` 若必须用 JS | `<script src="https://...">` · `javascript:` |
 
@@ -92,6 +93,8 @@ var parsed = h.parseCategorySeries(payload, 6);
 | `AIVIZ_UNSAFE_CONTENT` | 见 §4 禁止列；悬停优先纯 CSS |
 | `AIVIZ_FORBIDDEN_HOST_ID` | 换掉 app/root |
 | `AIVIZ_MOUNT_REQUIRED` | 加 `host.vsCv.mount` |
+| `AIVIZ_WARN_DOM_HOST_LOOKUP` | 把 `(host\|\|document).getElementById` 换成 [BUNDLE-BOILERPLATE.md](./BUNDLE-BOILERPLATE.md) 的 `$()` |
+| `AIVIZ_WARN_DOM_DOCUMENT_LOOKUP` | 把 `document.getElementById` 换成 `host.querySelector('#vs-cv-…')` |
 | partial / warnings | 补中文 title + `p.style` 驱动 DOM |
 
 预检失败时工具会打印 `→ 修复:` 行，**按提示改一处再 validate**，不要循环改十处。

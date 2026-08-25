@@ -159,6 +159,31 @@ def test_style_compliance_accepts_payload_style_only() -> None:
     assert warnings == []
 
 
+def test_style_compliance_warns_dom_lookup_antipatterns() -> None:
+    host_bad = """<!DOCTYPE html><html><body><script>(function(){
+      var host=document.currentScript.parentElement;
+      function q(id){return (host||document).getElementById(id)}
+      host.vsCv.mount(function(p){ var st=(p&&p.style)||{}; q('x'); });
+    })();</script></body></html>"""
+    doc_bad = """<!DOCTYPE html><html><body><script>(function(){
+      var host=document.currentScript.parentElement;
+      host.vsCv.mount(function(p){ var st=(p&&p.style)||{}; document.getElementById('vs-cv-root'); });
+    })();</script></body></html>"""
+    manifest = {**_MIN_MANIFEST, "runtime": "html"}
+    host_warnings = collect_bundle_style_compliance_warnings(
+        {"index.html": host_bad},
+        "index.html",
+        manifest,
+    )
+    doc_warnings = collect_bundle_style_compliance_warnings(
+        {"index.html": doc_bad},
+        "index.html",
+        manifest,
+    )
+    assert "AIVIZ_WARN_DOM_HOST_LOOKUP" in {item.code for item in host_warnings}
+    assert "AIVIZ_WARN_DOM_DOCUMENT_LOOKUP" in {item.code for item in doc_warnings}
+
+
 def test_official_custom_viz_examples_have_no_style_warnings() -> None:
     import json
     from pathlib import Path

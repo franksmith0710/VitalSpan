@@ -153,6 +153,31 @@ describe("mountCustomVizHtml", () => {
     host.remove();
   });
 
+  it("polyfills host.getElementById for bundle scripts using (host||document).getElementById", () => {
+    const host = document.createElement("div");
+    host.className = "vs-custom-viz-host";
+    document.body.appendChild(host);
+    const html = `<!DOCTYPE html><html><body><div id="vs-cv-track"></div><script>(function(){
+      var host=document.currentScript.parentElement;
+      function q(id){return (host||document).getElementById(id)}
+      host.vsCv.mount(function(p){
+        var track=q('vs-cv-track');
+        if(!track)return;
+        track.textContent=(p.rows&&p.rows.length)?String(p.rows.length):'empty';
+      });
+    })();</script></body></html>`;
+    mountCustomVizHtml(host, html);
+    injectCustomVizPayload(host, {
+      protocolVersion: CUSTOM_VIZ_PAYLOAD_PROTOCOL_VERSION,
+      bindingStatus: "bound",
+      columns: ["a"],
+      rows: [[1], [2]],
+      style: {},
+    });
+    expect(host.querySelector("#vs-cv-track")?.textContent).toBe("2");
+    host.remove();
+  });
+
   it("fires vsCv.onLayout when payload layout changes", () => {
     const host = document.createElement("div");
     host.className = "vs-custom-viz-host";

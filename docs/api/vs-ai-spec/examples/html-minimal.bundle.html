@@ -23,7 +23,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:transparent;color:var(
 <script>
 (function(){
   var host=document.currentScript&&document.currentScript.parentElement;
-  function $(id){return (host||document).getElementById(id)}
+  function $(id){return host?host.querySelector('#'+id):document.getElementById(id)}
   function clearEl(el){while(el&&el.firstChild)el.removeChild(el.firstChild)}
   function bindingStatus(p){
     if(!p)return'unbound';
