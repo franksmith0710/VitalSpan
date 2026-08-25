@@ -66,21 +66,19 @@ Task 文档中的「沙箱内取数」= **DeepTalk 插件视图 CSP**（`connect
 
 ## 3. 插件仓应交付什么（B 轨 · 实施状态）
 
-**生产基线（release）**：[`deeptalk-plugins/plugins/vitalspan`](../../../../deeptalk-plugins/plugins/vitalspan) **v0.2.16** — `components.tools` ×14 + `skills/vitalspan-bi`。
-
-**B 轨目标（Phase 3 进行中 · spike 8/10 已通过 2026-08-24）**：
+**B 轨已交付（release · 2026-08-25）**：**v0.3.0** — 见 [Phase 4 E2E](../../../reviews/grounded/2026-08-25-deeptalk-vitalspan-phase4-e2e.md)
 
 | 组件 | 状态 | 说明 |
 |------|------|------|
-| `components.tools` | ✅ v0.2.16 已有 | Agent wf2/wf3；Phase 3 **smoke 回归** ✅ |
+| `components.tools` | ✅ v0.3.0 | Agent wf2/wf3 ×14 |
 | `workspace-templates/vitalspan.bi.default` | ✅ v0.3.0 | 「新建工作区」列表 |
 | `views/home.js` | ✅ v0.3.0 | 绑定摘要 · health · **外链** 5173 |
 | `views/workspace-setup.js` | ✅ v0.3.0 | 创建向导 |
 | `execTools` `vitalspan_health` | ✅ v0.3.0 | iframe 内 health（无 fetch） |
-| `scripts/assemble-plugin.mjs` | ✅ v0.3.0 | 校验可安装布局（与 `release.mjs` 一致） |
+| `scripts/assemble-plugin.mjs` | ✅ v0.3.0 | 与 `release.mjs` 一致 |
 | iframe 内 list/compose | ⏸ C 轨二期 | 仍用 Agent tools + 5173 |
 
-**门控**：Phase 2 DeepTalk spike ≥8/10 通过后，才执行 Task 1–9。见 [执行评审](../../../reviews/grounded/2026-08-24-deeptalk-vitalspan-how-to-execute-adjudication.md)。
+**生产 zip**：`deeptalk-plugins/release/vitalspan-v0.3.0.zip`
 
 ---
 
@@ -125,7 +123,7 @@ Task 文档中的「沙箱内取数」= **DeepTalk 插件视图 CSP**（`connect
 | **确认** | 用户回复「b」· Phase 0 已闭合 |
 | **范围** | 模板 + 向导 + home（health + 外链 5173）+ execTool `vitalspan_health` |
 | **不含** | iframe 内 compose/upload/list（C 轨）；iframe 内嵌 5173 / gis |
-| **下一步** | Phase 1 文档（本契约/Task 已对齐）→ **Phase 2 DeepTalk spike** → Phase 3 Task 1–9 |
+| **下一步** | ✅ B 轨 v0.3.0 已交付（2026-08-25）· C 轨 / wf2 金样对话回归按需 |
 
 | 选项 | 范围 | 决策 |
 |------|------|------|

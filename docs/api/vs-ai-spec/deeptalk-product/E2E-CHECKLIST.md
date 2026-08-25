@@ -5,13 +5,13 @@
 
 ## 1. 插件与工作区（产品路径）
 
-- [ ] `deeptalk-plugins` 构建并安装 `release/vitalspan-v*.zip`
-- [ ] DeepTalk 设置页插件 **loaded**
-- [ ] 「新建工作区」列表出现 **VitalSpan BI**
-- [ ] 走完创建向导（api/fe 地址写入 `instanceConfig.vitalspan`）
-- [ ] 打开工作区 **首页** 视图：已绑定显示 API/FE 摘要；未绑定显示横幅 + reason
-- [ ] 页内「打开 VitalSpan 管理面」跳转 **5173**（不在 iframe 内嵌完整编辑器）
-- [ ] 工作区 iframe 无对外部 host 的 `fetch`（health 走 `pluginExec`）
+- [x] `deeptalk-plugins` 构建并安装 `release/vitalspan-v*.zip`
+- [x] DeepTalk 设置页插件 **loaded**
+- [x] 「新建工作区」列表出现 **VitalSpan BI**
+- [x] 走完创建向导（api/fe 地址写入 `instanceConfig.vitalspan`）
+- [x] 打开工作区 **首页** 视图：已绑定显示 API/FE 摘要；未绑定显示横幅 + reason
+- [x] 页内「打开 VitalSpan 管理面」跳转 **5173**（不在 iframe 内嵌完整编辑器）
+- [x] 工作区 iframe 无对外部 host 的 `fetch`（health 走 `pluginExec`）
 
 ## 2. Agent 工具（components.tools）
 

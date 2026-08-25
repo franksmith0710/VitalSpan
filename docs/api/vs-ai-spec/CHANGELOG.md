@@ -1,5 +1,11 @@
 # vs-ai-spec 变更
 
+## 2026-08-25 (Phase 4 · B 轨 v0.3.0 交付)
+
+- 用户 Phase 4 手测全过；契约 §3 更新为 **v0.3.0 已交付**
+- E2E §1 勾选；§2–§3 smoke/CI；§4–§5 按需 wf2 金样回归
+- 修复 `test_agent_tools_schema` 对齐 14 tools
+
 ## 2026-08-25 (Phase 3 审计 · Phase 4 手测指南)
 
 - Task 1–8 + release 验收落盘；`ids-sync.test` 加入 smoke

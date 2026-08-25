@@ -318,7 +318,7 @@ cd deeptalk-plugins && npm run release
 | ~~**2. Phase 1 只改文档**~~ | ✅ commit `1b4f50d6` |
 | **3. Phase 2 DeepTalk spike** | ✅ 8/10 · [验收记录](./2026-08-24-deeptalk-vitalspan-phase2-spike.md) · #4/#10 → Phase 4 |
 | **3** | Task 1–9 | ✅ 1–8 + release · [Phase 3 审计](./2026-08-25-deeptalk-vitalspan-phase3-audit.md) · Task 9 → Phase 4 |
-| **4. Phase 4** | [5 分钟手测指南](./2026-08-25-deeptalk-vitalspan-phase4-handtest.md) + E2E §2–§5 |
+| **4. Phase 4** | ✅ [E2E 收口](./2026-08-25-deeptalk-vitalspan-phase4-e2e.md) · B 轨 **v0.3.0 可交付** |
 
 **推荐默认路径（资源一般）**：**Phase 0 定 B 意图 → Phase 1 文档 → Phase 2 spike → 再决定是否 Phase 3**。
 

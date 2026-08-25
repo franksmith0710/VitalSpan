@@ -68,15 +68,23 @@ def test_publish_validate_only_via_executor_cli() -> None:
     assert "styleComplianceTier=full" in proc.stdout
 
 
-def test_agent_tools_schema_lists_six_tools() -> None:
+def test_agent_tools_schema_lists_fourteen_tools() -> None:
     schema_path = REPO_ROOT / "docs" / "api" / "vs-ai-spec" / "deeptalk-product" / "agent-tools.schema.json"
     data = json.loads(schema_path.read_text(encoding="utf-8"))
     names = {t["name"] for t in data["tools"]}
     assert names == {
         "vitalspan_health_check",
+        "vitalspan_scaffold_artifact",
+        "vitalspan_validate_artifact",
         "vitalspan_publish_artifact",
         "vitalspan_list_artifacts",
         "vitalspan_delete_artifact",
+        "vitalspan_list_layout_templates",
+        "vitalspan_list_chart_types",
+        "vitalspan_compose_dashboard",
+        "vitalspan_get_dashboard_layout",
+        "vitalspan_create_dashboard",
+        "vitalspan_list_dashboards",
         "vitalspan_upload_dashboard",
         "vitalspan_completion_gate",
     }
