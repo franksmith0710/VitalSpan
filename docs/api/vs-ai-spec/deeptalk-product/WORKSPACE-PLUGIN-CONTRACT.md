@@ -64,19 +64,21 @@ Task 文档中的「沙箱内取数」= **DeepTalk 插件视图 CSP**（`connect
 
 ---
 
-## 3. 插件仓应交付什么（B 轨 · 实施状态）
+## 3. 插件仓应交付什么（SOP 全量对齐 · v0.3.0）
 
-**B 轨已交付（release · 2026-08-25）**：**v0.3.0** — 见 [Phase 4 E2E](../../../reviews/grounded/2026-08-25-deeptalk-vitalspan-phase4-e2e.md)
+**已交付（2026-08-25）**：**v0.3.0** — Task 7–8 对齐通用 SOP（`resources` + `loadInstance`）；wf2/wf3 Agent 工具不变。见 [Phase 4 E2E](../../../reviews/grounded/2026-08-25-deeptalk-vitalspan-phase4-e2e.md)
 
 | 组件 | 状态 | 说明 |
 |------|------|------|
-| `components.tools` | ✅ v0.3.0 | Agent wf2/wf3 ×14 |
+| `components.tools` | ✅ v0.3.0 | Agent wf2/wf3 ×14（**不变**） |
 | `workspace-templates/vitalspan.bi.default` | ✅ v0.3.0 | 「新建工作区」列表 |
-| `views/home.js` | ✅ v0.3.0 | 绑定摘要 · health · **外链** 5173 |
+| `views/home.js` | ✅ v0.3.0 | 绑定摘要 · health · 页内→resources · 外链 5173 |
+| `views/resources.js` | ✅ v0.3.0 | 资源目录 · `loadInstance` · 深链 `?id=` |
 | `views/workspace-setup.js` | ✅ v0.3.0 | 创建向导 |
 | `execTools` `vitalspan_health` | ✅ v0.3.0 | iframe 内 health（无 fetch） |
+| `execTools` `loadInstance` | ✅ v0.3.0 | iframe 内只读 list（artifacts + dashboards） |
 | `scripts/assemble-plugin.mjs` | ✅ v0.3.0 | 与 `release.mjs` 一致 |
-| iframe 内 list/compose | ⏸ C 轨二期 | 仍用 Agent tools + 5173 |
+| iframe 内 compose/upload | ⏸ 仍用 Agent tools | **不改** wf2/wf3 工具链 |
 
 **生产 zip**：`deeptalk-plugins/release/vitalspan-v0.3.0.zip`
 
@@ -124,7 +126,7 @@ Task 文档中的「沙箱内取数」= **DeepTalk 插件视图 CSP**（`connect
 | 数据准备 | 数据连接 | `/admin/datasources` | 平台配置（非 wf 主路径） |
 
 - `feAdminUrl` 填 **`http://127.0.0.1:5173/admin`**（含 `/admin` 前缀）；打开后默认进仪表板列表，**wf2 须再进组件库**。
-- 插件 home 提供 wf2/wf3 **深链**（见 `home-entry.ts`）。
+- 插件 home / resources 提供 wf2/wf3 **5173 外链**与页内 **resources 深链**（见 `home-entry.ts` · `resources-entry.ts`）。
 - 评审：[5173 对齐记录](../../../reviews/grounded/2026-08-25-deeptalk-vitalspan-5173-admin-alignment.md)
 
 ---
@@ -133,20 +135,20 @@ Task 文档中的「沙箱内取数」= **DeepTalk 插件视图 CSP**（`connect
 
 | 字段 | 值 |
 |------|-----|
-| **决策** | **B — 轻量工作区** |
-| **日期** | 2026-08-24 |
-| **确认** | 用户回复「b」· Phase 0 已闭合 |
-| **范围** | 模板 + 向导 + home（health + 外链 5173）+ execTool `vitalspan_health` |
-| **不含** | iframe 内 compose/upload/list（C 轨）；iframe 内嵌 5173 / gis |
-| **下一步** | ✅ B 轨 v0.3.0 已交付（2026-08-25）· C 轨 / wf2 金样对话回归按需 |
+| **决策** | **SOP 全量对齐**（Task 7–8 满配；wf2/wf3 Agent 工具不变） |
+| **日期** | 2026-08-25（自 B 轻量工作区升格） |
+| **范围** | 模板 + 向导 + home + **resources** + `vitalspan_health` + **`loadInstance`** + 外链 5173 |
+| **不含** | iframe 内 compose/upload/publish（仍 Agent tools）；iframe 内嵌 5173 / gis |
+| **下一步** | ✅ v0.3.0 已交付 · wf2 金样对话回归按需 |
 
 | 选项 | 范围 | 决策 |
 |------|------|------|
 | A 维持现状 | 仅 Agent 工具 + 5173 | 否 |
-| **B 轻量工作区** | 模板 + 导航 + 连接/health + 跳 5173 + 最小 execTools | **是** |
-| C 完整 BI 工作区 | iframe 内 list/compose/delete | 否（二期） |
+| B 轻量工作区 | 仅 home + health | 否（已升格） |
+| **SOP 全量** | home + resources + health + loadInstance + navigateWorkspace 深链 | **是** |
+| C 完整 BI 工作区 | iframe 内 compose/upload/delete | 否（仍 Agent tools） |
 
-B 视图注册名：`vitalspan:home` · `vitalspan:workspace-setup` · execTool `vitalspan_health`。
+视图注册名：`vitalspan:home` · `vitalspan:resources` · `vitalspan:workspace-setup` · execTools `vitalspan_health` · `loadInstance`。
 
 ---
 

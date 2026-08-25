@@ -1,7 +1,8 @@
 ﻿# VitalSpan 特殊工作区插件 — 实施计划
 
 > 插件仓：`deeptalk-plugins/plugins/vitalspan/` · 契约：[WORKSPACE-PLUGIN-CONTRACT.md](./WORKSPACE-PLUGIN-CONTRACT.md)  
-> **轨道：B 轻量工作区**（Phase 0 已决策 · 2026-08-24）  
+> **仓内可读副本**：[`examples/special-workspace-plugin-reuse-task.md`](../../../examples/special-workspace-plugin-reuse-task.md)（与本文同步维护）  
+> **轨道：通用 SOP 全量对齐**（Task 7–8 含 `resources` + `loadInstance`；wf2/wf3 Agent 工具不变）  
 > **执行顺序**：[Phase 2 spike](../../../reviews/grounded/2026-08-24-deeptalk-vitalspan-how-to-execute-adjudication.md) **通过后再做 Task 1–9**
 
 > **执行者**：按任务顺序改目标插件仓库。每完成一节就勾选。  
@@ -16,7 +17,7 @@
 
 | Phase | 内容 | 通过标准 |
 |-------|------|----------|
-| 0 | 轨道决策 | ✅ B（2026-08-24） |
+| 0 | 轨道决策 | ✅ SOP 全量对齐（2026-08-25 自 B 轨升格） |
 | 1 | 契约 + 本文档对齐 | 契约 §3/§5 与本文一致 |
 | **2** | **DeepTalk spike** | ✅ **10/10**（#4/#10 → Phase 4 闭合） |
 | **3** | Task 1–9 | ✅ 全过 → [Task 9 验收](../../../reviews/grounded/2026-08-25-deeptalk-vitalspan-task9-host-acceptance.md) |
@@ -72,10 +73,12 @@ deeptalk-plugins/plugins/vitalspan/
 ├── workspace-templates/
 │   └── vitalspan.bi.default.workspace.json
 ├── views/
-│   ├── home.js                        # 构建产物
+│   ├── home.js
+│   ├── resources.js                   # Task 7 view-b
 │   └── workspace-setup.js
 ├── exec-tools/
-│   └── vitalspan-health.cjs           # B 轨仅此一个
+│   ├── vitalspan-health.cjs
+│   └── load-instance.cjs              # Task 8 · SOP 名 loadInstance
 ├── dist/                              # components.tools（已有）
 ├── skills/
 ├── assets/
@@ -89,11 +92,13 @@ deeptalk-plugins/plugins/vitalspan/
 ├── scripts/
 │   ├── build-views.mjs
 │   ├── assemble-plugin.mjs
+│   ├── spike-host-verify.mjs
+│   ├── task9-host-evidence.mjs
 │   └── smoke.mjs
 └── docs/PLUGIN_IDS.md
 ```
 
-C 轨扩展 execTools（如 `list-artifacts`）放 **二期**，不在 B Task 8 必做范围。
+wf2/wf3 仍走 `components.tools` + 5173；iframe 内 list 走 `loadInstance`（只读快照），**不**替代 Agent publish/compose 链。
 
 ---
 
@@ -142,13 +147,13 @@ export const VIEW_A = "home" as const;
 ```json
 {
   "name": "vitalspan",
-  "version": "0.1.0",
-  "description": "一句话说明这个专业工作区做什么",
-  "displayName": "显示名",
+  "version": "0.3.0",
+  "description": "VitalSpan BI：Agent 工具 + 特殊工作区",
+  "displayName": "VitalSpan BI",
   "permissions": [],
   "components": {
     "workspaceTemplates": [
-      "workspace-templates/vitalspan.workspace.json"
+      "workspace-templates/vitalspan.bi.default.workspace.json"
     ],
     "views": [
       "views/home.js",
@@ -220,7 +225,7 @@ export const VIEW_A = "home" as const;
       },
       {
         "id": "home",
-        "label": "总览",
+        "label": "VitalSpan",
         "type": "builtinOrPlugin",
         "pluginView": "vitalspan:home",
         "fallbackBuiltin": "workspace.placeholder",
@@ -359,7 +364,7 @@ export function readDomainBinding(
 
 **完成标准：** 打开 `/workspace/view/home` 时 iframe 显示本页；未绑定有横幅；已绑定能读到 `instanceId`（或等价字段）并展示。
 
-`src/pages/HomePage.tsx` 启动逻辑：
+`src/views/home-entry.ts` 启动逻辑（esbuild → `views/home.js`）：
 
 1. `subscribePluginViewData` 触发重读。
 2. `readDomainBinding(readPluginViewData().instanceConfig)`。
@@ -367,7 +372,7 @@ export function readDomainBinding(
 4. `ok === true`：展示绑定摘要；本阶段可以还没有真实取数。
 5. 根节点 `height: 100%` + 内部滚动。不要上报 `plugin-view:resize`（`fill` 模式会被忽略）。
 
-构建出 `plugin/views/home.js`（自包含 bundle）。`assemble-plugin` 只拷贝产物，不拷 `src/`。
+构建出 `views/home.js`（自包含 bundle）。`assemble-plugin` 校验产物，不拷 `src/`。
 
 本阶段允许页面只有绑定状态和标题。不要先做复杂业务 UI。
 
@@ -423,7 +428,7 @@ window.__pluginViewAction("workspaceSetup.complete", {
 - 按约 360px 高排版，列表在 iframe 内滚动。
 - `__pluginViewAction` 不存在时显示「宿主桥接不可用」，不要假装已创建。
 
-`src/pages/WorkspaceSetupPage.tsx` 的确认按钮：绑定非法时禁用。
+`src/views/workspace-setup-entry.ts` 的确认按钮：绑定非法时拦截 submit。
 
 - [x] `wizardView` 指向 `vitalspan:workspace-setup`（spike #3）
 - [x] 非法配置不能解锁创建（向导按钮 disabled + schema 校验）
@@ -434,9 +439,7 @@ window.__pluginViewAction("workspaceSetup.complete", {
 
 ## Task 7 — 页内导航与深链
 
-> **B 轨说明**：本期仅 `home` 一个业务视图；无 `resources` 页。下列后两项标 **N/A**；稳定性用 builtin 导航 ↔ home 切换验收。
-
-**完成标准：** 左侧导航、页内入口、父级 URL、iframe 内容四者一致；带 query 的地址能定位（多页时）。
+**完成标准：** 左侧导航、页内入口、父级 URL、iframe 内容四者一致；带 query 的地址能定位。
 
 页内跳转：
 
@@ -465,9 +468,9 @@ navigateWorkspace({ target: "experts" });
 3. `capabilities.views` 加上 `vitalspan:resources`
 4. `plugin.json` 的 `views` 加上该文件
 
-- [x] 左侧切换后 URL、选中态、内容一致（VitalSpan ↔ 新智能体 ↔ 工作区首页 · Phase 4）
-- [x] 页内入口会改父级 URL — **N/A（B）**；5173 为 `target=_blank` 外链
-- [x] `/workspace/view/resources?id=...` 能定位 — **N/A（B）**；未声明第二业务页
+- [x] 左侧切换后 URL、选中态、内容一致（home ↔ resources ↔ builtin · `resources-entry.ts`）
+- [x] 页内入口会改父级 URL（home「打开资源目录」· resources 行点击 · `navigateWorkspace`）
+- [x] `/workspace/view/resources?id=...` 能定位（`readPluginViewData().routeSearch` + `pluginview:data`）
 - [x] 连续切换 20 次无「页面加载失败」，无上一页残留（Phase 4 / Task 9 #6）
 
 ---
@@ -476,15 +479,20 @@ navigateWorkspace({ target: "experts" });
 
 iframe 不能 `fetch` 外部地址。外连 VitalSpan 须声明 `execTools` + `pluginExec`。
 
-### B 轨最小集（本期必做）
+### 必做 execTools（SOP 对齐）
 
-在 `plugin.json` 增加 **仅**：
+| 名称 | 模块 | 用途 |
+|------|------|------|
+| `vitalspan_health` | `exec-tools/vitalspan-health.cjs` | home 检测 `/health` |
+| `loadInstance` | `exec-tools/load-instance.cjs` | resources 只读快照（artifacts + dashboards） |
+
+在 `plugin.json` 声明（节选）：
 
 ```json
 {
-  "name": "vitalspan_health",
+  "name": "loadInstance",
   "runtime": "js-worker",
-  "module": "exec-tools/vitalspan-health.cjs",
+  "module": "exec-tools/load-instance.cjs",
   "export": "run",
   "load": "lazy",
   "keepAlive": "plugin",
@@ -492,26 +500,28 @@ iframe 不能 `fetch` 外部地址。外连 VitalSpan 须声明 `execTools` + `p
 }
 ```
 
-视图调用：
+home 调用 health：
 
 ```ts
 await window.pluginExec("vitalspan_health", { apiBaseUrl: binding.apiBaseUrl });
 ```
 
+resources 调用 loadInstance（参数来自 binding，非模型）：
+
+```ts
+const snapshot = await window.pluginExec("loadInstance", {
+  baseUrl: binding.apiBaseUrl,
+  apiBaseUrl: binding.apiBaseUrl,
+  feAdminUrl: binding.feAdminUrl,
+  instanceId: binding.mode,
+});
+```
+
 凭据：`VITALSPAN_USERNAME` · `VITALSPAN_DEV_ADMIN_PASSWORD` 由 worker 读 env；**不进** instanceConfig。
 
-### C 轨扩展（二期 · 本期不做）
+### 不在 iframe execTools 范围（仍用 Agent tools）
 
-list artifacts / list dashboards / compose 等 execTools — 见 [WORKSPACE-PLUGIN-CONTRACT](./WORKSPACE-PLUGIN-CONTRACT.md) C 轨。示例 ABI（`loadInstance`）：
-
-```json
-{
-  "name": "loadInstance",
-  "runtime": "js-worker",
-  "module": "exec-tools/load-instance.cjs",
-  "export": "run"
-}
-```
+compose / upload / publish / delete — 仍走 `components.tools` + 5173 验收；**本期不改** wf2/wf3 工具链。
 
 模块 ABI：
 
@@ -522,12 +532,12 @@ exports.run = async function run(params, ctx) {
 };
 ```
 
-视图调用：
+视图调用（历史 SOP 示例字段名；VitalSpan 用 `apiBaseUrl` / `feAdminUrl`）：
 
 ```ts
 const snapshot = await window.pluginExec("loadInstance", {
-  instanceId: binding.instanceId,
-  baseUrl: binding.service.baseUrl,
+  instanceId: binding.mode,
+  baseUrl: binding.apiBaseUrl,
 });
 ```
 
@@ -549,9 +559,9 @@ const snapshot = await window.pluginExec("loadInstance", {
 不要用 `components.mcp` 冒充必须常驻、与插件装卸无关的独立服务器。  
 不要把 `workspace-objects` 当成外部权威库。
 
-- [x] 业务页取数只走 `pluginExec`（home 检测 API）
+- [x] 业务页取数只走 `pluginExec`（home health · resources loadInstance）
 - [x] iframe 视图无外部 `fetch`（`views/*.js` 探针）
-- [x] 失败态可见、可重试（health 错误行 + 可再次点击）
+- [x] 失败态可见、可重试（health / resources 错误行 + 重试按钮）
 - [x] Agent 工具不接受模型传入的地址和凭据（`shared.ts` 读工作区 binding / env）
 
 ---
@@ -593,7 +603,7 @@ const snapshot = await window.pluginExec("loadInstance", {
 
 - [x] assemble 产物根目录只有可安装文件
 - [x] 安装哈希一致并已重启宿主（见 [Task 9 验收](../../../reviews/grounded/2026-08-25-deeptalk-vitalspan-task9-host-acceptance.md)）
-- [x] 上面 10 条全部勾过（B 轨 #5/#7 N/A；#1 拆 1a/1b · 证据见 `docs/TASK9-EVIDENCE.json`）
+- [x] 上面 10 条全部勾过（含 #5 页内 navigate · #7 resources 深链；#1 拆 1a/1b · 证据见 `docs/TASK9-EVIDENCE.json`）
 - [x] 引擎未被补丁污染（`Programs\DeepTalk` 无 vitalspan · 插件仅 `%APPDATA%`）
 
 ---

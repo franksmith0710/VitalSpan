@@ -1,5 +1,18 @@
 # vs-ai-spec 变更
 
+## 2026-08-25 (SOP 全量对齐 · resources + loadInstance)
+
+- 插件 v0.3.0：`views/resources.js` · `exec-tools/load-instance.cjs`（SOP 名 `loadInstance`）
+- Task 7：`navigateWorkspace` 页内导航 + `routeSearch` 深链；模板 navigation `resources`
+- Task 8：resources 取数走 `pluginExec('loadInstance')`；**wf2/wf3 Agent 工具不变**
+- 文档：`SPECIAL-WORKSPACE-PLUGIN-TASK.md` · `WORKSPACE-PLUGIN-CONTRACT.md` · `examples/` 去 B 轨 N/A
+
+## 2026-08-25 (examples 实例副本与真源对齐)
+
+- [`examples/special-workspace-plugin-reuse-task.md`](../../../examples/special-workspace-plugin-reuse-task.md) 同步为 VitalSpan B 轨 v0.3.0 已闭合实例（Task 全勾）
+- 明确 **wf2/wf3 · 14× Agent 组件工具不变**；仅工作区壳 Task 1–9 叙事
+- 真源仍为 `SPECIAL-WORKSPACE-PLUGIN-TASK.md`；两文件互链
+
 ## 2026-08-25 (Task 9 证据 · code-reviewer 修复)
 
 - 插件：`task9-host-evidence.mjs` · `TASK9-EVIDENCE.json` · `workspace-template-contract.test` · `instanceConfig` 补测
