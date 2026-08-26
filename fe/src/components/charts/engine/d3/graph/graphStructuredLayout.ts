@@ -28,12 +28,13 @@ function sortByDegree(ids: string[], degree: Map<string, number>): string[] {
   return [...ids].sort((a, b) => (degree.get(b) ?? 0) - (degree.get(a) ?? 0));
 }
 
-function minColumnGap(height: number, count: number, showLabel: boolean): number {
-  if (count <= 1) return 0;
-  const labelPad = showLabel ? 28 : 12;
-  const ideal = showLabel ? 44 : 34;
-  const available = Math.max(1, height - 56);
-  return Math.max(labelPad, Math.min(ideal, available / (count + 1)));
+/** 在可用高度内等距排布，保证节点不超出画布。 */
+function columnYPositions(count: number, height: number, padY: number): number[] {
+  if (count <= 0) return [];
+  if (count === 1) return [height / 2];
+  const usable = Math.max(1, height - padY * 2);
+  const step = usable / (count - 1);
+  return Array.from({ length: count }, (_, index) => padY + step * index);
 }
 
 /** 起点/终点分列，纵向等距，避免节点堆叠。 */
@@ -42,7 +43,6 @@ export function seedBipartiteStructuredLayout(
   links: GraphSimLink[],
   width: number,
   height: number,
-  showLabel: boolean,
 ): boolean {
   if (links.length === 0 || nodes.length < 2) return false;
   const { leftIds, rightIds, middleIds } = inferBipartiteSides(links);
@@ -53,14 +53,12 @@ export function seedBipartiteStructuredLayout(
 
   const placeColumn = (ids: string[], x: number) => {
     const ordered = sortByDegree(ids, degree);
-    const gap = minColumnGap(height, ordered.length, showLabel);
-    const totalSpan = gap * Math.max(0, ordered.length - 1);
-    const startY = Math.max(padY, (height - totalSpan) / 2);
+    const ys = columnYPositions(ordered.length, height, padY);
     ordered.forEach((id, index) => {
       const node = nodes.find((item) => item.id === id);
       if (!node) return;
       node.x = x;
-      node.y = ordered.length <= 1 ? height / 2 : startY + gap * index;
+      node.y = ys[index] ?? height / 2;
     });
   };
 

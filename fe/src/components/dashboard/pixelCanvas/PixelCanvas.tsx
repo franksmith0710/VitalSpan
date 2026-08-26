@@ -562,7 +562,7 @@ export function PixelCanvas({
           (item) => [item.id, widgetRect(item)] as const,
         ),
       );
-      previewRegistryRef.current.applyAll(positions);
+      previewRegistryRef.current.applyAll(positions, { skipWidgetIds: boundedWidget.id });
       syncPreviewStageMetrics(nextLayout);
     },
     [activeLayout, allowWidgetOverlap, beginCollisionPreview, clampWidgetToViewCanvas, resolveActiveAt, syncPreviewStageMetrics],

@@ -11,4 +11,21 @@ describe("createPixelShapePreviewRegistry", () => {
     );
     expect(sync).toHaveBeenCalledWith({ x: 10, y: 20, width: 300, height: 200 });
   });
+
+  it("skips active widget during drag preview to avoid stale rect stomp", () => {
+    const registry = createPixelShapePreviewRegistry();
+    const active = vi.fn();
+    const neighbor = vi.fn();
+    registry.register("active", active);
+    registry.register("neighbor", neighbor);
+    registry.applyAll(
+      new Map([
+        ["active", { x: 0, y: 0, width: 100, height: 80 }],
+        ["neighbor", { x: 0, y: 120, width: 200, height: 100 }],
+      ]),
+      { skipWidgetIds: "active" },
+    );
+    expect(active).not.toHaveBeenCalled();
+    expect(neighbor).toHaveBeenCalledWith({ x: 0, y: 120, width: 200, height: 100 });
+  });
 });

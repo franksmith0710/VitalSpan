@@ -538,12 +538,18 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       return;
     }
     if (isThreeMap && tryThreeResize("live")) return;
+    // 2D choropleth：SVG viewBox + 100% 随容器 CSS 缩放，交互期跳过全量重绘
+    if (!isThreeMap) {
+      const paint = readPaintSize();
+      if (paint) lastMeasureRef.current = paint;
+      return;
+    }
     if (liveTimerRef.current !== null) return;
     liveTimerRef.current = setTimeout(() => {
       liveTimerRef.current = null;
       measureAndRender("live");
     }, LIVE_RESIZE_THROTTLE_MS);
-  }, [isThreeMap, tryThreeResize, measureAndRender]);
+  }, [isThreeMap, tryThreeResize, measureAndRender, readPaintSize]);
 
   const onCommitResize = useCallback(() => {
     if (liveTimerRef.current !== null) {
@@ -636,9 +642,9 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   }, [fill, plan.empty, playing, onCommitResize]);
 
   useEffect(() => {
-    if (!props.layoutFootprint) return;
+    if (!props.layoutFootprint || playing) return;
     onCommitResize();
-  }, [props.layoutFootprint?.width, props.layoutFootprint?.height, onCommitResize]);
+  }, [props.layoutFootprint?.width, props.layoutFootprint?.height, onCommitResize, playing]);
 
   useEffect(() => {
     if (!fill || plan.empty || playing || viewportTransforming) return;

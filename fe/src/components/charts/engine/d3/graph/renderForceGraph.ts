@@ -15,15 +15,19 @@ import {
   type StructuredGraphLink,
 } from "@/components/charts/engine/d3/graph/graphStructuredLayout";
 import {
+  buildNodeDegreeMap,
+  resolveGraphLinkWidth,
+  resolveGraphNodeRadius,
+} from "@/components/charts/engine/d3/graph/graphVisualMetrics";
+import {
   buildGraphLayoutStateKey,
   readForceGraphLayoutState,
   writeForceGraphLayoutState,
 } from "@/components/charts/engine/d3/graph/forceGraphLayoutState";
 import {
-  buildNodeDegreeMap,
-  resolveGraphLinkWidth,
-  resolveGraphNodeRadius,
-} from "@/components/charts/engine/d3/graph/graphVisualMetrics";
+  buildGraphFitTransform,
+  computeGraphContentBounds,
+} from "@/components/charts/engine/d3/graph/graphFitView";
 
 type GraphNodeInput = { id: string; data?: { label?: string } };
 type GraphEdgeInput = { source: string; target: string; weight?: number };
@@ -60,7 +64,7 @@ function buildLayoutStateKey(
     }),
     layoutType,
   );
-  return base ? `${base}|structured-v3` : undefined;
+  return base ? `${base}|structured-v4` : undefined;
 }
 
 function seedStructuredLayout(
@@ -68,9 +72,8 @@ function seedStructuredLayout(
   links: SimLink[],
   width: number,
   height: number,
-  showLabel: boolean,
 ): boolean {
-  if (seedBipartiteStructuredLayout(nodes, links, width, height, showLabel)) return true;
+  if (seedBipartiteStructuredLayout(nodes, links, width, height)) return true;
   seedRingStructuredLayout(nodes, links, width, height);
   return false;
 }
@@ -178,7 +181,7 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
   const bipartiteSides = inferBipartiteSides(simLinks);
   const isBipartite = bipartiteSides.leftIds.size > 0 && bipartiteSides.rightIds.size > 0;
   if (!restoredLayout) {
-    seedStructuredLayout(simNodes, simLinks, width, height, showLabel);
+    seedStructuredLayout(simNodes, simLinks, width, height);
   }
 
   const nodeDegree = buildNodeDegreeMap(simLinks);
@@ -273,6 +276,24 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
       .text((d) => d.label);
   }
 
+  const zoomBehavior = d3
+    .zoom<SVGSVGElement, unknown>()
+    .scaleExtent([0.2, 4])
+    .filter((event) => {
+      if (event.type === "wheel") return true;
+      const target = event.target as Element | null;
+      if (!target) return false;
+      return target === svg.node() || target.tagName === "path" || target.tagName === "line";
+    })
+    .on("zoom", (event) => {
+      zoomRoot.attr("transform", event.transform);
+    });
+
+  svg.call(zoomBehavior).on("dblclick.zoom", null);
+  svg.on("wheel", (event) => {
+    event.stopPropagation();
+  });
+
   const span = Math.min(width, height);
   const cx = width / 2;
   const cy = height / 2;
@@ -329,6 +350,13 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
     persistLayout();
   };
 
+  const applyFitToView = () => {
+    const bounds = computeGraphContentBounds(simNodes, showLabel, labelFontSize);
+    if (!bounds) return;
+    const transform = buildGraphFitTransform(bounds, width, height);
+    svg.call(zoomBehavior.transform, transform);
+  };
+
   const syncPaint = () => {
     link.attr("d", (d) =>
       buildStructuredLinkPath(
@@ -341,6 +369,12 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
       ),
     );
     node.attr("transform", (d) => `translate(${d.x ?? 0},${d.y ?? 0})`);
+  };
+
+  const finishLayout = () => {
+    freezeLayout();
+    syncPaint();
+    applyFitToView();
   };
 
   let settleFrameId = 0;
@@ -366,8 +400,7 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
         settleFrameId = requestAnimationFrame(step);
         return;
       }
-      freezeLayout();
-      syncPaint();
+      finishLayout();
     };
     settleFrameId = requestAnimationFrame(step);
   };
@@ -375,16 +408,20 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
   simulation.on("tick", syncPaint);
 
   simulation.on("end", () => {
-    freezeLayout();
-    syncPaint();
+    finishLayout();
   });
 
   if (restoredLayout) {
-    freezeLayout();
-    syncPaint();
+    finishLayout();
   } else {
     runUntilSettledAsync();
   }
+
+  svg.on("dblclick", (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    applyFitToView();
+  });
 
   const dragBehavior = d3
     .drag<SVGGElement, SimNode>()
@@ -407,29 +444,6 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
       freezeLayout();
     });
   node.call(dragBehavior);
-
-  const zoomBehavior = d3
-    .zoom<SVGSVGElement, unknown>()
-    .scaleExtent([0.35, 4])
-    .filter((event) => {
-      if (event.type === "wheel") return true;
-      const target = event.target as Element | null;
-      if (!target) return false;
-      return target === svg.node() || target.tagName === "path" || target.tagName === "line";
-    })
-    .on("zoom", (event) => {
-      zoomRoot.attr("transform", event.transform);
-    });
-
-  svg.call(zoomBehavior).on("dblclick.zoom", null);
-  svg.on("dblclick", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    svg.transition().duration(250).call(zoomBehavior.transform, d3.zoomIdentity);
-  });
-  svg.on("wheel", (event) => {
-    event.stopPropagation();
-  });
 
   return () => {
     cancelSettle();

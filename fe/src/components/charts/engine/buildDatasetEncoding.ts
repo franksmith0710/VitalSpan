@@ -129,7 +129,10 @@ export function compositeCategoryKey(row: unknown[], columns: string[], fields: 
 }
 
 export const ADVANCED_CHART_ROW_CAP = 500;
-export const GRAPH_NODE_CAP = 200;
+/** 关系图需先聚合边，允许读取更多原始行再截断展示。 */
+export const GRAPH_CHART_ROW_CAP = 5000;
+export const GRAPH_NODE_CAP = 120;
+export const GRAPH_EDGE_CAP = 240;
 export const SANKEY_LINK_CAP = 300;
 
 export function safeColIndex(columns: string[], field: string): number | null {

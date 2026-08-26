@@ -20,7 +20,7 @@ describe("graphStructuredLayout", () => {
       { source: "d1", target: "p1" },
       { source: "d2", target: "p2" },
     ];
-    expect(seedBipartiteStructuredLayout(nodes, links, 480, 360, true)).toBe(true);
+    expect(seedBipartiteStructuredLayout(nodes, links, 480, 360)).toBe(true);
     const left = nodes.filter((node) => node.id.startsWith("d"));
     const right = nodes.filter((node) => node.id.startsWith("p"));
     expect(left.every((node) => (node.x ?? 0) < 140)).toBe(true);

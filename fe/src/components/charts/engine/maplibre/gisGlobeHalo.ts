@@ -3,8 +3,6 @@ import {
   bindMapRenderSync,
   isGlobeTransformProbeReady,
   resolveGlobeLimbBoundsForOverlay,
-  resolveGlobeScreenBounds,
-  shouldRenderGisStarfield,
 } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 import { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
 import { readOverlayLayoutSize, syncOverlayCanvasSize } from "@/components/charts/engine/maplibre/gisOverlayCanvas";
@@ -108,13 +106,6 @@ export function mountGisGlobeHaloOverlay(
 
     const map = getMap();
     if (!map || !map.isStyleLoaded() || !isGlobeTransformProbeReady(map)) {
-      canvas.style.display = "none";
-      ctx.clearRect(0, 0, width, height);
-      return;
-    }
-
-    const screen = resolveGlobeScreenBounds(map);
-    if (!screen || !shouldRenderGisStarfield(screen, width, height)) {
       canvas.style.display = "none";
       ctx.clearRect(0, 0, width, height);
       return;

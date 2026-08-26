@@ -2,10 +2,12 @@ import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRende
 import { chartViewModelToRenderSpec } from "@/components/charts/engine/buildChartViewModel";
 import {
   ADVANCED_CHART_ROW_CAP,
+  GRAPH_CHART_ROW_CAP,
   capRows,
   colIndex,
   resolveCartesianAxisFields,
 } from "@/components/charts/engine/buildDatasetEncoding";
+import { aggregateGraphFromRows } from "@/components/charts/engine/plugins/plans/graphPlanData";
 import {
   barRangePlan,
   bulletGraphPlan,
@@ -254,30 +256,13 @@ function graphPlan(
   const src = spec.encoding.dimensions[0]?.field ?? "";
   const dst = spec.encoding.dimensions[1]?.field ?? "";
   const metric = spec.encoding.metrics[0]?.field ?? "";
-  const si = colIndex(columns, src);
-  const di = colIndex(columns, dst);
-  const mi = metric ? colIndex(columns, metric) : -1;
-  const nodeSet = new Set<string>();
-  const edgeWeights = new Map<string, number>();
-  for (const r of rows) {
-    const s = String(r[si] ?? "");
-    const t = String(r[di] ?? "");
-    if (!s || !t) continue;
-    nodeSet.add(s);
-    nodeSet.add(t);
-    const key = `${s}\0${t}`;
-    const weight = mi >= 0 ? Number(r[mi] ?? 0) : 1;
-    edgeWeights.set(key, (edgeWeights.get(key) ?? 0) + (Number.isFinite(weight) ? weight : 0));
-  }
-  const edges = [...edgeWeights.entries()].map(([key, weight]) => {
-    const [source, target] = key.split("\0");
-    return { source, target, weight: weight > 0 ? weight : 1 };
-  });
+  const graph = aggregateGraphFromRows(rows, columns, src, dst, metric);
   const layout = spec.styleVariant === "dagre" ? "dagre" : "force";
   return d3Plan("ForceGraph", {
-    nodes: [...nodeSet].map((id) => ({ id, data: { label: id } })),
-    edges,
+    nodes: graph.nodes,
+    edges: graph.edges,
     layout: { type: layout },
+    graphTruncated: graph.truncated,
   });
 }
 
@@ -701,7 +686,8 @@ function d3TablePlan(type: string, vm: ChartViewModel): ChartRenderPlan {
 
 export function buildPlanForType(chartType: string, vm: ChartViewModel): ChartRenderPlan {
   const spec = chartViewModelToRenderSpec(vm);
-  const { rows: capped } = capRows(vm.dataset.rows, ADVANCED_CHART_ROW_CAP);
+  const rowCap = chartType === "graph" ? GRAPH_CHART_ROW_CAP : ADVANCED_CHART_ROW_CAP;
+  const { rows: capped } = capRows(vm.dataset.rows, rowCap);
   const columns = vm.dataset.columns;
 
   if (capped.length === 0 && chartType !== "map" && chartType !== "map-3d" && chartType !== "gis-map") {

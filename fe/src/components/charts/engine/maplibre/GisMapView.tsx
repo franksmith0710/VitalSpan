@@ -281,6 +281,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
       resyncDataLayers = () => {
         if (cancelled || !map) return;
+        const current = projectRef.current;
+        applyGlobeAtmosphere(map, {
+          projection: current.projection,
+          fog: current.fog,
+          atmospherePreset: current.atmospherePreset,
+        });
         syncOverlayRuntime(map);
         setMapRuntimeEpoch((epoch) => epoch + 1);
       };
@@ -376,13 +382,33 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         buildings3d: project.buildings3d !== false,
         earthOpacity,
       });
+      applyGlobeAtmosphere(
+        map,
+        {
+          projection: project.projection,
+          fog: project.fog,
+          atmospherePreset: project.atmospherePreset,
+        },
+        { preserveCamera: true },
+      );
       syncOverlayRuntime(map);
       setMapRuntimeEpoch((epoch) => epoch + 1);
       map.resize();
       onPaintReady?.();
     });
     appliedStyleKeyRef.current = styleKey;
-  }, [earthOpacity, onPaintReady, project.basemapLayers, project.buildings3d, style, styleKey, syncOverlayRuntime]);
+  }, [
+    earthOpacity,
+    onPaintReady,
+    project.atmospherePreset,
+    project.basemapLayers,
+    project.buildings3d,
+    project.fog,
+    project.projection,
+    style,
+    styleKey,
+    syncOverlayRuntime,
+  ]);
 
   useEffect(() => {
     const map = mapRef.current;

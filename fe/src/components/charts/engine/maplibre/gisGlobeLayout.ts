@@ -311,7 +311,10 @@ export function resolveGlobeLimbBoundsForOverlay(
   }
 
   const screen = resolveGlobeScreenBounds(map);
-  const inMapPixels = resolveGlobeLimbBoundsFromMap(map) ?? resolveGlobeLimbBoundsFromProject(map);
+  const inMapPixels =
+    resolveGlobeLimbBoundsFromMap(map) ??
+    resolveGlobeLimbBoundsFromProject(map) ??
+    (screen ? { x: screen.x, y: screen.y, radius: screen.radius } : null);
   if (!inMapPixels) {
     return null;
   }

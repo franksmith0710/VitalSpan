@@ -69,7 +69,7 @@ describe("renderD3ForceGraph", () => {
         { source: "线下门店", target: "2025-06-04" },
       ],
       "force",
-    )}|structured-v3`;
+    )}|structured-v4`;
     expect(readForceGraphLayoutState(layoutKey)?.["电话销售"]).toMatchObject({
       x: expect.any(Number),
       y: expect.any(Number),

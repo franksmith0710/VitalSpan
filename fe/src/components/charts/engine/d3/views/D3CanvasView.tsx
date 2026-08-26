@@ -17,6 +17,7 @@ import { buildD3CanvasContentKey } from "@/components/charts/engine/d3/views/bui
 import { d3ChartTestId } from "@/components/charts/engine/d3/views/d3TestId";
 import {
   ADVANCED_CHART_ROW_CAP,
+  GRAPH_CHART_ROW_CAP,
   capRows,
 } from "@/components/charts/engine/buildDatasetEncoding";
 import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelShapePlayerContext";
@@ -49,10 +50,13 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
     return applyChartStyleChain(base, style, chartConfig);
   }, [viewModel, style, chartConfig]);
 
+  const rowCap = viewModel.chartType === "graph" ? GRAPH_CHART_ROW_CAP : ADVANCED_CHART_ROW_CAP;
   const { rows: capped, truncated } = useMemo(
-    () => capRows(viewModel.dataset.rows, ADVANCED_CHART_ROW_CAP),
-    [viewModel.dataset.rows],
+    () => capRows(viewModel.dataset.rows, rowCap),
+    [viewModel.dataset.rows, rowCap],
   );
+  const graphDataTruncated =
+    viewModel.chartType === "graph" && plan.kind === "d3" && Boolean(plan.options?.graphTruncated);
 
   const playing = usePixelShapePlayer();
   const visualScale = useChartVisualScale();
@@ -258,7 +262,11 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
     <div className={cn("w-full", fill ? "absolute inset-0 flex min-h-0 flex-col" : "min-h-[120px]")} aria-label={ariaLabel}>
       {truncated ? (
         <p role="status" className="mb-2 shrink-0 text-theme-sm text-warning-600 dark:text-warning-400">
-          数据量较大，已采样显示前 {ADVANCED_CHART_ROW_CAP} 条</p>
+          数据量较大，已采样显示前 {rowCap} 条</p>
+      ) : null}
+      {graphDataTruncated ? (
+        <p role="status" className="mb-2 shrink-0 text-theme-sm text-warning-600 dark:text-warning-400">
+          关系过多，已按关系强度保留主要节点与连线</p>
       ) : null}
       {renderError ? (
         <p role="alert" className="mb-2 shrink-0 text-theme-sm text-error-600 dark:text-error-400">
