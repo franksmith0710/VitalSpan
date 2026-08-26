@@ -86,10 +86,9 @@ def aggregate_pack_theme(
         buckets = bucket_time_series(df[col], time_step)
         out = df.assign(_d=buckets).groupby("_d", dropna=False).size().reset_index(name="cnt")
         out.columns = ["d", "cnt"]
-        if theme == "trend":
-            out = out.sort_values("d")
-        elif theme != "activity":
+        if theme not in {"activity", "trend"}:
             raise StandardAnalysisError(RPT_STD_THEME_UNSUPPORTED, f"unsupported theme={theme}", 422)
+        out = out.sort_values("d")
         out, point_cap_applied = cap_recent_time_points(out, time_step)
 
     result_columns = list(out.columns)

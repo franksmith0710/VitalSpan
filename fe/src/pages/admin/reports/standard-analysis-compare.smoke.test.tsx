@@ -116,7 +116,8 @@ describe("StandardAnalysisPage compare mode", () => {
       expect(screen.getByText("对比期快照缺失")).toBeInTheDocument();
     });
     expect(screen.getByText(/当前实时查询/)).toBeInTheDocument();
-    expect(screen.getAllByText(/按城市计数/).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByTestId("standard-analysis-ops-toggle"));
+    expect(screen.getByTestId("standard-analysis-ops-detail")).toHaveTextContent("按城市计数");
     expect(screen.queryByRole("columnheader", { name: "增减" })).not.toBeInTheDocument();
   });
 

@@ -4,32 +4,49 @@ import { buildChartViewModel } from "@/components/charts/engine/buildChartViewMo
 import { buildStyleContext } from "@/components/charts/engine/buildStyleContext";
 import { useDashboardColorScheme } from "@/hooks/useDashboardColorScheme";
 import { resolveEffectivePaletteColors } from "@/lib/chartDeStyle";
-import type { AnalysisTheme } from "../useStandardAnalysis";
+import type { AnalysisTheme, StandardAnalysisRenderMeta } from "../useStandardAnalysis";
 import { buildStandardSectionChartConfig } from "../standardAnalysisPresentation";
+import {
+  prepareTrendChartRows,
+  sortTimeSeriesRows,
+} from "../standardAnalysisTimeSeries";
+import { buildLiveSummaryMetrics } from "./standardAnalysisUi";
+import { StandardAnalysisSummaryMetrics } from "./StandardAnalysisSummaryMetrics";
 
 type Props = {
   theme: AnalysisTheme;
   headers: string[];
   rows: unknown[][];
   chartType: "bar" | "line";
+  meta?: StandardAnalysisRenderMeta;
 };
 
-export function StandardAnalysisSectionChart({ theme, headers, rows, chartType }: Props) {
+export function StandardAnalysisSectionChart({ theme, headers, rows, chartType, meta }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scheme = useDashboardColorScheme(containerRef);
+  const metrics = useMemo(
+    () => buildLiveSummaryMetrics(headers, rows, theme, meta),
+    [headers, meta, rows, theme],
+  );
+
+  const chartRows = useMemo(() => {
+    if (theme === "trend") return prepareTrendChartRows(headers, rows);
+    if (theme === "activity") return sortTimeSeriesRows(headers, rows);
+    return rows;
+  }, [headers, rows, theme]);
 
   const config = useMemo(
-    () => buildStandardSectionChartConfig(headers, chartType),
-    [headers, chartType],
+    () => buildStandardSectionChartConfig(headers, chartType, theme),
+    [chartType, headers, theme],
   );
 
   const viewModel = useMemo(
     () =>
       buildChartViewModel(config, {
         columns: headers,
-        rows: rows as (string | number | boolean | null)[][],
+        rows: chartRows as (string | number | boolean | null)[][],
       }),
-    [config, headers, rows],
+    [chartRows, config, headers],
   );
 
   const style = useMemo(
@@ -54,15 +71,16 @@ export function StandardAnalysisSectionChart({ theme, headers, rows, chartType }
   }, [theme]);
 
   return (
-    <div ref={containerRef} className="flex min-h-0 flex-1 flex-col pt-2 pb-2">
-      <div className="relative min-h-[280px] flex-1 w-full">
+    <div ref={containerRef} className="flex min-h-0 flex-1 flex-col gap-2 px-5 pb-4 pt-2">
+      <StandardAnalysisSummaryMetrics metrics={metrics} />
+      <div className="relative min-h-[360px] flex-1 w-full rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
         <ChartEngineView
           viewModel={viewModel}
           style={style}
           chartConfig={config}
           ariaLabel={ariaLabel}
           fill
-          height={320}
+          height={400}
         />
       </div>
     </div>

@@ -4,10 +4,12 @@ import {
   coverCropFromTop,
   findDashboardThumbnailCaptureRoot,
   fitThumbnailSize,
+  GIS_MAP_CAPTURE_PREP_EVENT,
   measureCaptureBox,
   resolveCaptureBackground,
   resolveVisibleCaptureTarget,
   snapshotCanvasesForHtmlCapture,
+  waitForGisMapCaptureReady,
 } from "./captureDashboardThumbnail";
 
 function buildCaptureDom(scale = "0.42"): HTMLElement {
@@ -125,6 +127,58 @@ describe("captureDashboardThumbnail", () => {
     expect(host.querySelector("[data-thumbnail-canvas-snapshot]")).toBeTruthy();
 
     restore();
+    host.remove();
+  });
+
+  it("waitForGisMapCaptureReady resolves when paint state is ready and map canvas is drawable", async () => {
+    const host = document.createElement("div");
+    const gisView = document.createElement("div");
+    gisView.setAttribute("data-testid", "gis-map-view");
+    gisView.setAttribute("data-basemap", "pmtiles");
+    gisView.setAttribute("data-gis-paint-state", "loading");
+    const starfield = document.createElement("canvas");
+    starfield.width = 32;
+    starfield.height = 32;
+    starfield.toDataURL = () => `data:image/png;base64,${"S".repeat(220)}`;
+    const mapCanvas = document.createElement("canvas");
+    mapCanvas.className = "maplibregl-canvas";
+    mapCanvas.width = 320;
+    mapCanvas.height = 240;
+    mapCanvas.toDataURL = () => `data:image/png;base64,${"M".repeat(4_500)}`;
+    gisView.appendChild(mapCanvas);
+    host.append(gisView, starfield);
+    document.body.appendChild(host);
+
+    const prepEvents: string[] = [];
+    gisView.addEventListener(GIS_MAP_CAPTURE_PREP_EVENT, () => {
+      prepEvents.push("prep");
+    });
+
+    const waitPromise = waitForGisMapCaptureReady(host, 3000);
+    window.setTimeout(() => {
+      gisView.setAttribute("data-gis-paint-state", "ready");
+    }, 120);
+
+    await waitPromise;
+    expect(prepEvents.length).toBeGreaterThan(0);
+    host.remove();
+  });
+
+  it("waitForGisMapCaptureReady ignores starfield-only drawable canvases", async () => {
+    const host = document.createElement("div");
+    const gisView = document.createElement("div");
+    gisView.setAttribute("data-testid", "gis-map-view");
+    gisView.setAttribute("data-basemap", "pmtiles");
+    gisView.setAttribute("data-gis-paint-state", "ready");
+    const starfield = document.createElement("canvas");
+    starfield.width = 32;
+    starfield.height = 32;
+    starfield.toDataURL = () => `data:image/png;base64,${"S".repeat(220)}`;
+    host.append(gisView, starfield);
+    document.body.appendChild(host);
+
+    const waitPromise = waitForGisMapCaptureReady(host, 400);
+    await expect(waitPromise).resolves.toBeUndefined();
     host.remove();
   });
 });

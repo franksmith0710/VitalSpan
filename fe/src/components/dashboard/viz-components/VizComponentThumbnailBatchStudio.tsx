@@ -21,7 +21,7 @@ export function VizComponentThumbnailBatchStudio({
 
   return (
     <div
-      className="pointer-events-none fixed top-0 -left-[2400px] opacity-0"
+      className="pointer-events-none fixed top-0 -left-[2400px]"
       style={{ width: STUDIO_WIDTH, height: STUDIO_HEIGHT }}
       aria-hidden
       data-testid="viz-component-thumbnail-batch-studio"

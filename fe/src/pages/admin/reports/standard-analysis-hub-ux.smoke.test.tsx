@@ -102,6 +102,6 @@ describe("standard analysis hub UX-R2", () => {
     );
 
     expect(screen.getByTestId("standard-analysis-capture-toolbar")).toHaveTextContent("保存本期快照");
-    expect(screen.getByTestId("standard-analysis-meta-row-mobile")).toHaveTextContent("数据集绑定");
+    expect(screen.getByTestId("standard-analysis-observability-strip")).toBeInTheDocument();
   });
 });

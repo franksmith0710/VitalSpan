@@ -13,11 +13,11 @@ describe("buildLiveSummaryMetrics", () => {
       aggregatedPointCount: 90,
     });
 
-    expect(metrics.map((item) => item.label)).toEqual(["时间点", "记录总数", "单点峰值"]);
+    expect(metrics.map((item) => item.label)).toEqual(["时间点", "累计总量", "单日最高"]);
     expect(metrics[0]?.value).toBe("90");
-    expect(metrics[1]?.value).toBe("106");
+    expect(metrics[1]?.value).toBe("6");
     expect(metrics[2]?.value).toBe("3");
-    expect(metrics[2]?.hint).toContain("纵轴峰值");
+    expect(metrics[1]?.hint).toContain("折线末端");
   });
 
   it("uses dimension stats for distribution theme", () => {

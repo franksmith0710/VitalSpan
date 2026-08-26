@@ -27,12 +27,10 @@ import {
 } from "../standardAnalysisPresentation";
 import { buildStandardAnalysisDataMetaNote } from "../standardAnalysisDataMeta";
 import {
-  buildLiveSummaryMetrics,
   normalizeColumns,
   normalizeRows,
 } from "./standardAnalysisUi";
 import { StandardAnalysisSectionChart } from "./StandardAnalysisSectionChart";
-import { StandardAnalysisSummaryMetrics } from "./StandardAnalysisSummaryMetrics";
 
 type Props = {
   pack: AnalysisPack;
@@ -40,21 +38,6 @@ type Props = {
   runData?: RunResult;
   isLoading: boolean;
 };
-
-function LiveSummaryStrip({
-  headers,
-  rows,
-  theme,
-  meta,
-}: {
-  headers: string[];
-  rows: unknown[][];
-  theme: AnalysisTheme;
-  meta?: RunResult["renderSpec"]["meta"];
-}) {
-  const metrics = buildLiveSummaryMetrics(headers, rows, theme, meta);
-  return <StandardAnalysisSummaryMetrics metrics={metrics} />;
-}
 
 function resolveInitialPresentationMode(
   packKey: string,
@@ -153,25 +136,15 @@ export function StandardAnalysisLiveView({
         </div>
       ) : null}
 
-      {!isLoading && presentationMode === "chart" && chartSection && normalizedRows.length > 0 ? (
-        <LiveSummaryStrip
-          headers={rawHeaders}
-          rows={normalizedRows}
-          theme={activeTheme}
-          meta={runData?.renderSpec.meta}
-        />
-      ) : null}
-
       <div className="flex min-h-0 flex-1 flex-col">
         {!isLoading && presentationMode === "chart" && chartSection ? (
-          <div className="flex min-h-0 flex-1 flex-col px-5 pb-2">
-            <StandardAnalysisSectionChart
-              theme={activeTheme}
-              headers={rawHeaders}
-              rows={normalizedRows}
-              chartType={chartSection.chartType}
-            />
-          </div>
+          <StandardAnalysisSectionChart
+            theme={activeTheme}
+            headers={rawHeaders}
+            rows={normalizedRows}
+            chartType={chartSection.chartType}
+            meta={runData?.renderSpec.meta}
+          />
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
             <DataTable

@@ -80,7 +80,7 @@ describe("StandardAnalysisLiveView live summary strip", () => {
     );
 
     const strip = screen.getByTestId("standard-analysis-live-summary");
-    expect(strip).toHaveStyle({ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" });
+    expect(strip).toHaveClass("flex");
     expect(strip.textContent).toContain("状态数");
     expect(strip.textContent).toContain("记录总数");
     expect(strip.textContent).toContain("200");
@@ -112,9 +112,14 @@ describe("StandardAnalysisLiveView live summary strip", () => {
     );
 
     const strip = screen.getByTestId("standard-analysis-live-summary");
-    expect(strip.textContent).toContain("单点峰值");
+    expect(strip.textContent).toContain("累计总量");
+    expect(strip.textContent).toContain("7");
+    expect(strip.textContent).toContain("单日最高");
     expect(strip.textContent).toContain("5");
-    expect(strip.textContent).toContain("106");
+    expect(captured.viewModel?.dataset.rows).toEqual([
+      ["2025-04-05", 2],
+      ["2025-04-06", 7],
+    ]);
   });
 
   it("hides summary strip in table mode", async () => {

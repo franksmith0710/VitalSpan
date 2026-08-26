@@ -15,6 +15,7 @@ vi.mock("@/lib/captureDashboardThumbnail", () => ({
     if (!root) throw new Error("未找到可截图的组件预览区域");
     return root;
   }),
+  waitForGisMapCaptureReady: vi.fn(async () => undefined),
 }));
 
 import { apiUploadBlob } from "@/lib/apiUpload";

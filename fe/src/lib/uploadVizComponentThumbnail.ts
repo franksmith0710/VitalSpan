@@ -4,6 +4,7 @@ import {
   captureDashboardThumbnailBlob,
   findDashboardWidgetCaptureRoot,
   findVizComponentThumbnailCaptureRoot,
+  waitForGisMapCaptureReady,
   waitForThumbnailCaptureReady,
 } from "@/lib/captureDashboardThumbnail";
 
@@ -14,7 +15,8 @@ async function uploadThumbnailBlob(componentId: string, blob: Blob): Promise<voi
 }
 
 export async function captureVizComponentEditThumbnailBlob(): Promise<Blob> {
-  const root = await waitForThumbnailCaptureReady(findVizComponentThumbnailCaptureRoot);
+  const root = await waitForThumbnailCaptureReady(findVizComponentThumbnailCaptureRoot, 12_000);
+  await waitForGisMapCaptureReady(root);
   const blob = await captureDashboardThumbnailBlob(root);
   assertUsableImageBlob(blob);
   return blob;
@@ -25,7 +27,8 @@ export async function uploadVizComponentThumbnailBlob(componentId: string, blob:
 }
 
 async function captureDashboardWidgetThumbnailBlob(widgetId: string): Promise<Blob> {
-  const root = await waitForThumbnailCaptureReady(() => findDashboardWidgetCaptureRoot(widgetId));
+  const root = await waitForThumbnailCaptureReady(() => findDashboardWidgetCaptureRoot(widgetId), 12_000);
+  await waitForGisMapCaptureReady(root);
   const blob = await captureDashboardThumbnailBlob(root);
   assertUsableImageBlob(blob);
   return blob;

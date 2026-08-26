@@ -36,6 +36,7 @@ import {
   loadMapLibreRuntime,
 } from "@/components/charts/engine/maplibre/maplibreBootstrap";
 import { gisMapTransformRequest } from "@/components/charts/engine/maplibre/gisMapTransformRequest";
+import { GIS_MAP_CAPTURE_PREP_EVENT } from "@/lib/captureDashboardThumbnail";
 import { GeoMapOverlayHint } from "@/components/charts/engine/geo/GeoMapOverlayHint";
 import { resolveGisMapDataHint, shouldShowGisMapOverlayHint } from "@/lib/gisMapDataHint";
 import { resolveTileService } from "@/lib/tileServices";
@@ -46,6 +47,32 @@ type MapLibreMap = InstanceType<Awaited<ReturnType<typeof loadMapLibreRuntime>>[
 type StyleSpecification = import("maplibre-gl").StyleSpecification;
 
 const DEFAULT_AUTO_ROTATE_SPEED = GLOBE_IDLE_ROTATION_DEG_PER_SEC;
+
+type GisPaintState = "pending" | "loading" | "ready" | "error";
+
+function markGisMapReady(
+  map: MapLibreMap,
+  onReady: () => void,
+  cancelled: () => boolean,
+): void {
+  const finish = () => {
+    if (cancelled()) return;
+    map.triggerRepaint();
+    map.once("render", () => {
+      if (cancelled()) return;
+      onReady();
+    });
+  };
+  if (map.areTilesLoaded()) {
+    finish();
+    return;
+  }
+  map.once("idle", () => {
+    if (cancelled()) return;
+    if (map.areTilesLoaded()) finish();
+    else map.once("idle", finish);
+  });
+}
 
 function GisMapViewInner(props: ChartEngineViewProps) {
   const {
@@ -88,12 +115,48 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const [pmtilesLoading, setPmtilesLoading] = useState(false);
   const [pmtilesErrorHint, setPmtilesErrorHint] = useState<string | null>(null);
   const [mapErrorHint, setMapErrorHint] = useState<string | null>(null);
+  const [gisPaintState, setGisPaintState] = useState<GisPaintState>("pending");
   const [mapRuntimeEpoch, setMapRuntimeEpoch] = useState(0);
 
   const tileServiceId = project.tileServiceId;
   const flavor = project.basemapFlavor ?? "light";
   const view = project.view ?? DEFAULT_GIS_GLOBE_VIEW;
   const mapBootstrapKey = `${tileServiceId}:${project.projection ?? "globe"}`;
+
+  useEffect(() => {
+    if (!tileServiceId) {
+      setGisPaintState("error");
+      return;
+    }
+    if (pmtilesLoading || !pmtilesStyle) {
+      setGisPaintState("loading");
+    }
+  }, [pmtilesLoading, pmtilesStyle, tileServiceId]);
+
+  useEffect(() => {
+    if (pmtilesErrorHint || mapErrorHint) {
+      setGisPaintState("error");
+    }
+  }, [mapErrorHint, pmtilesErrorHint]);
+
+  useEffect(() => {
+    hostRef.current?.setAttribute("data-gis-paint-state", gisPaintState);
+  }, [gisPaintState]);
+
+  useEffect(() => {
+    const host = hostRef.current;
+    if (!host) return;
+    const onPrep = () => {
+      const map = mapRef.current;
+      if (!map?.isStyleLoaded()) return;
+      map.triggerRepaint();
+      map.once("idle", () => {
+        mapRef.current?.triggerRepaint();
+      });
+    };
+    host.addEventListener(GIS_MAP_CAPTURE_PREP_EVENT, onPrep);
+    return () => host.removeEventListener(GIS_MAP_CAPTURE_PREP_EVENT, onPrep);
+  }, [mapBootstrapKey]);
 
   useEffect(() => {
     if (!tileServiceId) {
@@ -257,6 +320,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     let cancelled = false;
     let map: MapLibreMap | null = null;
     let resyncDataLayers: (() => void) | undefined;
+    setGisPaintState("loading");
 
     void (async () => {
       const maplibregl = await loadMapLibreRuntime();
@@ -328,13 +392,21 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         syncOverlayRuntime(map);
         setMapRuntimeEpoch((epoch) => epoch + 1);
         map.resize();
-        onPaintReady?.();
+        markGisMapReady(
+          map,
+          () => {
+            setGisPaintState("ready");
+            onPaintReady?.();
+          },
+          () => cancelled,
+        );
       });
     })();
 
     return () => {
       cancelled = true;
       setMapErrorHint(null);
+      setGisPaintState("pending");
       if (map && resyncDataLayers) {
         map.off("style.load", resyncDataLayers);
       }
@@ -604,6 +676,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           data-projection={projection}
           data-earth-opacity={earthOpacity}
           data-overlay-features={overlayGeoJson?.features.length ?? 0}
+          data-gis-paint-state={gisPaintState}
           className="relative z-[4] h-full w-full"
           role="img"
           aria-label={ariaLabel ?? "GIS 地图"}

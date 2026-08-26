@@ -196,40 +196,64 @@ export async function encodeThumbnailBlob(blob: Blob): Promise<Blob> {
 }
 
 const GIS_MAP_VIEW_SELECTOR = '[data-testid="gis-map-view"]';
+const MAPLIBRE_CANVAS_SELECTOR = "canvas.maplibregl-canvas";
+/** 球面瓦片截图的 data URL 明显长于纯色底或空缓冲 */
+const MIN_MAP_CANVAS_SNAPSHOT_CHARS = 4_000;
+
+/** GisMapView 监听：截图前触发 MapLibre 重绘，避免 WebGL 缓冲为空 */
+export const GIS_MAP_CAPTURE_PREP_EVENT = "vs-gis-capture-prep";
 
 export function isUsableCanvasSnapshot(dataUrl: string): boolean {
   return Boolean(dataUrl && dataUrl !== "data:," && dataUrl.length > 200);
 }
 
-function canvasSnapshotLooksDrawable(canvas: HTMLCanvasElement): boolean {
+function canvasSnapshotLooksDrawable(
+  canvas: HTMLCanvasElement,
+  minChars = 200,
+): boolean {
   try {
-    return isUsableCanvasSnapshot(canvas.toDataURL("image/jpeg", 0.5));
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.5);
+    return Boolean(dataUrl && dataUrl !== "data:," && dataUrl.length > minChars);
   } catch {
     return false;
   }
 }
 
-/** GIS / MapLibre 需等底图与星场绘制完成后再截图，否则只剩深蓝底与标题。 */
+function findGisMapLibreCanvas(gisView: HTMLElement): HTMLCanvasElement | null {
+  return gisView.querySelector<HTMLCanvasElement>(MAPLIBRE_CANVAS_SELECTOR);
+}
+
+function gisMapLibreCanvasLooksReady(gisView: HTMLElement): boolean {
+  const mapCanvas = findGisMapLibreCanvas(gisView);
+  if (!mapCanvas || mapCanvas.width < 8 || mapCanvas.height < 8) return false;
+  return canvasSnapshotLooksDrawable(mapCanvas, MIN_MAP_CANVAS_SNAPSHOT_CHARS);
+}
+
+function dispatchGisMapCapturePrep(gisView: HTMLElement): void {
+  gisView.dispatchEvent(new CustomEvent(GIS_MAP_CAPTURE_PREP_EVENT, { bubbles: true }));
+}
+
+/** GIS / MapLibre 需等底图、星空与光晕绘制完成后再截图，否则只剩深蓝底。 */
 export async function waitForGisMapCaptureReady(
   root: HTMLElement,
-  timeoutMs = 20_000,
+  timeoutMs = 30_000,
 ): Promise<void> {
   const gisView = root.querySelector<HTMLElement>(GIS_MAP_VIEW_SELECTOR);
   if (!gisView) return;
 
+  dispatchGisMapCapturePrep(gisView);
+
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
     const basemap = gisView.getAttribute("data-basemap");
-    if (basemap === "error") return;
-    if (basemap === "pmtiles" || basemap === "blank") {
-      const canvases = Array.from(root.querySelectorAll("canvas")).filter(
-        (canvas) => canvas.width >= 8 && canvas.height >= 8,
-      );
-      if (canvases.some(canvasSnapshotLooksDrawable)) {
-        await nextPaint();
-        await nextPaint();
-        return;
-      }
+    const paintState = gisView.getAttribute("data-gis-paint-state");
+    if (basemap === "error" || paintState === "error") return;
+
+    if (paintState === "ready" && gisMapLibreCanvasLooksReady(gisView)) {
+      dispatchGisMapCapturePrep(gisView);
+      await nextPaint();
+      await nextPaint();
+      if (gisMapLibreCanvasLooksReady(gisView)) return;
     }
     await new Promise<void>((resolve) => {
       window.setTimeout(resolve, 200);
@@ -258,10 +282,20 @@ export function snapshotCanvasesForHtmlCapture(root: HTMLElement): () => void {
     const height = canvas.clientHeight || canvas.height;
     img.width = width;
     img.height = height;
+    const computed = getComputedStyle(canvas);
     img.style.cssText = canvas.style.cssText;
     img.style.display = "block";
     img.style.width = `${width}px`;
     img.style.height = `${height}px`;
+    if (computed.position && computed.position !== "static") {
+      img.style.position = computed.position;
+      img.style.top = computed.top;
+      img.style.left = computed.left;
+      img.style.right = computed.right;
+      img.style.bottom = computed.bottom;
+      img.style.zIndex = computed.zIndex;
+      img.style.pointerEvents = "none";
+    }
     img.src = dataUrl;
     const prevDisplay = canvas.style.display;
     canvas.setAttribute("data-thumbnail-canvas-hide", "");

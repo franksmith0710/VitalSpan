@@ -3,6 +3,10 @@ import { Activity, Database, GitBranch, MapPin, Timer, TrendingUp } from "lucide
 import { Badge } from "@/components/ui/badge";
 import type { AnalysisPack, AnalysisTheme, StandardAnalysisRenderMeta } from "../useStandardAnalysis";
 import { THEME_LABELS } from "../standardRoutes";
+import {
+  lastCumulativeCount,
+  maxDailyCountInRows,
+} from "../standardAnalysisTimeSeries";
 import { cn } from "@/lib/utils";
 
 /** 分栏仅 xl+：侧栏占用后 lg 内容区过窄，栅格 min-width:auto 会叠到详情上。 */
@@ -127,7 +131,28 @@ export function buildLiveSummaryMetrics(
   const totalRecords = meta?.sourceRowCount ?? (cntIdx >= 0 ? sumCnt : rows.length);
   const pointCount = meta?.aggregatedPointCount ?? rows.length;
 
-  if (theme === "activity" || theme === "trend") {
+  if (theme === "trend") {
+    const cumulativeTotal = lastCumulativeCount(headers, rows) ?? totalRecords;
+    const dailyPeak = maxDailyCountInRows(headers, rows);
+    const metrics: SummaryMetricItem[] = [
+      { label: "时间点", value: formatSummaryCount(pointCount) },
+      {
+        label: "累计总量",
+        value: formatSummaryCount(cumulativeTotal),
+        hint: "与趋势折线末端纵轴一致",
+      },
+    ];
+    if (dailyPeak != null) {
+      metrics.push({
+        label: "单日最高",
+        value: formatSummaryCount(dailyPeak),
+        hint: "各时间桶内单日计数峰值",
+      });
+    }
+    return metrics;
+  }
+
+  if (theme === "activity") {
     const metrics: SummaryMetricItem[] = [
       { label: "时间点", value: formatSummaryCount(pointCount) },
       {

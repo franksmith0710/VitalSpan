@@ -71,6 +71,26 @@ def test_aggregate_pack_theme_distribution_meta() -> None:
     assert meta["sampleBased"] is True
 
 
+def test_aggregate_pack_theme_activity_sorts_by_date() -> None:
+    columns = ["created_at"]
+    rows = [
+        ["2026-01-03"],
+        ["2026-01-01"],
+        ["2026-01-02"],
+    ]
+    mapping = FieldMapping(createdAt="created_at")
+    _, out_rows, _ = aggregate_pack_theme(
+        "activity",
+        columns,
+        rows,
+        mapping,
+        snapshot_preset="daily",
+        query_limit=5000,
+    )
+    dates = [row[0] for row in out_rows]
+    assert dates == ["2026-01-01", "2026-01-02", "2026-01-03"]
+
+
 def test_aggregate_pack_theme_weekly_activity_meta() -> None:
     columns = ["created_at"]
     rows = [[f"2026-01-{i:02d}"] for i in range(1, 8)]

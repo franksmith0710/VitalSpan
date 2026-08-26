@@ -9,6 +9,7 @@ import {
   isChartSection,
   resolveSectionChartType,
 } from "./standardAnalysisPresentation";
+import { prepareTrendChartRows } from "./standardAnalysisTimeSeries";
 
 describe("standardAnalysisPresentation", () => {
   it("humanizes internal column names", () => {
@@ -62,10 +63,23 @@ describe("standardAnalysisPresentation", () => {
       dimensions: [{ field: "dim", label: "维度" }],
       metrics: [{ field: "cnt", label: "数量" }],
     });
-    expect(buildStandardSectionChartConfig(["d", "cnt"], "line")).toMatchObject({
+    expect(buildStandardSectionChartConfig(["d", "cnt"], "line", "activity")).toMatchObject({
       chartType: "line",
       dimensions: [{ field: "d", label: "日期" }],
       metrics: [{ field: "cnt", label: "数量" }],
+    });
+    expect(buildStandardSectionChartConfig(["d", "cnt"], "line", "trend")).toMatchObject({
+      chartType: "line",
+      styleVariant: "area",
+      metrics: [{ field: "cnt", label: "累计数量" }],
+      nativeBody: {
+        deStyle: {
+          cartesian: {
+            lineSmooth: false,
+            areaOpacity: 0.22,
+          },
+        },
+      },
     });
   });
 
@@ -99,20 +113,23 @@ describe("standardAnalysisPresentation", () => {
     );
   });
 
-  it("encodes line chart points matching table rows", () => {
+  it("encodes trend line as cumulative area series", () => {
     const headers = ["d", "cnt"];
     const rows: (string | number)[][] = [
-      ["2026-08-01", 12],
-      ["2026-08-02", 18],
+      ["2026-08-01", 2],
+      ["2026-08-02", 3],
     ];
-    const config = buildStandardSectionChartConfig(headers, "line");
-    const vm = buildChartViewModel(config, { columns: headers, rows });
+    const config = buildStandardSectionChartConfig(headers, "line", "trend");
+    const vm = buildChartViewModel(config, {
+      columns: headers,
+      rows: prepareTrendChartRows(headers, rows) as (string | number)[][],
+    });
     const plan = buildPlanForType("line", vm);
     const data = plan.options.data as Array<{ __category__: string; __value__: number }>;
     expect(data).toEqual(
       expect.arrayContaining([
-        { __category__: "2026-08-01", __value__: 12 },
-        { __category__: "2026-08-02", __value__: 18 },
+        { __category__: "2026-08-01", __value__: 2 },
+        { __category__: "2026-08-02", __value__: 5 },
       ]),
     );
   });

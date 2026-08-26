@@ -49,14 +49,23 @@ export function resolveSectionChartType(chartType: string): ChartViewConfig["cha
 export function buildStandardSectionChartConfig(
   headers: string[],
   chartType: "bar" | "line",
+  theme?: AnalysisTheme,
 ): ChartViewConfig {
   const [dimensionField, metricField] = headers;
+  const resolvedChartType = resolveSectionChartType(chartType);
+  const isTrend = theme === "trend";
+  const isTimeSeries = theme === "activity" || isTrend;
   // 聚合列 dim/d 与表格 humanizeSectionHeaders 一致；勿用 fieldMapping 物理列名作轴标题
   const dimensionLabel = dimensionField ? humanizeSectionHeader(dimensionField) : undefined;
-  const metricLabel = metricField ? humanizeSectionHeader(metricField) : "数量";
+  const metricLabel = metricField
+    ? isTrend
+      ? "累计数量"
+      : humanizeSectionHeader(metricField)
+    : "数量";
 
   return {
-    chartType: resolveSectionChartType(chartType),
+    chartType: resolvedChartType,
+    styleVariant: isTrend ? "area" : undefined,
     dataSourceId: INLINE_CHART_DS,
     mode: "sql",
     sql: "SELECT 1",
@@ -64,6 +73,19 @@ export function buildStandardSectionChartConfig(
       ? [{ field: dimensionField, label: dimensionLabel ?? humanizeColumnName(dimensionField) }]
       : [],
     metrics: metricField ? [{ field: metricField, label: metricLabel }] : [],
+    nativeBody:
+      resolvedChartType === "line" && isTimeSeries
+        ? {
+            deStyle: {
+              cartesian: {
+                lineSmooth: false,
+                areaOpacity: isTrend ? 0.22 : 0.12,
+                lineWidth: 2,
+                pointSize: isTrend ? 0 : 3,
+              },
+            },
+          }
+        : undefined,
   };
 }
 

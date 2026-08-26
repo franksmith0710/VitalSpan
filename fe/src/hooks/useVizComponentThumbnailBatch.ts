@@ -5,6 +5,11 @@ import { listVizComponentsMissingThumbnail } from "@/lib/listVizComponentsMissin
 import { vizComponentPreviewDashboardStyle } from "@/lib/vizComponentPreviewStyle";
 import { fetchVizComponent } from "@/lib/vizComponents";
 import { persistVizComponentThumbnailBestEffort } from "@/lib/uploadVizComponentThumbnail";
+import {
+  findVizComponentThumbnailCaptureRoot,
+  waitForGisMapCaptureReady,
+  waitForThumbnailCaptureReady,
+} from "@/lib/captureDashboardThumbnail";
 
 export type VizComponentThumbnailBatchProgress = {
   current: number;
@@ -16,6 +21,12 @@ function waitForPaint(): Promise<void> {
   return new Promise((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   });
+}
+
+async function waitForStudioThumbnailReady(): Promise<void> {
+  await waitForPaint();
+  const root = await waitForThumbnailCaptureReady(findVizComponentThumbnailCaptureRoot, 15_000);
+  await waitForGisMapCaptureReady(root, 35_000);
 }
 
 export function useVizComponentThumbnailBatch(includeDrafts: boolean) {
@@ -48,10 +59,7 @@ export function useVizComponentThumbnailBatch(includeDrafts: boolean) {
         setProgress({ current: index + 1, total: ids.length, name: detail.name });
         setActiveWidget(componentDetailToLayoutWidget(detail));
         setStudioKey((key) => key + 1);
-        await waitForPaint();
-        await new Promise<void>((resolve) => {
-          window.setTimeout(resolve, 600);
-        });
+        await waitForStudioThumbnailReady();
 
         const result = await persistVizComponentThumbnailBestEffort(id);
         if (result.ok) ok += 1;

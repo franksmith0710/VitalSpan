@@ -22,8 +22,8 @@ import { StandardAnalysisCompareControls } from "./StandardAnalysisCompareContro
 import { StandardAnalysisCompareMatrixView } from "./StandardAnalysisCompareMatrixView";
 import { StandardAnalysisCompareView } from "./StandardAnalysisCompareView";
 import type { CompareLayout } from "../standardAnalysisComparePrefs";
-import { compareVolumeHint, themeAggregationHint } from "./standardAnalysisCompareUi";
-import { sortThemesForDisplay, StandardAnalysisMetaRow, THEME_META } from "./standardAnalysisUi";
+import { compareVolumeHint } from "./standardAnalysisCompareUi";
+import { sortThemesForDisplay, THEME_META } from "./standardAnalysisUi";
 import { StandardAnalysisLiveView } from "./StandardAnalysisLiveView";
 import { StandardAnalysisSnapshotStrip } from "./StandardAnalysisSnapshotStrip";
 
@@ -102,30 +102,11 @@ export function StandardAnalysisResultPanel({
   mapError,
 }: Props) {
   const activeQuery = viewMode === "live" ? runQuery : compareLayout === "matrix" ? matrixQuery : compareQuery;
-  const themeLabel = THEME_META[activeTheme]?.label ?? activeTheme;
   const compareVolumeNote =
     viewMode === "compare" ? compareVolumeHint(pack, activeTheme) : null;
 
   return (
     <section className="flex min-h-0 min-w-0 flex-1 flex-col">
-      <div className="shrink-0 border-b border-gray-200 px-5 py-4 dark:border-gray-800">
-        <h2 className="truncate text-theme-sm font-semibold text-gray-900 dark:text-white xl:hidden">
-          {pack.displayName}
-        </h2>
-        <div className="hidden min-w-0 xl:block">
-          <h2 className="truncate text-base font-semibold tracking-tight text-gray-900 dark:text-white">
-            {pack.displayName}
-          </h2>
-          <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-            {themeLabel} · {themeAggregationHint(pack, activeTheme)}
-            {viewMode === "live" ? " · 实时查询" : " · 周期快照对比"}
-          </p>
-        </div>
-        <div className={cn("mt-3 min-w-0 xl:hidden")} data-testid="standard-analysis-meta-row-mobile">
-          <StandardAnalysisMetaRow pack={pack} />
-        </div>
-      </div>
-
       <Tabs
         value={activeTheme}
         onValueChange={(value) => onThemeChange(value as AnalysisTheme)}
