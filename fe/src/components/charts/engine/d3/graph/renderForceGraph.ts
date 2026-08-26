@@ -2,11 +2,17 @@ import * as d3 from "d3";
 import { resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
+import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
 import {
+  inferBipartiteSides,
+  resolveBipartiteTargetX,
+  seedBipartiteLayout,
+} from "@/components/charts/engine/d3/graph/graphBipartiteLayout";
+import {
+  buildGraphLayoutStateKey,
   readForceGraphLayoutState,
   writeForceGraphLayoutState,
 } from "@/components/charts/engine/d3/graph/forceGraphLayoutState";
-import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
 
 type GraphNodeInput = { id: string; data?: { label?: string } };
 type GraphEdgeInput = { source: string; target: string };
@@ -27,15 +33,31 @@ function positionTooltip(
     .style("top", `${Math.max(event.clientY - rect.top - 48, 8)}px`);
 }
 
-function seedNodesInRing(nodes: SimNode[], width: number, height: number): void {
+function seedNodesScattered(nodes: SimNode[], width: number, height: number): void {
   const cx = width / 2;
   const cy = height / 2;
-  const radius = Math.min(width, height) * 0.28;
-  nodes.forEach((node, index) => {
-    const angle = (2 * Math.PI * index) / Math.max(nodes.length, 1) - Math.PI / 2;
-    node.x = cx + radius * Math.cos(angle);
-    node.y = cy + radius * Math.sin(angle);
+  const spreadX = width * 0.34;
+  const spreadY = height * 0.34;
+  nodes.forEach((node) => {
+    node.x = cx + (Math.random() - 0.5) * spreadX;
+    node.y = cy + (Math.random() - 0.5) * spreadY;
   });
+}
+
+function buildLayoutStateKey(
+  instanceKey: string | undefined,
+  nodes: SimNode[],
+  links: SimLink[],
+): string | undefined {
+  return buildGraphLayoutStateKey(
+    instanceKey,
+    nodes.map((node) => node.id),
+    links.map((link) => {
+      const source = typeof link.source === "string" ? link.source : link.source.id;
+      const target = typeof link.target === "string" ? link.target : link.target.id;
+      return { source, target };
+    }),
+  );
 }
 
 function resolveRepulsion(
@@ -131,10 +153,14 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
       .map((e) => ({ source: e.source, target: e.target })),
   );
 
-  const savedLayout = readForceGraphLayoutState(instanceKey);
+  const layoutStateKey = buildLayoutStateKey(instanceKey, simNodes, simLinks);
+  const savedLayout = readForceGraphLayoutState(layoutStateKey);
   const restoredLayout = savedLayout ? applySavedLayout(simNodes, savedLayout) : false;
   if (!restoredLayout) {
-    seedNodesInRing(simNodes, width, height);
+    const seededBipartite = seedBipartiteLayout(simNodes, simLinks, width, height);
+    if (!seededBipartite) {
+      seedNodesScattered(simNodes, width, height);
+    }
   }
 
   const colorScale = d3
@@ -226,12 +252,16 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
   const span = Math.min(width, height);
   const cx = width / 2;
   const cy = height / 2;
+  const bipartiteSides = inferBipartiteSides(simLinks);
+  const isBipartite = bipartiteSides.leftIds.size > 0 && bipartiteSides.rightIds.size > 0;
   const repulsion = resolveRepulsion(span, simNodes.length, layoutType, options.__graphRepulsion);
   const edgeLength = Number.isFinite(Number(options.__graphEdgeLength))
     ? Math.abs(Number(options.__graphEdgeLength))
     : layoutType === "dagre"
       ? 56
-      : Math.max(48, Math.min(120, span * 0.18));
+      : isBipartite
+        ? Math.max(56, Math.min(140, span * 0.22))
+        : Math.max(48, Math.min(120, span * 0.18));
   const collideRadius = showLabel ? 22 : 16;
 
   const simulation = d3
@@ -242,18 +272,27 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
         .forceLink<SimNode, SimLink>(simLinks)
         .id((d) => d.id)
         .distance(edgeLength)
-        .strength(0.85),
+        .strength(layoutType === "dagre" ? 0.95 : 0.85),
     )
     .force("charge", d3.forceManyBody().strength(-repulsion).distanceMax(span * 1.6))
-    .force("center", d3.forceCenter(cx, cy).strength(0.08))
+    .force("center", d3.forceCenter(cx, cy).strength(isBipartite ? 0.02 : 0.08))
     .force("collide", d3.forceCollide(collideRadius).strength(0.9).iterations(2))
     .alpha(restoredLayout ? 0.02 : 0.85)
     .alphaDecay(0.06)
     .velocityDecay(0.52)
     .alphaMin(0.002);
 
+  if (isBipartite) {
+    simulation.force(
+      "bipartiteX",
+      d3
+        .forceX<SimNode>((node) => resolveBipartiteTargetX(node.id, bipartiteSides, width))
+        .strength(layoutType === "dagre" ? 0.72 : 0.3),
+    );
+  }
+
   const persistLayout = () => {
-    writeForceGraphLayoutState(instanceKey, simNodes);
+    writeForceGraphLayoutState(layoutStateKey, simNodes);
   };
 
   const freezeLayout = () => {
@@ -279,7 +318,7 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
     }
   };
 
-  const runUntilSettledAsync = (maxTicks = 300, ticksPerFrame = 28) => {
+  const runUntilSettledAsync = (maxTicks = Math.max(320, simNodes.length * 14), ticksPerFrame = 28) => {
     cancelSettle();
     let ticks = 0;
     const step = () => {

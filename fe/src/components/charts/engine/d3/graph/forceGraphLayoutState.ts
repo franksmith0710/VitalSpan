@@ -40,3 +40,17 @@ export function writeForceGraphLayoutState(
 export function resetForceGraphLayoutStateForTests(): void {
   layoutByInstance.clear();
 }
+
+export function buildGraphLayoutStateKey(
+  instanceKey: string | undefined,
+  nodeIds: string[],
+  linkPairs: Array<{ source: string; target: string }>,
+): string | undefined {
+  if (!instanceKey) return undefined;
+  const nodeSig = [...nodeIds].sort().join(",");
+  const linkSig = linkPairs
+    .map((link) => `${link.source}->${link.target}`)
+    .sort()
+    .join(",");
+  return `${instanceKey}|${nodeSig}|${linkSig}`;
+}

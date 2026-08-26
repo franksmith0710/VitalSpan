@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { renderD3ForceGraph } from "@/components/charts/engine/d3/graph/renderForceGraph";
 import {
+  buildGraphLayoutStateKey,
   readForceGraphLayoutState,
   resetForceGraphLayoutStateForTests,
 } from "@/components/charts/engine/d3/graph/forceGraphLayoutState";
@@ -53,19 +54,22 @@ describe("renderD3ForceGraph", () => {
 
     const dispose = renderD3ForceGraph(container, baseConfig);
     await new Promise<void>((resolve) => {
-      const wait = () => {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => resolve());
-        });
-      };
-      wait();
+      window.setTimeout(resolve, 120);
     });
 
     const first = container.querySelector("g.node")?.getAttribute("transform");
     expect(first).toBeTruthy();
 
     dispose();
-    expect(readForceGraphLayoutState("force-graph-test")?.["电话销售"]).toMatchObject({
+    const layoutKey = buildGraphLayoutStateKey(
+      "force-graph-test",
+      ["电话销售", "线下门店", "2025-06-04"],
+      [
+        { source: "电话销售", target: "2025-06-04" },
+        { source: "线下门店", target: "2025-06-04" },
+      ],
+    );
+    expect(readForceGraphLayoutState(layoutKey)?.["电话销售"]).toMatchObject({
       x: expect.any(Number),
       y: expect.any(Number),
       fx: expect.any(Number),
