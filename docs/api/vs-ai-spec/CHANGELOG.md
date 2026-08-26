@@ -1,5 +1,14 @@
 # vs-ai-spec 变更
 
+## 2026-08-26 (customViz resize 生命周期门禁 · 插件 v0.3.4)
+
+- 入库 warn/DeepTalk 拦：`AIVIZ_WARN_RESIZE_LAYOUT` · `AIVIZ_WARN_D3_INTERRUPT` · `AIVIZ_WARN_D3_CLEAR`（`style_compliance.py`）
+- `AIVIZ_MOUNT_REQUIRED` 扩展至 **html + d3**（422）
+- [guides/BUNDLE-BOILERPLATE.md](./guides/BUNDLE-BOILERPLATE.md) §3b · [AGENT-SYSTEM-PROMPT.md](./deeptalk-product/AGENT-SYSTEM-PROMPT.md) resize 铁律
+- `assets/aiviz-structured-fixes.json` · `aiviz-publish-hints.json` 补 fix/snippet
+- 金样 `generic-blank-d3` 补 `svg.interrupt()`
+- DeepTalk 插件 **v0.3.4**：轻量 `preflight.ts` 同步 resize 422 · sync 脚本 · `release/vitalspan-v0.3.4.zip`
+
 ## 2026-08-25 (customViz 禁止重复平台配置 · maxItems 等)
 
 - [STYLE-SCHEMA.md](./guides/STYLE-SCHEMA.md) §禁止重复平台能力：数据 Tab「结果展示」/刷新、样式六块、截断横幅等 **不得**再进 styleSchema

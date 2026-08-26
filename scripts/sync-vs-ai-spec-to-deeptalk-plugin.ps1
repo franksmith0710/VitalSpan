@@ -25,6 +25,7 @@ foreach ($dir in @($assets, $templates, $productDest)) {
 
 $assetFiles = @(
   "contract_card.json",
+  "aiviz-publish-hints.json",
   "aiviz-structured-fixes.json",
   "aiviz-publish-hints.json",
   "custom-viz-paradigms.json",
