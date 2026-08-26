@@ -75,7 +75,7 @@ def test_needs_query_time_pandas_by_origin():
     assert needs_query_time_pandas() is True
 
 
-def test_transform_query_result_cleans_sync_dataset():
+def test_transform_query_result_skips_sync_dataset():
     db = MagicMock()
     ds_id = uuid.uuid4()
     raw = QueryResult(
@@ -85,8 +85,8 @@ def test_transform_query_result_cleans_sync_dataset():
         truncated=False,
     )
     out = transform_query_result(db, _dataset(origin="sync_job"), ds_id, raw)
-    assert out.rows[0][0] == "Widget"
-    assert out.rows[0][1] == 12.5
+    assert out.rows[0][0] == "  Widget  "
+    assert out.rows[0][1] == "12.5"
 
 
 def test_transform_query_result_cleans_managed_analytics():

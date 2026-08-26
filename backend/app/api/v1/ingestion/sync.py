@@ -453,11 +453,18 @@ def _to_detail(
     )
 
 
+_SUCCESSFUL_RUN_STATUSES = frozenset({"succeeded", "succeeded_with_warnings"})
+
+
+def _should_resolve_consume_status(last: SyncRun | None) -> bool:
+    return last is not None and last.status in _SUCCESSFUL_RUN_STATUSES
+
+
 def _detail_for_job(db: Session, job: SyncJob) -> SyncJobDetail:
     last_runs = _last_runs_by_job_id(db, [job.id])
     last = last_runs.get(job.id)
     consume = None
-    if last is not None and last.status == "succeeded":
+    if _should_resolve_consume_status(last):
         consume = resolve_consume_status(db, job)
     ds_labels = _datasource_labels(db, [job])
     health = resolve_sync_job_source_health(db, job)
@@ -476,7 +483,7 @@ def list_sync_jobs(
     for j in jobs:
         consume = None
         last = last_runs.get(j.id)
-        if last is not None and last.status == "succeeded":
+        if _should_resolve_consume_status(last):
             consume = resolve_consume_status(db, j)
         health = resolve_sync_job_source_health(db, j)
         items.append(_to_summary(j, last, ds_labels, consume, source_health=health))
@@ -734,6 +741,17 @@ def delete_sync_job(
             },
         )
     delete_datasets_for_sync_job(db, job)
+    from app.ingestion.sync_write import drop_analytics_table
+
+    if not drop_analytics_table(job.target_table):
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "SYNC_ANALYTICS_TABLE_DROP_FAILED",
+                "message": "分析库物理表删除失败，任务元数据未删除。请检查分析库连通性后重试。",
+                "detail": {"targetTable": job.target_table},
+            },
+        )
     db.delete(job)
     db.commit()
     refresh_all_jobs()

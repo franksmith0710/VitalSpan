@@ -80,6 +80,10 @@ def validate_dataset_spec(raw: dict, roles: list[str], *, session: Session | Non
     meta = _BUILTIN_DATASETS.get(spec.dataset_id)
     if meta is not None:
         _assert_roles_allowed(roles, meta.get("allowedRoles"))
+        if session is not None:
+            row = session.get(DatasetRecord, spec.dataset_id)
+            if row is None or row.bound_config_id is None:
+                raise QueryError("QUERY_DATASET_NOT_BOUND", "Dataset has no query binding", 422)
         return DatasetValidateOut(datasetId=spec.dataset_id, resolvedPath="dataset", readonly=True)
 
     if session is None:

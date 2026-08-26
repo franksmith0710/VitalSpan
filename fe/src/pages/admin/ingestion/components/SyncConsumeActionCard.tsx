@@ -30,6 +30,7 @@ type SyncConsumeActionCardProps = {
   jobName?: string;
   targetTable: string;
   rowsSynced?: number | null;
+  consumeWarning?: string | null;
   /** 其他写入同一 target_table 的任务名（用于共用 Dataset 提示） */
   sharedTargetJobNames?: string[];
   canManage?: boolean;
@@ -125,6 +126,7 @@ export function SyncConsumeActionCard({
   jobName,
   targetTable,
   rowsSynced,
+  consumeWarning,
   sharedTargetJobNames = [],
   canManage = false,
   onDismiss,
@@ -218,7 +220,12 @@ export function SyncConsumeActionCard({
     }
   };
 
-  const title = jobName ? `任务「${jobName}」同步成功 · 下一步出图` : "同步成功 · 下一步出图";
+  const hasWarning = Boolean(consumeWarning);
+  const title = jobName
+    ? `任务「${jobName}」${hasWarning ? "同步完成（有警告）" : "同步成功"} · 下一步出图`
+    : hasWarning
+      ? "同步完成（有警告）· 下一步出图"
+      : "同步成功 · 下一步出图";
   const busy = loading || preparing || ensuring || refreshing;
   const consumeLabel = hints?.consumeLabel;
 
@@ -345,6 +352,12 @@ export function SyncConsumeActionCard({
           </p>
         ) : null}
 
+        {consumeWarning ? (
+          <p className="mt-4 rounded-lg border border-warning-200 bg-warning-50/80 px-3 py-2 text-theme-sm text-warning-800 dark:border-warning-500/30 dark:bg-warning-500/10 dark:text-warning-300">
+            {consumeWarning}
+          </p>
+        ) : null}
+
         {busy && !hints ? (
           <div className="mt-4 flex items-center gap-2 text-theme-sm text-gray-500 dark:text-gray-400">
             <Loader2 className="size-4 animate-spin" aria-hidden />
@@ -374,7 +387,7 @@ export function SyncConsumeActionCard({
             </Button>
             <Button asChild variant="outline" size="sm">
               <Link to={`/admin/datasets/${hints.datasetId}/edit`}>
-                <LayoutDashboard className="size-4" aria-hidden />
+                <Layers className="size-4" aria-hidden />
                 查看数据集
               </Link>
             </Button>

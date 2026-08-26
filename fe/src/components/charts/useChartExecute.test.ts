@@ -63,8 +63,8 @@ describe("useChartExecute", () => {
       ...defaultChartConfig("line"),
       chartId: "w1",
       dataSourceId: "ds-1",
-      mode: "sql" as const,
-      sql: "SELECT 1",
+      mode: "dataset" as const,
+      configId: "cfg-1",
     };
     const filterParameters = { region: "east" };
 
@@ -113,16 +113,16 @@ describe("useChartExecute", () => {
   it("does not call execute when chart binding is not ready", async () => {
     const config = {
       ...defaultChartConfig("line"),
-      mode: "sql" as const,
+      mode: "dataset" as const,
       dataSourceId: "",
-      sql: "",
+      configId: "",
     };
 
     const { result } = renderHook(() => useChartExecute(config));
 
     await waitFor(() => expect(result.current.loading).toBe(false));
     expect(fetchChartExecuteResult).not.toHaveBeenCalled();
-    expect(result.current.error).toBe("请配置数据源与 SQL");
+    expect(result.current.error).toBe("请绑定数据集");
   });
 
   it("refetches when result limit changes", async () => {

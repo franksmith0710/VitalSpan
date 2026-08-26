@@ -6,12 +6,6 @@ import {
   type GisOverlayLayerOptions,
 } from "@/components/charts/engine/maplibre/gisMapOverlayStyle";
 import {
-  buildGisFlowStyleEmbedDefinitions,
-  emptyGisFlowGeoJson,
-  type GisFlowLayerOptions,
-  shouldAppendGisFlowLayers,
-} from "@/components/charts/engine/maplibre/gisMapFlowStyle";
-import {
   applyBasemapLayerVisibility,
   buildBasemapFlavor,
 } from "@/components/charts/engine/maplibre/gisBasemapPalette";
@@ -21,7 +15,6 @@ import type {
   GisBasemapLayerVisibility,
   GisLabelLang,
 } from "@/components/charts/engine/maplibre/gisProject";
-import { resolveGisFlowStyle } from "@/components/charts/engine/maplibre/gisProject";
 import type { TileServiceResolve } from "@/lib/tileServices";
 
 export const GIS_OVERLAY_SOURCE_ID = "vs-gis-overlay";
@@ -113,7 +106,7 @@ export function appendBuildings3dLayer(
   return appendBuildings3dLayerToStyle(style, flavor, true);
 }
 
-export type { GisOverlayLayerOptions, GisFlowLayerOptions };
+export type { GisOverlayLayerOptions };
 
 export function appendGisOverlayLayers(
   style: StyleSpecification,
@@ -127,26 +120,6 @@ export function appendGisOverlayLayers(
     sources: {
       ...style.sources,
       [source.id]: source.spec,
-    },
-    layers: [...(style.layers ?? []), ...layers],
-  };
-}
-
-export function appendGisFlowLayers(
-  style: StyleSpecification,
-  flow: GeoJSON.FeatureCollection | null,
-  options: GisFlowLayerOptions,
-): StyleSpecification {
-  if (!shouldAppendGisFlowLayers(options)) {
-    return style;
-  }
-  const data = flow ?? emptyGisFlowGeoJson();
-  const { sources, layers } = buildGisFlowStyleEmbedDefinitions(data, options);
-  return {
-    ...style,
-    sources: {
-      ...style.sources,
-      ...Object.fromEntries(sources.map((source) => [source.id, source.spec])),
     },
     layers: [...(style.layers ?? []), ...layers],
   };

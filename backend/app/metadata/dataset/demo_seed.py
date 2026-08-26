@@ -35,11 +35,6 @@ DEMO_DATASET_SPECS: tuple[dict[str, Any], ...] = (
         "tables": [{"name": "de_map_heat"}],
     },
     {
-        "dataset_id": "demo-map-flow",
-        "display_name": "【官方示例】GIS 全球枢纽 OD",
-        "tables": [{"name": "de_map_od_hubs"}],
-    },
-    {
         "dataset_id": "demo-gov-grid-stats",
         "display_name": "【官方示例】网格事件统计",
         "tables": [{"name": "gov_grid_stats"}],
@@ -59,6 +54,7 @@ RETIRED_DEMO_DATASET_REMAP: dict[str, str] = {
     "demo-gov-issues": "demo-gov-grid-stats",
     "demo-gov-budget": "demo-sales-wide",
     "demo-gov-investment": "demo-sales-wide",
+    "demo-map-flow": "demo-map-scatter",
 }
 
 _RETIRED_FIELD_REMAP: dict[str, dict[str, str]] = {
@@ -103,6 +99,12 @@ _RETIRED_FIELD_REMAP: dict[str, dict[str, str]] = {
         "investment_amount": "amount",
         "产业": "category_name",
         "投资额": "amount",
+    },
+    "demo-map-flow": {
+        "from_lng": "lng",
+        "from_lat": "lat",
+        "route_name": "point_name",
+        "weight": "amount",
     },
 }
 

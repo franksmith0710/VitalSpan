@@ -89,28 +89,28 @@ describe("chartFieldAssignment", () => {
     }
   });
 
-  it("gis-map routes OD columns to correct slots", () => {
+  it("gis-map auto-assigns lng/lat to coordinate slots", () => {
     const cfg = { chartType: "gis-map" as const, dimensions: [], metrics: [] };
-    expect(resolveAutoAssignTarget(cfg, "gis-map", "from_lng")).toEqual({
+    expect(resolveAutoAssignTarget(cfg, "gis-map", "lng")).toEqual({
       target: { axisId: "xAxis", index: 0 },
     });
-    expect(resolveAutoAssignTarget(cfg, "gis-map", "to_lat")).toEqual({
-      target: { axisId: "drill", index: 1 },
+    expect(resolveAutoAssignTarget(cfg, "gis-map", "lat")).toEqual({
+      target: { axisId: "xAxisExt", index: 0 },
     });
-    expect(resolveAutoAssignTarget(cfg, "gis-map", "route_name")).toEqual({
-      target: { axisId: "drill", index: 2 },
+    expect(resolveAutoAssignTarget(cfg, "gis-map", "point_name")).toEqual({
+      target: { axisId: "drill", index: 0 },
     });
   });
 
-  it("gis-map rejects route_name in start longitude slot", () => {
+  it("gis-map rejects province in longitude slot", () => {
     const result = validateFieldAssignment(
-      "route_name",
+      "province",
       { axisId: "xAxis", index: 0 },
       "gis-map",
     );
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.message).toContain("起点经度");
+      expect(result.message).toContain("经度");
     }
   });
 });

@@ -115,6 +115,19 @@ export const CUSTOM_VIZ_STYLE_BRIDGE_CSS = `
   display: none !important;
   pointer-events: none !important;
 }
+.${HOST_CLASS}[data-vs-tooltip-show="false"] .data-point {
+  pointer-events: none !important;
+  cursor: default !important;
+}
+.${HOST_CLASS} .podium-value,
+.${HOST_CLASS} .row-value {
+  color: var(--vs-style-label-color, inherit) !important;
+  font-size: calc(var(--vs-style-label-font-size, 12) * 1px);
+}
+.${HOST_CLASS}[data-vs-label-show="false"] .podium-value,
+.${HOST_CLASS}[data-vs-label-show="false"] .row-value {
+  display: none !important;
+}
 .${HOST_CLASS}[data-vs-series-gradient="true"] .fill,
 .${HOST_CLASS}[data-vs-series-gradient="true"] .bar-fill,
 .${HOST_CLASS}[data-vs-series-gradient="true"] .progress-fill,
@@ -268,7 +281,8 @@ export function applyCustomVizStyleBridgeDom(
     { key: "showValue", selector: ".val,.value,[class*='rank-value']" },
     {
       key: "labelShow",
-      selector: ".lbl,.label,.name,[class*='rank-label'],.value-label,.axis text",
+      selector:
+        ".lbl,.label,.name,[class*='rank-label'],.value-label,.axis text,.podium-value,.row-value",
     },
     { key: "tooltipShow", selector: ".tooltip,#tooltip" },
   ] as const;

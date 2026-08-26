@@ -11,5 +11,6 @@
   "AIVIZ_WARN_DETAIL_TABLE_METRICS": "fieldSlots 与 P2 多维明细范式不符：dimensions.max>1 时须 metrics.min=0,max=0；换 scrolling-table 金样或改 manifest",
   "AIVIZ_WARN_DOM_HOST_LOOKUP": "禁止 (host||document).getElementById；用 host.querySelector('#vs-cv-*') 或 BUNDLE-BOILERPLATE.md 的 $()",
   "AIVIZ_WARN_DOM_DOCUMENT_LOOKUP": "禁止 document.getElementById；节点须在宿主内 querySelector，id 前缀 vs-cv-",
-  "AIVIZ_WARN_PLATFORM_DUPLICATE_STYLE": "styleSchema 键与平台检查器重复（如 maxItems/refreshMode/titleShow）；删 schema 项，数据 Tab「结果展示」→ payload.rows，见 STYLE-SCHEMA.md"
+  "AIVIZ_WARN_PLATFORM_DUPLICATE_STYLE": "styleSchema 键与平台检查器重复（如 maxItems/refreshMode/titleShow）；删 schema 项，数据 Tab「结果展示」→ payload.rows，见 STYLE-SCHEMA.md",
+  "AIVIZ_WARN_PLATFORM_STYLE_KEYS": "bundle 须读平台六块：labelShow/tooltipShow/seriesGradient/paletteColors 或 CSS --vs-palette-*；复制 BUNDLE-BOILERPLATE.md §7 resolveStyle 模板"
 }

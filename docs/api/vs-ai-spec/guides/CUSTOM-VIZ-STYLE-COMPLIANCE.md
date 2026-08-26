@@ -25,6 +25,7 @@ POST/PUT `/api/v1/ai-viz/artifacts` 成功仍返回 `warnings[]`（不阻断入�
 | `AIVIZ_WARN_STYLE_COMPLIANCE` | 全 bundle 未引用 `payload.style` / `p.style` **且** 无 `--vs-style-*` / `--vs-palette-*` | 样式面板与看板配色可能不生效 |
 | `AIVIZ_WARN_LAYOUT_FALLBACK` | 仅 `clientWidth \|\| 320` 且无 `payload.layout` | 拖放 resize 可能留白 |
 | `AIVIZ_WARN_PLATFORM_DUPLICATE_STYLE` | styleSchema 声明 `maxItems`/`refreshMode`/六块键等与平台检查器重复 | 删 schema 项；条数用数据 Tab「结果展示」→ `payload.rows` |
+| `AIVIZ_WARN_PLATFORM_STYLE_KEYS` | 读了 `p.style` 但未消费六块键或 `--vs-palette-*` | 复制 `BUNDLE-BOILERPLATE.md` §7 `resolveStyle` 模板 |
 | `AIVIZ_WARN_DOM_HOST_LOOKUP` | entry 含 `(host\|\|document).getElementById` | 宿主 div 上无效，预览可能空白 |
 | `AIVIZ_WARN_DOM_DOCUMENT_LOOKUP` | entry 含 `document.getElementById` | 多实例抢节点 |
 
@@ -94,7 +95,7 @@ CSS 侧优先：
 
 ## 与 Style Bridge 的关系
 
-`customVizStyleBridge` 仅对**已入库但不合规**的野 bundle 做有限 DOM 兜底，**不是**主路径。新制品应满足本清单，而非依赖 Bridge。
+`customVizStyleBridge` 对**已入库但不完全合规**的 bundle 做有限 DOM/CSS 兜底（配色/标签/提示/渐变等），**不能替代** bundle 正确读 `payload.style`。新制品应满足本清单；Bridge 是第二道保险，不是主路径。
 
 ## Phase 3：`manifest.styleHooks`（自愿声明）
 
@@ -138,8 +139,8 @@ CSS 侧优先：
 
 | tier | 含义 |
 |------|------|
-| `full` | 无 warn；bundle 原生读变量/样式 |
-| `partial` | 仅有 mount/layout warn，或靠有效 `styleHooks` 兜底 |
+| `full` | 无 warn；bundle 原生读变量/样式，或有效 `styleHooks` |
+| `partial` | 有 warn（mount/layout/六块消费等），仍可用但样式可能不完整 |
 | `visual-only` | 仍有 `AIVIZ_WARN_STYLE_COMPLIANCE` 或 hook 无效 |
 
 **脚手架**：`node scripts/scaffold-custom-viz-html.mjs --out my-widget.json`（含 mount + hooks 示例）

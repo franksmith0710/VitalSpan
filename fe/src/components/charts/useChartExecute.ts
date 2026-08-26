@@ -40,6 +40,7 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [slowHint, setSlowHint] = useState(false);
+  const [truncated, setTruncated] = useState(false);
 
   const configRef = useRef(config);
   const filterRef = useRef(filterParameters);
@@ -62,6 +63,7 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
     }
     setError(null);
     setSlowHint(false);
+    setTruncated(false);
     const started = Date.now();
     try {
       if (!isChartExecuteReady(activeConfig)) {
@@ -80,6 +82,7 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
       if (gen !== requestGenRef.current) return;
       setColumns(data.columns);
       setRows(data.rows);
+      setTruncated(Boolean(data.truncated));
       hasDisplayedDataRef.current = data.columns.length > 0 || data.rows.length > 0;
       setSlowHint(Date.now() - started > SLOW_THRESHOLD_MS);
     } catch (err) {
@@ -89,6 +92,7 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
       setRows([]);
       hasDisplayedDataRef.current = false;
       setSlowHint(false);
+      setTruncated(false);
     } finally {
       if (gen === requestGenRef.current) {
         setLoading(false);
@@ -112,12 +116,14 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
     if (cached) {
       setColumns(cached.columns);
       setRows(cached.rows);
+      setTruncated(Boolean(cached.truncated));
       hasDisplayedDataRef.current =
         cached.columns.length > 0 || cached.rows.length > 0;
       setLoading(false);
       setError(null);
     } else {
       hasDisplayedDataRef.current = false;
+      setTruncated(false);
     }
     void run();
 
@@ -126,5 +132,5 @@ export function useChartExecute(config: ChartViewConfig, options: ChartExecuteOp
     };
   }, [requestKey, executeKey, run, enabled]);
 
-  return { columns, rows, loading, error, slowHint, rerun: run };
+  return { columns, rows, loading, error, slowHint, truncated, rerun: run };
 }

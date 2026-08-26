@@ -29,10 +29,10 @@ const FALLBACK_FIELD_RULES: Record<string, ChartFieldRule> = {
   map: { minDimensions: 1, maxDimensions: 3, minMetrics: 1, maxMetrics: 1 },
   "gis-map": {
     minDimensions: 0,
-    maxDimensions: 5,
+    maxDimensions: 3,
     minMetrics: 0,
     maxMetrics: 1,
-    note: "底图无需字段；可选散点或 OD 飞线叠加",
+    note: "底图无需字段；可选经纬度散点叠加",
   },
   heatmap: { minDimensions: 2, maxDimensions: 2, minMetrics: 1, maxMetrics: 1 },
   kpi: { minDimensions: 0, maxDimensions: 0, minMetrics: 1, maxMetrics: 1 },
@@ -112,7 +112,7 @@ export function resolveChartFieldRule(chartType: string): ChartFieldRule {
   };
 }
 
-/** catalog/BE 与 DE 轴蓝图取较大上限，避免 OD 飞线 drill 槽在持久化时被裁切 */
+/** catalog/BE 与 DE 轴蓝图取较大上限，避免散点 drill 槽在持久化时被裁切 */
 export function resolveEffectiveChartFieldRule(chartType: string): ChartFieldRule {
   const rule = resolveChartFieldRule(chartType);
   const deRule = deriveFieldRuleFromDeCatalog(chartType);

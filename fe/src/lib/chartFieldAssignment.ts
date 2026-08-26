@@ -8,8 +8,7 @@ import {
   looksLikeGisGeoLabelField,
   looksLikeGisLatField,
   looksLikeGisLngField,
-  resolveGisMapOdFieldSlot,
-} from "@/lib/gisMapFlow";
+} from "@/lib/gisMapScatter";
 import { axisFieldList, fieldAtSlot } from "@/lib/resolveChartEncoding";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
@@ -44,13 +43,6 @@ export function validateFieldAssignment(
   }
 
   const fieldKind = classifyDatasetField(trimmed);
-
-  if (chartType === "gis-map") {
-    const odSlot = resolveGisMapOdFieldSlot(trimmed);
-    if (odSlot && odSlot.axisId === target.axisId && odSlot.index === target.index) {
-      return { ok: true };
-    }
-  }
 
   if (slot.kind === "dimension" && fieldKind === "metric") {
     return {
@@ -108,7 +100,7 @@ export function validateFieldAssignment(
       if (looksLikeGisGeoLabelField(trimmed) || (!looksLikeGisLngField(trimmed) && fieldKind === "dimension")) {
         return {
           ok: false,
-          message: `「${trimmed}」不能作为起点经度。请绑定 from_lng 等数值型经度列，或点「接入 demo-map-flow」一键配置`,
+          message: `「${trimmed}」不能作为经度。请绑定 lng / longitude 等数值型经度列，或点「接入 de_map_heat」一键配置`,
         };
       }
     }
@@ -116,23 +108,7 @@ export function validateFieldAssignment(
       if (looksLikeGisGeoLabelField(trimmed) || (!looksLikeGisLatField(trimmed) && fieldKind === "dimension")) {
         return {
           ok: false,
-          message: `「${trimmed}」不能作为起点纬度。请绑定 from_lat 等数值型纬度列`,
-        };
-      }
-    }
-    if (target.axisId === "drill" && target.index === 0) {
-      if (looksLikeGisGeoLabelField(trimmed) || (!looksLikeGisLngField(trimmed) && fieldKind === "dimension")) {
-        return {
-          ok: false,
-          message: `「${trimmed}」不能作为终点经度。请绑定 to_lng 等数值型经度列`,
-        };
-      }
-    }
-    if (target.axisId === "drill" && target.index === 1) {
-      if (looksLikeGisGeoLabelField(trimmed) || (!looksLikeGisLatField(trimmed) && fieldKind === "dimension")) {
-        return {
-          ok: false,
-          message: `「${trimmed}」不能作为终点纬度。请绑定 to_lat 等数值型纬度列`,
+          message: `「${trimmed}」不能作为纬度。请绑定 lat / latitude 等数值型纬度列`,
         };
       }
     }
@@ -199,15 +175,6 @@ export function resolveAutoAssignTarget(
     const check = validateFieldAssignment(field, preferred, chartType);
     if (!check.ok) return { error: check.message };
     return { target: preferred };
-  }
-
-  if (chartType === "gis-map") {
-    const odSlot = resolveGisMapOdFieldSlot(field);
-    if (odSlot) {
-      const check = validateFieldAssignment(field, odSlot, chartType);
-      if (!check.ok) return { error: check.message };
-      if (!fieldAtSlot(cfg, odSlot)) return { target: odSlot };
-    }
   }
 
   for (const slot of chartDataSlotBlueprint(chartType)) {

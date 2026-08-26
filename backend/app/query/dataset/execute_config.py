@@ -11,6 +11,7 @@ from app.query.config_store.schemas import ConfigError, DatasetQueryConfigPayloa
 from app.query.config_store.service import get_config_by_id
 from app.query.dataset.chart_sql import build_chart_sql
 from app.query.dataset.pandas_transform import (
+    needs_query_time_pandas,
     resolve_dataset_transform_rules,
     transform_query_result,
 )
@@ -127,8 +128,9 @@ def execute_dataset_from_config(
         parameters=parameters,
         skip_wrap_limit=True,
     )
-    rules = resolve_dataset_transform_rules(session, bound)
-    result = transform_query_result(session, bound, req.data_source_id, result, rules)
+    if needs_query_time_pandas(session, bound, req.data_source_id):
+        rules = resolve_dataset_transform_rules(session, bound)
+        result = transform_query_result(session, bound, req.data_source_id, result, rules)
     return DatasetExecuteResponse(
         configId=req.config_id,
         configRevision=record.revision,

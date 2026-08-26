@@ -2,8 +2,6 @@ import { isGeoMapChartType, isGisMapChartType } from "@/lib/chartViewConfig";
 import { isLegacyTableChartType } from "@/lib/chartViewConfig";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
 import { activeFieldRefs } from "@/lib/chartConfigState";
-import { gisFlowFieldsReady } from "@/components/charts/engine/maplibre/gisMapFlow";
-import { isGisFlowEnabled } from "@/components/charts/engine/maplibre/gisProject";
 import { deAxisRenderReady, resolveChartEncoding } from "@/lib/resolveChartEncoding";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
@@ -99,9 +97,6 @@ export function buildChartRenderModel(
   }
 
   if (isGisMapChartType(config.chartType)) {
-    if (isGisFlowEnabled(config.nativeBody?.gisProject) && !gisFlowFieldsReady(config)) {
-      return { kind: "error", message: "OD 飞线需同时绑定起点/终点经纬度四个字段" };
-    }
     if (isChartExecuteReady(config)) {
       const lngField = dims[0]?.field;
       const latField = dims[1]?.field;

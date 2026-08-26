@@ -385,7 +385,7 @@ export const ChartRenderer = memo(function ChartRenderer({
     }
     return { width: bodySize.width || undefined, height: fillHeight };
   }, [embedded, bodySize.width, fillHeight]);
-  const { columns, rows, loading, error, slowHint, rerun } = useChartExecute(config, {
+  const { columns, rows, loading, error, slowHint, truncated, rerun } = useChartExecute(config, {
     filterParameters: mergedFilterParameters,
     executeKey: resolvedExecuteKey,
     limit: queryLimit,
@@ -1031,6 +1031,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       error={error}
       empty={empty && !isMapChart}
       slowHint={slowHint}
+      truncatedHint={truncated}
       onRetry={rerun}
     >
       {body}

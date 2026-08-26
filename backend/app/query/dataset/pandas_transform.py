@@ -107,12 +107,14 @@ def apply_pandas_to_query_result(
 
 
 def transform_query_result(
-    _db: Session,
-    _dataset: DatasetItemOut | None,
-    _data_source_id: uuid.UUID,
+    db: Session,
+    dataset: DatasetItemOut | None,
+    data_source_id: uuid.UUID,
     result: QueryResult,
     rules: list[dict[str, Any]] | None = None,
 ) -> QueryResult:
+    if not needs_query_time_pandas(db, dataset, data_source_id):
+        return result
     return apply_pandas_to_query_result(result, rules)
 
 

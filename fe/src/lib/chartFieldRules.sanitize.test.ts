@@ -1,44 +1,31 @@
 import { describe, expect, it } from "vitest";
-import { applyGisMapFlowConfig } from "@/lib/gisMapFlow";
+import { applyGisMapScatterConfig } from "@/lib/gisMapScatter";
 import { sanitizeChartFieldsForValidate } from "@/lib/chartFieldRules";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
-describe("sanitizeChartFieldsForValidate gis-map OD", () => {
-  it("keeps five dimension slots after persist sanitize", () => {
-    const cfg = applyGisMapFlowConfig({ chartType: "gis-map" }, "sample-ds");
+describe("sanitizeChartFieldsForValidate gis-map scatter", () => {
+  it("keeps lng/lat/label slots after persist sanitize", () => {
+    const cfg = applyGisMapScatterConfig({ chartType: "gis-map" }, "sample-ds");
     const sanitized = sanitizeChartFieldsForValidate(cfg);
-    expect(sanitized.dimensions?.map((d) => d.field)).toEqual([
-      "from_lng",
-      "from_lat",
-      "to_lng",
-      "to_lat",
-      "route_name",
-    ]);
-    expect(sanitized.metrics?.[0]?.field).toBe("weight");
+    expect(sanitized.dimensions?.map((d) => d.field)).toEqual(["lng", "lat", "point_name"]);
+    expect(sanitized.metrics?.[0]?.field).toBe("amount");
   });
 
-  it("keeps drill axes when legacy dimensions were truncated", () => {
+  it("keeps drill label when legacy dimensions were truncated", () => {
     const cfg: ChartViewConfig = {
       chartType: "gis-map",
       mode: "sql",
       sql: "SELECT 1",
-      dimensions: [{ field: "from_lng" }, { field: "from_lat" }, { field: "to_lng" }],
-      metrics: [{ field: "weight" }],
+      dimensions: [{ field: "lng" }, { field: "lat" }],
+      metrics: [{ field: "amount" }],
       axes: {
-        xAxis: [{ field: "from_lng" }],
-        xAxisExt: [{ field: "from_lat" }],
-        yAxis: [{ field: "weight" }],
-        drill: [{ field: "to_lng" }, { field: "to_lat" }, { field: "route_name" }],
+        xAxis: [{ field: "lng" }],
+        xAxisExt: [{ field: "lat" }],
+        yAxis: [{ field: "amount" }],
+        drill: [{ field: "point_name" }],
       },
-      nativeBody: { gisProject: { flow: { enabled: true } } },
     };
     const sanitized = sanitizeChartFieldsForValidate(cfg);
-    expect(sanitized.dimensions?.map((d) => d.field)).toEqual([
-      "from_lng",
-      "from_lat",
-      "to_lng",
-      "to_lat",
-      "route_name",
-    ]);
+    expect(sanitized.dimensions?.map((d) => d.field)).toEqual(["lng", "lat", "point_name"]);
   });
 });

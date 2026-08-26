@@ -10,13 +10,23 @@ import {
 
 type ScheduleStat = {
   label: string;
-  value: number;
+  value: string | number;
   hint?: string;
+  className?: string;
+  borderless?: boolean;
 };
 
-export function ScheduleStatCard({ label, value, hint }: ScheduleStat) {
+export function ScheduleStatCard({ label, value, hint, className, borderless }: ScheduleStat) {
   return (
-    <div className="min-w-0 rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
+    <div
+      className={cn(
+        "min-w-0 rounded-xl bg-white px-4 py-3 dark:bg-white/[0.03]",
+        borderless
+          ? "border-0 shadow-none"
+          : "border border-gray-200 shadow-theme-xs dark:border-gray-800",
+        className,
+      )}
+    >
       <p className="text-theme-xs text-gray-500 dark:text-gray-400">{label}</p>
       <p className="mt-1 text-title-sm font-semibold tabular-nums text-gray-900 dark:text-white">
         {value}

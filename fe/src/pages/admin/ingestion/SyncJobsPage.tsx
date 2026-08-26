@@ -37,17 +37,12 @@ import {
   SyncJobsToolbar,
   type SyncJobStatusFilter,
 } from "./components/SyncJobsToolbar";
-import { type SyncJobListResponse, type SyncJobSummary, isSyncRunActive } from "./components/sync-job-types";
+import { type SyncJobListResponse, type SyncJobSummary, type SyncRunSuccessPayload, isSyncRunActive, isSyncRunSucceeded, syncRunCompletionToast, syncRunSuccessFromJob } from "./components/sync-job-types";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { sliceListPage, useListPagination } from "@/lib/list-pagination";
 import { cn } from "@/lib/utils";
 
-type RecentRunSuccess = {
-  jobId: string;
-  jobName: string;
-  targetTable: string;
-  rowsSynced: number | null;
-};
+type RecentRunSuccess = SyncRunSuccessPayload;
 
 function filterByStatus(jobs: SyncJobSummary[], statusFilter: SyncJobStatusFilter) {
   switch (statusFilter) {
@@ -126,19 +121,20 @@ export function SyncJobsPage() {
           setJobs(data.items);
           const job = data.items.find((item) => item.id === jobId);
           const status = job?.last_run?.status;
-          if (status === "succeeded" && job) {
+          if (isSyncRunSucceeded(status) && job) {
             stopPolling();
-            const rows = job.last_run?.rows_synced;
-            setRecentRunSuccess({
-              jobId: job.id,
-              jobName: job.name,
-              targetTable: job.target_table,
-              rowsSynced: job.last_run?.rows_synced ?? null,
-            });
-            toast.success(
-              `任务「${jobName}」同步成功${rows != null ? `，写入 ${rows} 行` : ""}`,
-              { duration: 8000 },
-            );
+            const payload = syncRunSuccessFromJob(job);
+            if (!payload) {
+              return;
+            }
+            setRecentRunSuccess(payload);
+            const message = syncRunCompletionToast(jobName, payload, status);
+            const hasWarning = status === "succeeded_with_warnings" || Boolean(payload.consumeWarning);
+            if (hasWarning) {
+              toast.warning(message, { duration: 10_000 });
+            } else {
+              toast.success(message, { duration: 8000 });
+            }
             return;
           }
           if (status === "failed") {
@@ -362,6 +358,7 @@ export function SyncJobsPage() {
                 jobName={recentRunSuccess.jobName}
                 targetTable={recentRunSuccess.targetTable}
                 rowsSynced={recentRunSuccess.rowsSynced}
+                consumeWarning={recentRunSuccess.consumeWarning}
                 sharedTargetJobNames={sharedTargetJobNames}
                 canManage={canManage}
                 onDismiss={() => setRecentRunSuccess(null)}

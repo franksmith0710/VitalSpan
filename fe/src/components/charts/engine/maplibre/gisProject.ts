@@ -1,6 +1,5 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { normalizeBasemapHexColor } from "@/components/charts/engine/maplibre/gisBasemapPalette";
-import { DEFAULT_FLOW_ARC_LIFT } from "@/components/charts/engine/maplibre/gisFlowDefaults";
 
 /** gis-map 仅支持管理员登记的全球 PMTiles 外部底图。 */
 export type GisBasemapId = "pmtiles";
@@ -156,27 +155,6 @@ export type GisProjectOverlay = {
   colorByCategory?: boolean;
 };
 
-export type GisProjectFlow = {
-  /** 开启 OD 飞线（槽位语义切换为起点/终点经纬度） */
-  enabled?: boolean;
-  /** 弧线颜色；缺省取图表 palette 首色 */
-  color?: string;
-  /** 线宽下限（px） */
-  widthMin?: number;
-  /** 线宽上限（px） */
-  widthMax?: number;
-  /** 线不透明度 0–1 */
-  opacity?: number;
-  /** 按流量指标缩放线宽 */
-  scaleByMetric?: boolean;
-  /** 有飞线时自动 fitBounds */
-  autoFit?: boolean;
-  /** 流动光点与枢纽呼吸动画；默认开启 */
-  animate?: boolean;
-  /** 拱形高度 0.2–1.2；越大弧线越弯（仅影响 GeoJSON 路径） */
-  arcLift?: number;
-};
-
 export type GisProject = {
   basemap: GisBasemapId;
   tileServiceId?: string;
@@ -204,8 +182,6 @@ export type GisProject = {
   earthOpacity?: number;
   /** 经纬度散点叠加样式 */
   overlay?: GisProjectOverlay;
-  /** 全球 OD 飞线叠加 */
-  flow?: GisProjectFlow;
 };
 
 export const DEFAULT_GIS_OVERLAY: Required<
@@ -240,70 +216,6 @@ export const DEFAULT_GIS_OVERLAY: Required<
 };
 
 const DEFAULT_GIS_OVERLAY_COLOR = "#2563eb";
-
-export const DEFAULT_GIS_FLOW: Required<
-  Pick<GisProjectFlow, "widthMin" | "widthMax" | "opacity" | "scaleByMetric" | "autoFit" | "arcLift">
-> = {
-  widthMin: 1,
-  widthMax: 2.5,
-  opacity: 0.88,
-  scaleByMetric: false,
-  autoFit: true,
-  arcLift: DEFAULT_FLOW_ARC_LIFT,
-};
-
-export type ResolvedGisFlowStyle = {
-  enabled: boolean;
-  color: string;
-  widthMin: number;
-  widthMax: number;
-  opacity: number;
-  scaleByMetric: boolean;
-  autoFit: boolean;
-  animate: boolean;
-  arcLift: number;
-};
-
-export function isGisFlowEnabled(project: GisProject | undefined | null): boolean {
-  return project?.flow?.enabled === true;
-}
-
-export function resolveGisFlowStyle(
-  flow: GisProjectFlow | undefined,
-  chartColors?: string[],
-): ResolvedGisFlowStyle {
-  const widthMinRaw = Number(flow?.widthMin);
-  const widthMaxRaw = Number(flow?.widthMax);
-  const widthMin =
-    Number.isFinite(widthMinRaw) && widthMinRaw >= 0 ? widthMinRaw : DEFAULT_GIS_FLOW.widthMin;
-  const widthMax =
-    Number.isFinite(widthMaxRaw) && widthMaxRaw >= widthMin ? widthMaxRaw : DEFAULT_GIS_FLOW.widthMax;
-  const opacityRaw = Number(flow?.opacity);
-  const opacity =
-    Number.isFinite(opacityRaw) && opacityRaw >= 0 && opacityRaw <= 1
-      ? opacityRaw
-      : DEFAULT_GIS_FLOW.opacity;
-  const color =
-    typeof flow?.color === "string" && flow.color.trim()
-      ? flow.color.trim()
-      : chartColors?.[0] ?? "#f97316";
-  const arcLiftRaw = Number(flow?.arcLift);
-  const arcLift =
-    Number.isFinite(arcLiftRaw) && arcLiftRaw >= 0.15 && arcLiftRaw <= 1.5
-      ? arcLiftRaw
-      : DEFAULT_GIS_FLOW.arcLift;
-  return {
-    enabled: flow?.enabled === true,
-    color,
-    widthMin,
-    widthMax,
-    opacity,
-    scaleByMetric: flow?.scaleByMetric !== false,
-    autoFit: flow?.autoFit !== false,
-    animate: flow?.animate !== false,
-    arcLift,
-  };
-}
 
 export type ResolvedGisOverlayStyle = {
   color: string;
@@ -488,7 +400,6 @@ function normalizeGisProject(raw: unknown): GisProject {
   const waterColor = normalizeBasemapHexColor(candidate.waterColor);
   const basemapLayers = normalizeBasemapLayerVisibility(candidate.basemapLayers);
   const overlay = normalizeGisProjectOverlay(candidate.overlay);
-  const flow = normalizeGisProjectFlow(candidate.flow);
   return {
     basemap: "pmtiles",
     tileServiceId,
@@ -510,28 +421,7 @@ function normalizeGisProject(raw: unknown): GisProject {
         ? earthOpacityRaw
         : undefined,
     overlay,
-    flow,
   };
-}
-
-function normalizeGisProjectFlow(input: unknown): GisProjectFlow | undefined {
-  if (!input || typeof input !== "object") return undefined;
-  const raw = input as GisProjectFlow;
-  const next: GisProjectFlow = {};
-  if (raw.enabled === true) next.enabled = true;
-  if (typeof raw.color === "string" && raw.color.trim()) next.color = raw.color.trim();
-  const widthMin = Number(raw.widthMin);
-  if (Number.isFinite(widthMin) && widthMin >= 0) next.widthMin = widthMin;
-  const widthMax = Number(raw.widthMax);
-  if (Number.isFinite(widthMax) && widthMax >= 0) next.widthMax = widthMax;
-  const opacity = Number(raw.opacity);
-  if (Number.isFinite(opacity) && opacity >= 0 && opacity <= 1) next.opacity = opacity;
-  if (raw.scaleByMetric === false) next.scaleByMetric = false;
-  if (raw.autoFit === false) next.autoFit = false;
-  if (raw.animate === false) next.animate = false;
-  const arcLift = Number(raw.arcLift);
-  if (Number.isFinite(arcLift) && arcLift >= 0.15 && arcLift <= 1.5) next.arcLift = arcLift;
-  return Object.keys(next).length > 0 ? next : undefined;
 }
 
 function normalizeGisProjectOverlay(input: unknown): GisProjectOverlay | undefined {

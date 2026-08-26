@@ -31,6 +31,7 @@ import {
   normalizeColumns,
   normalizeRows,
 } from "./standardAnalysisUi";
+import { ScheduleStatCard } from "./SchedulePageOverview";
 import { StandardAnalysisSectionChart } from "./StandardAnalysisSectionChart";
 
 type Props = {
@@ -54,16 +55,18 @@ function LiveSummaryStrip({
 
   return (
     <div
-      className="flex shrink-0 flex-wrap items-baseline gap-x-6 gap-y-1 px-5 pt-3 pb-1"
+      className="grid shrink-0 gap-3 px-5 pt-3 pb-1"
+      style={{ gridTemplateColumns: `repeat(${metrics.length}, minmax(0, 1fr))` }}
       data-testid="standard-analysis-live-summary"
     >
       {metrics.map((metric) => (
-        <div key={metric.label} className="flex items-baseline gap-1.5">
-          <span className="text-theme-xs text-gray-500 dark:text-gray-400">{metric.label}</span>
-          <span className="text-theme-sm font-semibold tabular-nums text-gray-900 dark:text-white">
-            {metric.value}
-          </span>
-        </div>
+        <ScheduleStatCard
+          key={metric.label}
+          label={metric.label}
+          value={metric.value}
+          borderless
+          className="w-full bg-gray-50/80 dark:bg-white/[0.02]"
+        />
       ))}
     </div>
   );

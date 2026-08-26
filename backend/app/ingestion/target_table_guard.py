@@ -74,15 +74,15 @@ def find_running_jobs_on_target_table(
     jobs = db.scalars(
         select(SyncJob)
         .join(SyncRun, SyncRun.job_id == SyncJob.id)
-        .where(SyncRun.status.in_(("running", "cancelling")))
+        .where(
+            SyncRun.status.in_(("running", "cancelling")),
+            SyncJob.target_table.ilike(needle),
+        )
         .distinct(),
     ).all()
-    return [
-        job
-        for job in jobs
-        if job.target_table.strip().lower() == needle
-        and (exclude_job_id is None or job.id != exclude_job_id)
-    ]
+    if exclude_job_id is None:
+        return list(jobs)
+    return [job for job in jobs if job.id != exclude_job_id]
 
 
 def assert_target_table_not_busy(

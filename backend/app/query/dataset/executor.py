@@ -10,10 +10,12 @@ from app.datasources.acl import assert_visible
 from app.metadata.dataset.models import DatasetRecord
 from app.query.config_store.access import assert_config_readable
 from app.query.config_store.service import get_config_by_id
-from app.query.config_store.schemas import ConfigError
+from app.query.config_store.schemas import ConfigError, DatasetQueryConfigPayload
 from app.query.dataset.guard import validate_dataset_spec
 from app.query.dataset.schemas import DatasetExecutePlanOut, DatasetQuerySpec, ExecutePlanStep
 from app.query.schemas import QueryError
+from app.query.translator.from_config import translate_from_config_record
+from app.query.translator.schemas import TranslateError
 
 _FORBIDDEN_PARAM_KEYS = frozenset({"__proto__", "_sql"})
 _EXECUTE_PLAN_BUDGET_MS = 30
@@ -79,7 +81,52 @@ def build_dataset_execute_plan(
             )
         raise
 
-    steps.append(ExecutePlanStep(step="readonly_guard", status="pass", detail="readonly select only"))
+    payload = DatasetQueryConfigPayload.model_validate(record.payload)
+    try:
+        translate_from_config_record(record)
+        steps.append(ExecutePlanStep(step="readonly_guard", status="pass", detail="SQL translated"))
+    except TranslateError as exc:
+        steps.append(
+            ExecutePlanStep(step="readonly_guard", status="fail", detail=exc.message),
+        )
+        return DatasetExecutePlanOut(
+            datasetId=validated.dataset_id,
+            resolvedPath="dataset",
+            readonly=True,
+            steps=steps,
+        )
+
+    schema = payload.schema or "public"
+    table = payload.table
+    if table and payload.columns:
+        from app.datasources.metadata.service import list_columns
+
+        try:
+            col_resp = list_columns(
+                session, list(user.roles), uuid.UUID(str(ds_raw)), schema, table,
+            )
+            available = {col.name for col in col_resp.items}
+            missing = [c for c in payload.columns if c not in available]
+            if missing:
+                detail = f"绑定列不存在于目标表：{', '.join(missing[:5])}"
+                steps.append(ExecutePlanStep(step="plan_ready", status="fail", detail=detail))
+                return DatasetExecutePlanOut(
+                    datasetId=validated.dataset_id,
+                    resolvedPath="dataset",
+                    readonly=True,
+                    steps=steps,
+                )
+        except Exception as exc:
+            steps.append(
+                ExecutePlanStep(step="plan_ready", status="fail", detail=str(exc)[:200]),
+            )
+            return DatasetExecutePlanOut(
+                datasetId=validated.dataset_id,
+                resolvedPath="dataset",
+                readonly=True,
+                steps=steps,
+            )
+
     steps.append(
         ExecutePlanStep(
             step="plan_ready",

@@ -12,8 +12,6 @@ _GIS_MAP_SLOTS: tuple[tuple[str, int, str], ...] = (
     ("xAxis", 0, "dimension"),
     ("xAxisExt", 0, "dimension"),
     ("drill", 0, "dimension"),
-    ("drill", 1, "dimension"),
-    ("drill", 2, "dimension"),
     ("yAxis", 0, "metric"),
 )
 

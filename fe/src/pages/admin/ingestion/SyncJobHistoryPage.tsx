@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button, IconButton } from "@/components/ui/button";
 import { TruncateHint } from "@/components/ui/hint-tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PageErrorBanner } from "@/components/ui/page-error-banner";
+import { SourceHealthAlert } from "@/components/datasources/SourceHealthAlert";
 import { SyncConsumeActionCard } from "./components/SyncConsumeActionCard";
 import { type SyncJobListResponse, type SyncJobSummary } from "./components/sync-job-types";
 
@@ -40,7 +40,9 @@ type SyncRunListResponse = {
 };
 
 function statusBadge(status: string) {
-  if (status === "succeeded") return { color: "success" as const, label: "成功" };
+  if (status === "succeeded" || status === "succeeded_with_warnings") {
+    return { color: "success" as const, label: status === "succeeded_with_warnings" ? "成功（有警告）" : "成功" };
+  }
   if (status === "failed") return { color: "error" as const, label: "失败" };
   return { color: "warning" as const, label: "运行中" };
 }
@@ -144,14 +146,14 @@ export function SyncJobHistoryPage() {
   };
 
   const hasSucceededRun = useMemo(
-    () => runs.some((run) => run.status === "succeeded"),
+    () => runs.some((run) => run.status === "succeeded" || run.status === "succeeded_with_warnings"),
     [runs],
   );
 
   const latestSucceededRun = useMemo(
     () =>
       runs
-        .filter((run) => run.status === "succeeded")
+        .filter((run) => run.status === "succeeded" || run.status === "succeeded_with_warnings")
         .sort((a, b) => (b.finished_at ?? "").localeCompare(a.finished_at ?? ""))[0],
     [runs],
   );
@@ -193,6 +195,21 @@ export function SyncJobHistoryPage() {
         </div>
       ) : null}
 
+      {isSourceUnavailable(sourceHealth) && id ? (
+        <div className="shrink-0 px-6 pt-4">
+          <SourceHealthAlert health={sourceHealth} entity="sync_job" />
+          <p className="mt-2 text-theme-sm text-gray-500 dark:text-gray-400">
+            <Link
+              to={`/admin/ingestion/sync-jobs/${id}/edit`}
+              className="text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
+            >
+              前往编辑任务
+            </Link>
+            ，更换或恢复数据连接后再重试同步。
+          </p>
+        </div>
+      ) : null}
+
       <ListPageSection>
         {hasSucceededRun && targetTable && id ? (
           <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
@@ -201,6 +218,7 @@ export function SyncJobHistoryPage() {
               jobName={jobName ?? undefined}
               targetTable={targetTable}
               rowsSynced={latestSucceededRun?.rows_synced}
+              consumeWarning={latestSucceededRun?.consume_warning ?? undefined}
               sharedTargetJobNames={sharedTargetJobNames}
               canManage={canManage}
               onUpdated={() => void loadRuns()}

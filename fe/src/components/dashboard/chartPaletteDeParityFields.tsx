@@ -5,7 +5,7 @@ import { ChartPaletteLabelTooltipFields } from "./chartPaletteLabelTooltipFields
 import { DashboardConfigSlider } from "./deAttrSlider";
 import { DeAttrField, DeAttrForm, DeAttrToggleRow } from "./dashboardInspectorUi";
 import { InspectorSwitchRow } from "./inspectorCompact";
-import { resolvePaletteId, resolveInheritPreviewColors } from "@/lib/chartPalette";
+import { resolveInheritPreviewColors } from "@/lib/chartPalette";
 import type { ChartLabelStyle, ChartSeriesColorItem, ChartTooltipStyle } from "@/lib/chartDeStyle";
 import {
   Select,
@@ -98,7 +98,6 @@ export function ChartPaletteDeParityFields({
 }: ChartPaletteDeParityFieldsProps) {
   const density = dense ? "narrow" : "wide";
   const pickerValue = showInherit ? paletteId : paletteId ?? "default";
-  const inheritActive = showInherit && resolvePaletteId(paletteId) == null;
 
   const inheritPreviewColors = resolveInheritPreviewColors(
     dashboardPaletteId,
@@ -256,7 +255,6 @@ export function ChartPaletteDeParityFields({
       {showOpacity && onOpacityChange ? (
         <DashboardConfigSlider
           label="配色不透明度"
-          disabled={inheritActive}
           value={paletteOpacity != null ? Math.round(paletteOpacity * 100) : undefined}
           fallback={100}
           min={0}

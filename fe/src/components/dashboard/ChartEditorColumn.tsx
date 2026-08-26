@@ -37,20 +37,11 @@ import { chartHasAdvancedTab } from "@/lib/chartInspectorCapabilities";
 import { filterVisibleCatalogItems } from "@/lib/chartPaletteTaxonomy";
 import { isGeoMapChartType, isGisMapChartType } from "@/lib/chartViewConfig";
 import { resolveMapChartTypeGuide } from "@/lib/mapChartTypeGuide";
-import { isGisFlowEnabled } from "@/components/charts/engine/maplibre/gisProject";
-import { ensureGisMapOdFlowEnabled, isGisMapOdBindingComplete } from "@/lib/gisMapFlow";
 import { syncLegacyFieldsFromAxes, migrateChartConfigToDeAxes } from "@/lib/resolveChartEncoding";
 
 function buildValidateSuccessMessage(
   cfg: ReturnType<typeof useChartInspector>["cfg"],
 ): string {
-  if (
-    cfg.chartType === "gis-map" &&
-    isGisFlowEnabled(cfg.nativeBody?.gisProject) &&
-    !isGisMapOdBindingComplete(cfg)
-  ) {
-    return "OD 飞线未就绪：请绑定完整的 from/to 经纬度（含 to_lat 终点纬度）";
-  }
   const synced =
     cfg.chartType === "gis-map"
       ? syncLegacyFieldsFromAxes(migrateChartConfigToDeAxes(cfg))
@@ -91,22 +82,7 @@ export function ChartEditorColumn({
     setRefreshOk(false);
     setValidating(true);
     try {
-      const cfgForValidate = cfg.chartType === "gis-map" ? ensureGisMapOdFlowEnabled(cfg) : cfg;
-      if (
-        cfgForValidate !== cfg &&
-        isGisFlowEnabled(cfgForValidate.nativeBody?.gisProject) &&
-        !isGisFlowEnabled(cfg.nativeBody?.gisProject)
-      ) {
-        onChange(cfgForValidate);
-      }
-      if (
-        cfgForValidate.chartType === "gis-map" &&
-        isGisFlowEnabled(cfgForValidate.nativeBody?.gisProject) &&
-        !isGisMapOdBindingComplete(cfgForValidate)
-      ) {
-        setFieldError("OD 飞线需同时绑定 from_lng、from_lat、to_lng、to_lat 四个字段");
-        return;
-      }
+      const cfgForValidate = cfg;
       await apiFetch("/api/v1/charts/validate", {
         method: "POST",
         body: JSON.stringify(sanitizeChartFieldsForValidate(cfgForValidate)),

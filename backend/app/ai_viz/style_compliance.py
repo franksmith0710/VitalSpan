@@ -48,7 +48,21 @@ _PLATFORM_DUPLICATE_STYLE_KEYS: dict[str, str] = {
     "backgroundshow": "样式 Tab 平台六块 / 高级 widgetStyle；勿在 styleSchema 重复",
     "paletteid": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
     "palettecolors": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
+    "paletteopacity": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
+    "seriesgradient": "样式 Tab 平台六块 displayStyle；勿在 styleSchema 重复",
 }
+
+# bundle 须消费平台六块写入 payload.style 的键，或 CSS 变量兜底。
+_PLATFORM_STYLE_CONSUMPTION_MARKERS: tuple[str, ...] = (
+    "labelShow",
+    "tooltipShow",
+    "seriesGradient",
+    "paletteColors",
+    "paletteOpacity",
+    "resolveStyle",
+    "--vs-palette-",
+    "--vs-style-",
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -131,7 +145,7 @@ def resolve_style_compliance_tier(
 ) -> StyleComplianceTier:
     codes = {item.code for item in warnings}
     if not codes:
-        return "partial" if has_valid_style_hooks(manifest) else "full"
+        return "full"
     if "AIVIZ_WARN_STYLE_COMPLIANCE" in codes:
         if "AIVIZ_WARN_STYLE_HOOK_INVALID" in codes or "AIVIZ_WARN_STYLE_HOOK_UNKNOWN_KEY" in codes:
             return "visual-only"
@@ -179,6 +193,33 @@ def _collect_platform_duplicate_style_warnings(manifest: dict) -> list[StyleComp
     return warnings
 
 
+def _collect_platform_style_consumption_warnings(
+    combined: str,
+    manifest: dict,
+) -> list[StyleComplianceWarning]:
+    if has_valid_style_hooks(manifest):
+        return []
+
+    has_style_payload = bool(_STYLE_PAYLOAD_RE.search(combined))
+    has_style_tokens = bool(_STYLE_TOKEN_RE.search(combined))
+    if not has_style_payload and not has_style_tokens:
+        return []
+
+    if any(marker in combined for marker in _PLATFORM_STYLE_CONSUMPTION_MARKERS):
+        return []
+
+    return [
+        StyleComplianceWarning(
+            code="AIVIZ_WARN_PLATFORM_STYLE_KEYS",
+            message=(
+                "bundle 未消费平台六块样式键（labelShow/tooltipShow/seriesGradient/"
+                "paletteColors）或 --vs-palette-* / --vs-style-*；样式 Tab 可能不生效，"
+                "见 guides/BUNDLE-BOILERPLATE.md §7"
+            ),
+        )
+    ]
+
+
 def collect_bundle_style_compliance_warnings(
     files: dict[str, str],
     entry: str,
@@ -193,6 +234,7 @@ def collect_bundle_style_compliance_warnings(
     warnings.extend(_collect_field_slot_warnings(manifest))
     warnings.extend(_collect_style_hook_warnings(manifest))
     warnings.extend(_collect_platform_duplicate_style_warnings(manifest))
+    warnings.extend(_collect_platform_style_consumption_warnings(combined, manifest))
 
     if runtime == "html" and "vsCv.mount" not in entry_html:
         warnings.append(

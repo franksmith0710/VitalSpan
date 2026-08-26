@@ -46,7 +46,7 @@ import {
   type SyncMode,
 } from "./components/SyncJobForm";
 import { SyncConsumeActionCard } from "./components/SyncConsumeActionCard";
-import type { SyncJobLastRun, SyncJobSummary } from "./components/sync-job-types";
+import { isSyncRunSucceeded, type SyncJobLastRun, type SyncJobSummary } from "./components/sync-job-types";
 
 const DEFAULT_SOURCE_TABLE = defaultSyncSourceObject("mysql");
 
@@ -227,12 +227,13 @@ export function SyncJobFormPage() {
                 username: job.source.username,
               },
         );
-        if (job.last_run?.status === "succeeded") {
+        if (isSyncRunSucceeded(job.last_run?.status)) {
           setRecentRunSuccess({
             jobId: id,
             jobName: job.name,
             targetTable: job.target_table,
-            rowsSynced: job.last_run.rows_synced,
+            rowsSynced: job.last_run?.rows_synced ?? null,
+            consumeWarning: job.last_run?.consume_warning ?? null,
           });
         } else {
           setRecentRunSuccess(null);
@@ -565,6 +566,7 @@ export function SyncJobFormPage() {
                 jobName={form.name.trim() || undefined}
                 targetTable={recentRunSuccess!.targetTable}
                 rowsSynced={recentRunSuccess!.rowsSynced}
+                consumeWarning={recentRunSuccess!.consumeWarning}
                 sharedTargetJobNames={sharedTargetJobNames}
                 canManage={canManage}
                 onDismiss={() => setConsumeCardDismissed(true)}

@@ -33,8 +33,7 @@ export type ChartStyleSectionId =
   | "label"
   | "background"
   | "gisProject"
-  | "gisOverlay"
-  | "gisFlow";
+  | "gisOverlay";
 
 export const STYLE_VARIANT_LABELS: Record<string, string> = {
   default: "默认",

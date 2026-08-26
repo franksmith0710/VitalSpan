@@ -11,6 +11,7 @@ type ChartPanelProps = {
   empty: boolean;
   onRetry: () => void;
   slowHint?: boolean;
+  truncatedHint?: boolean;
   children: ReactNode;
 };
 
@@ -21,6 +22,7 @@ export function ChartPanel({
   empty,
   onRetry,
   slowHint = false,
+  truncatedHint = false,
   children,
 }: ChartPanelProps) {
   return (
@@ -59,7 +61,14 @@ export function ChartPanel({
           className="rounded-lg border border-dashed border-gray-200 dark:border-gray-800"
         />
       ) : (
-        children
+        <>
+          {truncatedHint ? (
+            <p className="mb-2 text-theme-xs text-warning-600 dark:text-warning-400">
+              查询结果已截断，图表仅展示部分数据。请缩小筛选范围或提高查询上限。
+            </p>
+          ) : null}
+          {children}
+        </>
       )}
     </div>
   );

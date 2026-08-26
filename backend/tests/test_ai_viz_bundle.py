@@ -151,7 +151,9 @@ def test_style_compliance_warns_detail_table_with_required_metrics() -> None:
 def test_style_compliance_accepts_payload_style_only() -> None:
     html = (
         "<!DOCTYPE html><html><body><script>"
-        "host.vsCv.mount(function(p){var st=(p&&p.style)||{};});"
+        "host.vsCv.mount(function(p){var st=(p&&p.style)||{};"
+        "if(st.labelShow===false)return;"
+        "});"
         "</script></body></html>"
     )
     manifest = {**_MIN_MANIFEST, "runtime": "html"}
@@ -218,11 +220,46 @@ def test_style_compliance_warns_platform_duplicate_style_keys() -> None:
     assert "AIVIZ_WARN_PLATFORM_DUPLICATE_STYLE" in codes
 
 
+def test_style_compliance_warns_when_style_read_without_platform_keys() -> None:
+    manifest = {**_MIN_MANIFEST, "runtime": "html"}
+    html = (
+        "<!DOCTYPE html><html><body><script>"
+        "host.vsCv.mount(function(p){var st=(p&&p.style)||{};"
+        "var c=st.accentColor||'#111';})"
+        "</script></body></html>"
+    )
+    warnings = collect_bundle_style_compliance_warnings({"index.html": html}, "index.html", manifest)
+    codes = {item.code for item in warnings}
+    assert "AIVIZ_WARN_PLATFORM_STYLE_KEYS" in codes
+
+
+def test_style_compliance_accepts_css_palette_vars_without_platform_keys() -> None:
+    manifest = {**_MIN_MANIFEST, "runtime": "html"}
+    html = (
+        "<!DOCTYPE html><html><head><style>"
+        ".fill{background:var(--vs-palette-0,#3b82f6)}"
+        "</style></head><body><div class='fill'></div>"
+        "<script>host.vsCv.mount(function(p){})</script></body></html>"
+    )
+    warnings = collect_bundle_style_compliance_warnings({"index.html": html}, "index.html", manifest)
+    codes = {item.code for item in warnings}
+    assert "AIVIZ_WARN_PLATFORM_STYLE_KEYS" not in codes
+
+
 def test_valid_style_hooks_suppresses_style_compliance_warning() -> None:
-    html = "<!DOCTYPE html><html><body><div class='fill'></div></body></html>"
+    html = (
+        "<!DOCTYPE html><html><body><div class='fill'></div>"
+        "<script>host.vsCv.mount(function(){})</script></body></html>"
+    )
     manifest = {
         **_MIN_MANIFEST,
         "runtime": "html",
+        "styleSchema": {
+            "type": "object",
+            "properties": {
+                "accentColor": {"type": "string", "format": "color"},
+            },
+        },
         "styleHooks": {
             "accentColor": {"selectors": [".fill"], "property": "background"},
         },
@@ -230,7 +267,7 @@ def test_valid_style_hooks_suppresses_style_compliance_warning() -> None:
     warnings = collect_bundle_style_compliance_warnings({"index.html": html}, "index.html", manifest)
     codes = {item.code for item in warnings}
     assert "AIVIZ_WARN_STYLE_COMPLIANCE" not in codes
-    assert resolve_style_compliance_tier(warnings, manifest) == "partial"
+    assert resolve_style_compliance_tier(warnings, manifest) == "full"
 
 
 def test_unknown_style_hook_key_warns() -> None:

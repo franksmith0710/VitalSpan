@@ -37,6 +37,7 @@ import {
 } from "@/lib/syncConsumeApi";
 import {
   isSyncRunActive,
+  isSyncRunSucceeded,
   lastRunBadgeColor,
   lastRunStatusLabel,
   sourceSummaryLabel,
@@ -73,8 +74,22 @@ function LastRunCell({ job }: { job: SyncJobSummary }) {
       <div className="text-theme-xs text-gray-500 dark:text-gray-400">
         {new Date(lastRun.started_at).toLocaleString("zh-CN")}
       </div>
-      {lastRun.status === "succeeded" && lastRun.rows_synced != null ? (
-        <div className="text-theme-xs text-gray-500">{lastRun.rows_synced} 行</div>
+      {lastRun.status === "succeeded" || lastRun.status === "succeeded_with_warnings" ? (
+        <>
+          {lastRun.rows_synced != null ? (
+            <div className="text-theme-xs text-gray-500">{lastRun.rows_synced} 行</div>
+          ) : null}
+          {lastRun.consume_warning ? (
+            <TruncateHint
+              title={lastRun.consume_warning}
+              className="max-w-[160px] text-theme-xs text-warning-600 dark:text-warning-400"
+            >
+              {lastRun.consume_warning}
+            </TruncateHint>
+          ) : lastRun.rows_truncated ? (
+            <div className="text-theme-xs text-warning-600 dark:text-warning-400">已达同步行数上限</div>
+          ) : null}
+        </>
       ) : null}
       {lastRun.status === "failed" && lastRun.error_message ? (
         <TruncateHint
@@ -90,7 +105,7 @@ function LastRunCell({ job }: { job: SyncJobSummary }) {
 
 function ConsumeReadyCell({ job }: { job: SyncJobSummary }) {
   const lastRun = job.last_run;
-  if (!lastRun || lastRun.status !== "succeeded") {
+  if (!lastRun || (lastRun.status !== "succeeded" && lastRun.status !== "succeeded_with_warnings")) {
     return <span className="text-theme-xs text-gray-400">—</span>;
   }
   if (!job.consume_status) {
@@ -106,7 +121,7 @@ function ConsumeReadyCell({ job }: { job: SyncJobSummary }) {
 function ConsumeActionButton({ job, canManage }: { job: SyncJobSummary; canManage: boolean }) {
   const lastRun = job.last_run;
   const consume = job.consume_status;
-  if (!lastRun || lastRun.status !== "succeeded" || !consume) {
+  if (!lastRun || !isSyncRunSucceeded(lastRun.status) || !consume) {
     return null;
   }
 

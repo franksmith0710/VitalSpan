@@ -112,11 +112,11 @@ def _warm_meta_database() -> None:
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     from app.ingestion.scheduler import get_scheduler, refresh_all_jobs, register_stale_run_reconcile
-    from app.ingestion.sync_executor import reconcile_stale_running_runs
+    from app.ingestion.sync_executor import STALE_RUN_MAX_AGE_SECONDS, reconcile_stale_running_runs
 
     assert_runtime_compliant()
     try:
-        reconciled = reconcile_stale_running_runs(max_age_seconds=600)
+        reconciled = reconcile_stale_running_runs(max_age_seconds=STALE_RUN_MAX_AGE_SECONDS)
         if reconciled:
             logger.info("ingestion_stale_runs_reconciled count=%s", reconciled)
     except Exception:

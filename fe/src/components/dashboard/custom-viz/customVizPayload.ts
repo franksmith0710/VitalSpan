@@ -54,7 +54,10 @@ export function resolveCustomVizBindingStatus(args: {
 }
 
 import { buildCustomVizAxisPlan } from "./customVizLayoutHelpers";
-import { applyCustomVizStyleBridgeAttributes } from "./customVizStyleBridge";
+import {
+  applyCustomVizStyleBridgeAttributes,
+  applyCustomVizStyleBridgeDom,
+} from "./customVizStyleBridge";
 
 export function buildCustomVizRuntimePayload(args: {
   executeReady: boolean;
@@ -163,6 +166,7 @@ export function injectCustomVizPayload(host: HTMLElement, payload: CustomVizRunt
         bubbles: false,
       }),
     );
+    applyCustomVizStyleBridgeDom(host, payload.style);
   }
 
   if (layoutChanged && payload.layout) {

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from functools import lru_cache
 from typing import Any
 
@@ -11,6 +13,13 @@ from app.ingestion.models import SyncJob
 
 _ANALYTICS_STATEMENT_TIMEOUT_MS = 60_000
 _ANALYTICS_LOCK_TIMEOUT_MS = 30_000
+_WRITE_CHUNK_SIZE = 5_000
+logger = logging.getLogger(__name__)
+
+
+def _executemany_chunked(conn, sql, rows: list[dict[str, Any]], *, chunk_size: int = _WRITE_CHUNK_SIZE) -> None:
+    for offset in range(0, len(rows), chunk_size):
+        conn.execute(sql, rows[offset : offset + chunk_size])
 
 
 @lru_cache
@@ -52,8 +61,7 @@ def write_analytics_full(job: SyncJob, rows: list[dict[str, Any]]) -> int:
     try:
         conn.execute(text(f'DROP TABLE IF EXISTS "{job.target_table}"'))
         conn.execute(text(f'CREATE TABLE "{job.target_table}" ({col_defs})'))
-        for row in rows:
-            conn.execute(insert_sql, row)
+        _executemany_chunked(conn, insert_sql, rows)
         tx.commit()
     except Exception:
         tx.rollback()
@@ -61,6 +69,25 @@ def write_analytics_full(job: SyncJob, rows: list[dict[str, Any]]) -> int:
     finally:
         conn.close()
     return len(rows)
+
+
+def _existing_columns(conn, table: str) -> set[str]:
+    result = conn.execute(
+        text(
+            "SELECT column_name FROM information_schema.columns "
+            "WHERE table_schema = 'public' AND table_name = :table",
+        ),
+        {"table": table},
+    )
+    return {str(row[0]) for row in result}
+
+
+def _ensure_incremental_columns(conn, table: str, columns: list[str]) -> None:
+    existing = _existing_columns(conn, table)
+    for col in columns:
+        if col in existing:
+            continue
+        conn.execute(text(f'ALTER TABLE "{table}" ADD COLUMN IF NOT EXISTS "{col}" TEXT'))
 
 
 def write_analytics_incremental(job: SyncJob, rows: list[dict[str, Any]]) -> int:
@@ -90,8 +117,8 @@ def write_analytics_incremental(job: SyncJob, rows: list[dict[str, Any]]) -> int
                 f'UNIQUE ("{pk}"))',
             ),
         )
-        for row in rows:
-            conn.execute(insert_sql, row)
+        _ensure_incremental_columns(conn, job.target_table, columns)
+        _executemany_chunked(conn, insert_sql, rows)
         tx.commit()
     except Exception:
         tx.rollback()
@@ -105,3 +132,27 @@ def write_analytics(job: SyncJob, rows: list[dict[str, Any]]) -> int:
     if job.sync_mode == "incremental":
         return write_analytics_incremental(job, rows)
     return write_analytics_full(job, rows)
+
+
+def drop_analytics_table(target_table: str) -> bool:
+    """删除分析库中的同步产出物理表（元数据清理时调用）。成功返回 True。"""
+    if not get_settings().analytics_database_url:
+        return True
+    table = target_table.strip()
+    if not table:
+        return True
+    try:
+        conn, tx = _begin_analytics_write()
+    except Exception as exc:
+        logger.warning("drop_analytics_table_connect_failed table=%s err=%s", table, exc)
+        return False
+    try:
+        conn.execute(text(f'DROP TABLE IF EXISTS "{table}"'))
+        tx.commit()
+        return True
+    except Exception as exc:
+        tx.rollback()
+        logger.warning("drop_analytics_table_failed table=%s err=%s", table, exc)
+        return False
+    finally:
+        conn.close()

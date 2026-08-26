@@ -1,7 +1,6 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { activeFieldRefs } from "@/lib/chartConfigState";
 import { parseMetricValue } from "@/lib/buildChartRenderModel";
-import { isGisFlowEnabled } from "@/components/charts/engine/maplibre/gisProject";
 
 export type GisOverlayPoint = {
   lng: number;
@@ -35,7 +34,6 @@ export function buildGisOverlayGeoJson(
   rows: (string | number | boolean | null)[][],
   chartColors?: string[],
 ): GeoJSON.FeatureCollection | null {
-  if (isGisFlowEnabled(config.nativeBody?.gisProject)) return null;
   const dims = activeFieldRefs(config.dimensions);
   const metrics = activeFieldRefs(config.metrics);
   if (dims.length < 2 || rows.length === 0) return null;

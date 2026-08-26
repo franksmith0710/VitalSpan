@@ -7,7 +7,6 @@ import { useChartInspector } from "../ChartInspectorContext";
 import { readChartDeStyle } from "@/lib/chartDeStyle";
 import { ChartGisMapProjectPanel } from "./ChartGisMapProjectPanel";
 import { ChartGisMapOverlayPanel } from "./ChartGisMapOverlayPanel";
-import { ChartGisMapFlowPanel } from "./ChartGisMapFlowPanel";
 import {
   ChartBackgroundStyleSection,
   ChartLabelStyleSection,
@@ -59,8 +58,6 @@ export function ChartStyleSection({ sectionId }: ChartStyleSectionProps) {
       return isGisMapChartType(cfg.chartType) ? <ChartGisMapProjectPanel /> : null;
     case "gisOverlay":
       return isGisMapChartType(cfg.chartType) ? <ChartGisMapOverlayPanel /> : null;
-    case "gisFlow":
-      return isGisMapChartType(cfg.chartType) ? <ChartGisMapFlowPanel /> : null;
     case "variantBasic":
       return <ChartVariantBasicSection />;
     case "axis":

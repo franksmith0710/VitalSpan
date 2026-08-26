@@ -202,8 +202,9 @@ def test_delete_sync_job_cascades_bound_dataset_and_config(client, auth_headers)
     bound_config_id = uuid.UUID(ensured.json()["boundConfigId"])
     stable_ref = _stable_ref_id(target)
 
-    deleted = client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
-    assert deleted.status_code == 204
+    with patch("app.ingestion.sync_write.drop_analytics_table", return_value=True):
+        deleted = client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+    assert deleted.status_code == 204, deleted.text
     assert client.get(f"/api/v1/datasets/{target}", headers=auth_headers).status_code == 404
 
     db = get_meta_session()
@@ -214,6 +215,36 @@ def test_delete_sync_job_cascades_bound_dataset_and_config(client, auth_headers)
         select(QueryConfigRecord).where(QueryConfigRecord.ref_id == stable_ref).limit(1),
     ) is None
     db.close()
+
+
+def test_delete_sync_job_returns_503_when_analytics_drop_fails(client, auth_headers):
+    mysql_datasource_id = _seed_mysql_datasource()
+    target = f"dropfail_{uuid.uuid4().hex[:8]}"
+    create = client.post(
+        "/api/v1/ingestion/sync-jobs",
+        json={
+            "name": "drop-fail-job",
+            "source_mode": "datasource",
+            "source_data_source_id": str(mysql_datasource_id),
+            "source_table": "dirty_orders",
+            "target_table": target,
+            "schedule_cron": None,
+        },
+        headers=auth_headers,
+    )
+    assert create.status_code == 201, create.text
+    job_id = create.json()["id"]
+
+    with patch("app.ingestion.sync_write.drop_analytics_table", return_value=False):
+        deleted = client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+
+    assert deleted.status_code == 503
+    assert deleted.json()["detail"]["code"] == "SYNC_ANALYTICS_TABLE_DROP_FAILED"
+    assert client.get(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers).status_code == 200
+
+    with patch("app.ingestion.sync_write.drop_analytics_table", return_value=True):
+        cleanup = client.delete(f"/api/v1/ingestion/sync-jobs/{job_id}", headers=auth_headers)
+    assert cleanup.status_code == 204, cleanup.text
 
 
 def test_delete_dataset_removes_bound_query_config(client, auth_headers):

@@ -32,6 +32,7 @@ describe("resolveCustomVizRuntimeStyle", () => {
       labelShow: false,
       cornerRadius: 6,
       paletteColors: ["#465fff", "#7a5af8", "#12b76a", "#0ba5ec", "#ee46bc"],
+      tooltipShow: true,
     });
   });
 
@@ -64,6 +65,27 @@ describe("resolveCustomVizRuntimeStyle", () => {
     });
 
     expect(style.accentColor).toBe("#ff00ff");
+  });
+
+  it("injects inherited label and tooltip visibility into payload style", () => {
+    const style = resolveCustomVizRuntimeStyle({
+      manifestDefault: {},
+      config: { artifactId: "a1" },
+      dashboardStyle: {
+        chartLabelShow: false,
+        tooltipShow: true,
+        chartLabelStyle: { color: "#abc", fontSize: 14 },
+        chartTooltipStyle: { color: "#def", background: "#111", fontSize: 13 },
+      },
+    });
+
+    expect(style.labelShow).toBe(false);
+    expect(style.tooltipShow).toBe(true);
+    expect(style.labelColor).toBe("#abc");
+    expect(style.labelFontSize).toBe(14);
+    expect(style.tooltipColor).toBe("#def");
+    expect(style.tooltipBackground).toBe("#111");
+    expect(style.tooltipFontSize).toBe(13);
   });
 });
 

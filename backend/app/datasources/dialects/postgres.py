@@ -56,13 +56,18 @@ class PostgresConnector:
         password: str,
         connect_timeout_sec: float = 5.0,
         ssl_mode: str = "preferred",
+        read_timeout_sec: float | None = None,
     ) -> Any:
         if ssl_mode not in _SSL_MODES:
             raise ValueError(f"invalid ssl_mode: {ssl_mode}")
-        return psycopg.connect(**self._connect_kwargs(
+        kwargs = self._connect_kwargs(
             host=host, port=port, database=database, username=username, password=password,
             connect_timeout_sec=connect_timeout_sec, ssl_mode=ssl_mode,
-        ))
+        )
+        if read_timeout_sec is not None:
+            ms = int(read_timeout_sec * 1000)
+            kwargs["options"] = f"-c statement_timeout={ms}"
+        return psycopg.connect(**kwargs)
 
     def test_connection(
         self,

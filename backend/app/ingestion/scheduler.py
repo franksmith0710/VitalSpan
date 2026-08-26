@@ -9,7 +9,7 @@ from sqlalchemy import select
 
 from app.ingestion.cron_validate import validate_schedule_cron
 from app.ingestion.models import SyncJob, get_meta_session
-from app.ingestion.sync_executor import reconcile_stale_running_runs, run_job
+from app.ingestion.sync_executor import STALE_RUN_MAX_AGE_SECONDS, reconcile_stale_running_runs, run_job
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +56,11 @@ def refresh_all_jobs() -> None:
         db.close()
 
 
-def register_stale_run_reconcile(*, interval_minutes: int = 1, max_age_seconds: int = 600) -> None:
+def register_stale_run_reconcile(
+    *,
+    interval_minutes: int = 1,
+    max_age_seconds: int = STALE_RUN_MAX_AGE_SECONDS,
+) -> None:
     """周期清理僵死 running 同步记录（进程中断或源/分析库挂起）。"""
     scheduler = get_scheduler()
     scheduler.add_job(

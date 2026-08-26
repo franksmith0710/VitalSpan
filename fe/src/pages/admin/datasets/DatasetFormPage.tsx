@@ -261,6 +261,11 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
     const apiPayload = toDatasetApiPayload(values);
     setIsSaving(true);
     try {
+      await apiFetch("/api/v1/datasets/validate", {
+        method: "POST",
+        body: JSON.stringify(apiPayload),
+      });
+
       const saved =
         mode === "create"
           ? await apiFetch<DatasetItem>("/api/v1/datasets", {

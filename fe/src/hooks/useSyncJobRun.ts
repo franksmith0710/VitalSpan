@@ -5,15 +5,13 @@ import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import {
   isSyncRunActive,
+  isSyncRunSucceeded,
+  syncRunCompletionToast,
   type SyncJobListResponse,
+  type SyncRunSuccessPayload,
 } from "@/pages/admin/ingestion/components/sync-job-types";
 
-export type SyncRunSuccess = {
-  jobId: string;
-  jobName: string;
-  targetTable: string;
-  rowsSynced: number | null;
-};
+export type SyncRunSuccess = SyncRunSuccessPayload;
 
 type UseSyncJobRunOptions = {
   onSuccess?: (payload: SyncRunSuccess) => void;
@@ -59,20 +57,23 @@ export function useSyncJobRun(options: UseSyncJobRunOptions = {}) {
           const data = await apiFetch<SyncJobListResponse>("/api/v1/ingestion/sync-jobs");
           const job = data.items.find((item) => item.id === jobId);
           const status = job?.last_run?.status;
-          if (status === "succeeded" && job) {
+          if (isSyncRunSucceeded(status) && job) {
             finishPolling();
-            const rows = job.last_run?.rows_synced;
             const payload: SyncRunSuccess = {
               jobId: job.id,
               jobName: job.name,
               targetTable: job.target_table,
               rowsSynced: job.last_run?.rows_synced ?? null,
+              consumeWarning: job.last_run?.consume_warning ?? null,
             };
             onSuccessRef.current?.(payload);
-            toast.success(
-              `任务「${jobName}」同步成功${rows != null ? `，写入 ${rows} 行` : ""}`,
-              { duration: 8000 },
-            );
+            const message = syncRunCompletionToast(jobName, payload, status);
+            const hasWarning = status === "succeeded_with_warnings" || Boolean(payload.consumeWarning);
+            if (hasWarning) {
+              toast.warning(message, { duration: 10_000 });
+            } else {
+              toast.success(message, { duration: 8000 });
+            }
             return;
           }
           if (status === "failed") {

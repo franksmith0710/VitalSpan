@@ -10,6 +10,24 @@ LIMIT 500`;
 
 export const DEMO_MAP_SCATTER_DATASET_ID = "demo-map-scatter";
 
+const LNG_NAME_PATTERN = /(?:^|_)(lng|lon|longitude|经度|x_coord)(?:$|_)/i;
+const LAT_NAME_PATTERN = /(?:^|_)(lat|latitude|纬度|y_coord)(?:$|_)/i;
+const GEO_NAME_PATTERN =
+  /(?:^|_)(region|province|city|district|area|country|state|county|name|route|地区|省份|城市|区县|国家)(?:$|_)/i;
+
+export function looksLikeGisLngField(field: string): boolean {
+  return LNG_NAME_PATTERN.test(field.trim());
+}
+
+export function looksLikeGisLatField(field: string): boolean {
+  return LAT_NAME_PATTERN.test(field.trim());
+}
+
+export function looksLikeGisGeoLabelField(field: string): boolean {
+  const trimmed = field.trim();
+  return GEO_NAME_PATTERN.test(trimmed) && !looksLikeGisLngField(trimmed) && !looksLikeGisLatField(trimmed);
+}
+
 export function applyGisMapScatterConfig(
   cfg: ChartViewConfig,
   dataSourceId?: string,

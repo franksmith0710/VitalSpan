@@ -25,10 +25,18 @@ from app.ingestion.sync_run_guard import (
 )
 from app.ingestion.sync_write import write_analytics
 
-__all__ = ["run_job", "reconcile_stale_running_runs", "validate_sync_table_names", "INGESTION_MAX_ROWS"]
+__all__ = [
+    "run_job",
+    "reconcile_stale_running_runs",
+    "validate_sync_table_names",
+    "INGESTION_MAX_ROWS",
+    "STALE_RUN_MAX_AGE_SECONDS",
+]
 
 from app.ingestion.models import INGESTION_MAX_ROWS  # noqa: E402
 from app.ingestion.sync_fetch import validate_sync_table_names  # noqa: E402
+
+STALE_RUN_MAX_AGE_SECONDS = 3600
 
 _TRUNCATION_WARNING = (
     f"已同步 {INGESTION_MAX_ROWS} 行，源数据可能更多（已达单次上限）。"
@@ -53,7 +61,7 @@ def _run_still_active(db: Session, run: SyncRun) -> bool:
     return run.status in {"running", "cancelling"}
 
 
-def reconcile_stale_running_runs(*, max_age_seconds: int = 600) -> int:
+def reconcile_stale_running_runs(*, max_age_seconds: int = STALE_RUN_MAX_AGE_SECONDS) -> int:
     """将超时仍停留在 running/cancelling 的记录标为失败（进程中断或源库连接挂起）。"""
     db = get_meta_session()
     try:
@@ -81,7 +89,7 @@ def reconcile_stale_running_runs(*, max_age_seconds: int = 600) -> int:
 
 def run_job(job_id: uuid.UUID, trace_id: str, *, run_id: uuid.UUID | None = None, attempt: int = 0) -> uuid.UUID | None:
     db = get_meta_session()
-    job = db.get(SyncJob, job_id)
+    job = db.scalar(select(SyncJob).where(SyncJob.id == job_id).with_for_update())
     if job is None:
         if run_id is not None:
             fail_run_for_guard(db, run_id, "任务不存在")
@@ -121,11 +129,12 @@ def run_job(job_id: uuid.UUID, trace_id: str, *, run_id: uuid.UUID | None = None
         cleaned = apply_rules(fetch_result.rows, rules)
         raise_if_cancel_requested(db, run)
         count = write_analytics(job, cleaned)
+        raise_if_cancel_requested(db, run)
         next_watermark = compute_next_watermark(job, cleaned)
-        if next_watermark is not None:
-            job.last_watermark = next_watermark
         if not _run_still_active(db, run):
-            db.close()
+            db.refresh(run)
+            if run.status in {"cancelling", "cancelled"}:
+                finalize_cancelled(db, run)
             return run_id
         consume_warning: str | None = None
         if fetch_result.truncated:
@@ -139,10 +148,13 @@ def run_job(job_id: uuid.UUID, trace_id: str, *, run_id: uuid.UUID | None = None
                 if consume_warning
                 else prepare_warning
             )
+        final_status = "succeeded_with_warnings" if consume_warning else "succeeded"
+        if next_watermark is not None:
+            job.last_watermark = next_watermark
         _update_run(
             db,
             run,
-            status="succeeded",
+            status=final_status,
             finished_at=datetime.now(timezone.utc),
             rows_synced=count,
             rows_truncated=fetch_result.truncated,

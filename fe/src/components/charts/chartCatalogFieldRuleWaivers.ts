@@ -38,9 +38,9 @@ export const FIELD_RULE_MAX_WAIVERS: Record<string, FieldRuleMaxWaiver> = {
     reason: "region + drill×2 in derive; backend maxD=3",
   },
   "gis-map": {
-    maxDimensions: 5,
+    maxDimensions: 3,
     gapId: "GAP-MAP-DRILL",
-    reason: "xAxis+xAxisExt+drill×3 for OD flyline; backend GIS_MAP_RULE maxD=5",
+    reason: "lng+lat+label drill; backend GIS_MAP_RULE maxD=3",
   },
   kpi: {
     maxDimensions: 0,

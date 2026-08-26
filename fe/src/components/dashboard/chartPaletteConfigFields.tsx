@@ -1,6 +1,5 @@
 import { ChartPalettePicker } from "./ChartPalettePicker";
 import { ChartDeSliderField } from "./deAttrSlider";
-import { resolvePaletteId } from "@/lib/chartPalette";
 import { cn } from "@/lib/utils";
 
 import type { ChartSeriesColorItem } from "@/lib/chartDeStyle";
@@ -41,7 +40,6 @@ export function ChartPaletteConfigFields({
   className,
 }: ChartPaletteConfigFieldsProps) {
   const pickerValue = showInherit ? paletteId : paletteId ?? "default";
-  const inheritActive = showInherit && resolvePaletteId(paletteId) == null;
   const sliderLayout = opacitySliderLayout ?? (dense ? "inline" : "stacked");
 
   return (
@@ -61,7 +59,6 @@ export function ChartPaletteConfigFields({
           <ChartDeSliderField
             label="配色不透明度"
             layout={sliderLayout}
-            disabled={inheritActive}
             value={
               paletteOpacity != null ? Math.round(paletteOpacity * 100) : undefined
             }
@@ -80,11 +77,6 @@ export function ChartPaletteConfigFields({
                 : undefined
             }
           />
-          {inheritActive ? (
-            <p className="text-[10px] leading-snug text-gray-400 dark:text-gray-500">
-              使用默认配色时，请先在上方选择独立配色方案
-            </p>
-          ) : null}
         </div>
       ) : null}
     </div>

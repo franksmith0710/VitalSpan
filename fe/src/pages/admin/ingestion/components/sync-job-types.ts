@@ -5,6 +5,8 @@ export type SyncJobLastRun = {
   started_at: string;
   finished_at: string | null;
   rows_synced: number | null;
+  rows_truncated?: boolean;
+  consume_warning?: string | null;
   error_message: string | null;
 };
 
@@ -57,7 +59,49 @@ export function sourceSummaryLabel(job: Pick<SyncJobSummary, "source_type" | "so
   return type;
 }
 
+export type SyncRunSuccessPayload = {
+  jobId: string;
+  jobName: string;
+  targetTable: string;
+  rowsSynced: number | null;
+  consumeWarning?: string | null;
+};
+
+export function isSyncRunSucceeded(status: string | undefined | null) {
+  return status === "succeeded" || status === "succeeded_with_warnings";
+}
+
+export function syncRunCompletionHeadline(hasWarning: boolean) {
+  return hasWarning ? "同步完成（有警告）" : "同步成功";
+}
+
+export function syncRunSuccessFromJob(job: SyncJobSummary): SyncRunSuccessPayload | null {
+  if (!isSyncRunSucceeded(job.last_run?.status)) {
+    return null;
+  }
+  return {
+    jobId: job.id,
+    jobName: job.name,
+    targetTable: job.target_table,
+    rowsSynced: job.last_run?.rows_synced ?? null,
+    consumeWarning: job.last_run?.consume_warning ?? null,
+  };
+}
+
+export function syncRunCompletionToast(
+  jobName: string,
+  payload: Pick<SyncRunSuccessPayload, "rowsSynced" | "consumeWarning">,
+  status: string | undefined | null,
+) {
+  const hasWarning = status === "succeeded_with_warnings" || Boolean(payload.consumeWarning);
+  const headline = syncRunCompletionHeadline(hasWarning);
+  const rowsPart = payload.rowsSynced != null ? `，写入 ${payload.rowsSynced} 行` : "";
+  const warningPart = payload.consumeWarning ? `：${payload.consumeWarning}` : "";
+  return `任务「${jobName}」${headline}${rowsPart}${warningPart}`;
+}
+
 export function lastRunStatusLabel(status: string) {
+  if (status === "succeeded_with_warnings") return "成功（有警告）";
   if (status === "succeeded") return "成功";
   if (status === "failed") return "失败";
   if (status === "running") return "运行中";
@@ -67,6 +111,7 @@ export function lastRunStatusLabel(status: string) {
 }
 
 export function lastRunBadgeColor(status: string): "success" | "error" | "warning" | "light" {
+  if (status === "succeeded_with_warnings") return "warning";
   if (status === "succeeded") return "success";
   if (status === "failed") return "error";
   if (status === "running" || status === "cancelling") return "warning";

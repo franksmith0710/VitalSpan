@@ -30,6 +30,12 @@ def ensure_tables():
         conn.execute(text("DELETE FROM ingestion_sync_jobs"))
 
 
+@pytest.fixture(autouse=True)
+def _suppress_consume_prepare_warnings():
+    with patch("app.ingestion.sync_consume.best_effort_prepare_after_sync", return_value=None):
+        yield
+
+
 def _seed_job(*, target_table: str | None = None) -> uuid.UUID:
     db = get_meta_session()
     job = SyncJob(

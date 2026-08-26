@@ -12,7 +12,6 @@ import { migrateChartConfigToDeAxes, resolveChartEncoding, deAxisRenderReady } f
 import { groupDatasetFields } from "@/components/dashboard/datasetFieldClassification";
 import { nativeBodyHasLegacySqlBinding } from "@/lib/chartNativeBodyUi";
 import { isDemoPackageDataset } from "@/lib/demoPackage";
-import { suggestGisMapOdFields } from "@/lib/gisMapFlow";
 
 function activeFieldRefs(refs: ChartFieldRef[] | undefined): ChartFieldRef[] {
   return (refs ?? []).filter((r) => Boolean(r.field?.trim()));
@@ -77,6 +76,8 @@ export function buildChartExecuteEncoding(config: ChartViewConfig): ChartExecute
 export type ChartExecuteResult = {
   columns: string[];
   rows: (string | number | boolean | null)[][];
+  truncated?: boolean;
+  configRevision?: number;
 };
 
 export const CHART_EXECUTE_LIMIT = 50;
@@ -218,12 +219,11 @@ const executeResultCache = new Map<string, ChartExecuteResult>();
 const executeConcurrencyLimiter = createConcurrencyLimiter(CHART_EXECUTE_MAX_CONCURRENCY);
 
 let cachedDemoDatasourceId: string | null | undefined;
-let cachedDatasetBoundConfigIds: Map<string, string> | null = null;
 
 /** 测试用：清空演示数据源缓存 */
 export function resetDemoDatasourceExecuteCache(): void {
   cachedDemoDatasourceId = undefined;
-  cachedDatasetBoundConfigIds = null;
+  cachedDatasetBoundMeta = null;
 }
 
 async function resolveDemoDatasourceRef(dataSourceId: string | undefined): Promise<string | undefined> {
@@ -246,23 +246,35 @@ async function resolveDemoDatasourceRef(dataSourceId: string | undefined): Promi
   return cachedDemoDatasourceId ?? dataSourceId;
 }
 
-async function resolveDatasetBoundConfigId(datasetId: string): Promise<string | null> {
-  if (!cachedDatasetBoundConfigIds) {
+let cachedDatasetBoundMeta: Map<string, { configId: string; revision: number | null }> | null = null;
+
+async function resolveDatasetBoundMeta(
+  datasetId: string,
+): Promise<{ configId: string; revision: number | null } | null> {
+  if (!cachedDatasetBoundMeta) {
     try {
       const res = await apiFetch<{
-        items: Array<{ datasetId: string; boundConfigId?: string | null }>;
+        items: Array<{ datasetId: string; boundConfigId?: string | null; boundConfigRevision?: number | null }>;
       }>("/api/v1/datasets?limit=200&offset=0");
-      cachedDatasetBoundConfigIds = new Map();
+      cachedDatasetBoundMeta = new Map();
       for (const item of res.items ?? []) {
         if (item.boundConfigId) {
-          cachedDatasetBoundConfigIds.set(item.datasetId, item.boundConfigId);
+          cachedDatasetBoundMeta.set(item.datasetId, {
+            configId: item.boundConfigId,
+            revision: item.boundConfigRevision ?? null,
+          });
         }
       }
     } catch {
-      cachedDatasetBoundConfigIds = new Map();
+      cachedDatasetBoundMeta = new Map();
     }
   }
-  return cachedDatasetBoundConfigIds.get(datasetId) ?? null;
+  return cachedDatasetBoundMeta.get(datasetId) ?? null;
+}
+
+async function resolveDatasetBoundConfigId(datasetId: string): Promise<string | null> {
+  const meta = await resolveDatasetBoundMeta(datasetId);
+  return meta?.configId ?? null;
 }
 
 async function configForExecute(config: ChartViewConfig): Promise<ChartViewConfig> {
@@ -272,9 +284,13 @@ async function configForExecute(config: ChartViewConfig): Promise<ChartViewConfi
     dataSourceId !== config.dataSourceId ? dataSourceId : null,
   );
   if (next.mode === "dataset" && next.datasetId && !next.configId) {
-    const boundId = await resolveDatasetBoundConfigId(next.datasetId);
-    if (boundId) {
-      next = { ...next, configId: boundId };
+    const bound = await resolveDatasetBoundMeta(next.datasetId);
+    if (bound) {
+      next = {
+        ...next,
+        configId: bound.configId,
+        configRevision: next.configRevision ?? bound.revision ?? undefined,
+      };
     }
   }
   return next;
@@ -302,7 +318,13 @@ export async function fetchChartExecuteResultShared(
 
   const promise = executeConcurrencyLimiter(() => fetchChartExecuteResult(config, options))
     .then((data) => {
-      executeResultCache.set(key, data);
+      const revision = data.configRevision ?? config.configRevision ?? null;
+      const cacheKey = chartExecuteBindingKey(
+        revision != null ? { ...config, configRevision: revision } : config,
+        options.filterParameters,
+        limit,
+      );
+      executeResultCache.set(cacheKey, data);
       return data;
     })
     .finally(() => {
@@ -318,6 +340,7 @@ export async function fetchChartExecuteResultShared(
 export function resetChartExecuteSharedInflight(): void {
   inflightExecute.clear();
   executeResultCache.clear();
+  cachedDatasetBoundMeta = null;
 }
 
 export async function fetchChartExecuteResult(
@@ -353,8 +376,6 @@ export function suggestChartFields(columns: string[], chartType: ChartType) {
   if (columns.length === 0) return { dimensions: [], metrics: [] };
   const { dimensions, metrics } = groupDatasetFields(columns);
   if (isGisMapChartType(chartType)) {
-    const odFields = suggestGisMapOdFields(columns);
-    if (odFields) return odFields;
     const lng = columns.find((c) => /(?:^|_)(lng|lon|longitude|经度)(?:$|_)/i.test(c));
     const lat = columns.find((c) => /(?:^|_)(lat|latitude|纬度)(?:$|_)/i.test(c));
     if (lng && lat) {

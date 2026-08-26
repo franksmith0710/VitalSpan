@@ -254,6 +254,39 @@ export function resolveCustomVizRuntimeStyle(args: {
   if (merged.seriesGradient == null && args.dashboardStyle?.seriesGradient != null) {
     merged.seriesGradient = args.dashboardStyle.seriesGradient;
   }
+  if (merged.paletteOpacity == null && args.config?.displayStyle?.paletteOpacity == null) {
+    const inheritedOpacity = args.dashboardStyle?.paletteOpacity;
+    if (inheritedOpacity != null) merged.paletteOpacity = inheritedOpacity;
+  }
+
+  // 六块标签/提示：写入有效值（含看板继承），供 bundle 与 style bridge 消费
+  if (merged.labelShow == null) {
+    merged.labelShow = readCustomVizLabelVisible(args.config, args.dashboardStyle);
+  }
+  if (merged.tooltipShow == null) {
+    merged.tooltipShow = readCustomVizTooltipVisible(args.config, args.dashboardStyle);
+  }
+  if (merged.labelColor == null) {
+    const color = resolveCustomVizLabelColor(args.config, args.dashboardStyle);
+    if (color) merged.labelColor = color;
+  }
+  if (merged.labelFontSize == null && args.config?.displayStyle?.label?.fontSize == null) {
+    const size = args.dashboardStyle?.chartLabelStyle?.fontSize;
+    if (size != null) merged.labelFontSize = size;
+  }
+  if (merged.tooltipColor == null) {
+    const color = resolveCustomVizTooltipColor(args.config, args.dashboardStyle);
+    if (color) merged.tooltipColor = color;
+  }
+  if (merged.tooltipBackground == null) {
+    const bg = resolveCustomVizTooltipBackground(args.config, args.dashboardStyle);
+    if (bg) merged.tooltipBackground = bg;
+  }
+  if (merged.tooltipFontSize == null && args.config?.displayStyle?.tooltip?.fontSize == null) {
+    const size = args.dashboardStyle?.chartTooltipStyle?.fontSize;
+    if (size != null) merged.tooltipFontSize = size;
+  }
+
   return merged;
 }
 

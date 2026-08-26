@@ -167,7 +167,7 @@ export function SyncJobConsumeGuide({
                   to={datasetCreatePath}
                   className="text-brand-600 underline-offset-2 hover:underline dark:text-brand-400"
                 >
-                  手动新建 Dataset
+                  手动创建数据集（高级）
                 </Link>
                 并勾选表
                 <span className="font-mono"> {targetTable}</span>（须在同步成功后）。
@@ -224,7 +224,7 @@ export function SyncJobConsumeGuide({
                 的表
                 <span className="font-mono text-theme-xs"> {targetTable}</span>
                 {rowsSynced != null ? `（本次 ${rowsSynced} 行）` : ""}
-                。点击「创建数据集」即可出图。
+                。推荐使用下方「一键创建数据集并绑定」出图。
               </p>
             </div>
           </div>
@@ -243,8 +243,8 @@ export function SyncJobConsumeGuide({
         </div>
 
         <div className="mt-5 flex flex-wrap gap-2 border-t border-gray-200/80 pt-5 dark:border-gray-800">
-          <Button asChild variant="primary" size="sm">
-            <Link to={datasetCreatePath}>创建数据集</Link>
+          <Button asChild variant="outline" size="sm">
+            <Link to={datasetCreatePath}>手动创建数据集（高级）</Link>
           </Button>
           <Button asChild variant="outline" size="sm">
             <Link to="/admin/dashboards">打开仪表板</Link>
