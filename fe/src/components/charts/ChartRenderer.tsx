@@ -74,6 +74,7 @@ import {
   resolveTableThemeVars,
 } from "@/lib/chartSurfaceTheme";
 import { useElementSize } from "@/hooks/useElementSize";
+import { shouldShowEmbeddedMountGateSkeleton } from "@/lib/dashboardEditChartPerf";
 import { useAdminHeavyRenderSuspended } from "@/hooks/useAdminHeavyRenderSuspended";
 import { useDashboardColorScheme } from "@/hooks/useDashboardColorScheme";
 import { useDashboardGridPlayer } from "@/components/dashboard/dashboardGridPlayerContext";
@@ -938,8 +939,12 @@ export const ChartRenderer = memo(function ChartRenderer({
     const gateLabel =
       mountGateStatus === "offscreen" ? "图表屏外已暂停" : "图表排队加载中";
     if (
-      !effectiveRenderEnabled ||
-      (!effectiveQueryEnabled && !gisBasemapOnly && !isGisMapChart)
+      shouldShowEmbeddedMountGateSkeleton(effectiveRenderEnabled, effectiveQueryEnabled, {
+        gisBasemapOnly,
+        isGisMapChart,
+        columnCount: columns.length,
+        rowCount: rows.length,
+      })
     ) {
       return (
         <div ref={bodyRef} className="relative h-full min-h-0 w-full min-w-0 overflow-hidden">

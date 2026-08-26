@@ -27,7 +27,6 @@ import {
   startGisGlobeAutoRotate,
   syncGisMapView,
 } from "@/components/charts/engine/maplibre/gisMapRuntime";
-import { withDevPmtilesArchiveUrl } from "@/components/charts/engine/maplibre/gisPmtilesUrl";
 import { mountGisGlobeHaloOverlay } from "@/components/charts/engine/maplibre/gisGlobeHalo";
 import { mountGisStarfieldOverlay } from "@/components/charts/engine/maplibre/gisStarfield";
 import { registerGisMapViewLiveControl } from "@/components/charts/engine/maplibre/gisMapViewBridge";
@@ -150,11 +149,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     void resolveTileService(tileServiceId)
       .then(async (resolved) => {
         if (cancelled) return;
-        const devResolved = withDevPmtilesArchiveUrl(resolved);
-        await ensurePmtilesArchiveRegistered(devResolved.pmtilesUrl);
+        await ensurePmtilesArchiveRegistered(resolved.pmtilesUrl);
         if (cancelled) return;
         setPmtilesStyle(
-          buildPmtilesStyle(devResolved, project.labelLang ?? "zh-Hans", {
+          buildPmtilesStyle(resolved, project.labelLang ?? "zh-Hans", {
             flavor,
             buildings3d: project.buildings3d,
             landColor: project.landColor,
@@ -348,8 +346,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         setMapErrorHint(message);
       });
 
-      map.once("load", () => {
-        if (cancelled || !map) return;
+      let initialLoadDone = false;
+      const finishInitialLoad = () => {
+        if (initialLoadDone || cancelled || !map) return;
+        initialLoadDone = true;
         setMapErrorHint(null);
         const current = projectRef.current;
         applyBasemapRuntimePatch(map, {
@@ -368,6 +368,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         map.resize();
         setGisPaintState("ready");
         onPaintReadyRef.current?.();
+      };
+
+      map.once("load", finishInitialLoad);
+      map.once("style.load", finishInitialLoad);
+      queueMicrotask(() => {
+        if (map.isStyleLoaded()) finishInitialLoad();
       });
     })();
 

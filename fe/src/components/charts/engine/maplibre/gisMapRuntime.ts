@@ -114,9 +114,9 @@ export function whenGisMapStyleReady(map: MapLibreMap, run: () => void) {
     return;
   }
   const onReady = () => {
+    if (!map.isStyleLoaded()) return;
     map.off("load", onReady);
     map.off("style.load", onReady);
-    if (!map.isStyleLoaded()) return;
     run();
   };
   // setStyle 后 load 不再触发；仅 style.load 会到。已 loaded 时勿挂 once("load") 以免永不回调。

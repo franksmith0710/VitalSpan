@@ -36,6 +36,25 @@ def test_preflight_rejects_d3_without_mount() -> None:
     assert any(item.code == "AIVIZ_MOUNT_REQUIRED" for item in result.errors)
 
 
+def test_preflight_rejects_html_without_mount() -> None:
+    path = ROOT / "docs/api/vs-ai-spec/examples/generic-blank-html.json"
+    bundle = json.loads(path.read_text(encoding="utf-8"))
+    bundle["files"]["index.html"] = bundle["files"]["index.html"].replace("vsCv.mount", "onPayload")
+    result = preflight_bundle(bundle, backend_root=_BACKEND)
+    assert result.ok is False
+    assert any(item.code == "AIVIZ_MOUNT_REQUIRED" for item in result.errors)
+
+
+def test_preflight_warns_d3_transition_without_interrupt() -> None:
+    bundle = _load_golden()
+    html = bundle["files"]["index.html"]
+    html = html.replace("svg.selectAll('*').remove()", "clipPath.transition();svg.selectAll('*').remove()")
+    bundle["files"]["index.html"] = html
+    result = preflight_bundle(bundle, backend_root=_BACKEND)
+    assert result.ok is True
+    assert any(w["code"] == "AIVIZ_WARN_D3_INTERRUPT" for w in result.warnings)
+
+
 def test_preflight_rejects_files_content_object() -> None:
     bundle = _load_golden()
     bundle["files"]["index.html"] = {"content": "<html></html>"}

@@ -22,7 +22,7 @@ HINTS: dict[str, str] = {
         '禁止 id="app" 或 id="root"（与平台 SPA 冲突）。容器改用 id="vs-cv-*"'
     ),
     "AIVIZ_MOUNT_REQUIRED": (
-        "d3 runtime 必须在 entry 脚本中调用 host.vsCv.mount(function (p) { ... })"
+        "entry 必须调用 host.vsCv.mount(function (p) { ... })，html/d3 均须如此"
     ),
     "AIVIZ_MISSING_ENTRY": "files 必须包含 manifest.entry 指向的 HTML（通常 index.html）",
     "AIVIZ_INLINE_D3_FORBIDDEN": (
@@ -31,7 +31,15 @@ HINTS: dict[str, str] = {
     "AIVIZ_FICTION_API": (
         "禁止 getStyle()、vs-cv-style-update、.vs-cv-style；样式只读 (p&&p.style)||{}，变化由 mount 回调重绘"
     ),
-    "AIVIZ_WARN_MOUNT_RECOMMENDED": "html 也应 host.vsCv.mount(render)，否则 resize/样式可能不同步",
+    "AIVIZ_WARN_MOUNT_RECOMMENDED": "html runtime 也应 host.vsCv.mount(render)",
+    "AIVIZ_WARN_RESIZE_LAYOUT": (
+        "render 内 var layout=(p&&p.layout)||{}; w=layout.width||…; h=layout.height||…；"
+        "禁仅用 clientWidth 作唯一尺寸"
+    ),
+    "AIVIZ_WARN_D3_INTERRUPT": (
+        "d3 重绘前 svg.interrupt()，再 selectAll('*').remove()；有 .transition( 必须 interrupt"
+    ),
+    "AIVIZ_WARN_D3_CLEAR": "d3 每次 render 须 svg.selectAll('*').remove() 清空旧图层",
     "AIVIZ_WARN_STYLE_COMPLIANCE": (
         "render 内读 var st = (p && p.style) || {}；styleSchema 每项加中文 title"
     ),

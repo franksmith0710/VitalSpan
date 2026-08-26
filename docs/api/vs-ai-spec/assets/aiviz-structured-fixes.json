@@ -15,9 +15,24 @@
     "contractRef": "dom.vs-cv"
   },
   "AIVIZ_MOUNT_REQUIRED": {
-    "fix": "d3 runtime 须在 entry 调用 host.vsCv.mount",
-    "snippet": "host.vsCv.mount(function (p) { render(p); });",
+    "fix": "entry 须调用 host.vsCv.mount(renderFn)，html/d3 均须如此",
+    "snippet": "if (host && host.vsCv && host.vsCv.mount) { host.vsCv.mount(render); } else { render({}); }",
     "contractRef": "mount.required"
+  },
+  "AIVIZ_WARN_RESIZE_LAYOUT": {
+    "fix": "render 须读 payload.layout 设宽高；勿仅用 clientWidth",
+    "snippet": "var layout = (p && p.layout) || {}; var w = layout.width || svgEl.clientWidth || 320; var h = layout.height || svgEl.clientHeight || 200; svg.attr('width', w).attr('height', h);",
+    "contractRef": "layout.resize"
+  },
+  "AIVIZ_WARN_D3_INTERRUPT": {
+    "fix": "重绘前 svg.interrupt() 终止旧 transition/clip-path 动画",
+    "snippet": "var svg = d3.select(svgEl); svg.interrupt(); svg.selectAll('*').remove();",
+    "contractRef": "layout.resize"
+  },
+  "AIVIZ_WARN_D3_CLEAR": {
+    "fix": "每次 render 清空 SVG 再绘制",
+    "snippet": "svg.selectAll('*').remove();",
+    "contractRef": "layout.resize"
   },
   "AIVIZ_MISSING_ENTRY": {
     "fix": "files 须含 manifest.entry 指向的 HTML",

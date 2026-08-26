@@ -40,26 +40,32 @@ describe("whenGisMapStyleReady", () => {
     expect(run).toHaveBeenCalledTimes(1);
   });
 
-  it("waits for style.load when map already loaded but style is reloading", () => {
+  it("keeps listening when load fires before style is ready", () => {
     const run = vi.fn();
     const once = vi.fn();
-    const queued: Array<() => void> = [];
-    let styleLoaded = false;
-    once.mockImplementation((_event: string, cb: () => void) => {
-      queued.push(cb);
+    const off = vi.fn();
+    const handlers = new Map<string, () => void>();
+    once.mockImplementation((event: string, cb: () => void) => {
+      handlers.set(event, cb);
     });
+    off.mockImplementation((event: string) => {
+      handlers.delete(event);
+    });
+    let styleLoaded = false;
     const map = {
       isStyleLoaded: () => styleLoaded,
-      loaded: () => true,
+      loaded: () => false,
       once,
-      off: vi.fn(),
+      off,
     };
 
     whenGisMapStyleReady(map as never, run);
-    expect(once).toHaveBeenCalledTimes(1);
-    expect(once).toHaveBeenCalledWith("style.load", expect.any(Function));
+    handlers.get("load")?.();
+    expect(run).not.toHaveBeenCalled();
+    expect(handlers.has("style.load")).toBe(true);
+
     styleLoaded = true;
-    for (const cb of queued) cb();
+    handlers.get("style.load")?.();
     expect(run).toHaveBeenCalledTimes(1);
   });
 });

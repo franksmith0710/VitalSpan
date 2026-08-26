@@ -122,10 +122,10 @@ def _validate_bundle_runtime_contract(entry_html: str, manifest: dict) -> None:
             'entry HTML must not use id="app" (conflicts with platform SPA)',
             422,
         )
-    if runtime == "d3" and "vsCv.mount" not in entry_html:
+    if "vsCv.mount" not in entry_html:
         raise AiVizError(
             "AIVIZ_MOUNT_REQUIRED",
-            "d3 runtime must call host.vsCv.mount(renderFn) for resize/payload lifecycle",
+            "entry must call host.vsCv.mount(renderFn) for resize/payload lifecycle",
             422,
         )
 

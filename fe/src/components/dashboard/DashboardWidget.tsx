@@ -3,6 +3,10 @@ import { GripVertical, Trash2 } from "lucide-react";
 import { GeoMapPlaceholderChart } from "@/components/charts/adapters/GeoMapPlaceholderChart";
 import { ChartRenderer } from "@/components/charts/ChartRenderer";
 import { useChartMountGate } from "@/components/charts/ChartMountContext";
+import {
+  resolveChartMountPriority,
+  useDashboardGridPlayingWidgetId,
+} from "@/components/dashboard/dashboardGridPlayerContext";
 import { useInViewport } from "@/hooks/useInViewport";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { isGeoMapChartType } from "@/lib/chartViewConfig";
@@ -255,8 +259,15 @@ function DashboardChartMountGate({
     rootSelector: viewportRoot,
     enabled: mode === "edit",
   });
+  const gridPlayingWidgetId = useDashboardGridPlayingWidgetId();
+  const priority = resolveChartMountPriority(
+    widgetId,
+    selected,
+    shell,
+    gridPlayingWidgetId,
+  );
   const { canQuery, canRender, onMountReady } = useChartMountGate(widgetId, {
-    priority: selected ? 0 : 1,
+    priority,
     inView: mode === "edit" ? inView : true,
   });
 

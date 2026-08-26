@@ -31,13 +31,18 @@ def test_to_artifact_out_includes_warnings_for_non_compliant_html() -> None:
             "fieldSlots": _MIN_FIELD_SLOTS,
             "runtime": "html",
         },
-        files_json={"index.html": "<!DOCTYPE html><html><body><div>static</div></body></html>"},
+        files_json={
+            "index.html": (
+                "<!DOCTYPE html><html><body><script>"
+                "host.vsCv.mount(function(p){});"
+                "</script></body></html>"
+            ),
+        },
         content_hash="abc123",
         status="draft",
     )
     out = to_artifact_out(row)
     codes = {item.code for item in out.warnings}
-    assert "AIVIZ_WARN_MOUNT_RECOMMENDED" in codes
     assert "AIVIZ_WARN_STYLE_COMPLIANCE" in codes
     assert out.style_compliance_tier == "partial"
 
@@ -60,7 +65,13 @@ def test_create_artifact_returns_warnings_without_blocking_ingest() -> None:
             field_slots=_MIN_FIELD_SLOTS,
             style_schema={"properties": {"accentColor": {"type": "string"}}},
         ),
-        files={"index.html": "<!DOCTYPE html><html><body><div>static</div></body></html>"},
+        files={
+            "index.html": (
+                "<!DOCTYPE html><html><body><script>"
+                "if(host&&host.vsCv&&host.vsCv.mount){host.vsCv.mount(function(p){});}"
+                "</script></body></html>"
+            ),
+        },
     )
 
     out = create_artifact(db, payload, _actor())
@@ -68,3 +79,25 @@ def test_create_artifact_returns_warnings_without_blocking_ingest() -> None:
     assert any(item.code == "AIVIZ_WARN_STYLE_COMPLIANCE" for item in out.warnings)
     assert out.style_compliance_tier == "partial"
     db.commit.assert_called_once()
+
+
+def test_create_artifact_rejects_html_without_mount() -> None:
+    db = MagicMock()
+    payload = AiVizArtifactCreateIn(
+        manifest=AiVizManifestIn(
+            id="no-mount-v1",
+            displayName="No Mount",
+            runtime="html",
+            field_slots=_MIN_FIELD_SLOTS,
+            style_schema={"properties": {"accentColor": {"type": "string"}}},
+        ),
+        files={"index.html": "<!DOCTYPE html><html><body><div>static</div></body></html>"},
+    )
+    from app.ai_viz.errors import AiVizError
+
+    try:
+        create_artifact(db, payload, _actor())
+    except AiVizError as exc:
+        assert exc.code == "AIVIZ_MOUNT_REQUIRED"
+    else:
+        raise AssertionError("expected AIVIZ_MOUNT_REQUIRED")

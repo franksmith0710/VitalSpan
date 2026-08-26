@@ -14,6 +14,12 @@ _STYLE_PAYLOAD_RE = re.compile(
 )
 _STYLE_TOKEN_RE = re.compile(r"--vs-(?:style|palette)-", re.IGNORECASE)
 _LAYOUT_FALLBACK_RE = re.compile(r"clientWidth\s*\|\|\s*320")
+_EXPLICIT_CHART_SIZE_RE = re.compile(
+    r"clientWidth|clientHeight|\.attr\s*\(\s*['\"]width|\.attr\s*\(\s*['\"]height|"
+    r"canvas\.width\s*=|canvas\.height\s*=|setAttribute\s*\(\s*['\"]width",
+)
+_D3_TRANSITION_RE = re.compile(r"\.transition\s*\(")
+_D3_INTERRUPT_RE = re.compile(r"\.interrupt\s*\(")
 _HOST_GET_ELEMENT_BY_ID_RE = re.compile(r"\(\s*host\s*\|\|\s*document\s*\)\s*\.\s*getElementById\b")
 _DOCUMENT_GET_ELEMENT_BY_ID_RE = re.compile(r"\bdocument\s*\.\s*getElementById\b")
 _DOCUMENT_GET_ELEMENT_BY_ID_FALLBACK_RE = re.compile(r":\s*document\s*\.\s*getElementById\b")
@@ -193,6 +199,57 @@ def _collect_platform_duplicate_style_warnings(manifest: dict) -> list[StyleComp
     return warnings
 
 
+def _reads_payload_layout(entry_html: str) -> bool:
+    if "layout.width" in entry_html or "layout.height" in entry_html:
+        return True
+    if "payload.layout" in entry_html:
+        return True
+    return bool(re.search(r"\(p\s*&&\s*p\.layout\)", entry_html))
+
+
+def _collect_resize_lifecycle_warnings(
+    entry_html: str,
+    runtime: str,
+) -> list[StyleComplianceWarning]:
+    warnings: list[StyleComplianceWarning] = []
+
+    needs_layout = runtime == "d3" or bool(_EXPLICIT_CHART_SIZE_RE.search(entry_html))
+    if needs_layout and not _reads_payload_layout(entry_html):
+        warnings.append(
+            StyleComplianceWarning(
+                code="AIVIZ_WARN_RESIZE_LAYOUT",
+                message=(
+                    "render 须读取 payload.layout.width/height 设置 SVG/canvas 尺寸；"
+                    "禁仅用 clientWidth 作唯一依据，否则拖大拖小 widget 会错位/叠层"
+                ),
+            )
+        )
+
+    if _D3_TRANSITION_RE.search(entry_html) and not _D3_INTERRUPT_RE.search(entry_html):
+        warnings.append(
+            StyleComplianceWarning(
+                code="AIVIZ_WARN_D3_INTERRUPT",
+                message=(
+                    "检测到 d3 .transition( 但未 .interrupt()；resize 重绘前须 svg.interrupt() "
+                    "再清空，否则 clip-path/动画会卡在旧尺寸"
+                ),
+            )
+        )
+
+    if runtime == "d3" and "selectAll('*').remove()" not in entry_html and "selectAll(\"*\").remove()" not in entry_html:
+        warnings.append(
+            StyleComplianceWarning(
+                code="AIVIZ_WARN_D3_CLEAR",
+                message=(
+                    "d3 runtime 重绘前须 svg.selectAll('*').remove() 清空旧图层，"
+                    "避免 resize 后新旧图形叠在一起"
+                ),
+            )
+        )
+
+    return warnings
+
+
 def _collect_platform_style_consumption_warnings(
     combined: str,
     manifest: dict,
@@ -236,13 +293,7 @@ def collect_bundle_style_compliance_warnings(
     warnings.extend(_collect_platform_duplicate_style_warnings(manifest))
     warnings.extend(_collect_platform_style_consumption_warnings(combined, manifest))
 
-    if runtime == "html" and "vsCv.mount" not in entry_html:
-        warnings.append(
-            StyleComplianceWarning(
-                code="AIVIZ_WARN_MOUNT_RECOMMENDED",
-                message="html runtime 建议使用 host.vsCv.mount(renderFn)，否则 resize 与样式更新可能不稳定",
-            )
-        )
+    warnings.extend(_collect_resize_lifecycle_warnings(entry_html, runtime))
 
     has_style_payload = bool(_STYLE_PAYLOAD_RE.search(combined))
     has_style_tokens = bool(_STYLE_TOKEN_RE.search(combined))

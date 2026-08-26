@@ -27,3 +27,25 @@ export function capChartPaintSize(
 export function shouldDeferEditLivePaint(editMode: boolean, selected: boolean): boolean {
   return editMode && !selected;
 }
+
+type EmbeddedMountGateSnapshot = {
+  gisBasemapOnly: boolean;
+  isGisMapChart: boolean;
+  columnCount: number;
+  rowCount: number;
+};
+
+/**
+ * 嵌入图表 mount gate：仅当无法绘制任何内容时才用骨架屏占位。
+ * 交互冻结时 queryEnabled 可暂时为 false，但已有数据的图表应继续展示最后一帧。
+ */
+export function shouldShowEmbeddedMountGateSkeleton(
+  renderEnabled: boolean,
+  queryEnabled: boolean,
+  snapshot: EmbeddedMountGateSnapshot,
+): boolean {
+  if (!renderEnabled) return true;
+  if (queryEnabled) return false;
+  if (snapshot.gisBasemapOnly || snapshot.isGisMapChart) return false;
+  return snapshot.columnCount === 0 && snapshot.rowCount === 0;
+}

@@ -64,6 +64,21 @@ var svg = host.vsCv.d3.select(host.querySelector("#vs-cv-chart"));
 | 列/行 | `p.columns` · `p.rows`；维/指字段名用 `p.encoding.dimensions` / `.metrics` |
 | 尺寸 | 读 `p.layout.width` / `p.layout.height`；禁仅 `clientWidth \|\| 320` 作唯一依据 |
 | 生命周期 | **必须** `host.vsCv.mount(render)`（html / d3 均如此） |
+| d3 重绘 | **必须** `svg.interrupt()` → `svg.selectAll('*').remove()` → 再绘制 |
+| d3 动画 | 使用 `.transition(` 时 render 入口**必须**先 `.interrupt()`，否则 resize 后 clip/线条错位 |
+
+## 3b. resize 门禁（DeepTalk publish 硬约束）
+
+`vitalspan_validate_artifact` 仅当 **styleComplianceTier=full 且 warnings=0** 才可 `publish_artifact`。下列 warning 任一出现即视为 resize 不合格：
+
+| code | 含义 |
+|------|------|
+| `AIVIZ_MOUNT_REQUIRED` | 未 `vsCv.mount`（422，html/d3 均拦） |
+| `AIVIZ_WARN_RESIZE_LAYOUT` | 未读 `payload.layout` 设 SVG/canvas 尺寸 |
+| `AIVIZ_WARN_D3_INTERRUPT` | 有 transition 但未 interrupt |
+| `AIVIZ_WARN_D3_CLEAR` | d3 重绘未清空旧图层 |
+
+Agent **只改** `renderBusiness` / 业务 DOM；**禁止**删除 scaffold 自带的 mount/layout/interrupt/clear 壳层。
 
 ## 4. 容器自适应与溢出（DeepTalk 组件通用）
 
