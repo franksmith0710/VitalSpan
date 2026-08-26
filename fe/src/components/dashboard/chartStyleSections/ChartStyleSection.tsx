@@ -16,6 +16,7 @@ import {
   ChartTitleStyleSection,
 } from "./ChartCommonStyleSections";
 import { ChartMapBasicStyleSection } from "./ChartMapBasicStyleSection";
+import { ChartVariantBasicSection } from "./ChartVariantBasicSection";
 import {
   ChartAxisStyleSection,
   ChartCartesianShapeSection,
