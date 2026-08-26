@@ -53,14 +53,36 @@ vitalspan_completion_gate workflow=3 + tool_stdout（compose/upload 含 ok dashb
 
 ## 6. 开发备用（可选 · CLI）
 
-在 `integrations/vitalspan/`（sync 后）：
+在 `integrations/vitalspan/`（sync 后）或 VitalSpan 仓 `deeptalk-product/executor/`：
 
 ```bash
 python executor/cli.py vitalspan_health_check
-python executor/cli.py vitalspan_publish_artifact --file examples/custom-viz-trend-line.json
+python executor/cli.py vitalspan_scaffold_artifact --id hex-kpi-grid --name "六边形KPI"
+python tools/build-hex-kpi-example.py
+python executor/cli.py vitalspan_validate_artifact --file examples/hex-kpi-grid.json
+python executor/cli.py vitalspan_publish_artifact --file examples/hex-kpi-grid.json
+python executor/cli.py vitalspan_completion_gate --workflow 2 --agent-summary "..." --tool-stdout "<publish stdout>"
 ```
 
 与插件工具输出语义应对齐；**不作为**客户交付验收主路径。
+
+## 7. L3-ZeroRef 闭环（VitalSpan 仓 · 2026-08-26）
+
+| 步骤 | 命令/产物 | 期望 |
+|------|-----------|------|
+| 契约 | `vitalspan_get_contract_card` | JSON `contract_card` |
+| 起盘 | `scaffold` → `generic-blank-*` | `examples/<id>.json` |
+| 业务 | 只改 `renderBusiness` | 不抄 trend-line 金样 |
+| 预检 | `validate --json` | `ok` + `full` + `fixes:[]` |
+| 入库 | `publish` | `ok artifactId=<uuid>` + `full` |
+| Gate | `completion_gate wf2` | passed |
+| 5173 | 分析 → 组件库 | 可见 + 样式 Tab 六块有反应 |
+
+- [x] `examples/hex-kpi-grid.json`（验收金样 · artifactId 见 publish 输出）
+- [x] validate → publish → `completion_gate wf2` 绿（CLI）
+- [x] `AGENT-SYSTEM-PROMPT.md` ≤80 行 · `DEEPTALK-AGENT-PROMPT.md` 已对齐
+- [ ] 5173 人工走查 hex-kpi-grid 样式 Tab（本地环境）
+- [ ] 插件 zip sync `deeptalk-plugins`（本机无仓；跑 `scripts/sync-vs-ai-spec-to-deeptalk-repo.ps1` 需 Deeptalk 根目录）
 
 ## VitalSpan CI 参考
 

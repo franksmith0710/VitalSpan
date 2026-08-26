@@ -27,7 +27,10 @@ export const ADMIN_PAGE_SURFACE_CLASS =
 export const ADMIN_PAGE_HEADER_FRAME_CLASS = cn(ADMIN_PAGE_SURFACE_CLASS, "shrink-0 overflow-hidden");
 
 /** 页头内容区内边距 */
-export const ADMIN_PAGE_HEADER_BODY_CLASS = "px-5 py-5";
+export const ADMIN_PAGE_HEADER_BODY_CLASS = "px-4 py-3";
+
+/** 列表页内容区内边距（表格/卡片栅格） */
+export const LIST_PAGE_CONTENT_PAD_CLASS = "px-4 py-3";
 
 /** 页头操作区：与标题块右对齐 */
 export const ADMIN_PAGE_HEADER_ACTIONS_CLASS =
@@ -44,7 +47,7 @@ export function AdminPageHeaderIcon({
   return (
     <span
       className={cn(
-        "flex size-12 shrink-0 items-center justify-center rounded-xl",
+        "flex size-10 shrink-0 items-center justify-center rounded-lg",
         "bg-brand-50 text-brand-600 dark:bg-brand-500/15 dark:text-brand-400",
         className,
       )}
@@ -86,7 +89,7 @@ export function ListPageTableFrame({
   className?: string;
 }) {
   return (
-    <div className={cn("min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-5 py-5", className)}>
+    <div className={cn(LIST_PAGE_CONTENT_PAD_CLASS, className)}>
       {children}
     </div>
   );
@@ -109,8 +112,8 @@ export function ListPageToolbar({
       className={cn(
         "flex shrink-0 border-b border-gray-100 bg-gray-50/80 dark:border-white/[0.06] dark:bg-white/[0.02]",
         actionsOnly
-          ? "justify-end px-5 py-3"
-          : "flex-col gap-3 px-5 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between",
+          ? "justify-end px-4 py-2"
+          : "flex-col gap-2 px-4 py-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between",
         className,
       )}
     >
@@ -129,7 +132,7 @@ export function ListPageBody({
   children: ReactNode;
   className?: string;
 }) {
-  return <div className={cn("shrink-0 p-5", className)}>{children}</div>;
+  return <div className={cn("shrink-0 p-4", className)}>{children}</div>;
 }
 
 export function ListPageFooter({
@@ -142,7 +145,7 @@ export function ListPageFooter({
   return (
     <div
       className={cn(
-        "shrink-0 border-t border-gray-100 bg-gray-50/80 px-5 py-3 dark:border-white/[0.06] dark:bg-white/[0.02]",
+        "shrink-0 border-t border-gray-100 bg-gray-50/80 px-4 py-2 dark:border-white/[0.06] dark:bg-white/[0.02]",
         className,
       )}
     >

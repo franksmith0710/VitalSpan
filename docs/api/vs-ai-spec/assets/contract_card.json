@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "summary": "customViz 最小机器契约（L3 从零）；规范经工具返回，不写入 Agent prompt",
+  "mount": {
+    "id": "mount.required",
+    "rule": "entry 脚本须 host.vsCv.mount(function (p) { render(p); })",
+    "runtime": ["html", "d3"]
+  },
+  "style": {
+    "id": "style.read",
+    "rule": "var st = (p && p.style) || {}；须消费 labelShow/tooltipShow/paletteColors/seriesGradient 或 CSS --vs-palette-* / --vs-style-*",
+    "forbidden": ["getStyle()", "vs-cv-style-update", ".vs-cv-style"]
+  },
+  "dom": {
+    "id": "dom.vs-cv",
+    "rule": "容器 id 前缀 vs-cv-；禁 id=app/root；禁 document.getElementById，用 host.querySelector('#vs-cv-*')",
+    "canvas": "业务逻辑只写在 #vs-cv-canvas 内"
+  },
+  "d3": {
+    "id": "d3.host",
+    "rule": "runtime:d3 时用 host.vsCv.d3；禁 CDN script src 与内联整库",
+    "layout": "尺寸优先读 p.layout，禁仅 clientWidth||320"
+  },
+  "forbidden": ["MapLibre", "在线地图瓦片", "javascript:", "onclick=", "onmouseenter="],
+  "publishGate": "styleComplianceTier=full 且 warnings=0"
+}

@@ -1,11 +1,17 @@
-"""Actionable hints when customViz publish/preflight fails — keep in sync with plugin assets/aiviz-publish-hints.json."""
+"""Actionable hints when customViz publish/preflight fails — sync with assets/aiviz-publish-hints.json."""
 
 from __future__ import annotations
 
+import json
+from pathlib import Path
+from typing import Any
+
+_ASSETS = Path(__file__).resolve().parents[1] / "assets"
+_FIXES_CACHE: dict[str, dict[str, str]] | None = None
+
 HINTS: dict[str, str] = {
     "AIVIZ_INVALID_MANIFEST": (
-        "manifest 缺字段。先判范式 P1–P4，用 scaffold 复制对应金样；"
-        "fieldSlots 须与范式一致（见 assets/custom-viz-paradigms.json）"
+        "manifest 缺字段。用 scaffold generic-blank 起盘；fieldSlots 与范式一致"
     ),
     "AIVIZ_UNSAFE_CONTENT": (
         "HTML 安全规则：禁止 <script src=、HTML 属性 onclick=/onmouseenter=、javascript:。"
@@ -33,7 +39,32 @@ HINTS: dict[str, str] = {
         "fieldSlots 与 P2 多维明细范式不符：dimensions.max>1 时须 metrics.min=0,max=0；"
         "换 scrolling-table 金样或改 manifest（与组件 id 无关）"
     ),
+    "AIVIZ_WARN_DOM_HOST_LOOKUP": (
+        "禁止 (host||document).getElementById；用 host.querySelector('#vs-cv-*')"
+    ),
+    "AIVIZ_WARN_DOM_DOCUMENT_LOOKUP": (
+        "禁止 document.getElementById；节点须在宿主内 querySelector，id 前缀 vs-cv-"
+    ),
+    "AIVIZ_WARN_PLATFORM_DUPLICATE_STYLE": (
+        "styleSchema 键与平台检查器重复（如 maxItems/refreshMode/titleShow）；删 schema 项，数据 Tab「结果展示」→ payload.rows"
+    ),
+    "AIVIZ_WARN_PLATFORM_STYLE_KEYS": (
+        "bundle 须读平台六块：labelShow/tooltipShow/seriesGradient/paletteColors 或 CSS --vs-palette-*"
+    ),
 }
+
+
+def _load_structured_fixes() -> dict[str, dict[str, str]]:
+    global _FIXES_CACHE
+    if _FIXES_CACHE is not None:
+        return _FIXES_CACHE
+    path = _ASSETS / "aiviz-structured-fixes.json"
+    if path.is_file():
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        _FIXES_CACHE = raw if isinstance(raw, dict) else {}
+    else:
+        _FIXES_CACHE = {}
+    return _FIXES_CACHE
 
 
 def hint_for(code: str, message: str = "") -> str | None:
@@ -48,10 +79,41 @@ def hint_for(code: str, message: str = "") -> str | None:
     return None
 
 
+def structured_fix(code: str, message: str = "") -> dict[str, Any]:
+    fixes = _load_structured_fixes()
+    item = dict(fixes.get(code, {}))
+    if not item.get("fix"):
+        hint = hint_for(code, message)
+        if hint:
+            item["fix"] = hint
+    if not item.get("snippet"):
+        item["snippet"] = ""
+    if not item.get("contractRef"):
+        item["contractRef"] = code.split("_", 1)[0].lower()
+    return {"code": code, **item}
+
+
 def format_error_block(code: str, message: str, http_status: int = 422) -> list[str]:
+    fix = structured_fix(code, message)
     lines = [f"[{http_status}] {code}: {message}"]
-    hint = hint_for(code, message)
-    if hint:
-        lines.append(f"  → 修复: {hint}")
-    lines.append("  → 金样: examples/html-minimal.json（默认）· guides/CUSTOM-VIZ-AUTHOR.md")
+    if fix.get("fix"):
+        lines.append(f"  → fix: {fix['fix']}")
+    if fix.get("snippet"):
+        lines.append(f"  → snippet: {fix['snippet']}")
+    if fix.get("contractRef"):
+        lines.append(f"  → contractRef: {fix['contractRef']}")
     return lines
+
+
+def fixes_for_issues(
+    errors: list[dict[str, Any]] | None = None,
+    warnings: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for bucket in (errors or [], warnings or []):
+        for item in bucket:
+            code = str(item.get("code", ""))
+            msg = str(item.get("message", ""))
+            if code:
+                out.append(structured_fix(code, msg))
+    return out

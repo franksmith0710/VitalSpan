@@ -1,7 +1,19 @@
 {
   "version": 1,
-  "description": "customViz scaffold 范式真源：Agent 先判范式，再选 template；fieldSlots 须与范式一致。",
+  "description": "customViz scaffold 范式真源：L3 从零默认 P5 generic-blank；fieldSlots 须与范式一致。",
   "paradigms": [
+    {
+      "id": "P5-open-canvas",
+      "label": "开放画布（L3 从零）",
+      "when": "训练集外新形态；只改 #vs-cv-canvas 业务区",
+      "templates": ["generic-blank-html", "generic-blank-d3"],
+      "runtime": ["html", "d3"],
+      "fieldSlots": {
+        "dimensions": { "min": 1, "max": 1, "note": "默认单列；多列明细请改 manifest 并对齐 P2" },
+        "metrics": { "min": 1, "max": 8, "note": "按需调整 max" }
+      },
+      "default": true
+    },
     {
       "id": "P1-cartesian",
       "label": "笛卡尔图",
@@ -48,11 +60,17 @@
     }
   ],
   "templateFiles": {
+    "generic-blank-html": "examples/generic-blank-html.json",
+    "generic-blank-d3": "examples/generic-blank-d3.json",
     "html-minimal": "examples/html-minimal.json",
     "scrolling-table": "examples/scrolling-table.json",
     "alert-feed": "examples/custom-viz-alert-feed.json",
     "ranking-bar": "examples/custom-viz-ranking-bar-chart-fixed.json",
     "trend-line": "examples/custom-viz-trend-line.json"
+  },
+  "defaultTemplate": {
+    "html": "generic-blank-html",
+    "d3": "generic-blank-d3"
   },
   "warnCodes": {
     "AIVIZ_WARN_DETAIL_TABLE_METRICS": "fieldSlots 不符合 P2 多维明细范式：dimensions.max>1 时 metrics 须 min=0,max=0"

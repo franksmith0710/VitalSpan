@@ -1,0 +1,72 @@
+{
+  "AIVIZ_INVALID_MANIFEST": {
+    "fix": "manifest 缺 id/displayName/entry/runtime/fieldSlots；用 scaffold generic-blank 起盘",
+    "snippet": "\"manifest\": { \"id\": \"my-widget\", \"displayName\": \"名称\", \"entry\": \"index.html\", \"runtime\": \"html\" }",
+    "contractRef": "mount.required"
+  },
+  "AIVIZ_UNSAFE_CONTENT": {
+    "fix": "禁 script src=、onclick=、javascript:；悬停用 CSS animation-play-state 或 addEventListener",
+    "snippet": "el.addEventListener('mouseenter', fn);",
+    "contractRef": "dom.vs-cv"
+  },
+  "AIVIZ_FORBIDDEN_HOST_ID": {
+    "fix": "禁 id=\"app\" / id=\"root\"；改用 id=\"vs-cv-root\" 等 vs-cv-*",
+    "snippet": "<div id=\"vs-cv-root\"><div id=\"vs-cv-canvas\"></div></div>",
+    "contractRef": "dom.vs-cv"
+  },
+  "AIVIZ_MOUNT_REQUIRED": {
+    "fix": "d3 runtime 须在 entry 调用 host.vsCv.mount",
+    "snippet": "host.vsCv.mount(function (p) { render(p); });",
+    "contractRef": "mount.required"
+  },
+  "AIVIZ_MISSING_ENTRY": {
+    "fix": "files 须含 manifest.entry 指向的 HTML",
+    "snippet": "\"files\": { \"index.html\": \"<!DOCTYPE html>...\" }",
+    "contractRef": "mount.required"
+  },
+  "AIVIZ_INLINE_D3_FORBIDDEN": {
+    "fix": "勿内联 d3 整库；用 var d3 = host.vsCv.d3",
+    "snippet": "var d3 = host.vsCv.d3;",
+    "contractRef": "d3.host"
+  },
+  "AIVIZ_FICTION_API": {
+    "fix": "样式只读 (p&&p.style)||{}；禁 getStyle / vs-cv-style",
+    "snippet": "var st = (p && p.style) || {};",
+    "contractRef": "style.read"
+  },
+  "AIVIZ_WARN_MOUNT_RECOMMENDED": {
+    "fix": "html runtime 也应 host.vsCv.mount(render)",
+    "snippet": "host.vsCv.mount(render);",
+    "contractRef": "mount.required"
+  },
+  "AIVIZ_WARN_STYLE_COMPLIANCE": {
+    "fix": "render 内读 (p&&p.style)||{}；styleSchema 每项加中文 title",
+    "snippet": "function resolveStyle(p){ var st=(p&&p.style)||{}; return { accentColor: st.accentColor||'var(--vs-palette-0,#38bdf8)' }; }",
+    "contractRef": "style.read"
+  },
+  "AIVIZ_WARN_PLATFORM_STYLE_KEYS": {
+    "fix": "须消费 labelShow/tooltipShow/paletteColors 或 --vs-palette-*",
+    "snippet": "labelShow: st.labelShow !== false, palette: st.paletteColors || []",
+    "contractRef": "style.read"
+  },
+  "AIVIZ_WARN_DOM_HOST_LOOKUP": {
+    "fix": "禁 (host||document).getElementById；用 host.querySelector('#vs-cv-*')",
+    "snippet": "function $(id){ return host.querySelector('#'+id); }",
+    "contractRef": "dom.vs-cv"
+  },
+  "AIVIZ_WARN_DOM_DOCUMENT_LOOKUP": {
+    "fix": "禁 document.getElementById；节点须在宿主内 querySelector",
+    "snippet": "host.querySelector('#vs-cv-canvas')",
+    "contractRef": "dom.vs-cv"
+  },
+  "AIVIZ_WARN_DETAIL_TABLE_METRICS": {
+    "fix": "dimensions.max>1 时 metrics 须 min=0,max=0；或改 dimensions.max=1",
+    "snippet": "\"metrics\": { \"min\": 0, \"max\": 0 }",
+    "contractRef": "dom.vs-cv"
+  },
+  "AIVIZ_WARN_PLATFORM_DUPLICATE_STYLE": {
+    "fix": "删 styleSchema 中与平台六块重复的键（labelShow/paletteColors 等）",
+    "snippet": "仅保留 accentColor/fontSize 等业务键",
+    "contractRef": "style.read"
+  }
+}

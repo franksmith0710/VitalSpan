@@ -105,8 +105,8 @@ function PageHeaderHero({
         if (event.target === event.currentTarget) onHeaderBlankPointerDown?.();
       }}
     >
-      <div className="flex flex-wrap items-start gap-3 sm:gap-4">
-        <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
+      <div className="flex flex-wrap items-start gap-2 sm:gap-3">
+        <div className="flex min-w-0 flex-1 items-start gap-2 sm:gap-3">
           {leadingActions ? (
             <div className={cn(ADMIN_PAGE_HEADER_ACTIONS_CLASS, "shrink-0 pt-0.5")}>{leadingActions}</div>
           ) : null}
@@ -152,15 +152,15 @@ export function AdminPageShell({
     <div
       className={cn(
         isCompactHeader
-          ? "flex min-h-0 flex-1 flex-col gap-2 overflow-hidden md:gap-3"
-          : "grid shrink-0 gap-4",
+          ? "flex min-h-0 flex-1 flex-col gap-1.5 overflow-hidden md:gap-2"
+          : "grid shrink-0 gap-3",
         className,
       )}
     >
       <div className={ADMIN_PAGE_HEADER_FRAME_CLASS} data-testid="admin-page-header-frame">
         {useToolbarHeader ? (
           <header
-            className="px-5 py-3"
+            className="px-4 py-2"
             onPointerDown={(event) => {
               if (event.target === event.currentTarget) onHeaderBlankPointerDown?.();
             }}
@@ -200,7 +200,6 @@ export function AdminPageShell({
             actions={actions}
             titleUnwrapped={titleUnwrapped}
             onHeaderBlankPointerDown={onHeaderBlankPointerDown}
-            bodyClassName={isFillLayout ? "py-4" : undefined}
           />
         )}
       </div>

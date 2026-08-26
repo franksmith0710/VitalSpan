@@ -63,11 +63,11 @@ export function PaginationBar({
   return (
     <div
       className={cn(
-        "flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
+        "flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between",
         className,
       )}
     >
-      <div className="flex min-w-0 flex-wrap items-center gap-3">
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
         {showSizeChanger ? (
           <PaginationSizeChanger
             pageSize={pageSize}

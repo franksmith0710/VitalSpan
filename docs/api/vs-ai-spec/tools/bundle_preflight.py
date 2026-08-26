@@ -147,6 +147,32 @@ def preflight_bundle(bundle: dict[str, Any], *, backend_root: Path | None = None
     return PreflightResult(ok=True, warnings=warnings, style_compliance_tier=tier)
 
 
+def preflight_to_payload(result: PreflightResult) -> dict[str, Any]:
+    from aiviz_publish_hints import fixes_for_issues
+
+    errors = [
+        {"code": e.code, "message": e.message, "httpStatus": e.http_status}
+        for e in result.errors
+    ]
+    warnings = list(result.warnings)
+    tier = result.style_compliance_tier
+    ok = result.ok and tier == "full" and not warnings
+    next_tools = (
+        ["vitalspan_publish_artifact"]
+        if ok
+        else ["vitalspan_get_contract_card", "vitalspan_validate_artifact"]
+    )
+    return {
+        "ok": ok,
+        "preflightOk": result.ok,
+        "errors": errors,
+        "warnings": warnings,
+        "fixes": fixes_for_issues(errors, warnings),
+        "styleComplianceTier": tier,
+        "nextTools": next_tools,
+    }
+
+
 def format_preflight_lines(result: PreflightResult) -> list[str]:
     from aiviz_publish_hints import format_error_block
 
@@ -155,7 +181,7 @@ def format_preflight_lines(result: PreflightResult) -> list[str]:
         lines.append("preflight FAILED:")
         for item in result.errors:
             lines.extend(format_error_block(item.code, item.message, item.http_status))
-        lines.append("  → 文档: guides/CUSTOM-VIZ-AUTHOR.md")
+        lines.append("  → 下一步: vitalspan_get_contract_card · 按 fix/snippet 改 bundle 后重跑 validate")
         return lines
     lines.append("preflight ok")
     if result.style_compliance_tier:

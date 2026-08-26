@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """Scaffold a publish-ready customViz bundle from official gold templates.
 
-  python tools/scaffold-custom-viz.py --id my-scroll-table --name 我的流动表
+  python tools/scaffold-custom-viz.py --id my-widget --name 我的组件
+  python tools/scaffold-custom-viz.py --id my-widget --name 我的组件 --template generic-blank-d3
   python tools/scaffold-custom-viz.py --id my-scroll-table --name 我的流动表 --template scrolling-table
-  python tools/scaffold-custom-viz.py --id my-kpi --name 脉冲KPI --template alert-feed
 
-Then edit examples/<id>.bundle.html (optional) and repack, or edit JSON directly.
-Always run validate before publish:
+Then edit renderBusiness / #vs-cv-canvas in examples/<id>.json, then validate + publish:
 
-  python tools/validate-ai-viz-bundle.py --file examples/my-scroll-table.json
-  python tools/publish-ai-viz-artifact.py --file examples/my-scroll-table.json
+  python tools/validate-ai-viz-bundle.py --file examples/my-widget.json --json
+  python tools/publish-ai-viz-artifact.py --file examples/my-widget.json
 """
 
 from __future__ import annotations
@@ -23,12 +22,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = ROOT / "examples"
 TEMPLATES: dict[str, str] = {
+    "generic-blank-html": "generic-blank-html.json",
+    "generic-blank-d3": "generic-blank-d3.json",
     "html-minimal": "html-minimal.json",
     "scrolling-table": "scrolling-table.json",
     "alert-feed": "custom-viz-alert-feed.json",
     "ranking-bar": "custom-viz-ranking-bar-chart-fixed.json",
     "trend-line": "custom-viz-trend-line.json",
 }
+DEFAULT_TEMPLATE = "generic-blank-html"
 
 
 def slug_ok(value: str) -> bool:
@@ -41,9 +43,9 @@ def main() -> None:
     parser.add_argument("--name", required=True, help="manifest.displayName (Chinese OK)")
     parser.add_argument(
         "--template",
-        default="html-minimal",
+        default=DEFAULT_TEMPLATE,
         choices=sorted(TEMPLATES.keys()),
-        help="gold template (default html-minimal; use scrolling-table/trend-line only for that paradigm)",
+        help="gold template (default generic-blank-html; trend-line/ranking-bar only when that paradigm applies)",
     )
     parser.add_argument("--out", type=Path, default=None, help="output json path")
     args = parser.parse_args()
@@ -68,9 +70,9 @@ def main() -> None:
     print(f"ok {out}")
     print(f"  template={args.template} from {src_name}")
     print("  next: edit bundle if needed, then:")
-    print(f"  python tools/validate-ai-viz-bundle.py --file {out.relative_to(ROOT)}")
+    print(f"  python tools/validate-ai-viz-bundle.py --file {out.relative_to(ROOT)} --json")
     print(f"  python tools/publish-ai-viz-artifact.py --file {out.relative_to(ROOT)}")
-    print("  DOM/mount 模板: guides/BUNDLE-BOILERPLATE.md")
+    print("  只改 #vs-cv-canvas / renderBusiness；失败看 validate --json 的 fix/snippet")
 
     bundle_html = EXAMPLES / f"{args.id}.bundle.html"
     src_html = EXAMPLES / src_name.replace(".json", ".bundle.html")

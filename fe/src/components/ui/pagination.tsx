@@ -24,7 +24,7 @@ const PaginationContent = React.forwardRef<HTMLUListElement, React.ComponentProp
   ({ className, ...props }, ref) => (
     <ul
       ref={ref}
-      className={cn("flex flex-row items-center gap-1 rounded-lg bg-white p-1 dark:bg-gray-900", className)}
+      className={cn("flex flex-row items-center gap-0.5 rounded-lg bg-white p-0.5 dark:bg-gray-900", className)}
       {...props}
     />
   ),
@@ -46,7 +46,7 @@ const PaginationLink = ({ className, isActive, disabled, ...props }: PaginationL
     aria-current={isActive ? "page" : undefined}
     disabled={disabled}
     className={cn(
-      "inline-flex size-9 items-center justify-center rounded-lg text-theme-sm font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20 disabled:pointer-events-none disabled:opacity-40",
+      "inline-flex size-8 items-center justify-center rounded-md text-theme-xs font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-3 focus-visible:ring-brand-500/20 disabled:pointer-events-none disabled:opacity-40",
       isActive
         ? "bg-brand-500 text-white shadow-theme-xs hover:bg-brand-600"
         : "bg-white text-gray-700 ring-1 ring-inset ring-gray-200 hover:bg-gray-50 dark:bg-gray-900 dark:text-gray-300 dark:ring-gray-700 dark:hover:bg-white/[0.04]",
@@ -60,7 +60,7 @@ PaginationLink.displayName = "PaginationLink";
 const PaginationPrevious = ({ className, ...props }: React.ComponentProps<typeof PaginationLink>) => (
   <PaginationLink
     aria-label="上一页"
-    className={cn("size-9 px-0", className)}
+    className={cn("size-8 px-0", className)}
     {...props}
   >
     <ChevronLeft className="size-4" aria-hidden />
@@ -71,7 +71,7 @@ PaginationPrevious.displayName = "PaginationPrevious";
 const PaginationNext = ({ className, ...props }: React.ComponentProps<typeof PaginationLink>) => (
   <PaginationLink
     aria-label="下一页"
-    className={cn("size-9 px-0", className)}
+    className={cn("size-8 px-0", className)}
     {...props}
   >
     <ChevronRight className="size-4" aria-hidden />
@@ -82,7 +82,7 @@ PaginationNext.displayName = "PaginationNext";
 const PaginationEllipsis = ({ className, ...props }: React.ComponentProps<"span">) => (
   <span
     aria-hidden
-    className={cn("flex size-9 items-center justify-center text-gray-400 dark:text-gray-500", className)}
+    className={cn("flex size-8 items-center justify-center text-gray-400 dark:text-gray-500", className)}
     {...props}
   >
     <MoreHorizontal className="size-4" />
@@ -109,7 +109,7 @@ export function PaginationSizeChanger({
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2.5 py-1 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900",
+        "inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-2 py-0.5 shadow-theme-xs dark:border-gray-800 dark:bg-gray-900",
         className,
       )}
     >
@@ -118,7 +118,7 @@ export function PaginationSizeChanger({
       </span>
       <Select value={String(pageSize)} onValueChange={(value) => onPageSizeChange(Number(value))}>
         <SelectTrigger
-          className="h-8 w-[4.25rem] shrink-0 border-0 bg-gray-50 px-2 shadow-none focus-visible:ring-2 dark:bg-white/5"
+          className="h-7 w-[4rem] shrink-0 border-0 bg-gray-50 px-1.5 text-theme-xs shadow-none focus-visible:ring-2 dark:bg-white/5"
           aria-label="每页条数"
           aria-labelledby={labelId}
         >
@@ -155,7 +155,7 @@ export function PaginationSummary({
   className,
 }: PaginationSummaryProps) {
   return (
-    <p className={cn("text-theme-sm leading-none text-gray-500 dark:text-gray-400", className)}>
+    <p className={cn("text-theme-xs leading-none text-gray-500 dark:text-gray-400", className)}>
       显示{" "}
       <span className="font-medium tabular-nums text-gray-800 dark:text-white/90">
         {start}–{end}

@@ -67,3 +67,81 @@ describe("StandardAnalysisLiveView chart data", () => {
     expect(typeof captured.viewModel?.dataset.rows[0]?.[1]).toBe("number");
   });
 });
+
+describe("StandardAnalysisLiveView live summary strip", () => {
+  afterEach(() => {
+    cleanup();
+    captured.viewModel = undefined;
+  });
+
+  it("renders borderless ScheduleStatCard metrics in a full-width grid", () => {
+    render(
+      <StandardAnalysisLiveView pack={pack} activeTheme="lifecycle" runData={runData} isLoading={false} />,
+    );
+
+    const strip = screen.getByTestId("standard-analysis-live-summary");
+    expect(strip).toHaveStyle({ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" });
+    expect(strip.textContent).toContain("结果行数");
+    expect(strip.textContent).toContain("数量合计");
+    expect(strip.textContent).toMatch(/结果行数[\s\S]*2/);
+    expect(strip.textContent).toMatch(/数量合计[\s\S]*200/);
+
+    const cards = strip.querySelectorAll(".rounded-xl");
+    expect(cards.length).toBe(2);
+    for (const card of cards) {
+      expect(card.className).toMatch(/border-0/);
+      expect(card.className).not.toMatch(/border-gray-200/);
+    }
+  });
+
+  it("adds top-region metric for distribution theme", () => {
+    const distributionRun: RunResult = {
+      ...runData,
+      theme: "distribution",
+      renderSpec: {
+        sections: [
+          {
+            kind: "chart",
+            chartType: "bar",
+            columns: ["region", "cnt"],
+            rows: [
+              ["华东", 10],
+              ["华北", 30],
+            ],
+          },
+        ],
+        meta: {},
+      },
+    };
+
+    render(
+      <StandardAnalysisLiveView
+        pack={pack}
+        activeTheme="distribution"
+        runData={distributionRun}
+        isLoading={false}
+      />,
+    );
+
+    const strip = screen.getByTestId("standard-analysis-live-summary");
+    expect(strip).toHaveStyle({ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" });
+    expect(strip.textContent).toContain("最高区域");
+    expect(strip.textContent).toContain("华北");
+  });
+
+  it("hides summary strip when there are no rows", () => {
+    const emptyRun: RunResult = {
+      ...runData,
+      renderSpec: {
+        sections: [{ kind: "chart", chartType: "bar", columns: ["dim", "cnt"], rows: [] }],
+        meta: {},
+      },
+    };
+
+    render(
+      <StandardAnalysisLiveView pack={pack} activeTheme="lifecycle" runData={emptyRun} isLoading={false} />,
+    );
+
+    expect(screen.queryByTestId("standard-analysis-live-summary")).not.toBeInTheDocument();
+  });
+});

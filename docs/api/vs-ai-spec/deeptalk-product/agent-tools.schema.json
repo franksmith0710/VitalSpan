@@ -14,9 +14,20 @@
       }
     },
     {
+      "name": "vitalspan_get_contract_card",
+      "runtime": "plugin|cli",
+      "description": "Workflow 2: return contract_card.json (底层规范，按需调用，不写入 prompt)",
+      "cli": "python executor/cli.py vitalspan_get_contract_card",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
       "name": "vitalspan_scaffold_artifact",
-      "runtime": "plugin",
-      "description": "Workflow 2: scaffold customViz bundle under examples/",
+      "runtime": "plugin|cli",
+      "description": "Workflow 2: scaffold customViz under examples/ (default generic-blank-*)",
+      "cli": "python executor/cli.py vitalspan_scaffold_artifact --id {id} --name {name} --runtime {runtime}",
       "parameters": {
         "type": "object",
         "properties": {
@@ -29,8 +40,9 @@
     },
     {
       "name": "vitalspan_validate_artifact",
-      "runtime": "plugin",
-      "description": "Workflow 2: preflight bundle + record validate stamp (required before publish)",
+      "runtime": "plugin|cli",
+      "description": "Workflow 2: preflight + structured fix/snippet JSON + validate stamp",
+      "cli": "python executor/cli.py vitalspan_validate_artifact --file {file}",
       "parameters": {
         "type": "object",
         "properties": {

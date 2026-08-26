@@ -21,7 +21,13 @@ if str(_TOOLS) not in sys.path:
     sys.path.insert(0, str(_TOOLS))
 
 from aiviz_publish_hints import format_error_block
-from bundle_preflight import format_preflight_lines, load_bundle, pack_dir, preflight_bundle
+from bundle_preflight import (
+    format_preflight_lines,
+    load_bundle,
+    pack_dir,
+    preflight_bundle,
+    preflight_to_payload,
+)
 
 
 def main() -> None:
@@ -45,22 +51,14 @@ def main() -> None:
     bundle = load_bundle(path)
     result = preflight_bundle(bundle)
 
+    payload = preflight_to_payload(result)
     if args.json:
-        payload = {
-            "ok": result.ok,
-            "errors": [
-                {"code": e.code, "message": e.message, "httpStatus": e.http_status}
-                for e in result.errors
-            ],
-            "warnings": result.warnings,
-            "styleComplianceTier": result.style_compliance_tier,
-        }
         print(json.dumps(payload, ensure_ascii=False, indent=2))
     else:
         for line in format_preflight_lines(result):
             print(line)
 
-    if not result.ok:
+    if not payload["ok"]:
         raise SystemExit(1)
 
 

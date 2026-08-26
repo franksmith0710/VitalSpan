@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sys
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from completion_gate import check_completion
 from publish_executor import publish_file
@@ -23,6 +24,76 @@ class AgentToolResult:
 def vitalspan_health_check() -> AgentToolResult:
     result = run_tool("check-vitalspan-health.py")
     return AgentToolResult("vitalspan_health_check", result.ok, result.stdout, result.stderr)
+
+
+def vitalspan_scaffold_artifact(
+    artifact_id: str,
+    name: str,
+    runtime: str = "html",
+) -> AgentToolResult:
+    template = "generic-blank-d3" if runtime == "d3" else "generic-blank-html"
+    result = run_tool(
+        "scaffold-custom-viz.py",
+        "--id",
+        artifact_id,
+        "--name",
+        name,
+        "--template",
+        template,
+    )
+    rel = f"examples/{artifact_id}.json"
+    data = {"file": rel, "template": template}
+    return AgentToolResult(
+        "vitalspan_scaffold_artifact",
+        result.ok,
+        result.stdout,
+        result.stderr,
+        data if result.ok else None,
+    )
+
+
+def vitalspan_validate_artifact(file: str) -> AgentToolResult:
+    result = run_tool("validate-ai-viz-bundle.py", "--file", file, "--json")
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    data: dict | None = None
+    stdout = result.stdout
+    if result.stdout.strip():
+        try:
+            data = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            data = None
+    ok = result.ok and bool(data and data.get("ok"))
+    tier = (data or {}).get("styleComplianceTier")
+    warn_count = len((data or {}).get("warnings") or [])
+    ok = ok and tier == "full" and warn_count == 0
+    if ok:
+        stdout = (
+            f"ok validate stamp={stamp}\n"
+            f"styleComplianceTier={tier}\n"
+            f"warnings={warn_count}\n"
+        )
+        if warn_count:
+            stdout += "fix loop required before publish (see fixes in --json)\n"
+    elif data:
+        stdout = json.dumps({**data, "validateStamp": stamp}, ensure_ascii=False, indent=2)
+    return AgentToolResult("vitalspan_validate_artifact", ok, stdout, result.stderr, data)
+
+
+def vitalspan_get_contract_card() -> AgentToolResult:
+    result = run_tool("get-contract-card.py")
+    data: dict | None = None
+    if result.stdout.strip():
+        try:
+            data = json.loads(result.stdout)
+        except json.JSONDecodeError:
+            data = None
+    return AgentToolResult(
+        "vitalspan_get_contract_card",
+        result.ok and data is not None,
+        result.stdout,
+        result.stderr,
+        data,
+    )
 
 
 def vitalspan_publish_artifact(
