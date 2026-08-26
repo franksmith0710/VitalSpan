@@ -8,7 +8,15 @@ from sqlalchemy.orm import Session
 
 from app.ai_viz.errors import AiVizError
 from app.ai_viz.models import AiVizArtifact, validate_bundle_files, validate_manifest
-from app.ai_viz.schemas import AiVizArtifactCreateIn, AiVizArtifactOut, AiVizComplianceWarningOut
+from app.ai_viz.schemas import (
+    AiVizArtifactBundleOut,
+    AiVizArtifactCreateIn,
+    AiVizArtifactOut,
+    AiVizArtifactReferenceOut,
+    AiVizArtifactReferencesOut,
+    AiVizComplianceWarningOut,
+)
+from app.dashboard.models import Dashboard
 from app.ai_viz.style_compliance import (
     collect_bundle_style_compliance_warnings,
     resolve_style_compliance_tier,
@@ -114,6 +122,68 @@ def get_entry_html(db: Session, artifact_id: uuid.UUID, actor: UserContext) -> s
     return html
 
 
+def _artifact_id_in_widget(widget: dict, artifact_id: uuid.UUID) -> str | None:
+    cv = widget.get("customVizConfig") or widget.get("custom_viz_config")
+    if not isinstance(cv, dict):
+        return None
+    ref = cv.get("artifactId") or cv.get("artifact_id")
+    if ref is None:
+        return None
+    if str(ref) != str(artifact_id):
+        return None
+    wid = widget.get("id")
+    return str(wid) if wid is not None else ""
+
+
+def find_artifact_references(db: Session, artifact_id: uuid.UUID) -> list[AiVizArtifactReferenceOut]:
+    refs: list[AiVizArtifactReferenceOut] = []
+    rows = db.scalars(select(Dashboard)).all()
+    for row in rows:
+        layout = row.layout_json if isinstance(row.layout_json, dict) else {}
+        widgets = layout.get("widgets") or []
+        if not isinstance(widgets, list):
+            continue
+        for widget in widgets:
+            if not isinstance(widget, dict):
+                continue
+            widget_id = _artifact_id_in_widget(widget, artifact_id)
+            if widget_id is None:
+                continue
+            refs.append(
+                AiVizArtifactReferenceOut(
+                    dashboardId=row.id,
+                    dashboardName=row.name,
+                    widgetId=widget_id,
+                )
+            )
+    return refs
+
+
+def get_artifact_references(
+    db: Session,
+    artifact_id: uuid.UUID,
+    actor: UserContext,
+) -> AiVizArtifactReferencesOut:
+    get_artifact(db, artifact_id, actor)
+    return AiVizArtifactReferencesOut(
+        artifactId=artifact_id,
+        references=find_artifact_references(db, artifact_id),
+    )
+
+
+def get_artifact_bundle(
+    db: Session,
+    artifact_id: uuid.UUID,
+    actor: UserContext,
+) -> AiVizArtifactBundleOut:
+    row = get_artifact(db, artifact_id, actor, write=True)
+    return AiVizArtifactBundleOut(
+        artifactId=row.id,
+        manifest=dict(row.manifest_json),
+        files=dict(row.files_json),
+    )
+
+
 def list_artifacts(
     db: Session,
     actor: UserContext,
@@ -136,5 +206,21 @@ def list_artifacts(
 
 def delete_artifact(db: Session, artifact_id: uuid.UUID, actor: UserContext) -> None:
     row = get_artifact(db, artifact_id, actor, write=True)
+    refs = find_artifact_references(db, artifact_id)
+    if refs:
+        detail = [
+            {
+                "dashboardId": str(item.dashboard_id),
+                "dashboardName": item.dashboard_name,
+                "widgetId": item.widget_id,
+            }
+            for item in refs
+        ]
+        raise AiVizError(
+            "AIVIZ_IN_USE",
+            "组件仍被看板/大屏引用，请先移除 widget 或更换 artifactId",
+            409,
+            fields=detail,
+        )
     db.delete(row)
     db.commit()

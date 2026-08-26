@@ -16,6 +16,11 @@ export default defineConfig(({ mode }) => {
       target: apiProxyTarget,
       changeOrigin: true,
     },
+    "/dev-pmtiles": {
+      target: env.VITE_DEV_PMTILES_PROXY || "http://127.0.0.1:8080",
+      changeOrigin: true,
+      rewrite: (path) => path.replace(/^\/dev-pmtiles/, ""),
+    },
   };
   for (const segment of proxyBaseSegments) {
     proxy[`/${segment}/api`] = {

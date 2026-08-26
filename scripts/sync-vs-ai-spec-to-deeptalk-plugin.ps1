@@ -27,7 +27,8 @@ $assetFiles = @(
   "contract_card.json",
   "aiviz-structured-fixes.json",
   "aiviz-publish-hints.json",
-  "custom-viz-paradigms.json"
+  "custom-viz-paradigms.json",
+  "capability-routing.json"
 )
 foreach ($name in $assetFiles) {
   $src = Join-Path $Spec "assets\$name"

@@ -194,6 +194,9 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
     measureAndRender("commit", true);
   }, [measureAndRender]);
 
+  const onCommitResizeRef = useRef(onCommitResize);
+  onCommitResizeRef.current = onCommitResize;
+
   useEmbeddedChartLiveResize(fill && !plan.empty, containerRef, onLiveResize, onCommitResize);
 
   useEffect(() => {
@@ -206,20 +209,18 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
 
   useEffect(() => {
     if (!fill || plan.empty) return;
-    if (!playing) {
-      measureAndRender("commit", false);
-    }
-  }, [fill, plan.empty, playing, measureAndRender]);
+    if (!playing) onCommitResizeRef.current();
+  }, [fill, plan.empty, playing]);
 
   useEffect(() => {
-    if (!props.layoutFootprint) return;
-    measureAndRender("commit", true);
-  }, [props.layoutFootprint?.width, props.layoutFootprint?.height, measureAndRender]);
+    if (!props.layoutFootprint || playing) return;
+    onCommitResizeRef.current();
+  }, [props.layoutFootprint?.width, props.layoutFootprint?.height, playing]);
 
   useEffect(() => {
     if (!fill || plan.empty || playing || viewportTransforming) return;
-    measureAndRender("commit", true);
-  }, [visualScale, fill, plan.empty, playing, viewportTransforming, measureAndRender]);
+    onCommitResizeRef.current();
+  }, [visualScale, fill, plan.empty, playing, viewportTransforming]);
 
   useEffect(() => {
     return () => {

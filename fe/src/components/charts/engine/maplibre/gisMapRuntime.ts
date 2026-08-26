@@ -49,6 +49,58 @@ export function applyGisMapStylePreservingCamera(
   });
 }
 
+/** 球面模式下 areTilesLoaded 可能长期 false；首帧 idle 即可视为可展示。 */
+export function markGisMapPaintReady(
+  map: MapLibreMap,
+  onReady: () => void,
+  cancelled: () => boolean,
+  projection: GisProjection | undefined,
+): void {
+  const finish = () => {
+    if (cancelled()) return;
+    map.triggerRepaint();
+    map.once("render", () => {
+      if (cancelled()) return;
+      onReady();
+    });
+  };
+
+  const waitForPresentableFrame = () => {
+    if (projection === "globe") {
+      let settled = false;
+      const finishOnce = () => {
+        if (settled || cancelled()) return;
+        settled = true;
+        finish();
+      };
+      map.once("idle", finishOnce);
+      window.setTimeout(finishOnce, 2_000);
+      return;
+    }
+    if (map.areTilesLoaded()) {
+      finish();
+      return;
+    }
+    map.once("idle", () => {
+      if (cancelled()) return;
+      if (map.areTilesLoaded()) finish();
+      else map.once("idle", finish);
+    });
+  };
+
+  if (map.isStyleLoaded()) {
+    waitForPresentableFrame();
+    return;
+  }
+  map.once("load", waitForPresentableFrame);
+}
+
+export function reloadGisProtomapsSource(map: MapLibreMap): void {
+  if (!map.isStyleLoaded()) return;
+  const source = map.getSource("protomaps") as { reload?: () => void } | undefined;
+  source?.reload?.();
+}
+
 export type GlobeAtmosphereState = {
   projection?: GisProjection;
   fog?: GisProjectFog;

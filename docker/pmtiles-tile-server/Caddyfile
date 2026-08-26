@@ -7,6 +7,15 @@
 :8080 {
 	root * /srv
 
+	@options method OPTIONS
+	handle @options {
+		header Access-Control-Allow-Origin "{http.request.header.Origin}"
+		header Access-Control-Allow-Methods "GET, HEAD, OPTIONS"
+		header Access-Control-Allow-Headers "Range, If-Match, If-None-Match"
+		header Access-Control-Expose-Headers "Content-Length, Content-Range, ETag, Accept-Ranges"
+		respond 204
+	}
+
 	handle /health {
 		respond "ok" 200
 	}
@@ -18,9 +27,6 @@
 	handle {
 		file_server
 	}
-
-	@options method OPTIONS
-	respond @options 204
 
 	# 本地开发：Vite 默认 host=127.0.0.1，Origin 可能是 localhost 或 127.0.0.1，须回显请求 Origin
 	@dev_origin header_regexp Origin ^https?://(localhost|127\.0\.0\.1)(:\d+)?$

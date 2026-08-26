@@ -80,14 +80,15 @@
         "type": "object",
         "properties": {
           "limit": { "type": "integer", "default": 100 },
-          "offset": { "type": "integer", "default": 0 }
+          "offset": { "type": "integer", "default": 0 },
+          "q": { "type": "string", "description": "Filter by manifest id or displayName" }
         }
       }
     },
     {
       "name": "vitalspan_delete_artifact",
       "runtime": "plugin|cli",
-      "description": "DELETE artifact by id (owner only)",
+      "description": "DELETE artifact by id (owner only); returns 409 if still referenced by dashboards",
       "cli": "python executor/cli.py vitalspan_delete_artifact --artifact-id {artifact_id}",
       "parameters": {
         "type": "object",
@@ -95,6 +96,72 @@
           "artifact_id": { "type": "string" }
         },
         "required": ["artifact_id"]
+      }
+    },
+    {
+      "name": "vitalspan_get_artifact",
+      "runtime": "plugin|cli",
+      "description": "Download full bundle to workspace examples/ for edit→validate→publish PUT",
+      "cli": "python executor/cli.py vitalspan_get_artifact --artifact-id {artifact_id} --file {file}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "artifact_id": { "type": "string" },
+          "file": { "type": "string", "description": "Optional output path under workspace" }
+        },
+        "required": ["artifact_id"]
+      }
+    },
+    {
+      "name": "vitalspan_list_artifact_dashboard_refs",
+      "runtime": "plugin|cli",
+      "description": "List dashboards/data-screens referencing artifactId",
+      "cli": "python executor/cli.py vitalspan_list_artifact_dashboard_refs --artifact-id {artifact_id}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "artifact_id": { "type": "string" }
+        },
+        "required": ["artifact_id"]
+      }
+    },
+    {
+      "name": "vitalspan_delete_dashboard",
+      "runtime": "plugin|cli",
+      "description": "DELETE dashboard or data-screen by uuid",
+      "cli": "python executor/cli.py vitalspan_delete_dashboard --dashboard-id {dashboard_id}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "dashboard_id": { "type": "string" }
+        },
+        "required": ["dashboard_id"]
+      }
+    },
+    {
+      "name": "vitalspan_validate_chart_config",
+      "runtime": "plugin|cli",
+      "description": "Workflow 1: validate L1/L2 chartConfig via POST /charts/validate",
+      "cli": "python executor/cli.py vitalspan_validate_chart_config --file {file}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "file": { "type": "string" }
+        },
+        "required": ["file"]
+      }
+    },
+    {
+      "name": "vitalspan_route_request",
+      "runtime": "plugin|cli",
+      "description": "Rule-based wf1/wf2/wf3 routing from capability-routing.json",
+      "cli": "python executor/cli.py vitalspan_route_request --text {text}",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "text": { "type": "string", "description": "User request in natural language" }
+        },
+        "required": ["text"]
       }
     },
     {
@@ -175,7 +242,7 @@
         "type": "object",
         "properties": {
           "surface_kind": { "type": "string", "enum": ["dashboard", "data-screen"] },
-          "limit": { "type": "integer", "default": 50 }
+          "limit": { "type": "integer", "default": 100 }
         }
       }
     },

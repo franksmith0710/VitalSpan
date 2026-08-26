@@ -23,12 +23,28 @@ def main() -> None:
     parser.add_argument("--password", default=os.environ.get("VITALSPAN_DEV_ADMIN_PASSWORD", "changeme"))
     parser.add_argument("--limit", type=int, default=100)
     parser.add_argument("--offset", type=int, default=0)
+    parser.add_argument("--q", default="", help="case-insensitive filter on manifest id/displayName")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args()
     api = str(args.api).rstrip("/")
     token = login(api, args.username, args.password)
     data = list_artifacts(api, token, limit=args.limit, offset=args.offset)
     items = data.get("items") or []
+    q = (args.q or "").strip().lower()
+    if q:
+        filtered = []
+        for item in items:
+            manifest = item.get("manifest") or {}
+            hay = " ".join(
+                [
+                    str(item.get("artifactId") or item.get("artifact_id") or ""),
+                    str(manifest.get("id") or ""),
+                    str(manifest.get("displayName") or ""),
+                ]
+            ).lower()
+            if q in hay:
+                filtered.append(item)
+        items = filtered
 
     if args.json:
         print(json.dumps(data, ensure_ascii=False, indent=2))
@@ -37,9 +53,10 @@ def main() -> None:
     print(f"count {len(items)}")
     for item in items:
         manifest = item.get("manifest") or {}
-        name = manifest.get("displayName") or manifest.get("id") or "?"
+        slug = manifest.get("id") or "?"
+        name = manifest.get("displayName") or slug
         tier = item.get("styleComplianceTier") or item.get("style_compliance_tier") or "?"
-        print(f"  {item.get('artifactId')}  {name}  tier={tier}")
+        print(f"  {item.get('artifactId')}  id={slug}  {name}  tier={tier}")
 
 
 if __name__ == "__main__":

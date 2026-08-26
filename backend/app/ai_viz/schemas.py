@@ -50,3 +50,28 @@ class AiVizArtifactListOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
     items: list[AiVizArtifactOut]
+
+
+class AiVizArtifactBundleOut(BaseModel):
+    """Full bundle for Agent edit round-trip (owner + dashboard:edit)."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    artifact_id: uuid.UUID = Field(alias="artifactId")
+    manifest: dict[str, Any]
+    files: dict[str, str]
+
+
+class AiVizArtifactReferenceOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    dashboard_id: uuid.UUID = Field(alias="dashboardId")
+    dashboard_name: str = Field(alias="dashboardName")
+    widget_id: str = Field(alias="widgetId")
+
+
+class AiVizArtifactReferencesOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    artifact_id: uuid.UUID = Field(alias="artifactId")
+    references: list[AiVizArtifactReferenceOut] = Field(default_factory=list)

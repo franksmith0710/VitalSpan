@@ -95,7 +95,10 @@ export class ChartMountScheduler {
       return { canQuery: false, canRender: false };
     }
     if (this.interactionFrozen && entry.state === "ready") {
-      return { canQuery: true, canRender: true };
+      return {
+        canQuery: entry.priority === 0,
+        canRender: true,
+      };
     }
     if (!entry.inView) {
       return { canQuery: false, canRender: false };

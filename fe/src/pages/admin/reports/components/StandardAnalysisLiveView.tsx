@@ -84,6 +84,31 @@ export function StandardAnalysisLiveView({
     writeStoredViewMode(pack.packKey, mode);
   };
 
+  const presentationToggle = showChartToggle ? (
+    <div className={cn(HUB_SEGMENTED_SHELL_CLASS, "inline-flex shrink-0 gap-0.5 p-0.5")}>
+      <Button
+        type="button"
+        variant={presentationMode === "chart" ? "primary" : "ghost"}
+        size="sm"
+        className={cn(HUB_SEGMENTED_BUTTON_CLASS, "h-8 gap-1.5 px-3")}
+        onClick={() => handlePresentationModeChange("chart")}
+      >
+        <BarChart3 className="size-3.5" aria-hidden />
+        图表
+      </Button>
+      <Button
+        type="button"
+        variant={presentationMode === "table" ? "primary" : "ghost"}
+        size="sm"
+        className={cn(HUB_SEGMENTED_BUTTON_CLASS, "h-8 gap-1.5 px-3")}
+        onClick={() => handlePresentationModeChange("table")}
+      >
+        <Table2 className="size-3.5" aria-hidden />
+        数据表
+      </Button>
+    </div>
+  ) : null;
+
   return (
     <ListPageTableFrame className="flex min-h-0 flex-1 flex-col">
       {dataMetaNote ? (
@@ -109,33 +134,6 @@ export function StandardAnalysisLiveView({
         </div>
       ) : null}
 
-      {showChartToggle ? (
-        <div className="flex shrink-0 items-center justify-end px-5 pt-4">
-          <div className={cn(HUB_SEGMENTED_SHELL_CLASS, "inline-flex gap-0.5 p-0.5")}>
-            <Button
-              type="button"
-              variant={presentationMode === "chart" ? "primary" : "ghost"}
-              size="sm"
-              className={cn(HUB_SEGMENTED_BUTTON_CLASS, "h-8 gap-1.5 px-3")}
-              onClick={() => handlePresentationModeChange("chart")}
-            >
-              <BarChart3 className="size-3.5" aria-hidden />
-              图表
-            </Button>
-            <Button
-              type="button"
-              variant={presentationMode === "table" ? "primary" : "ghost"}
-              size="sm"
-              className={cn(HUB_SEGMENTED_BUTTON_CLASS, "h-8 gap-1.5 px-3")}
-              onClick={() => handlePresentationModeChange("table")}
-            >
-              <Table2 className="size-3.5" aria-hidden />
-              数据表
-            </Button>
-          </div>
-        </div>
-      ) : null}
-
       <div className="flex min-h-0 flex-1 flex-col">
         {!isLoading && presentationMode === "chart" && chartSection ? (
           <StandardAnalysisSectionChart
@@ -144,9 +142,13 @@ export function StandardAnalysisLiveView({
             rows={normalizedRows}
             chartType={chartSection.chartType}
             meta={runData?.renderSpec.meta}
+            headerActions={presentationToggle}
           />
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
+            {presentationToggle ? (
+              <div className="flex shrink-0 justify-end px-5 pt-2">{presentationToggle}</div>
+            ) : null}
             <DataTable
               loading={isLoading}
               empty={!isLoading && liveRows.length === 0}

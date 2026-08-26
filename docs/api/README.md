@@ -280,6 +280,8 @@ redoc: /redoc
 | PUT | `/api/v1/ai-viz/artifacts/{id}` | 覆盖同一组件源码；引用方刷新即新 | 内部 | 试点 | AIVIZ-009 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 | GET | `/api/v1/ai-viz/artifacts` | 当前用户 artifact 列表（图表盘「自定义」） | 内部 | 试点 | AIVIZ-006 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 | GET | `/api/v1/ai-viz/artifacts/{id}` | artifact 元数据；`dashboard:read` 即可（不限属主） | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
+| GET | `/api/v1/ai-viz/artifacts/{id}/bundle` | 完整 bundle（manifest+files）；属主 + `dashboard:edit`；Agent 拉取编辑 | 内部 | 试点 | AIVIZ-019 | 已实现 | `backend/app/api/v1/ai_viz.py` |
+| GET | `/api/v1/ai-viz/artifacts/{id}/refs` | 引用该 artifact 的看板/大屏列表 | 内部 | 试点 | AIVIZ-019 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 | GET | `/api/v1/ai-viz/artifacts/{id}/entry` | 组件 HTML；`dashboard:read` 即可（不限属主） | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 | DELETE | `/api/v1/ai-viz/artifacts/{id}` | 属主从组件库删除 artifact | 内部 | 试点 | AIVIZ-018 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 

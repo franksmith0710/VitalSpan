@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useMemo, useRef, type ReactNode } from "react";
 import { ChartEngineView } from "@/components/charts/engine/ChartEngineView";
 import { buildChartViewModel } from "@/components/charts/engine/buildChartViewModel";
 import { buildStyleContext } from "@/components/charts/engine/buildStyleContext";
@@ -19,9 +19,17 @@ type Props = {
   rows: unknown[][];
   chartType: "bar" | "line";
   meta?: StandardAnalysisRenderMeta;
+  headerActions?: ReactNode;
 };
 
-export function StandardAnalysisSectionChart({ theme, headers, rows, chartType, meta }: Props) {
+export function StandardAnalysisSectionChart({
+  theme,
+  headers,
+  rows,
+  chartType,
+  meta,
+  headerActions,
+}: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const scheme = useDashboardColorScheme(containerRef);
   const metrics = useMemo(
@@ -72,7 +80,12 @@ export function StandardAnalysisSectionChart({ theme, headers, rows, chartType, 
 
   return (
     <div ref={containerRef} className="flex min-h-0 flex-1 flex-col gap-2 px-5 pb-4 pt-2">
-      <StandardAnalysisSummaryMetrics metrics={metrics} />
+      <div className="flex shrink-0 items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <StandardAnalysisSummaryMetrics metrics={metrics} />
+        </div>
+        {headerActions}
+      </div>
       <div className="relative min-h-[360px] flex-1 w-full rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.03]">
         <ChartEngineView
           viewModel={viewModel}

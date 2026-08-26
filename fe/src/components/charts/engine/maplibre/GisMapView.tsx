@@ -27,6 +27,7 @@ import {
   startGisGlobeAutoRotate,
   syncGisMapView,
 } from "@/components/charts/engine/maplibre/gisMapRuntime";
+import { withDevPmtilesArchiveUrl } from "@/components/charts/engine/maplibre/gisPmtilesUrl";
 import { mountGisGlobeHaloOverlay } from "@/components/charts/engine/maplibre/gisGlobeHalo";
 import { mountGisStarfieldOverlay } from "@/components/charts/engine/maplibre/gisStarfield";
 import { registerGisMapViewLiveControl } from "@/components/charts/engine/maplibre/gisMapViewBridge";
@@ -50,30 +51,6 @@ const DEFAULT_AUTO_ROTATE_SPEED = GLOBE_IDLE_ROTATION_DEG_PER_SEC;
 
 type GisPaintState = "pending" | "loading" | "ready" | "error";
 
-function markGisMapReady(
-  map: MapLibreMap,
-  onReady: () => void,
-  cancelled: () => boolean,
-): void {
-  const finish = () => {
-    if (cancelled()) return;
-    map.triggerRepaint();
-    map.once("render", () => {
-      if (cancelled()) return;
-      onReady();
-    });
-  };
-  if (map.areTilesLoaded()) {
-    finish();
-    return;
-  }
-  map.once("idle", () => {
-    if (cancelled()) return;
-    if (map.areTilesLoaded()) finish();
-    else map.once("idle", finish);
-  });
-}
-
 function GisMapViewInner(props: ChartEngineViewProps) {
   const {
     viewModel,
@@ -91,6 +68,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const shellRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const onPaintReadyRef = useRef(onPaintReady);
+  onPaintReadyRef.current = onPaintReady;
   const appliedStyleKeyRef = useRef<string | null>(null);
   const syncedViewKeyRef = useRef<string | null>(null);
   const overlayFitKeyRef = useRef<string | null>(null);
@@ -171,10 +150,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     void resolveTileService(tileServiceId)
       .then(async (resolved) => {
         if (cancelled) return;
-        await ensurePmtilesArchiveRegistered(resolved.pmtilesUrl);
+        const devResolved = withDevPmtilesArchiveUrl(resolved);
+        await ensurePmtilesArchiveRegistered(devResolved.pmtilesUrl);
         if (cancelled) return;
         setPmtilesStyle(
-          buildPmtilesStyle(resolved, project.labelLang ?? "zh-Hans", {
+          buildPmtilesStyle(devResolved, project.labelLang ?? "zh-Hans", {
             flavor,
             buildings3d: project.buildings3d,
             landColor: project.landColor,
@@ -343,16 +323,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       appliedStyleKeyRef.current = styleKey;
       syncedViewKeyRef.current = null;
 
+      // style.load 仅重挂散点层（8/25 febfba53 模式）；勿在此 reload PMTiles 或重复 patch 底图。
       resyncDataLayers = () => {
         if (cancelled || !map) return;
-        const current = projectRef.current;
-        applyGlobeAtmosphere(map, {
-          projection: current.projection,
-          fog: current.fog,
-          atmospherePreset: current.atmospherePreset,
-        });
         syncOverlayRuntime(map);
-        setMapRuntimeEpoch((epoch) => epoch + 1);
       };
       map.on("style.load", resyncDataLayers);
 
@@ -392,14 +366,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         syncOverlayRuntime(map);
         setMapRuntimeEpoch((epoch) => epoch + 1);
         map.resize();
-        markGisMapReady(
-          map,
-          () => {
-            setGisPaintState("ready");
-            onPaintReady?.();
-          },
-          () => cancelled,
-        );
+        setGisPaintState("ready");
+        onPaintReadyRef.current?.();
       });
     })();
 
@@ -415,7 +383,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       appliedStyleKeyRef.current = null;
       syncedViewKeyRef.current = null;
     };
-  }, [applyConfiguredView, mapBootstrapKey, onPaintReady, renderBasemap]);
+  }, [applyConfiguredView, mapBootstrapKey, renderBasemap]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -466,12 +434,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       syncOverlayRuntime(map);
       setMapRuntimeEpoch((epoch) => epoch + 1);
       map.resize();
-      onPaintReady?.();
+      setGisPaintState("ready");
+      onPaintReadyRef.current?.();
     });
     appliedStyleKeyRef.current = styleKey;
   }, [
     earthOpacity,
-    onPaintReady,
     project.atmospherePreset,
     project.basemapLayers,
     project.buildings3d,

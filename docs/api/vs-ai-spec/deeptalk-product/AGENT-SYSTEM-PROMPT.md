@@ -22,7 +22,16 @@
 | `vitalspan_publish_artifact` | validate + POST/PUT |
 | `vitalspan_completion_gate` | wf2 结束校验 |
 
-其它：`list/delete_artifacts` · wf3 `compose/get/upload_dashboard` · wf1 `list_chart_types`。
+其它：`route_request` · `get/list/delete_artifacts` · `list_artifact_dashboard_refs` · wf3 `compose/get/upload/delete_dashboard` · wf1 `validate_chart_config` · `list_chart_types`。
+
+## 工作流 ② 更新已有组件
+
+1. `vitalspan_list_artifacts`（或已知 artifactId）
+2. `vitalspan_get_artifact artifact_id=<uuid>` → `examples/<id>.json`
+3. 改 bundle → `validate_artifact` → `publish_artifact artifact_id=<uuid>`
+4. `completion_gate wf2`
+
+删组件前：`list_artifact_dashboard_refs`；仍被引用时 delete 会 409。
 
 ## 工作流 ②（从零新组件）
 
@@ -35,7 +44,7 @@
 
 ## 工作流 ③（摘要）
 
-`list_layout_templates` → `compose_dashboard` → 可选 `get_dashboard_layout` 改样式 → `upload_dashboard` → gate wf3。
+`route_request`（可选）→ `list_layout_templates` → `compose_dashboard` → 可选 `get_dashboard_layout` 改样式 → `upload_dashboard` → `delete_dashboard`（删整页）→ gate wf3。
 
 ## 完成汇报（wf2）
 

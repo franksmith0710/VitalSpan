@@ -64,9 +64,22 @@ describe("ChartMountScheduler", () => {
     scheduler.markReady("ready");
     const release = scheduler.acquireInteractionFreeze();
     scheduler.register("ready", 1, false);
-    expect(scheduler.getGate("ready")).toEqual({ canQuery: true, canRender: true });
+    expect(scheduler.getGate("ready")).toEqual({ canQuery: false, canRender: true });
     release();
     expect(scheduler.getGate("ready")).toEqual({ canQuery: false, canRender: false });
+  });
+
+  it("allows selected widget query during interaction freeze", () => {
+    const scheduler = new ChartMountScheduler(2);
+    scheduler.register("selected", 0, true);
+    scheduler.register("peer", 1, true);
+    scheduler.markReady("selected");
+    scheduler.markReady("peer");
+    const release = scheduler.acquireInteractionFreeze();
+    expect(scheduler.getGate("selected")).toEqual({ canQuery: true, canRender: true });
+    expect(scheduler.getGate("peer")).toEqual({ canQuery: false, canRender: true });
+    release();
+    expect(scheduler.getGate("peer")).toEqual({ canQuery: true, canRender: true });
   });
 
   it("restores offscreen pause after interaction freeze ends", () => {

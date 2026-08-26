@@ -22,7 +22,11 @@
 | health | `vitalspan_health_check` | `ok health http://127.0.0.1:8000/health` |
 | publish 金样 | `vitalspan_publish_artifact` | `ok artifactId=<uuid>` + `styleComplianceTier=full` |
 | list | `vitalspan_list_artifacts` | 列表含该组件 |
-| delete | `vitalspan_delete_artifact` | `ok deleted artifactId=...` |
+| get | `vitalspan_get_artifact` | `ok get artifactId=... file=examples/...` |
+| refs | `vitalspan_list_artifact_dashboard_refs` | 被引用时列出 dashboardId |
+| delete | `vitalspan_delete_artifact` | `ok deleted`；仍被引用时 **409** |
+| delete dash | `vitalspan_delete_dashboard` | `ok deleted dashboardId=...` |
+| route | `vitalspan_route_request` | JSON `workflow` 1/2/3 |
 | compose | `vitalspan_compose_dashboard` | `ok dashboardId=` + `layout widgets: N`（N≥1） |
 
 - [ ] DeepTalk Agent 已内置 [AGENT-SYSTEM-PROMPT.md](./AGENT-SYSTEM-PROMPT.md)

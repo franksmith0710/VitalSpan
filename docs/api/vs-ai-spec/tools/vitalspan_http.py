@@ -115,3 +115,15 @@ def update_artifact(api: str, token: str, artifact_id: str, bundle: dict[str, An
 
 def delete_artifact(api: str, token: str, artifact_id: str) -> None:
     request_json("DELETE", f"{api.rstrip('/')}/ai-viz/artifacts/{artifact_id}", None, token)
+
+
+def get_artifact_bundle(api: str, token: str, artifact_id: str) -> dict[str, Any]:
+    return request_json("GET", f"{api.rstrip('/')}/ai-viz/artifacts/{artifact_id}/bundle", None, token)
+
+
+def get_artifact_refs(api: str, token: str, artifact_id: str) -> dict[str, Any]:
+    return request_json("GET", f"{api.rstrip('/')}/ai-viz/artifacts/{artifact_id}/refs", None, token)
+
+
+def delete_dashboard(api: str, token: str, dashboard_id: str) -> None:
+    request_json("DELETE", f"{api.rstrip('/')}/dashboards/{dashboard_id}", None, token)

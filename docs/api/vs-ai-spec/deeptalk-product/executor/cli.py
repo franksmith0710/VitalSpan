@@ -15,14 +15,20 @@ if str(_EXECUTOR) not in sys.path:
 from agent_tools import (
     vitalspan_completion_gate,
     vitalspan_delete_artifact,
+    vitalspan_delete_dashboard,
+    vitalspan_get_artifact,
     vitalspan_get_contract_card,
     vitalspan_health_check,
+    vitalspan_list_artifact_dashboard_refs,
     vitalspan_list_artifacts,
     vitalspan_publish_artifact,
+    vitalspan_route_request,
     vitalspan_scaffold_artifact,
     vitalspan_validate_artifact,
+    vitalspan_validate_chart_config,
     vitalspan_upload_dashboard,
 )
+from route_request import route_request  # noqa: F401 — re-export for tests
 
 
 def _emit(result, json_out: bool) -> int:
@@ -57,6 +63,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--workflow", choices=["1", "2", "3"], default=None)
     parser.add_argument("--agent-summary", default="")
     parser.add_argument("--tool-stdout", default="")
+    parser.add_argument("--text", default="", help="natural language for route_request")
+    parser.add_argument("--q", default="", help="filter for list_artifacts")
     parser.add_argument("--validate-only", action="store_true")
     parser.add_argument("--health-first", action="store_true")
     parser.add_argument("--json", action="store_true")
@@ -92,11 +100,31 @@ def main(argv: list[str] | None = None) -> int:
             args.json,
         )
     if name == "vitalspan_list_artifacts":
-        return _emit(vitalspan_list_artifacts(args.limit, args.offset), args.json)
+        return _emit(vitalspan_list_artifacts(args.limit, args.offset, query=args.q), args.json)
+    if name == "vitalspan_get_artifact":
+        if not args.artifact_id:
+            raise SystemExit("--artifact-id required")
+        return _emit(vitalspan_get_artifact(args.artifact_id, file=args.file), args.json)
     if name == "vitalspan_delete_artifact":
         if not args.artifact_id:
             raise SystemExit("--artifact-id required")
         return _emit(vitalspan_delete_artifact(args.artifact_id), args.json)
+    if name == "vitalspan_list_artifact_dashboard_refs":
+        if not args.artifact_id:
+            raise SystemExit("--artifact-id required")
+        return _emit(vitalspan_list_artifact_dashboard_refs(args.artifact_id), args.json)
+    if name == "vitalspan_delete_dashboard":
+        if not args.dashboard_id:
+            raise SystemExit("--dashboard-id required")
+        return _emit(vitalspan_delete_dashboard(args.dashboard_id), args.json)
+    if name == "vitalspan_validate_chart_config":
+        if not args.file:
+            raise SystemExit("--file required")
+        return _emit(vitalspan_validate_chart_config(args.file), args.json)
+    if name == "vitalspan_route_request":
+        if not args.text:
+            raise SystemExit("--text required")
+        return _emit(vitalspan_route_request(args.text), args.json)
     if name == "vitalspan_upload_dashboard":
         if not args.dashboard_id or not args.file:
             raise SystemExit("--dashboard-id and --file required")

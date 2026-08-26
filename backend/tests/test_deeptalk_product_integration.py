@@ -70,7 +70,7 @@ def test_publish_validate_only_via_executor_cli() -> None:
     assert "styleComplianceTier=full" in proc.stdout
 
 
-def test_agent_tools_schema_lists_fifteen_tools() -> None:
+def test_agent_tools_schema_lists_twenty_tools() -> None:
     schema_path = REPO_ROOT / "docs" / "api" / "vs-ai-spec" / "deeptalk-product" / "agent-tools.schema.json"
     data = json.loads(schema_path.read_text(encoding="utf-8"))
     names = {t["name"] for t in data["tools"]}
@@ -82,6 +82,11 @@ def test_agent_tools_schema_lists_fifteen_tools() -> None:
         "vitalspan_publish_artifact",
         "vitalspan_list_artifacts",
         "vitalspan_delete_artifact",
+        "vitalspan_get_artifact",
+        "vitalspan_list_artifact_dashboard_refs",
+        "vitalspan_delete_dashboard",
+        "vitalspan_validate_chart_config",
+        "vitalspan_route_request",
         "vitalspan_list_layout_templates",
         "vitalspan_list_chart_types",
         "vitalspan_compose_dashboard",
@@ -91,6 +96,15 @@ def test_agent_tools_schema_lists_fifteen_tools() -> None:
         "vitalspan_upload_dashboard",
         "vitalspan_completion_gate",
     }
+
+
+def test_route_request_sankey_via_cli() -> None:
+    proc = _run_cli("vitalspan_route_request", "--text", "客户要流向地图桑基图")
+    assert proc.returncode == 0, proc.stderr or proc.stdout
+    payload = json.loads(proc.stdout)
+    assert payload["ok"] is True
+    assert payload["workflow"] == "1"
+    assert payload.get("chartType") == "sankey"
 
 
 def test_contract_card_json_valid() -> None:

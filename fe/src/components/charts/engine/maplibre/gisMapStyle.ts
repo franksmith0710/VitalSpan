@@ -15,6 +15,7 @@ import type {
   GisBasemapLayerVisibility,
   GisLabelLang,
 } from "@/components/charts/engine/maplibre/gisProject";
+import { buildPmtilesVectorSourceUrl } from "@/components/charts/engine/maplibre/gisPmtilesUrl";
 import type { TileServiceResolve } from "@/lib/tileServices";
 
 export const GIS_OVERLAY_SOURCE_ID = "vs-gis-overlay";
@@ -89,7 +90,7 @@ export function buildPmtilesStyle(
     sources: {
       [PMTILES_SOURCE_ID]: {
         type: "vector",
-        url: `pmtiles://${resolved.pmtilesUrl}`,
+        url: buildPmtilesVectorSourceUrl(resolved.pmtilesUrl),
         attribution: resolved.name,
       },
     },

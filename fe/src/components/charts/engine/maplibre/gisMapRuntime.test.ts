@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   advanceGlobeLongitude,
   GLOBE_IDLE_ROTATION_DEG_PER_SEC,
+  markGisMapPaintReady,
   normalizeGlobeLongitude,
   REAL_EARTH_ROTATION_DEG_PER_SEC,
   whenGisMapStyleReady,
@@ -60,5 +61,21 @@ describe("whenGisMapStyleReady", () => {
     styleLoaded = true;
     for (const cb of queued) cb();
     expect(run).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("markGisMapPaintReady", () => {
+  it("finishes on first idle for globe without waiting for areTilesLoaded", () => {
+    const onReady = vi.fn();
+    const map = {
+      isStyleLoaded: () => true,
+      areTilesLoaded: () => false,
+      triggerRepaint: vi.fn(),
+      once: vi.fn((event: string, cb: () => void) => {
+        if (event === "idle" || event === "render") cb();
+      }),
+    };
+    markGisMapPaintReady(map as never, onReady, () => false, "globe");
+    expect(onReady).toHaveBeenCalledTimes(1);
   });
 });

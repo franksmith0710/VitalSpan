@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "description": "DeepTalk VitalSpan 意图路由（规则引擎，非 LLM）",
+  "rules": [
+    {
+      "match": ["流向", "sankey", "桑基", "de-kpi-flow-wall", "de_map_flow"],
+      "workflow": "1",
+      "chartType": "sankey",
+      "reason": "流向/链路用内置 sankey（wf1），禁止 customViz 仿地图"
+    },
+    {
+      "match": ["地图", "choropleth", "省界", "gis-map", "gis"],
+      "workflow": "1",
+      "chartType": "gis-map",
+      "reason": "地图用内置 gis-map 或 choropleth（wf1），禁止在线瓦片 customViz"
+    },
+    {
+      "match": ["关系图", "graph", "力导向", "dagre"],
+      "workflow": "1",
+      "chartType": "graph",
+      "reason": "关系图用内置 graph（wf1）"
+    },
+    {
+      "match": ["排名", "ranking", "排行榜", "柱状"],
+      "workflow": "2",
+      "template": "ranking-bar",
+      "runtime": "html",
+      "reason": "排名/对比 customViz 用 P1 ranking-bar 金样（wf2）"
+    },
+    {
+      "match": ["趋势", "折线", "trend", "动态趋势"],
+      "workflow": "2",
+      "template": "trend-line",
+      "runtime": "d3",
+      "reason": "笛卡尔趋势用 P1 trend-line d3 金样（wf2）"
+    },
+    {
+      "match": ["滚动表", "明细表", "scrolling-table", "多维明细"],
+      "workflow": "2",
+      "template": "scrolling-table",
+      "runtime": "html",
+      "reason": "P2 多维明细用 scrolling-table（wf2）"
+    },
+    {
+      "match": ["kpi", "指标卡", "六边形", "hex"],
+      "workflow": "2",
+      "runtime": "html",
+      "reason": "KPI/开放画布用 generic-blank-html（wf2）"
+    }
+  ]
+}

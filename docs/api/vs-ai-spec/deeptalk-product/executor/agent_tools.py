@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 
 from completion_gate import check_completion
 from publish_executor import publish_file
+from route_request import route_request
 from subprocess_runner import run_tool
 
 
@@ -117,14 +118,52 @@ def vitalspan_publish_artifact(
     )
 
 
-def vitalspan_list_artifacts(limit: int = 100, offset: int = 0) -> AgentToolResult:
-    result = run_tool("list-ai-viz-artifacts.py", "--limit", str(limit), "--offset", str(offset))
+def vitalspan_list_artifacts(limit: int = 100, offset: int = 0, query: str = "") -> AgentToolResult:
+    args = ["--limit", str(limit), "--offset", str(offset)]
+    if query.strip():
+        args.extend(["--q", query.strip()])
+    result = run_tool("list-ai-viz-artifacts.py", *args)
     return AgentToolResult("vitalspan_list_artifacts", result.ok, result.stdout, result.stderr)
+
+
+def vitalspan_get_artifact(artifact_id: str, file: str | None = None) -> AgentToolResult:
+    args = [artifact_id]
+    if file:
+        args.extend(["--file", file])
+    result = run_tool("get-ai-viz-artifact.py", *args)
+    return AgentToolResult("vitalspan_get_artifact", result.ok, result.stdout, result.stderr)
 
 
 def vitalspan_delete_artifact(artifact_id: str) -> AgentToolResult:
     result = run_tool("delete-ai-viz-artifact.py", artifact_id)
     return AgentToolResult("vitalspan_delete_artifact", result.ok, result.stdout, result.stderr)
+
+
+def vitalspan_list_artifact_dashboard_refs(artifact_id: str) -> AgentToolResult:
+    result = run_tool("list-artifact-dashboard-refs.py", artifact_id)
+    return AgentToolResult(
+        "vitalspan_list_artifact_dashboard_refs",
+        result.ok,
+        result.stdout,
+        result.stderr,
+    )
+
+
+def vitalspan_delete_dashboard(dashboard_id: str) -> AgentToolResult:
+    result = run_tool("delete-dashboard.py", dashboard_id)
+    return AgentToolResult("vitalspan_delete_dashboard", result.ok, result.stdout, result.stderr)
+
+
+def vitalspan_validate_chart_config(file: str) -> AgentToolResult:
+    result = run_tool("validate-chart-config.py", "--file", file)
+    ok = result.ok and "ok chartType=" in result.stdout
+    return AgentToolResult("vitalspan_validate_chart_config", ok, result.stdout, result.stderr)
+
+
+def vitalspan_route_request(text: str) -> AgentToolResult:
+    route = route_request(text)
+    stdout = json.dumps(route.to_dict(), ensure_ascii=False, indent=2)
+    return AgentToolResult("vitalspan_route_request", route.ok, stdout, "")
 
 
 def vitalspan_upload_dashboard(dashboard_id: str, file: str) -> AgentToolResult:

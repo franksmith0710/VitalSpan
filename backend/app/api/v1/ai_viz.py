@@ -9,7 +9,13 @@ from sqlalchemy.orm import Session
 
 from app.ai_viz import service as ai_viz_service
 from app.ai_viz.errors import AiVizError
-from app.ai_viz.schemas import AiVizArtifactCreateIn, AiVizArtifactListOut, AiVizArtifactOut
+from app.ai_viz.schemas import (
+    AiVizArtifactBundleOut,
+    AiVizArtifactCreateIn,
+    AiVizArtifactListOut,
+    AiVizArtifactOut,
+    AiVizArtifactReferencesOut,
+)
 from app.auth.deps import UserContext, require_permission
 from app.datasources.models import get_meta_session
 
@@ -96,6 +102,30 @@ def get_artifact_meta(
     try:
         row = ai_viz_service.get_artifact(db, artifact_id, user)
         return ai_viz_service.to_artifact_out(row)
+    except AiVizError as exc:
+        return _error_response(exc)
+
+
+@router.get("/artifacts/{artifact_id}/bundle", response_model=AiVizArtifactBundleOut)
+def get_artifact_bundle(
+    artifact_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
+    db: Annotated[Session, Depends(_db)],
+) -> AiVizArtifactBundleOut | JSONResponse:
+    try:
+        return ai_viz_service.get_artifact_bundle(db, artifact_id, user)
+    except AiVizError as exc:
+        return _error_response(exc)
+
+
+@router.get("/artifacts/{artifact_id}/refs", response_model=AiVizArtifactReferencesOut)
+def get_artifact_references(
+    artifact_id: uuid.UUID,
+    user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    db: Annotated[Session, Depends(_db)],
+) -> AiVizArtifactReferencesOut | JSONResponse:
+    try:
+        return ai_viz_service.get_artifact_references(db, artifact_id, user)
     except AiVizError as exc:
         return _error_response(exc)
 
