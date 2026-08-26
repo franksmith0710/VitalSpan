@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { GripVertical } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { FIELD_DRAG_MIME } from "@/lib/chartFieldDrag";
+import { writeFieldDragData } from "@/lib/chartFieldDrag";
 import { useChartInspector } from "./ChartInspectorContext";
 
 type DatasetFieldBankProps = {
@@ -50,8 +50,7 @@ export function DatasetFieldBank({ className }: DatasetFieldBankProps) {
                   type="button"
                   draggable
                   onDragStart={(e) => {
-                    e.dataTransfer.setData(FIELD_DRAG_MIME, field);
-                    e.dataTransfer.effectAllowed = "copy";
+                    writeFieldDragData(e.dataTransfer, field);
                   }}
                   onClick={() => assignField(field)}
                   className="flex w-full items-center gap-1.5 rounded-lg px-2 py-2 text-left text-theme-xs hover:bg-white dark:hover:bg-white/[0.06]"

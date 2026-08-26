@@ -393,6 +393,25 @@ export function suggestChartFields(columns: string[], chartType: ChartType) {
       metrics: metrics.slice(0, 3).map((field) => ({ field })),
     };
   }
+  if (chartType === "map" || chartType === "map-3d") {
+    const geoField =
+      dimensions.find((d) =>
+        /(?:^|_)(region|area|city|province|country|geo|district|name)(?:$|_)|省|市|自治区|区$|县$/i.test(
+          d,
+        ),
+      ) ??
+      columns.find((c) =>
+        /(?:^|_)(region|area|city|province|country|geo|district|name)(?:$|_)|省|市|自治区|区$|县$/i.test(
+          c,
+        ),
+      );
+    const dimension = geoField ?? dimensions[0] ?? columns[0];
+    const metric = metrics[0] ?? columns.find((col) => col !== dimension);
+    return {
+      dimensions: dimension ? [{ field: dimension }] : [],
+      metrics: metric ? [{ field: metric }] : [],
+    };
+  }
   const dimension = dimensions[0] ?? columns[0];
   const metric = metrics[0] ?? columns.find((col) => col !== dimension);
   return {

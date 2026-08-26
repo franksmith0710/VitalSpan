@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Calendar, GripVertical, Hash, Trash2, Type, X } from "lucide-react";
 import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
-import { FIELD_DRAG_MIME } from "@/lib/chartFieldDrag";
+import { readFieldDragData } from "@/lib/chartFieldDrag";
 import { classifyDatasetField, fieldDisplayKind } from "./datasetFieldClassification";
 import type { DeAxisId } from "@/lib/chartDeAxis";
 
@@ -125,7 +125,7 @@ export function ChartFieldMultiSlot({
           if (disabled) return;
           e.preventDefault();
           setDragOver(false);
-          const field = e.dataTransfer.getData(FIELD_DRAG_MIME);
+          const field = readFieldDragData(e.dataTransfer);
           if (field) onDropField?.(field);
         }}
         className={cn(

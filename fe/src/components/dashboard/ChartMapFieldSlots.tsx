@@ -1,6 +1,7 @@
 import { CircleHelp } from "lucide-react";
 import { ChartFieldSlot } from "./ChartFieldSlot";
 import { useChartInspector } from "./chartInspectorContext";
+import { isChartFieldDropDisabled } from "@/lib/chartFieldDrag";
 import { isSameSlotTarget, type SlotTarget } from "./chartInspectorTypes";
 import { clearAxisField, fieldAtSlot } from "@/lib/resolveChartEncoding";
 
@@ -90,7 +91,7 @@ export function ChartMapFieldSlots() {
     clearFieldAssignError,
   } = useChartInspector();
 
-  const columnsDisabled = columns.length === 0;
+  const columnsDisabled = isChartFieldDropDisabled(columnsLoading, columns);
 
   const renderSlot = (
     target: SlotTarget,

@@ -23,7 +23,7 @@ import {
 } from "@/components/charts/engine/geo/geoMapRenderResult";
 import { buildGeoMapContentKey } from "@/components/charts/engine/geo/geoMapContentKey";
 import { GeoMapOverlayHint } from "@/components/charts/engine/geo/GeoMapOverlayHint";
-import { loadOfflineGeoMap } from "@/components/charts/engine/geo/geoMapLevels";
+import { isOfflineGeoMapReady, loadOfflineGeoMap } from "@/components/charts/engine/geo/geoMapLevels";
 import { VS_REGIONS_MAP_ID, withMapLoadTimeout } from "@/components/charts/engine/geo/geoConstants";
 import { activeGeoEngine } from "@/components/charts/engine/geoEnginePort";
 import type { ChartEngineViewProps } from "@/components/charts/engine/types";
@@ -407,9 +407,24 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       };
 
       if (!isThreeMap) {
+        const mapIdToLoad = geoMapLevel.mapId;
+        const runD3Paint = () => {
+          try {
+            runD3();
+          } catch (err) {
+            endPresentationPaint();
+            setRenderError(err instanceof Error ? err.message : "地图渲染失败");
+            if (mode !== "live") setChartAnimationSuppressed(false);
+            notifyPaintReady();
+          }
+        };
+        if (isOfflineGeoMapReady(mapIdToLoad)) {
+          setMapAssetLoading(false);
+          runD3Paint();
+          return;
+        }
         setThreeLoading(false);
         setMapAssetLoading(true);
-        const mapIdToLoad = geoMapLevel.mapId;
         void withMapLoadTimeout(loadOfflineGeoMap(mapIdToLoad))
           .then((geo) => {
             if (gen !== renderGenRef.current) return;
@@ -420,14 +435,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
               notifyPaintReady();
               return;
             }
-            try {
-              runD3();
-            } catch (err) {
-              endPresentationPaint();
-              setRenderError(err instanceof Error ? err.message : "地图渲染失败");
-              if (mode !== "live") setChartAnimationSuppressed(false);
-              notifyPaintReady();
-            }
+            runD3Paint();
           })
           .catch((err) => {
             if (gen !== renderGenRef.current) return;
@@ -565,6 +573,9 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     measureAndRender("commit", true);
   }, [isThreeMap, tryThreeResize, measureAndRender]);
 
+  const onCommitResizeRef = useRef(onCommitResize);
+  onCommitResizeRef.current = onCommitResize;
+
   useEmbeddedChartLiveResize(fill && !plan.empty, containerRef, onLiveResize, onCommitResize);
 
   useEffect(() => {
@@ -638,18 +649,18 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
 
   useEffect(() => {
     if (!fill || plan.empty) return;
-    if (!playing) onCommitResize();
-  }, [fill, plan.empty, playing, onCommitResize]);
+    if (!playing) onCommitResizeRef.current();
+  }, [fill, plan.empty, playing]);
 
   useEffect(() => {
     if (!props.layoutFootprint || playing) return;
-    onCommitResize();
-  }, [props.layoutFootprint?.width, props.layoutFootprint?.height, onCommitResize, playing]);
+    onCommitResizeRef.current();
+  }, [props.layoutFootprint?.width, props.layoutFootprint?.height, playing]);
 
   useEffect(() => {
     if (!fill || plan.empty || playing || viewportTransforming) return;
-    onCommitResize();
-  }, [visualScale, fill, plan.empty, playing, viewportTransforming, onCommitResize]);
+    onCommitResizeRef.current();
+  }, [visualScale, fill, plan.empty, playing, viewportTransforming]);
 
   useEffect(() => {
     renderGenRef.current += 1;

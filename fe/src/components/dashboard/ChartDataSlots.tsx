@@ -1,4 +1,4 @@
-import { classifyDatasetField } from "./datasetFieldClassification";
+import { isChartFieldDropDisabled } from "@/lib/chartFieldDrag";
 import { ChartFieldMultiSlot } from "./ChartFieldMultiSlot";
 import { ChartFieldSlot } from "./ChartFieldSlot";
 import { chartDataSlotBlueprint } from "./chartFieldSlots";
@@ -33,7 +33,7 @@ export function ChartDataSlots({ hideMapHint = false }: { hideMapHint?: boolean 
     clearFieldAssignError,
   } = useChartInspector();
 
-  const columnsDisabled = columns.length === 0;
+  const columnsDisabled = isChartFieldDropDisabled(columnsLoading, columns);
   const slots = chartDataSlotBlueprint(cfg.chartType);
   const mapHint = isGeoMapChartType(cfg.chartType) ? mapChartFieldHint(columns) : null;
 

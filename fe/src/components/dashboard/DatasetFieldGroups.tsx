@@ -3,7 +3,7 @@ import { Calendar, GripVertical, Hash, RefreshCw, Type } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SearchField } from "@/components/ui/search-field";
 import { cn } from "@/lib/utils";
-import { FIELD_DRAG_MIME } from "@/lib/chartFieldDrag";
+import { readFieldDragData, writeFieldDragData } from "@/lib/chartFieldDrag";
 import type { DatasetFieldKind } from "./datasetFieldClassification";
 import {
   fieldDisplayKind,
@@ -53,8 +53,7 @@ function FieldRow({
         type="button"
         draggable
         onDragStart={(event) => {
-          event.dataTransfer.setData(FIELD_DRAG_MIME, field);
-          event.dataTransfer.effectAllowed = "copy";
+          writeFieldDragData(event.dataTransfer, field);
         }}
         onClick={() => onFieldClick?.(field)}
         className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left transition-colors hover:bg-white dark:hover:bg-white/[0.06]"

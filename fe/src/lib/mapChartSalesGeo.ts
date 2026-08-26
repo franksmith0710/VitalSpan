@@ -54,8 +54,11 @@ export function applySalesGeoDrillMapConfig(
     configId: configId ?? cfg.configId,
     dataSourceId: dataSourceId ?? cfg.dataSourceId,
     bindingId: undefined,
-    dimensions: [{ field: "province" }, { field: "city" }, { field: "district" }],
-    metrics: [{ field: "amount" }],
+    axes: {
+      xAxis: [{ field: "province" }],
+      yAxis: [{ field: "amount" }],
+      drill: [{ field: "city" }, { field: "district" }],
+    },
   });
 }
 

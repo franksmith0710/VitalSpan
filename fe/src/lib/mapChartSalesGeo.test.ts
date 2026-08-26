@@ -7,6 +7,7 @@ import {
   SALES_GEO_PROVINCE_SQL,
 } from "./mapChartSalesGeo";
 import type { ChartViewConfig } from "./chartViewConfig";
+import { fieldAtSlot } from "./resolveChartEncoding";
 
 const baseCfg: ChartViewConfig = {
   chartType: "map",
@@ -22,8 +23,21 @@ describe("mapChartSalesGeo", () => {
     expect(next.datasetId).toBe(DEMO_SALES_GEO_DATASET_ID);
     expect(next.configId).toBe("cfg-geo");
     expect(next.dataSourceId).toBe("ds-sample");
-    expect(next.dimensions?.map((d) => d.field)).toEqual(["province", "city", "district"]);
+    expect(fieldAtSlot(next, { axisId: "xAxis", index: 0 })).toBe("province");
+    expect(fieldAtSlot(next, { axisId: "drill", index: 0 })).toBe("city");
+    expect(fieldAtSlot(next, { axisId: "drill", index: 1 })).toBe("district");
     expect(next.metrics?.[0]?.field).toBe("amount");
+  });
+
+  it("overwrites partial axes when one-click setup runs", () => {
+    const partial: ChartViewConfig = {
+      ...baseCfg,
+      axes: { yAxis: [{ field: "amount" }] },
+      metrics: [{ field: "amount" }],
+    };
+    const next = applySalesGeoDrillMapConfig(partial, "ds-sample", "cfg-geo");
+    expect(fieldAtSlot(next, { axisId: "xAxis", index: 0 })).toBe("province");
+    expect(fieldAtSlot(next, { axisId: "yAxis", index: 0 })).toBe("amount");
   });
 
   it("detects active sales geo config", () => {

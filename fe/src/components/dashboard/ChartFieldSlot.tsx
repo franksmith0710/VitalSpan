@@ -2,7 +2,7 @@ import { useState, type ReactNode } from "react";
 import { Calendar, GripVertical, Hash, Type, X } from "lucide-react";
 import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
-import { FIELD_DRAG_MIME } from "@/lib/chartFieldDrag";
+import { readFieldDragData } from "@/lib/chartFieldDrag";
 import { fieldDisplayKind } from "./datasetFieldClassification";
 
 const slotVariants = cva(
@@ -137,7 +137,7 @@ export function ChartFieldSlot({
           if (disabled) return;
           e.preventDefault();
           setDragOver(false);
-          const field = e.dataTransfer.getData(FIELD_DRAG_MIME);
+          const field = readFieldDragData(e.dataTransfer);
           if (field) onDropField?.(field);
         }}
         className={cn(
