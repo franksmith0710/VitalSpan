@@ -7,6 +7,7 @@ import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-p
 import { DESTRUCTIVE_ALERT_ACTION_CLASS } from "@/components/layout/list-batch-delete";
 import {
   LIST_PAGE_CARD_GRID_CLASS,
+  ListPagePagination,
   ListPageSection,
   ListPageTableFrame,
   ListPageToolbar,
@@ -48,6 +49,7 @@ import {
 } from "@/lib/dashboardTemplates";
 import { hasCapability } from "@/lib/capabilities";
 import { mapApiError } from "@/lib/apiError";
+import { useListPagination } from "@/lib/list-pagination";
 import { queryKeys } from "@/lib/queryKeys";
 import { dataScreenEditPath } from "@/lib/dataScreenLayout";
 import { buildTemplateEditSyncState } from "@/lib/templateEditSession";
@@ -137,6 +139,7 @@ export function VizTemplatesHubPage() {
 
   /** 类型 + 分类联合筛选；政务与其他分类交互一致。 */
   const listSurfaceKind = surfaceKind;
+  const pagination = useListPagination(20, [listSurfaceKind, categoryKey, q]);
 
   const listQuery = useQuery({
     queryKey: queryKeys.dashboardTemplates.list({
@@ -144,6 +147,8 @@ export function VizTemplatesHubPage() {
       categoryKey: categoryKey ?? undefined,
       q,
       includeDrafts: canManage,
+      limit: pagination.pageSize,
+      offset: pagination.offset,
     }),
     queryFn: () =>
       fetchDashboardTemplates({
@@ -151,7 +156,8 @@ export function VizTemplatesHubPage() {
         categoryKey: categoryKey ?? undefined,
         q: q || undefined,
         includeDrafts: canManage,
-        limit: 100,
+        limit: pagination.pageSize,
+        offset: pagination.offset,
       }),
   });
 
@@ -232,6 +238,7 @@ export function VizTemplatesHubPage() {
     deleteMutation.isPending;
 
   const items = filterTemplatesForHub(listQuery.data?.items ?? []);
+  const total = listQuery.data?.total ?? 0;
 
   const handleSurfaceKindChange = (kind: VizSurfaceKind) => {
     setSurfaceKind(kind);
@@ -375,14 +382,19 @@ export function VizTemplatesHubPage() {
               }
             />
           ) : (
-            <>
-              {renderCardGrid(items, 4)}
-              <p className="mt-4 text-theme-xs text-gray-500 dark:text-gray-400">
-                共 {items.length} 个模板
-              </p>
-            </>
+            renderCardGrid(items, 4)
           )}
         </ListPageTableFrame>
+
+        {!listQuery.isLoading && total > 0 ? (
+          <ListPagePagination
+            current={pagination.page}
+            pageSize={pagination.pageSize}
+            total={total}
+            showSizeChanger
+            onChange={pagination.onPageChange}
+          />
+        ) : null}
       </ListPageSection>
 
       <TemplateSettingsDialog

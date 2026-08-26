@@ -3,6 +3,7 @@ import { ChartFieldMultiSlot } from "./ChartFieldMultiSlot";
 import { ChartFieldSlot } from "./ChartFieldSlot";
 import { chartDataSlotBlueprint } from "./chartFieldSlots";
 import { useChartInspector } from "./chartInspectorContext";
+import { classifyDatasetField } from "./datasetFieldClassification";
 import { isSameSlotTarget, type SlotTarget } from "./chartInspectorTypes";
 import { MapChartFieldHintBanner } from "./MapChartFieldHint";
 import { mapChartFieldHint } from "@/lib/mapChartDataHint";

@@ -44,6 +44,8 @@ export const queryKeys = {
       categoryKey?: string;
       q?: string;
       includeDrafts?: boolean;
+      limit?: number;
+      offset?: number;
     }) => ["dashboardTemplates", "list", params] as const,
     detail: (id: string) => ["dashboardTemplates", "detail", id] as const,
   },
