@@ -45,6 +45,7 @@ export function buildGraphLayoutStateKey(
   instanceKey: string | undefined,
   nodeIds: string[],
   linkPairs: Array<{ source: string; target: string }>,
+  layoutType = "force",
 ): string | undefined {
   if (!instanceKey) return undefined;
   const nodeSig = [...nodeIds].sort().join(",");
@@ -52,5 +53,5 @@ export function buildGraphLayoutStateKey(
     .map((link) => `${link.source}->${link.target}`)
     .sort()
     .join(",");
-  return `${instanceKey}|${nodeSig}|${linkSig}`;
+  return `${instanceKey}|${layoutType}|${nodeSig}|${linkSig}`;
 }

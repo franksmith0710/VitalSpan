@@ -21,7 +21,6 @@ DROP VIEW IF EXISTS vs_official_bar_range;
 DROP VIEW IF EXISTS vs_official_category_tree;
 DROP VIEW IF EXISTS vs_official_gauge;
 DROP VIEW IF EXISTS de_map_flow;
-DROP VIEW IF EXISTS de_map_od_hubs;
 DROP VIEW IF EXISTS de_map_heat;
 DROP VIEW IF EXISTS de_map_district;
 DROP VIEW IF EXISTS de_map_city;
@@ -609,21 +608,6 @@ SELECT
   end_lat,
   flow_amount
 FROM map_flows;
-
--- GIS 全球枢纽 OD 飞线（字段名对齐 gis-map flow 槽位）
-CREATE OR REPLACE VIEW de_map_od_hubs AS
-SELECT route_name, from_lng, from_lat, to_lng, to_lat, weight
-FROM (
-  SELECT '上海 → 洛杉矶' AS route_name, 121.47 AS from_lng, 31.23 AS from_lat, -118.24 AS to_lng, 34.05 AS to_lat, 920 AS weight
-  UNION ALL SELECT '上海 → 东京', 121.47, 31.23, 139.69, 35.68, 860
-  UNION ALL SELECT '上海 → 新加坡', 121.47, 31.23, 103.85, 1.29, 740
-  UNION ALL SELECT '上海 → 迪拜', 121.47, 31.23, 55.27, 25.20, 680
-  UNION ALL SELECT '上海 → 法兰克福', 121.47, 31.23, 8.68, 50.11, 620
-  UNION ALL SELECT '上海 → 悉尼', 121.47, 31.23, 151.21, -33.87, 580
-  UNION ALL SELECT '北京 → 伦敦', 116.40, 39.90, -0.12, 51.51, 780
-  UNION ALL SELECT '广州 → 新加坡', 113.26, 23.13, 103.85, 1.29, 640
-  UNION ALL SELECT '迪拜 → 巴黎', 55.27, 25.20, 2.35, 48.86, 490
-) od_routes;
 
 -- 销售全宽表（柱/线/饼 + 省级地图 region_map）
 CREATE OR REPLACE VIEW de_sales_wide AS

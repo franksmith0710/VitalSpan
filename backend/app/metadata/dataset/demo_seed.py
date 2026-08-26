@@ -54,7 +54,6 @@ RETIRED_DEMO_DATASET_REMAP: dict[str, str] = {
     "demo-gov-issues": "demo-gov-grid-stats",
     "demo-gov-budget": "demo-sales-wide",
     "demo-gov-investment": "demo-sales-wide",
-    "demo-map-flow": "demo-map-scatter",
 }
 
 _RETIRED_FIELD_REMAP: dict[str, dict[str, str]] = {
@@ -99,12 +98,6 @@ _RETIRED_FIELD_REMAP: dict[str, dict[str, str]] = {
         "investment_amount": "amount",
         "产业": "category_name",
         "投资额": "amount",
-    },
-    "demo-map-flow": {
-        "from_lng": "lng",
-        "from_lat": "lat",
-        "route_name": "point_name",
-        "weight": "amount",
     },
 }
 

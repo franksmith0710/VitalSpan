@@ -11,7 +11,10 @@ import { ChartDeAttrField, CHART_DE_INPUT } from "../chartInspectorDeFields";
 import { ChartDeSliderField } from "../deAttrSlider";
 import { INSPECTOR_SELECT_TRIGGER, InspectorInlineColorRow, InspectorSwitchRow } from "../inspectorCompact";
 import type { StyleProperty } from "./customVizStyleSchema";
-import { resolveCustomVizStylePropertyLabel } from "./customVizManifestLabels";
+import {
+  resolveCustomVizStyleEnumLabel,
+  resolveCustomVizStylePropertyLabel,
+} from "./customVizManifestLabels";
 
 function readNumber(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
@@ -78,7 +81,7 @@ export function CustomVizStylePropertyField({
           <SelectContent>
             {prop.enum.map((option, index) => (
               <SelectItem key={option} value={option}>
-                {prop.enumNames?.[index] ?? option}
+                {resolveCustomVizStyleEnumLabel(option, prop.enumNames, index, propKey)}
               </SelectItem>
             ))}
           </SelectContent>

@@ -62,7 +62,7 @@ const FALLBACK_FIELD_RULES: Record<string, ChartFieldRule> = {
     maxDimensions: 2,
     minMetrics: 0,
     maxMetrics: 1,
-    note: "关系图需 2 个维度（起点、终点）",
+    note: "关系图需 2 个维度（起点、终点）；网络拓扑适合网状关系，流向分层适合起点→终点",
   },
   "chart-mix": {
     minDimensions: 1,

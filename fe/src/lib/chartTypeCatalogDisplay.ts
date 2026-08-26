@@ -69,7 +69,7 @@ export const FALLBACK_CATALOG_ITEMS: ChartTypeCatalogItem[] = [
   { type: "timeline", displayName: "时间轴", category: "basic", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
   { type: "sankey", displayName: "桑基图", category: "flow", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
   { type: "funnel", displayName: "漏斗图", category: "flow", renderer: "antv", styleVariants: ["default", "pyramid"], fieldRule: {} },
-  { type: "graph", displayName: "关系图", category: "relation", renderer: "antv", styleVariants: ["default", "force", "dagre"], fieldRule: {} },
+  { type: "graph", displayName: "关系图", category: "relation", renderer: "antv", styleVariants: ["force", "dagre"], fieldRule: {} },
   { type: "wordCloud", displayName: "词云", category: "advanced", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
   { type: "bidirectional-bar", displayName: "双向条形图", category: "advanced", renderer: "antv", styleVariants: ["default"], fieldRule: {} },
   { type: "waterfall", displayName: "瀑布图", category: "advanced", renderer: "antv", styleVariants: ["default"], fieldRule: {} },

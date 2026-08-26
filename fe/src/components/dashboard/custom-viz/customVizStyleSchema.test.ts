@@ -16,7 +16,7 @@ describe("customVizStyleSchema", () => {
     expect(schema?.properties).toMatchObject({
       accentColor: { type: "string", format: "color", title: "强调色" },
       barHeight: { type: "number", title: "条高度" },
-      showValue: { type: "boolean", title: "showValue" },
+      showValue: { type: "boolean", title: "显示数值" },
     });
   });
 

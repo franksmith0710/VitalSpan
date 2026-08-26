@@ -292,26 +292,6 @@ export function ChartGraphShapeSection() {
   return (
     <ChartInspectorSection title="关系图样式" data-testid="chart-graph-shape">
       <div className={INSPECTOR_SECTION_GAP}>
-        <div className="border-b border-gray-100 py-2 dark:border-white/[0.06]">
-          <p className="mb-1.5 text-[11px] font-medium text-gray-600 dark:text-gray-300">布局</p>
-          <Select
-            value={graph.layout ?? cfg.styleVariant ?? "force"}
-            onValueChange={(layout) =>
-              mutateChartConfig((current) => {
-                const withGraph = patchBlock(current, "graph", { layout });
-                return { ...withGraph, styleVariant: layout };
-              })
-            }
-          >
-            <SelectTrigger className={INSPECTOR_SELECT} aria-label="关系图布局">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="force">力导向</SelectItem>
-              <SelectItem value="dagre">紧凑排列</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
         <ChartDeSliderField
           label="斥力"
           value={graph.repulsion}

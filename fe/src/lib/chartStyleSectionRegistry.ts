@@ -46,8 +46,8 @@ export const STYLE_VARIANT_LABELS: Record<string, string> = {
   rose: "玫瑰",
   progress: "进度",
   pyramid: "金字塔",
-  force: "力导向",
-  dagre: "层次",
+  force: "网络拓扑",
+  dagre: "流向分层",
   bubble: "气泡",
 };
 

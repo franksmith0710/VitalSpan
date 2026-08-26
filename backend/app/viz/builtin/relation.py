@@ -11,5 +11,5 @@ RELATION_SPECS = (
     antv("sankey", "桑基图", "relation", field_rule=FLOW_RULE, note="桑基图需 2 个维度与 1 个度量"),
     antv("circle-packing", "圆形填充图", "relation", field_rule=PIE_RULE),
     antv("multi-scatter", "多维散点图", "relation", field_rule=MULTI_SCATTER_RULE),
-    antv("graph", "关系图", "relation", library="g6", field_rule=GRAPH_RULE, style_variants=("default", "force", "dagre")),
+    antv("graph", "关系图", "relation", library="g6", field_rule=GRAPH_RULE, style_variants=("force", "dagre")),
 )

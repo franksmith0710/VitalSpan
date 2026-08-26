@@ -61,14 +61,15 @@ describe("renderD3ForceGraph", () => {
     expect(first).toBeTruthy();
 
     dispose();
-    const layoutKey = buildGraphLayoutStateKey(
+    const layoutKey = `${buildGraphLayoutStateKey(
       "force-graph-test",
       ["电话销售", "线下门店", "2025-06-04"],
       [
         { source: "电话销售", target: "2025-06-04" },
         { source: "线下门店", target: "2025-06-04" },
       ],
-    );
+      "force",
+    )}|structured-v3`;
     expect(readForceGraphLayoutState(layoutKey)?.["电话销售"]).toMatchObject({
       x: expect.any(Number),
       y: expect.any(Number),

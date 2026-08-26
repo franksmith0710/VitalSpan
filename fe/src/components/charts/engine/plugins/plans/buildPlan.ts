@@ -253,11 +253,12 @@ function graphPlan(
 ): ChartRenderPlan {
   const src = spec.encoding.dimensions[0]?.field ?? "";
   const dst = spec.encoding.dimensions[1]?.field ?? "";
+  const metric = spec.encoding.metrics[0]?.field ?? "";
   const si = colIndex(columns, src);
   const di = colIndex(columns, dst);
+  const mi = metric ? colIndex(columns, metric) : -1;
   const nodeSet = new Set<string>();
-  const edgeKeys = new Set<string>();
-  const edges: Array<{ source: string; target: string }> = [];
+  const edgeWeights = new Map<string, number>();
   for (const r of rows) {
     const s = String(r[si] ?? "");
     const t = String(r[di] ?? "");
@@ -265,10 +266,13 @@ function graphPlan(
     nodeSet.add(s);
     nodeSet.add(t);
     const key = `${s}\0${t}`;
-    if (edgeKeys.has(key)) continue;
-    edgeKeys.add(key);
-    edges.push({ source: s, target: t });
+    const weight = mi >= 0 ? Number(r[mi] ?? 0) : 1;
+    edgeWeights.set(key, (edgeWeights.get(key) ?? 0) + (Number.isFinite(weight) ? weight : 0));
   }
+  const edges = [...edgeWeights.entries()].map(([key, weight]) => {
+    const [source, target] = key.split("\0");
+    return { source, target, weight: weight > 0 ? weight : 1 };
+  });
   const layout = spec.styleVariant === "dagre" ? "dagre" : "force";
   return d3Plan("ForceGraph", {
     nodes: [...nodeSet].map((id) => ({ id, data: { label: id } })),
