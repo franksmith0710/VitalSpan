@@ -3,18 +3,20 @@ import type { ChartEngineViewProps } from "@/components/charts/engine/types";
 import { buildGisOverlayGeoJson } from "@/components/charts/engine/maplibre/gisMapOverlay";
 import {
   readGisProject,
+  listGisProjectLayers,
   resolveGisOverlayStyle,
   resolveGisRenderableBasemap,
   DEFAULT_GIS_GLOBE_VIEW,
 } from "@/components/charts/engine/maplibre/gisProject";
 import { applyBasemapRuntimePatch } from "@/components/charts/engine/maplibre/gisBasemapPalette";
-import { appendGisOverlayLayers, buildPmtilesStyle } from "@/components/charts/engine/maplibre/gisMapStyle";
+import { buildPmtilesStyle } from "@/components/charts/engine/maplibre/gisMapStyle";
 import {
-  buildGisOverlayStyleKey,
-  emptyGisOverlayGeoJson,
-  syncGisOverlayData,
-  syncGisOverlayStyle,
-} from "@/components/charts/engine/maplibre/gisMapOverlayStyle";
+  appendGisProjectLayersToStyle,
+  buildGisLayersStyleKey,
+  gisScatterInteractionLayerIds,
+  syncGisProjectLayers,
+  type GisLayerRuntimeEntry,
+} from "@/components/charts/engine/maplibre/gisMapLayerStyle";
 import { buildGeoJsonBoundsKey, fitGisOverlayBounds } from "@/components/charts/engine/maplibre/gisMapOverlayFit";
 import { mountGisOverlayInteraction } from "@/components/charts/engine/maplibre/gisMapOverlayInteraction";
 import { applyGisGlobeToStyle, spaceBackdropForPreset } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
@@ -198,32 +200,35 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     [pmtilesStyle, project],
   );
 
-  const overlayLayerOptions = useMemo(
-    () => ({
-      flavor,
-      overlay: project.overlay,
-      chartColors: styleContext.chartColors,
-    }),
-    [flavor, project.overlay, styleContext.chartColors],
-  );
-  const overlayLayerOptionsRef = useRef(overlayLayerOptions);
-  overlayLayerOptionsRef.current = overlayLayerOptions;
-  const overlayStyleKey = useMemo(
-    () => buildGisOverlayStyleKey(overlayLayerOptions),
-    [overlayLayerOptions],
-  );
+  const gisLayers = useMemo(() => listGisProjectLayers(project), [project]);
+  const layerEntries = useMemo((): GisLayerRuntimeEntry[] => {
+    return gisLayers.map((layer) => ({
+      layer,
+      geoJson: overlayGeoJson,
+      options: {
+        flavor,
+        overlay: layer.style,
+        chartColors: styleContext.chartColors,
+      },
+    }));
+  }, [flavor, gisLayers, overlayGeoJson, styleContext.chartColors]);
+  const layerEntriesRef = useRef(layerEntries);
+  layerEntriesRef.current = layerEntries;
+  const layersStyleKey = useMemo(() => buildGisLayersStyleKey(layerEntries), [layerEntries]);
 
-  const syncOverlayRuntime = useCallback((map: MapLibreMap) => {
-    syncGisOverlayData(map, overlayGeoJsonRef.current);
-    syncGisOverlayStyle(map, overlayLayerOptionsRef.current);
-    const overlayResolved = resolveGisOverlayStyle(
-      overlayLayerOptionsRef.current.overlay,
-      overlayLayerOptionsRef.current.chartColors,
-    );
-    if (overlayResolved.autoFit && overlayGeoJsonRef.current) {
-      const boundsKey = buildGeoJsonBoundsKey(overlayGeoJsonRef.current);
+  const syncLayersRuntime = useCallback((map: MapLibreMap) => {
+    syncGisProjectLayers(map, layerEntriesRef.current);
+    const fitCollections: GeoJSON.FeatureCollection[] = [];
+    for (const entry of layerEntriesRef.current) {
+      const resolved = resolveGisOverlayStyle(entry.layer.style, entry.options.chartColors);
+      if (resolved.autoFit && entry.geoJson) {
+        fitCollections.push(entry.geoJson);
+      }
+    }
+    if (fitCollections.length > 0) {
+      const boundsKey = buildGeoJsonBoundsKey(fitCollections[0]!);
       if (boundsKey && overlayFitKeyRef.current !== boundsKey) {
-        fitGisOverlayBounds(map, [overlayGeoJsonRef.current]);
+        fitGisOverlayBounds(map, fitCollections);
         overlayFitKeyRef.current = boundsKey;
       }
     } else if (!overlayGeoJsonRef.current) {
@@ -243,11 +248,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         buildings3d: project.buildings3d,
         projection: project.projection,
         atmospherePreset: project.atmospherePreset,
-        overlayStyleKey,
+        layersStyleKey,
       }),
     [
       flavor,
-      overlayStyleKey,
+      layersStyleKey,
       project.atmospherePreset,
       project.basemapLayers,
       project.buildings3d,
@@ -261,13 +266,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
   const style = useMemo(() => {
     if (!pmtilesStyle) return null;
-    const withOverlay = appendGisOverlayLayers(
-      pmtilesStyle,
-      emptyGisOverlayGeoJson(),
-      overlayLayerOptions,
-    );
-    return applyGisGlobeToStyle(withOverlay, project.projection, project.atmospherePreset);
-  }, [overlayLayerOptions, pmtilesStyle, project.atmospherePreset, project.projection]);
+    const withLayers = appendGisProjectLayersToStyle(pmtilesStyle, layerEntries);
+    return applyGisGlobeToStyle(withLayers, project.projection, project.atmospherePreset);
+  }, [layerEntries, pmtilesStyle, project.atmospherePreset, project.projection]);
 
   const styleKey = mapStyleKey;
   const atmosphereKey = useMemo(
@@ -324,7 +325,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       // style.load 仅重挂散点层（8/25 febfba53 模式）；勿在此 reload PMTiles 或重复 patch 底图。
       resyncDataLayers = () => {
         if (cancelled || !map) return;
-        syncOverlayRuntime(map);
+        syncLayersRuntime(map);
       };
       map.on("style.load", resyncDataLayers);
 
@@ -363,7 +364,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           atmospherePreset: current.atmospherePreset,
         });
         applyConfiguredView(map);
-        syncOverlayRuntime(map);
+        syncLayersRuntime(map);
         setMapRuntimeEpoch((epoch) => epoch + 1);
         map.resize();
         setGisPaintState("ready");
@@ -437,7 +438,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         },
         { preserveCamera: true },
       );
-      syncOverlayRuntime(map);
+      syncLayersRuntime(map);
       setMapRuntimeEpoch((epoch) => epoch + 1);
       map.resize();
       setGisPaintState("ready");
@@ -453,7 +454,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     project.projection,
     style,
     styleKey,
-    syncOverlayRuntime,
+    syncLayersRuntime,
   ]);
 
   useEffect(() => {
@@ -500,13 +501,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   useEffect(() => {
     const shell = shellRef.current;
     if (!shell) return;
-    return mountGisGlobeHaloOverlay(
-      shell,
-      () => mapRef.current,
-      project.atmospherePreset,
-      project.projection,
-    );
-  }, [atmosphereKey, project.atmospherePreset, project.projection]);
+    return mountGisGlobeHaloOverlay(shell, () => mapRef.current, () => ({
+      preset: projectRef.current.atmospherePreset,
+      projection: projectRef.current.projection,
+      halo: projectRef.current.halo,
+    }));
+  }, [atmosphereKey, project.atmospherePreset, project.halo, project.projection]);
 
   useEffect(() => {
     const shell = shellRef.current;
@@ -543,41 +543,56 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   useLayoutEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    syncOverlayRuntime(map);
+    syncLayersRuntime(map);
     if (map.isStyleLoaded()) {
-      map.once("idle", () => syncOverlayRuntime(map));
+      map.once("idle", () => syncLayersRuntime(map));
     }
-  }, [chartConfig, mapBootstrapKey, mapRuntimeEpoch, overlayGeoJson, overlayLayerOptions, style, styleKey, syncOverlayRuntime]);
+  }, [chartConfig, mapBootstrapKey, mapRuntimeEpoch, layerEntries, layersStyleKey, style, styleKey, syncLayersRuntime]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     const runFit = () => {
-      const overlayResolved = resolveGisOverlayStyle(project.overlay, styleContext.chartColors);
-      if (!overlayResolved.autoFit || !overlayGeoJson) {
+      const fitCollections: GeoJSON.FeatureCollection[] = [];
+      for (const entry of layerEntries) {
+        const resolved = resolveGisOverlayStyle(entry.layer.style, styleContext.chartColors);
+        if (resolved.autoFit && entry.geoJson) {
+          fitCollections.push(entry.geoJson);
+        }
+      }
+      if (fitCollections.length === 0) {
         if (!overlayGeoJson) overlayFitKeyRef.current = null;
         return;
       }
-      const boundsKey = buildGeoJsonBoundsKey(overlayGeoJson);
+      const boundsKey = buildGeoJsonBoundsKey(fitCollections[0]!);
       if (boundsKey && overlayFitKeyRef.current !== boundsKey) {
-        fitGisOverlayBounds(map, [overlayGeoJson]);
+        fitGisOverlayBounds(map, fitCollections);
         overlayFitKeyRef.current = boundsKey;
       }
     };
     if (map.isStyleLoaded()) runFit();
     else map.once("load", runFit);
-  }, [overlayGeoJson, project.overlay, styleContext.chartColors]);
+  }, [layerEntries, overlayGeoJson, styleContext.chartColors]);
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     let dispose: (() => void) | undefined;
-    const cluster = resolveGisOverlayStyle(project.overlay, styleContext.chartColors).cluster;
+    const scatterLayer = layerEntries.find((entry) => entry.layer.kind === "scatter");
+    const cluster = resolveGisOverlayStyle(scatterLayer?.layer.style, styleContext.chartColors).cluster;
+    const interactionIds = scatterLayer
+      ? gisScatterInteractionLayerIds(scatterLayer.layer.id, cluster)
+      : undefined;
     const mount = () => {
       dispose?.();
-      dispose = mountGisOverlayInteraction(map, cluster, (payload) => {
-        onLinkageClick?.({ name: payload.name, value: payload.value });
-      });
+      dispose = mountGisOverlayInteraction(
+        map,
+        cluster,
+        (payload) => {
+          onLinkageClick?.({ name: payload.name, value: payload.value });
+        },
+        interactionIds,
+      );
     };
     if (map.isStyleLoaded()) mount();
     else map.once("load", mount);
@@ -585,13 +600,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       map.off("load", mount);
       dispose?.();
     };
-  }, [onLinkageClick, overlayStyleKey, project.overlay, styleContext.chartColors]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map) return;
-    syncGisOverlayStyle(map, overlayLayerOptions);
-  }, [overlayLayerOptions, overlayStyleKey]);
+  }, [layerEntries, layersStyleKey, onLinkageClick, styleContext.chartColors]);
 
   useEffect(() => {
     remeasureShell();

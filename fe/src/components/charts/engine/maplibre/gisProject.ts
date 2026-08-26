@@ -1,5 +1,16 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { normalizeBasemapHexColor } from "@/components/charts/engine/maplibre/gisBasemapPalette";
+import {
+  normalizeGisProjectHalo,
+  type GisProjectHalo,
+} from "@/components/charts/engine/maplibre/gisProjectHalo";
+import {
+  normalizeGisProjectLayers,
+  type GisProjectLayer,
+} from "@/components/charts/engine/maplibre/gisProjectLayers";
+
+export type { GisProjectHalo } from "@/components/charts/engine/maplibre/gisProjectHalo";
+export type { GisLayerKind, GisProjectLayer } from "@/components/charts/engine/maplibre/gisProjectLayers";
 
 /** gis-map 仅支持管理员登记的全球 PMTiles 外部底图。 */
 export type GisBasemapId = "pmtiles";
@@ -180,8 +191,12 @@ export type GisProject = {
   buildings3d?: boolean;
   /** 地球表面（矢量底图）不透明度 0–1，默认 1；不影响星空/大气 */
   earthOpacity?: number;
-  /** 经纬度散点叠加样式 */
+  /** 经纬度散点叠加样式（legacy；优先 layers[]） */
   overlay?: GisProjectOverlay;
+  /** 业务图层栈（散点/热力等） */
+  layers?: GisProjectLayer[];
+  /** GeoLibre 对齐的大气光晕参数 */
+  halo?: GisProjectHalo;
 };
 
 export const DEFAULT_GIS_OVERLAY: Required<
@@ -364,12 +379,27 @@ export function writeGisProject(
   };
 }
 
+function isCanonicalPresetFog(fog: GisProjectFog): boolean {
+  return (Object.keys(GIS_ATMOSPHERE_PRESETS) as GisAtmospherePreset[]).some((key) => {
+    const presetFog = GIS_ATMOSPHERE_PRESETS[key];
+    return (
+      presetFog.color === fog.color &&
+      presetFog["high-color"] === fog["high-color"] &&
+      presetFog["horizon-blend"] === fog["horizon-blend"] &&
+      presetFog["space-color"] === fog["space-color"] &&
+      presetFog["star-intensity"] === fog["star-intensity"]
+    );
+  });
+}
+
 export function resolveGisAtmosphereFog(
   preset: GisAtmospherePreset | undefined,
   fogOverride: GisProjectFog | undefined,
 ): GisProjectFog {
   const base = preset ? GIS_ATMOSPHERE_PRESETS[preset] : DEFAULT_GLOBE_FOG;
-  return fogOverride && Object.keys(fogOverride).length > 0 ? { ...base, ...fogOverride } : base;
+  if (!fogOverride || Object.keys(fogOverride).length === 0) return base;
+  if (isCanonicalPresetFog(fogOverride)) return base;
+  return { ...base, ...fogOverride };
 }
 
 function normalizeGisProject(raw: unknown): GisProject {
@@ -391,7 +421,10 @@ function normalizeGisProject(raw: unknown): GisProject {
   const view =
     normalizeGisView(candidate.view) ??
     (projection === "globe" ? DEFAULT_GIS_GLOBE_VIEW : DEFAULT_GIS_PROJECT.view);
-  const fog = resolveGisFog(projection, atmospherePreset);
+  const fog =
+    projection === "globe"
+      ? resolveGisAtmosphereFog(atmospherePreset, candidate.fog)
+      : undefined;
   const autoRotateSpeed = Number(candidate.autoRotateSpeed);
   const earthOpacityRaw = Number(
     candidate.earthOpacity ?? (candidate as { mapOpacity?: number }).mapOpacity,
@@ -400,6 +433,8 @@ function normalizeGisProject(raw: unknown): GisProject {
   const waterColor = normalizeBasemapHexColor(candidate.waterColor);
   const basemapLayers = normalizeBasemapLayerVisibility(candidate.basemapLayers);
   const overlay = normalizeGisProjectOverlay(candidate.overlay);
+  const layers = normalizeGisProjectLayers(candidate.layers);
+  const halo = normalizeGisProjectHalo(candidate.halo);
   return {
     basemap: "pmtiles",
     tileServiceId,
@@ -421,6 +456,8 @@ function normalizeGisProject(raw: unknown): GisProject {
         ? earthOpacityRaw
         : undefined,
     overlay,
+    layers,
+    halo,
   };
 }
 
@@ -506,13 +543,7 @@ function normalizeGisView(input: unknown): GisProjectView | undefined {
   };
 }
 
-function resolveGisFog(
-  projection: GisProjection,
-  preset: GisAtmospherePreset,
-): GisProjectFog | undefined {
-  if (projection !== "globe") return undefined;
-  return { ...GIS_ATMOSPHERE_PRESETS[preset] };
-}
+export { listGisProjectLayers } from "@/components/charts/engine/maplibre/gisProjectLayers";
 
 export function defaultGisProjectNativeBody(): Record<string, unknown> {
   return { gisProject: DEFAULT_GIS_PROJECT };

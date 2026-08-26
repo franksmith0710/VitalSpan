@@ -1,5 +1,9 @@
 import type { GisAtmospherePreset, GisProjection } from "@/components/charts/engine/maplibre/gisProject";
 import {
+  resolveGisProjectHalo,
+  type GisProjectHalo,
+} from "@/components/charts/engine/maplibre/gisProjectHalo";
+import {
   bindMapRenderSync,
   isGlobeTransformProbeReady,
   resolveGlobeLimbBoundsForOverlay,
@@ -22,10 +26,13 @@ const HALO_CANVAS_CLASS =
 export function mountGisGlobeHaloOverlay(
   wrapper: HTMLElement,
   getMap: () => MapLibreMap | null,
-  preset: GisAtmospherePreset | undefined,
-  projection: GisProjection | undefined,
+  getContext: () => {
+    preset: GisAtmospherePreset | undefined;
+    projection: GisProjection | undefined;
+    halo: GisProjectHalo | undefined;
+  },
 ): () => void {
-  const enabled = projection === "globe";
+  const enabled = () => getContext().projection === "globe";
 
   const canvas = document.createElement("canvas");
   canvas.dataset.testid = "gis-globe-halo";
@@ -92,11 +99,14 @@ export function mountGisGlobeHaloOverlay(
   };
 
   const paint = () => {
-    if (!running || !ctx || !enabled) {
+    if (!running || !ctx || !enabled()) {
       canvas.style.display = "none";
       return;
     }
     bindMapIfNeeded();
+
+    const { preset, halo: haloRaw } = getContext();
+    const halo = resolveGisProjectHalo(haloRaw, preset);
 
     const overlay = resolvePaintOverlay();
     const { width, height } = readOverlayLayoutSize(overlay);
@@ -120,7 +130,7 @@ export function mountGisGlobeHaloOverlay(
 
     mapReady = true;
     canvas.style.display = "block";
-    drawGlobeAtmosphereHalo(ctx, width, height, limb, preset);
+    drawGlobeAtmosphereHalo(ctx, width, height, limb, preset, halo);
   };
 
   const bootLoop = () => {

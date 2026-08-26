@@ -1,5 +1,6 @@
 import type { GisAtmospherePreset } from "@/components/charts/engine/maplibre/gisProject";
 import type { GlobeLimbBounds } from "@/components/charts/engine/maplibre/gisGlobeLayout";
+import type { ResolvedGisProjectHalo } from "@/components/charts/engine/maplibre/gisProjectHalo";
 import {
   GEOLIBRE_HALO_OUTER_SCALE,
   GEOLIBRE_HALO_STOPS_DAY,
@@ -28,15 +29,19 @@ export function drawGlobeAtmosphereHalo(
   height: number,
   limb: GlobeLimbBounds,
   preset: GisAtmospherePreset | undefined,
+  halo?: ResolvedGisProjectHalo,
 ) {
   const { x: cx, y: cy, radius: globeRadius } = limb;
-  const outer = globeRadius * GEOLIBRE_HALO_OUTER_SCALE;
+  const outerScale = halo?.outerScale ?? GEOLIBRE_HALO_OUTER_SCALE;
+  const haloOpacity = halo?.opacity ?? 1;
+  const outer = globeRadius * outerScale;
   const gradient = ctx.createRadialGradient(cx, cy, globeRadius, cx, cy, outer);
   applyHaloGradientStops(gradient, preset);
 
   ctx.clearRect(0, 0, width, height);
   ctx.save();
   ctx.globalCompositeOperation = "screen";
+  ctx.globalAlpha = haloOpacity;
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, width, height);
   ctx.restore();

@@ -136,6 +136,18 @@ export function ChartGisMapOverlayPanel() {
           onCheckedChange={(cluster) => patchOverlay({ cluster })}
         />
 
+        {resolved.cluster ? (
+          <InspectorSliderField
+            label="聚合最大 zoom"
+            hint="高于此 zoom 时显示单个散点"
+            value={resolved.clusterMaxZoom}
+            min={0}
+            max={18}
+            step={1}
+            onChange={(clusterMaxZoom) => patchOverlay({ clusterMaxZoom })}
+          />
+        ) : null}
+
         <InspectorSwitchRow
           label="有散点时自动定位"
           checked={resolved.autoFit}

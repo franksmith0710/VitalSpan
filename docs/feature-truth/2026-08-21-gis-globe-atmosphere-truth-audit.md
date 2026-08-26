@@ -161,3 +161,24 @@ ChartGisMapProjectPanel → writeGisProject → GisMapView
 - 建议：`root-first-solve` 处理 P0（椭圆 fit + BROWSER 门禁）
 - 用户批准修复：**否**（本次仅审计）
 - 单测：**53/53 绿** ≠ 视觉 REAL
+
+---
+
+## 8. 复验记录（2026-08-26 · GeoLibre 能力迁入）
+
+| 字段 | 值 |
+|------|-----|
+| 日期 | 2026-08-26 |
+| 变更 | A1 paint 竞态修复 · A2 高级大气/光晕/自转速度面板 · B1 `layers[]` · B2 `ChartGisMapLayersPanel` · B3 多图层 runtime |
+| 单测 | `pnpm exec vitest run src/components/charts/engine/maplibre/` → **101/101 绿** |
+| BROWSER | `5173` 组件库 GIS 地图编辑页：`data-gis-paint-state=ready`；PMTiles 陆海+散点可见；样式 Tab 出现「GIS 底图」「高级大气与光晕」「GIS 图层」 |
+| 总体判定 | **PARTIAL 7/10 · B**（渲染链与面板接线已验；T1 GeoLibre 远视图像素对标仍为 PARTIAL） |
+
+| ID | 2026-08-26 期望 vs 实际 | 判定 |
+|----|-------------------------|------|
+| T1 | 外缘柔光 ≈ GeoLibre 远视图 | **PARTIAL** — 球面 globe + 光晕参数已暴露；未做 side-by-side 像素 diff |
+| T2 | pitch 下光晕贴边 | **PARTIAL** — 新增 `gisGlobeLayout` pitch 单测；BROWSER 未验倾斜拖动 |
+| T6 | 面板 → `gisProject` | **CHAIN→PARTIAL** — BROWSER 见高级大气折叠 + GIS 图层区块；无 Playwright 写回断言 |
+| B-new | `gisProject.layers[]` 多图层 | **CHAIN** — `gisProjectLayers.test.ts` + 样式 Tab UI |
+
+**仍待 P0**：与 [web.geolibre.app](https://web.geolibre.app/) 远视图 side-by-side 截图对标（T1）；GeoLibre #230 椭圆拟合完整移植（T2）。

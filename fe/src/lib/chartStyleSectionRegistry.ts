@@ -33,6 +33,7 @@ export type ChartStyleSectionId =
   | "label"
   | "background"
   | "gisProject"
+  | "gisLayers"
   | "gisOverlay";
 
 export const STYLE_VARIANT_LABELS: Record<string, string> = {

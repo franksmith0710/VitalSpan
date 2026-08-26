@@ -34,8 +34,9 @@ export function mountGisOverlayInteraction(
   map: MapLibreMap,
   clusterEnabled: boolean,
   onPointClick?: (payload: GisOverlayClickPayload) => void,
+  layerIds?: string[],
 ): () => void {
-  const layerIds = overlayLayerIds(clusterEnabled);
+  const ids = layerIds ?? overlayLayerIds(clusterEnabled);
   let popup: Popup | null = null;
 
   const handleClick = (event: import("maplibre-gl").MapMouseEvent & { features?: GeoJSON.Feature[] }) => {
@@ -66,7 +67,7 @@ export function mountGisOverlayInteraction(
   const enterHandlers = new Map<string, () => void>();
   const leaveHandlers = new Map<string, () => void>();
 
-  for (const layerId of layerIds) {
+  for (const layerId of ids) {
     map.on("click", layerId, handleClick);
     const onEnter = () => {
       map.getCanvas().style.cursor = "pointer";
@@ -83,7 +84,7 @@ export function mountGisOverlayInteraction(
   return () => {
     popup?.remove();
     popup = null;
-    for (const layerId of layerIds) {
+    for (const layerId of ids) {
       map.off("click", layerId, handleClick);
       const onEnter = enterHandlers.get(layerId);
       const onLeave = leaveHandlers.get(layerId);

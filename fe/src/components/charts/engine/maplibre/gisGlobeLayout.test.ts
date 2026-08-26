@@ -142,6 +142,31 @@ describe("resolveGlobeLimbBoundsForOverlay", () => {
     expect(limb!.y).toBeCloseTo(150, 0);
   });
 
+  it("shrinks limb radius under pitch perspective", () => {
+    const mapHost = document.createElement("div");
+    const makeMap = (pitch: number) => ({
+      isStyleLoaded: () => true,
+      getContainer: () => mapHost,
+      getCenter: () => ({ lng: 100, lat: 28 }),
+      getPitch: () => pitch,
+      getBearing: () => 0,
+      transform: {
+        centerPoint: { x: 200, y: 150 },
+        worldSize: 512,
+        center: { lat: 28 },
+        width: 400,
+        height: 300,
+        isPointOnMapSurface: (point: { x: number; y: number }) =>
+          Math.hypot(point.x - 200, point.y - 150) <= 80,
+      },
+    });
+    const flat = resolveGlobeLimbBoundsForOverlay(makeMap(0) as never, mapHost, 400, 300);
+    const tilted = resolveGlobeLimbBoundsForOverlay(makeMap(60) as never, mapHost, 400, 300);
+    expect(flat).not.toBeNull();
+    expect(tilted).not.toBeNull();
+    expect(tilted!.radius).toBeLessThan(flat!.radius);
+  });
+
   it("returns null when transform probe is unavailable instead of viewport fallback", () => {
     const mapHost = document.createElement("div");
     const map = {
