@@ -31,7 +31,39 @@ describe("resolveCustomVizRuntimeStyle", () => {
       titleColor: "#abc",
       labelShow: false,
       cornerRadius: 6,
+      paletteColors: ["#465fff", "#7a5af8", "#12b76a", "#0ba5ec", "#ee46bc"],
     });
+  });
+
+  it("uses display palette for accentColor when schema style has no explicit accent", () => {
+    const style = resolveCustomVizRuntimeStyle({
+      manifestDefault: { accentColor: "#10b981", lineWidth: 3 },
+      config: {
+        artifactId: "a1",
+        displayStyle: { paletteId: "nightfall" },
+        style: { lineWidth: 5 },
+      },
+      dashboardStyle: {},
+    });
+
+    expect(style.accentColor).not.toBe("#10b981");
+    expect(style.lineWidth).toBe(5);
+    expect(Array.isArray(style.paletteColors)).toBe(true);
+    expect((style.paletteColors as string[]).length).toBeGreaterThan(0);
+    expect(style.accentColor).toBe((style.paletteColors as string[])[0]);
+  });
+
+  it("keeps schema accentColor over display palette", () => {
+    const style = resolveCustomVizRuntimeStyle({
+      manifestDefault: { accentColor: "#10b981" },
+      config: {
+        artifactId: "a1",
+        displayStyle: { paletteId: "nightfall" },
+        style: { accentColor: "#ff00ff" },
+      },
+    });
+
+    expect(style.accentColor).toBe("#ff00ff");
   });
 });
 

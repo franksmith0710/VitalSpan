@@ -56,6 +56,19 @@ describe("customVizStyleBridge", () => {
     host.remove();
   });
 
+  it("hides tooltip when tooltipShow is false", () => {
+    const host = document.createElement("div");
+    host.className = "vs-custom-viz-host";
+    host.innerHTML = '<div id="tooltip" class="tooltip">tip</div>';
+    document.body.appendChild(host);
+    appendCustomVizStyleBridge(host);
+
+    applyCustomVizStyleBridgeDom(host, { tooltipShow: false });
+    expect(host.getAttribute("data-vs-tooltip-show")).toBe("false");
+    expect((host.querySelector("#tooltip") as HTMLElement).style.display).toBe("none");
+    host.remove();
+  });
+
   it("appends manifest hook stylesheet when provided", () => {
     const host = document.createElement("div");
     host.className = "vs-custom-viz-host";
@@ -64,6 +77,33 @@ describe("customVizStyleBridge", () => {
       accentColor: { selectors: [".custom-bar"] },
     });
     expect(host.querySelector(".vs-cv-style-hooks")?.textContent).toContain(".custom-bar");
+    host.remove();
+  });
+
+  it("applies SVG area gradient when seriesGradient is true", () => {
+    const host = document.createElement("div");
+    host.className = "vs-custom-viz-host";
+    host.innerHTML =
+      '<svg><defs></defs><path class="trend-area" fill="#10b981" fill-opacity="0.4"></path></svg>';
+    document.body.appendChild(host);
+    appendCustomVizStyleBridge(host);
+
+    applyCustomVizStyleBridgeDom(host, { seriesGradient: true, accentColor: "#336699" });
+    const area = host.querySelector(".trend-area") as SVGPathElement;
+    expect(area.getAttribute("fill")).toMatch(/^url\(#vs-cv-series-grad-/);
+    expect(area.getAttribute("fill-opacity")).toBe("1");
+    host.remove();
+  });
+
+  it("restores solid area fill when seriesGradient is false", () => {
+    const host = document.createElement("div");
+    host.className = "vs-custom-viz-host";
+    host.innerHTML = '<svg><path class="trend-area" fill="url(#old)"></path></svg>';
+    document.body.appendChild(host);
+
+    applyCustomVizStyleBridgeDom(host, { seriesGradient: false, accentColor: "#abcdef" });
+    const area = host.querySelector(".trend-area") as SVGPathElement;
+    expect(area.getAttribute("fill")).toBe("#abcdef");
     host.remove();
   });
 });

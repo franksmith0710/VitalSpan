@@ -112,3 +112,41 @@ html, body { height: 100%; overflow: hidden; }
 | P1 滚动条图 | `dynamic-scroll-chart` | `examples/dynamic-scroll-chart.bundle.html` |
 
 脚手架：`python tools/scaffold-custom-viz.py --id my-x --name 名称 --template scrolling-table`
+
+## 7. 平台六块（displayStyle）消费清单
+
+样式 Tab **六块**（标题/备注/标签/提示/图表配色/背景）由平台写入 `payload.style`，bundle **必须**读取，禁止在 `styleSchema` 重复声明同名键。
+
+| 六块 | payload.style 键 | bundle 读法 |
+|------|------------------|-------------|
+| 标签 | `labelShow` · `labelColor` · `labelFontSize` | 控制数值/轴标签显隐与颜色；禁写死始终绘制 |
+| 提示 | `tooltipShow` · `tooltipColor` · `tooltipBackground` · `tooltipFontSize` | 控制 hover 提示显隐与样式 |
+| 图表配色 | `paletteColors` · `paletteId` · `paletteOpacity` · **`seriesGradient`** | 优先 `st.paletteColors[0]`；否则 `--vs-palette-0`；**`seriesGradient: true`** 时面积/柱形用 `linearGradient`（上 95% → 下 55% 透明度），见 `future-trend-chart` / 内置 `renderD3LineChart` |
+
+推荐模板（复制进 `resolveStyle`）：
+
+```javascript
+function hostVar(name, fallback) {
+  if (!host) return fallback;
+  var v = getComputedStyle(host).getPropertyValue(name).trim();
+  return v || fallback;
+}
+function resolveStyle(p) {
+  var st = (p && p.style) || {};
+  var palette = Array.isArray(st.paletteColors) ? st.paletteColors.slice() : [];
+  for (var i = palette.length; i < 8; i++) {
+    var c = hostVar("--vs-palette-" + i, "");
+    if (c) palette.push(c);
+  }
+  return {
+    accentColor: st.accentColor || palette[0] || hostVar("--vs-style-accent-color", "#3b82f6"),
+    labelShow: st.labelShow !== false,
+    tooltipShow: st.tooltipShow !== false,
+    labelColor: st.labelColor || hostVar("--dashboard-text-primary", "#e2e8f0"),
+    tooltipColor: st.tooltipColor || hostVar("--dashboard-text-primary", "#e2e8f0"),
+    tooltipBg: st.tooltipBackground || "rgba(15,23,42,0.95)",
+  };
+}
+```
+
+金样：`examples/custom-viz-trend-line.json` · `examples/future-trend-chart.bundle.html`

@@ -241,8 +241,18 @@ export function resolveCustomVizRuntimeStyle(args: {
   const flatDisplay = flattenCustomVizDisplayStyle(args.config?.displayStyle);
   const merged = { ...manifestDefault, ...flatDisplay, ...schemaStyle };
   const palette = resolveCustomVizEffectivePaletteColors(args.config, args.dashboardStyle);
-  if (palette[0] && merged.accentColor == null && merged.barColor == null) {
+  if (palette.length) {
+    merged.paletteColors = palette;
+  }
+  const schemaHasExplicitAccent =
+    schemaStyle.accentColor != null ||
+    schemaStyle.lineColor != null ||
+    schemaStyle.barColor != null;
+  if (palette[0] && !schemaHasExplicitAccent) {
     merged.accentColor = palette[0];
+  }
+  if (merged.seriesGradient == null && args.dashboardStyle?.seriesGradient != null) {
+    merged.seriesGradient = args.dashboardStyle.seriesGradient;
   }
   return merged;
 }
