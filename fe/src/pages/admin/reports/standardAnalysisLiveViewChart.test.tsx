@@ -20,7 +20,7 @@ const pack: AnalysisPack = {
   boundConfigId: "",
   dataSourceId: "00000000-0000-4000-8000-000000000001",
   fieldMapping: { status: "category_name", region: "province", createdAt: "created_at" },
-  enabledThemes: ["lifecycle", "distribution"],
+  enabledThemes: ["lifecycle", "distribution", "trend"],
   allowedRoles: ["admin"],
   snapshotCronPreset: "daily",
   snapshotRetentionPeriods: 12,
@@ -43,7 +43,7 @@ const runData: RunResult = {
         ],
       },
     ],
-    meta: {},
+    meta: { sourceRowCount: 200, aggregatedPointCount: 2 },
   },
 };
 
@@ -74,59 +74,60 @@ describe("StandardAnalysisLiveView live summary strip", () => {
     captured.viewModel = undefined;
   });
 
-  it("renders borderless ScheduleStatCard metrics in a full-width grid", () => {
+  it("shows chart-aligned summary only in chart mode", () => {
     render(
       <StandardAnalysisLiveView pack={pack} activeTheme="lifecycle" runData={runData} isLoading={false} />,
     );
 
     const strip = screen.getByTestId("standard-analysis-live-summary");
-    expect(strip).toHaveStyle({ gridTemplateColumns: "repeat(2, minmax(0, 1fr))" });
-    expect(strip.textContent).toContain("结果行数");
-    expect(strip.textContent).toContain("数量合计");
-    expect(strip.textContent).toMatch(/结果行数[\s\S]*2/);
-    expect(strip.textContent).toMatch(/数量合计[\s\S]*200/);
-
-    const cards = strip.querySelectorAll(".rounded-xl");
-    expect(cards.length).toBe(2);
-    for (const card of cards) {
-      expect(card.className).toMatch(/border-0/);
-      expect(card.className).not.toMatch(/border-gray-200/);
-    }
+    expect(strip).toHaveStyle({ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" });
+    expect(strip.textContent).toContain("状态数");
+    expect(strip.textContent).toContain("记录总数");
+    expect(strip.textContent).toContain("200");
+    expect(strip.textContent).toContain("办公耗材");
   });
 
-  it("adds top-region metric for distribution theme", () => {
-    const distributionRun: RunResult = {
+  it("shows time-series peak aligned with line chart data", () => {
+    const trendRun: RunResult = {
       ...runData,
-      theme: "distribution",
+      theme: "trend",
       renderSpec: {
         sections: [
           {
             kind: "chart",
-            chartType: "bar",
-            columns: ["region", "cnt"],
+            chartType: "line",
+            columns: ["d", "cnt"],
             rows: [
-              ["华东", 10],
-              ["华北", 30],
+              ["2025-04-05", 2],
+              ["2025-04-06", 5],
             ],
           },
         ],
-        meta: {},
+        meta: { sourceRowCount: 106, aggregatedPointCount: 2 },
       },
     };
 
     render(
-      <StandardAnalysisLiveView
-        pack={pack}
-        activeTheme="distribution"
-        runData={distributionRun}
-        isLoading={false}
-      />,
+      <StandardAnalysisLiveView pack={pack} activeTheme="trend" runData={trendRun} isLoading={false} />,
     );
 
     const strip = screen.getByTestId("standard-analysis-live-summary");
-    expect(strip).toHaveStyle({ gridTemplateColumns: "repeat(3, minmax(0, 1fr))" });
-    expect(strip.textContent).toContain("最高区域");
-    expect(strip.textContent).toContain("华北");
+    expect(strip.textContent).toContain("单点峰值");
+    expect(strip.textContent).toContain("5");
+    expect(strip.textContent).toContain("106");
+  });
+
+  it("hides summary strip in table mode", async () => {
+    const { userEvent } = await import("@testing-library/user-event");
+    const user = userEvent.setup();
+
+    render(
+      <StandardAnalysisLiveView pack={pack} activeTheme="lifecycle" runData={runData} isLoading={false} />,
+    );
+
+    expect(screen.getByTestId("standard-analysis-live-summary")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "数据表" }));
+    expect(screen.queryByTestId("standard-analysis-live-summary")).not.toBeInTheDocument();
   });
 
   it("hides summary strip when there are no rows", () => {

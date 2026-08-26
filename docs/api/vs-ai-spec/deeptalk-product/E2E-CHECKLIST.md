@@ -78,11 +78,11 @@ python executor/cli.py vitalspan_completion_gate --workflow 2 --agent-summary ".
 | Gate | `completion_gate wf2` | passed |
 | 5173 | 分析 → 组件库 | 可见 + 样式 Tab 六块有反应 |
 
-- [x] `examples/hex-kpi-grid.json`（验收金样 · artifactId 见 publish 输出）
+- [x] `examples/hex-kpi-grid.json`（验收金样 · 已 publish 可复测）
 - [x] validate → publish → `completion_gate wf2` 绿（CLI）
 - [x] `AGENT-SYSTEM-PROMPT.md` ≤80 行 · `DEEPTALK-AGENT-PROMPT.md` 已对齐
-- [ ] 5173 人工走查 hex-kpi-grid 样式 Tab（本地环境）
-- [ ] 插件 zip sync `deeptalk-plugins`（本机无仓；跑 `scripts/sync-vs-ai-spec-to-deeptalk-repo.ps1` 需 Deeptalk 根目录）
+- [x] 插件 **v0.3.2** sync + `release/vitalspan-v0.3.2.zip`（L3 工具 + assets）
+- [ ] DeepTalk 安装 zip 并重启 · 5173 走查 hex-kpi-grid 样式 Tab
 
 ## VitalSpan CI 参考
 

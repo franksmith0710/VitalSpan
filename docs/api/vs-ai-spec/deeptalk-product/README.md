@@ -73,6 +73,7 @@ deeptalk/integrations/vitalspan/          # sync 目标（可选）
 | 桌面 MVP | `.\scripts\sync-vs-ai-spec-pack.ps1` |
 | DeepTalk 产品仓（备用） | `.\scripts\sync-vs-ai-spec-to-deeptalk-repo.ps1` |
 | 插件 release | `deeptalk-plugins` 根 `npm run release` |
+| **L3 sync → 插件** | `.\scripts\sync-vs-ai-spec-to-deeptalk-plugin.ps1 -PluginRoot C:\...\deeptalk-plugins\plugins\vitalspan` |
 | 离线 zip | `.\scripts\pack-vs-ai-spec-deeptalk-test.ps1` |
 
 ## 验收

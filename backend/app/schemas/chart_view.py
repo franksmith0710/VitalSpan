@@ -310,6 +310,12 @@ class ChartViewConfigLayout(BaseModel):
         return self
 
     @model_validator(mode="after")
+    def normalize_graph_style_variant(self) -> "ChartViewConfigLayout":
+        if self.chart_type == "graph" and self.style_variant in ("default", None, ""):
+            return self.model_copy(update={"style_variant": "force"})
+        return self
+
+    @model_validator(mode="after")
     def validate_layout_shell(self) -> ChartViewConfigLayout:
         from app.viz.registry import ChartTypeNotRegistered, get_spec
 

@@ -8,7 +8,7 @@
 | 选项 | A 全面 Web Worker · B 主线程减负 · C Profile-first 合成路径 · S0 维持现状 |
 | 裁决 | **RECOMMEND_SYNTHESIZED**（C = A 的 PoC 子集 + B 的 Phase 1） |
 | 方向纠正强度 | **改道** |
-| 置信度 | **MEDIUM**（缺 Chrome Performance 实测栈；代码锚点 T1 充分） |
+| 置信度 | **HIGH**（P2/P3 实测见 [附录](./2026-08-26-vitalspan-fe-performance-profile-appendix.md)；P1 像素画布待补录） |
 | **交付** | 判 + 纠 + 给（§6–§9 完整） |
 
 ---
@@ -62,7 +62,7 @@
 | T1 | 代码 | 2D choropleth **主线程** `renderD3ChoroplethChart` 建 SVG DOM | [`fe/src/components/charts/engine/d3/geo/renderChoropleth.ts`](../../../fe/src/components/charts/engine/d3/geo/renderChoropleth.ts) |
 | T1 | 代码 | 列表卡片 `IntersectionObserver` + 预览槽位 | [`fe/src/components/dashboard/DashboardListCardPreview.tsx`](../../../fe/src/components/dashboard/DashboardListCardPreview.tsx) |
 | T1 | 近期修复 | 碰撞预览 skip 活动 widget；2D 地图 live resize viewBox；`onCommitResizeRef` | `pixelShapePreviewRegistry.ts` · `D3GeoMapView.tsx`（会话内已落地） |
-| T3 | 未测 | Chrome Performance 主线程 Top 栈（拖拽/多 widget/Inspector） | **待 Phase 0 录制** |
+| T3 | 实测 | P3 冷进入 Top：`buildDatasetEncoding` / `renderD3ChoroplethChart` / `runD3Renderer`；P2 Inspector：`renderWithHooks` / `fetchWithTimeout` | [附录](./2026-08-26-vitalspan-fe-performance-profile-appendix.md) |
 | H1 | 假设 | 用户卡顿主场景 = **大屏 PixelCanvas + 区域地图** | 近期对话 + DOM 路径 |
 | H2 | 假设 | 后端 demo 查询 <3s | 本地环境未在本评审中压测 |
 
@@ -250,4 +250,4 @@ pnpm exec vitest run src/pages/admin/dashboard/dashboard-first-screen.perf.smoke
 
 ---
 
-*status: complete · 待步 0 Performance 实测附录可后续补 HIGH 置信度*
+*status: complete · 步 0 P2/P3 已录；P1 像素画布待环境修复后补录 → [附录](./2026-08-26-vitalspan-fe-performance-profile-appendix.md)*

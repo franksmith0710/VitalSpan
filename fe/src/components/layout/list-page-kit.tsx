@@ -89,7 +89,13 @@ export function ListPageTableFrame({
   className?: string;
 }) {
   return (
-    <div className={cn(LIST_PAGE_CONTENT_PAD_CLASS, className)}>
+    <div
+      className={cn(
+        "min-h-0 flex-1 overflow-x-hidden overflow-y-auto",
+        LIST_PAGE_CONTENT_PAD_CLASS,
+        className,
+      )}
+    >
       {children}
     </div>
   );
@@ -145,7 +151,7 @@ export function ListPageFooter({
   return (
     <div
       className={cn(
-        "shrink-0 border-t border-gray-100 bg-gray-50/80 px-4 py-2 dark:border-white/[0.06] dark:bg-white/[0.02]",
+        "mt-auto shrink-0 border-t border-gray-100 bg-gray-50/80 px-4 py-2 dark:border-white/[0.06] dark:bg-white/[0.02]",
         className,
       )}
     >

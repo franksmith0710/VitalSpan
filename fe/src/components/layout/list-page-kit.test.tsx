@@ -14,6 +14,7 @@ describe("ListPageTableFrame", () => {
 
     const frame = screen.getByText("列表内容").parentElement;
     expect(frame?.className).toContain("overflow-y-auto");
+    expect(frame?.className).toContain("flex-1");
     expect(frame?.className).not.toContain("overflow-hidden");
   });
 });

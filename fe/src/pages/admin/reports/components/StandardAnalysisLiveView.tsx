@@ -31,8 +31,8 @@ import {
   normalizeColumns,
   normalizeRows,
 } from "./standardAnalysisUi";
-import { ScheduleStatCard } from "./SchedulePageOverview";
 import { StandardAnalysisSectionChart } from "./StandardAnalysisSectionChart";
+import { StandardAnalysisSummaryMetrics } from "./StandardAnalysisSummaryMetrics";
 
 type Props = {
   pack: AnalysisPack;
@@ -45,31 +45,15 @@ function LiveSummaryStrip({
   headers,
   rows,
   theme,
+  meta,
 }: {
   headers: string[];
   rows: unknown[][];
   theme: AnalysisTheme;
+  meta?: RunResult["renderSpec"]["meta"];
 }) {
-  const metrics = buildLiveSummaryMetrics(headers, rows, theme);
-  if (metrics.length === 0) return null;
-
-  return (
-    <div
-      className="grid shrink-0 gap-3 px-5 pt-3 pb-1"
-      style={{ gridTemplateColumns: `repeat(${metrics.length}, minmax(0, 1fr))` }}
-      data-testid="standard-analysis-live-summary"
-    >
-      {metrics.map((metric) => (
-        <ScheduleStatCard
-          key={metric.label}
-          label={metric.label}
-          value={metric.value}
-          borderless
-          className="w-full bg-gray-50/80 dark:bg-white/[0.02]"
-        />
-      ))}
-    </div>
-  );
+  const metrics = buildLiveSummaryMetrics(headers, rows, theme, meta);
+  return <StandardAnalysisSummaryMetrics metrics={metrics} />;
 }
 
 function resolveInitialPresentationMode(
@@ -169,8 +153,13 @@ export function StandardAnalysisLiveView({
         </div>
       ) : null}
 
-      {!isLoading && liveRows.length > 0 ? (
-        <LiveSummaryStrip headers={rawHeaders} rows={liveRows} theme={activeTheme} />
+      {!isLoading && presentationMode === "chart" && chartSection && normalizedRows.length > 0 ? (
+        <LiveSummaryStrip
+          headers={rawHeaders}
+          rows={normalizedRows}
+          theme={activeTheme}
+          meta={runData?.renderSpec.meta}
+        />
       ) : null}
 
       <div className="flex min-h-0 flex-1 flex-col">
