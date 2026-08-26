@@ -90,7 +90,7 @@ describe("captureDashboardThumbnail", () => {
     expect(measureCaptureBox(el)).toEqual({ width: 800, height: 500 });
   });
 
-  it("snapshotCanvasesForHtmlCapture hides canvas even when toDataURL throws", () => {
+  it("snapshotCanvasesForHtmlCapture keeps canvas when toDataURL throws", () => {
     const host = document.createElement("div");
     const canvas = document.createElement("canvas");
     canvas.width = 16;
@@ -102,14 +102,29 @@ describe("captureDashboardThumbnail", () => {
     document.body.appendChild(host);
 
     const restore = snapshotCanvasesForHtmlCapture(host);
+    expect(canvas.getAttribute("data-thumbnail-canvas-hide")).toBeNull();
+    expect(canvas.style.display).toBe("");
+    expect(host.querySelector("[data-thumbnail-canvas-snapshot]")).toBeNull();
+
+    restore();
+    host.remove();
+  });
+
+  it("snapshotCanvasesForHtmlCapture replaces canvas when snapshot is usable", () => {
+    const host = document.createElement("div");
+    const canvas = document.createElement("canvas");
+    canvas.width = 16;
+    canvas.height = 16;
+    canvas.toDataURL = () => `data:image/png;base64,${"A".repeat(220)}`;
+    host.appendChild(canvas);
+    document.body.appendChild(host);
+
+    const restore = snapshotCanvasesForHtmlCapture(host);
     expect(canvas.getAttribute("data-thumbnail-canvas-hide")).toBe("");
     expect(canvas.style.display).toBe("none");
     expect(host.querySelector("[data-thumbnail-canvas-snapshot]")).toBeTruthy();
 
     restore();
-    expect(canvas.getAttribute("data-thumbnail-canvas-hide")).toBeNull();
-    expect(canvas.style.display).toBe("");
-    expect(host.querySelector("[data-thumbnail-canvas-snapshot]")).toBeNull();
     host.remove();
   });
 });

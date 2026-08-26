@@ -195,6 +195,48 @@ export async function encodeThumbnailBlob(blob: Blob): Promise<Blob> {
   }
 }
 
+const GIS_MAP_VIEW_SELECTOR = '[data-testid="gis-map-view"]';
+
+export function isUsableCanvasSnapshot(dataUrl: string): boolean {
+  return Boolean(dataUrl && dataUrl !== "data:," && dataUrl.length > 200);
+}
+
+function canvasSnapshotLooksDrawable(canvas: HTMLCanvasElement): boolean {
+  try {
+    return isUsableCanvasSnapshot(canvas.toDataURL("image/jpeg", 0.5));
+  } catch {
+    return false;
+  }
+}
+
+/** GIS / MapLibre 需等底图与星场绘制完成后再截图，否则只剩深蓝底与标题。 */
+export async function waitForGisMapCaptureReady(
+  root: HTMLElement,
+  timeoutMs = 20_000,
+): Promise<void> {
+  const gisView = root.querySelector<HTMLElement>(GIS_MAP_VIEW_SELECTOR);
+  if (!gisView) return;
+
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const basemap = gisView.getAttribute("data-basemap");
+    if (basemap === "error") return;
+    if (basemap === "pmtiles" || basemap === "blank") {
+      const canvases = Array.from(root.querySelectorAll("canvas")).filter(
+        (canvas) => canvas.width >= 8 && canvas.height >= 8,
+      );
+      if (canvases.some(canvasSnapshotLooksDrawable)) {
+        await nextPaint();
+        await nextPaint();
+        return;
+      }
+    }
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 200);
+    });
+  }
+}
+
 /** html-to-image 直接 clone WebGL canvas 会 toDataURL 失败或读到空缓冲；先换成静态 img。 */
 export function snapshotCanvasesForHtmlCapture(root: HTMLElement): () => void {
   const restores: Array<() => void> = [];
@@ -208,6 +250,7 @@ export function snapshotCanvasesForHtmlCapture(root: HTMLElement): () => void {
     } catch {
       dataUrl = "";
     }
+    if (!isUsableCanvasSnapshot(dataUrl)) continue;
     const img = document.createElement("img");
     img.setAttribute("data-thumbnail-canvas-snapshot", "");
     img.alt = "";
@@ -219,7 +262,7 @@ export function snapshotCanvasesForHtmlCapture(root: HTMLElement): () => void {
     img.style.display = "block";
     img.style.width = `${width}px`;
     img.style.height = `${height}px`;
-    if (dataUrl && dataUrl !== "data:,") img.src = dataUrl;
+    img.src = dataUrl;
     const prevDisplay = canvas.style.display;
     canvas.setAttribute("data-thumbnail-canvas-hide", "");
     canvas.style.display = "none";
@@ -246,6 +289,7 @@ export async function captureDashboardThumbnailBlob(root: HTMLElement): Promise<
     throw new Error("画布尚未完成布局，无法截取封面");
   }
   await nextPaint();
+  await waitForGisMapCaptureReady(root);
   const restoreCanvases = snapshotCanvasesForHtmlCapture(target);
   try {
     const dataUrl = await withTimeout(

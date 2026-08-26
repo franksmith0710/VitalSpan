@@ -31,6 +31,8 @@ describe("CustomVizStylePanel", () => {
     expect(screen.getByRole("button", { name: "备注" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "标签" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "提示" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "图表标签" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "图表提示" })).not.toBeInTheDocument();
     expect(screen.getByTestId("custom-viz-style-form")).toBeInTheDocument();
   });
 });

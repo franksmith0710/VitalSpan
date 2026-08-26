@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LayoutWidget } from "../layoutUtils";
 import { ChartInspectorProvider } from "../ChartInspectorProvider";
 import { ChartGisMapFlowPanel } from "./ChartGisMapFlowPanel";
+import { DEFAULT_GIS_FLOW } from "@/components/charts/engine/maplibre/gisProject";
 
 function gisWidget(flow?: { enabled?: boolean; color?: string; opacity?: number }): LayoutWidget {
   return {
@@ -126,7 +127,7 @@ describe("ChartGisMapFlowPanel", () => {
     });
   });
 
-  it("clears flow on reset", async () => {
+  it("resets flow paint to defaults while keeping enabled", async () => {
     const onChange = vi.fn();
     renderPanel(
       <ChartGisMapFlowPanel />,
@@ -146,8 +147,12 @@ describe("ChartGisMapFlowPanel", () => {
       expect(onChange).toHaveBeenCalledWith(
         expect.objectContaining({
           nativeBody: expect.objectContaining({
-            gisProject: expect.not.objectContaining({
-              flow: expect.anything(),
+            gisProject: expect.objectContaining({
+              flow: expect.objectContaining({
+                enabled: true,
+                widthMin: DEFAULT_GIS_FLOW.widthMin,
+                widthMax: DEFAULT_GIS_FLOW.widthMax,
+              }),
             }),
           }),
         }),

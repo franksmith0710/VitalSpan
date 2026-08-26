@@ -18,7 +18,7 @@ import {
 import { resolveGisChartColors } from "@/lib/resolveGisChartColors";
 
 const FLOW_HINT =
-  "开启后数据槽为：起点经/纬、终点经/纬（drill 槽）、可选流量指标。与散点互斥；示例见数据 Tab 一键接入。";
+  "开启后绑定起点/终点四维；同一起点坐标的多行会自动聚合成一个源头枢纽，动态彗星沿弧线飞向各终点。示例见数据 Tab 一键接入。";
 
 export function ChartGisMapFlowPanel() {
   const { cfg, mutateChartConfig, dashboardStyle } = useChartInspector();
@@ -44,7 +44,12 @@ export function ChartGisMapFlowPanel() {
   );
 
   const resetFlow = () => {
-    mutateChartConfig((current) => writeGisProject(current, { flow: undefined }));
+    mutateChartConfig((current) => {
+      const wasEnabled = readGisProject(current).flow?.enabled === true;
+      return writeGisProject(current, {
+        flow: { enabled: wasEnabled, ...DEFAULT_GIS_FLOW },
+      });
+    });
   };
 
   const hasCustomFlow = Boolean(project.flow && Object.keys(project.flow).length > 0);

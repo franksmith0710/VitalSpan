@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   buildGisFlowLayerDefinitions,
   buildGisFlowLineGradient,
+  buildFlowCometGradient,
   buildGisFlowLineWidth,
   buildGisFlowStyleEmbedDefinitions,
   buildGisFlowStyleKey,
@@ -36,7 +37,7 @@ describe("gisMapFlowStyle", () => {
     expect(layers[2]?.id).toBe(GIS_FLOW_LINE_LAYER_ID);
     expect(layers[3]?.id).toBe(GIS_FLOW_PULSE_LAYER_ID);
     expect(layers[4]?.id).toBe(GIS_FLOW_HUB_LAYER_ID);
-    expect(layers[2]?.paint?.["line-color"]).toBeDefined();
+    expect(layers[2]?.paint?.["line-gradient"]).toBeDefined();
     expect(layers[3]?.paint?.["line-width"]).toBeDefined();
     expect(layers[3]?.paint?.["line-dasharray"]).toBeUndefined();
   });
@@ -62,11 +63,18 @@ describe("gisMapFlowStyle", () => {
     expect(split.hubs.features).toHaveLength(1);
   });
 
-  it("builds crest highlight gradient", () => {
+  it("builds endpoint-fade gradient for thin fly lines", () => {
     const gradient = buildGisFlowLineGradient("#f97316");
     expect(gradient[0]).toBe("interpolate");
     expect(gradient[2]).toEqual(["line-progress"]);
-    expect(String(gradient[8])).toContain("255, 255, 255");
+    expect(String(gradient[4])).toContain("0.04");
+    expect(String(gradient[6])).toContain("0.2");
+  });
+
+  it("builds comet head gradient for animated pulse", () => {
+    const gradient = buildFlowCometGradient("#38bdf8", 0.6, 0.35);
+    expect(gradient[0]).toBe("interpolate");
+    expect(String(gradient[10])).toContain("255, 255, 255");
   });
 
   it("changes style key when flow paint changes", () => {
@@ -90,7 +98,7 @@ describe("gisMapFlowStyle", () => {
     expect(width[0]).toBe("interpolate");
     expect(width[2]).toEqual(["zoom"]);
     expect(width[3]).toBe(0);
-    expect(width[4]).toBeCloseTo(16.8);
+    expect(width[4]).toBeCloseTo(6.6);
   });
 
   it("embeds split sources without geometry filters", () => {

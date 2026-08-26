@@ -342,6 +342,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         pitch: initialView.pitch ?? 0,
         attributionControl: false,
         transformRequest: gisMapTransformRequest,
+        canvasContextAttributes: { preserveDrawingBuffer: true },
       });
       mapRef.current = map;
       appliedStyleKeyRef.current = styleKey;

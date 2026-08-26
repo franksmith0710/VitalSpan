@@ -23,7 +23,8 @@ export type GisFlowSegment = {
   weight?: number;
 };
 
-const DEFAULT_FLOW_COLOR = "#f97316";
+const DEFAULT_FLOW_COLOR = "#38bdf8";
+const DEST_HUB_COLOR = "#fb7185";
 
 const ARC_SEGMENTS = 80;
 
@@ -35,6 +36,10 @@ function gisOdCoordinatesReady(config: ChartViewConfig): boolean {
       dims[2]?.field?.trim() &&
       dims[3]?.field?.trim(),
   );
+}
+
+export function flowHubKey(lng: number, lat: number): string {
+  return `${lng.toFixed(4)}:${lat.toFixed(4)}`;
 }
 
 /** 跨日界线时 MapLibre 会把 LineString 画成横穿全屏的错线，须拆段。 */
@@ -56,7 +61,7 @@ export function splitLineAtAntimeridian(coords: [number, number][]): [number, nu
   return segments.length ? segments : [coords];
 }
 
-function buildFlowArcFeatures(
+function buildFlowLineFeatures(
   segment: GisFlowSegment,
   index: number,
   fallbackColor: string,
@@ -72,7 +77,7 @@ function buildFlowArcFeatures(
     arcLift,
   );
   const arcs = splitLineAtAntimeridian(arcCoords);
-  const lineFeatures = arcs.map((coordinates, arcIndex) => ({
+  return arcs.map((coordinates, arcIndex) => ({
     type: "Feature" as const,
     id: `flow-${index}-${arcIndex}`,
     geometry: { type: "LineString" as const, coordinates },
@@ -82,23 +87,43 @@ function buildFlowArcFeatures(
       weightNorm,
       color: fallbackColor,
       role: "arc",
+      flowIndex: index,
+      flowPhase: (index * 0.17) % 1,
     },
   }));
-  const hubFeatures: GeoJSON.Feature[] = [
-    {
+}
+
+function upsertFlowHub(
+  hubMap: Map<string, GeoJSON.Feature>,
+  lng: number,
+  lat: number,
+  role: "source" | "dest",
+  color: string,
+  outbound?: number,
+): void {
+  const key = flowHubKey(lng, lat);
+  const existing = hubMap.get(key);
+  if (!existing) {
+    hubMap.set(key, {
       type: "Feature",
-      id: `hub-from-${index}`,
-      geometry: { type: "Point", coordinates: [segment.fromLng, segment.fromLat] },
-      properties: { color: fallbackColor, role: "hub" },
-    },
-    {
-      type: "Feature",
-      id: `hub-to-${index}`,
-      geometry: { type: "Point", coordinates: [segment.toLng, segment.toLat] },
-      properties: { color: fallbackColor, role: "hub" },
-    },
-  ];
-  return [...lineFeatures, ...hubFeatures];
+      id: `hub-${role}-${key}`,
+      geometry: { type: "Point", coordinates: [lng, lat] },
+      properties: {
+        color,
+        hubRole: role,
+        ...(role === "source" ? { outbound: outbound ?? 1 } : {}),
+      },
+    });
+    return;
+  }
+  if (role === "source") {
+    existing.properties = {
+      ...existing.properties,
+      hubRole: "source",
+      color,
+      outbound: Math.max(Number(existing.properties?.outbound ?? 0), outbound ?? 1),
+    };
+  }
 }
 
 export function buildGisFlowGeoJson(
@@ -136,12 +161,7 @@ export function buildGisFlowGeoJson(
     const fromLat = parseMetricValue(row[fromLatIdx]);
     const toLng = parseMetricValue(row[toLngIdx]);
     const toLat = parseMetricValue(row[toLatIdx]);
-    if (
-      fromLng == null ||
-      fromLat == null ||
-      toLng == null ||
-      toLat == null
-    ) {
+    if (fromLng == null || fromLat == null || toLng == null || toLat == null) {
       continue;
     }
     const labelRaw = labelIdx >= 0 ? row[labelIdx] : undefined;
@@ -157,6 +177,12 @@ export function buildGisFlowGeoJson(
   }
   if (!segments.length) return null;
 
+  const sourceOutbound = new Map<string, number>();
+  for (const segment of segments) {
+    const key = flowHubKey(segment.fromLng, segment.fromLat);
+    sourceOutbound.set(key, (sourceOutbound.get(key) ?? 0) + 1);
+  }
+
   const weights = segments
     .map((segment) => segment.weight)
     .filter((value): value is number => value != null && Number.isFinite(value));
@@ -165,16 +191,33 @@ export function buildGisFlowGeoJson(
   const fallbackColor = chartColors?.[0] ?? DEFAULT_FLOW_COLOR;
   const arcLift = resolveGisFlowStyle(config.nativeBody?.gisProject, chartColors).arcLift;
 
-  const features: GeoJSON.Feature[] = [];
+  const hubMap = new Map<string, GeoJSON.Feature>();
+  const lineFeatures: GeoJSON.Feature[] = [];
+
   segments.forEach((segment, index) => {
     let weightNorm: number | undefined;
     if (segment.weight != null && minWeight != null && maxWeight != null) {
       weightNorm = maxWeight === minWeight ? 0.5 : (segment.weight - minWeight) / (maxWeight - minWeight);
     }
-    features.push(...buildFlowArcFeatures(segment, index, fallbackColor, weightNorm, arcLift));
+    lineFeatures.push(
+      ...buildFlowLineFeatures(segment, index, fallbackColor, weightNorm, arcLift),
+    );
+    const sourceKey = flowHubKey(segment.fromLng, segment.fromLat);
+    upsertFlowHub(
+      hubMap,
+      segment.fromLng,
+      segment.fromLat,
+      "source",
+      fallbackColor,
+      sourceOutbound.get(sourceKey),
+    );
+    upsertFlowHub(hubMap, segment.toLng, segment.toLat, "dest", DEST_HUB_COLOR);
   });
 
-  return { type: "FeatureCollection", features };
+  return {
+    type: "FeatureCollection",
+    features: [...lineFeatures, ...hubMap.values()],
+  };
 }
 
 export function gisFlowFieldsReady(config: ChartViewConfig): boolean {

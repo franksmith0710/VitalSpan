@@ -2,13 +2,15 @@ import {
   GIS_FLOW_GLOW_LAYER_ID,
   GIS_FLOW_HUB_LAYER_ID,
   GIS_FLOW_PULSE_LAYER_ID,
+  buildFlowCometGradient,
 } from "@/components/charts/engine/maplibre/gisMapFlowStyle";
 import type { ResolvedGisFlowStyle } from "@/components/charts/engine/maplibre/gisProject";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
-const PULSE_CYCLE_MS = 2800;
-const HUB_PULSE_CYCLE_MS = 2200;
+const COMET_CYCLE_MS = 2600;
+const COMET_TRAIL = 0.26;
+const HUB_PULSE_CYCLE_MS = 1800;
 
 function prefersReducedMotion(): boolean {
   if (typeof window === "undefined" || !window.matchMedia) return false;
@@ -24,12 +26,24 @@ function setPaintSafe(map: MapLibreMap, layerId: string, key: string, value: unk
   }
 }
 
-/** 飞线流动感：pulse 层 + 外发光 + 枢纽呼吸（rAF；兼容 MapLibre 6.x） */
+function resetFlowAnimationPaint(map: MapLibreMap, resolved: ResolvedGisFlowStyle) {
+  setPaintSafe(map, GIS_FLOW_PULSE_LAYER_ID, "line-opacity", 0);
+  setPaintSafe(map, GIS_FLOW_GLOW_LAYER_ID, "line-opacity", Math.min(0.35, resolved.opacity * 0.28));
+  setPaintSafe(map, GIS_FLOW_HUB_LAYER_ID, "circle-blur", 0.12);
+}
+
+/**
+ * OD 飞线彗星动画：沿弧线从起点流向终点的 line-trim-offset + line-gradient 脉冲
+ * （对标 ECharts lines effect / DataEase 动态飞线）。
+ */
 export function mountGisFlowLineAnimation(
   map: MapLibreMap,
   resolved: ResolvedGisFlowStyle,
 ): () => void {
-  if (!resolved.animate || prefersReducedMotion()) return () => {};
+  if (!resolved.animate || prefersReducedMotion()) {
+    resetFlowAnimationPaint(map, resolved);
+    return () => {};
+  }
 
   let frameId = 0;
   const start = performance.now();
@@ -39,37 +53,47 @@ export function mountGisFlowLineAnimation(
       frameId = requestAnimationFrame(tick);
       return;
     }
-    const phase = ((now - start) % PULSE_CYCLE_MS) / PULSE_CYCLE_MS;
-    const wave = 0.5 + 0.5 * Math.sin(phase * Math.PI * 2);
+
+    const phase = ((now - start) % COMET_CYCLE_MS) / COMET_CYCLE_MS;
+    const head = phase;
+    const tail = Math.max(0, head - COMET_TRAIL);
 
     if (map.getLayer(GIS_FLOW_PULSE_LAYER_ID)) {
+      setPaintSafe(map, GIS_FLOW_PULSE_LAYER_ID, "line-trim-offset", [
+        tail,
+        Math.min(1, head + 0.002),
+      ]);
       setPaintSafe(
         map,
         GIS_FLOW_PULSE_LAYER_ID,
-        "line-opacity",
-        resolved.opacity * (0.35 + 0.5 * wave),
+        "line-gradient",
+        buildFlowCometGradient(resolved.color, head, tail),
       );
-      setPaintSafe(map, GIS_FLOW_PULSE_LAYER_ID, "line-blur", 0.2 + 0.8 * wave);
+      setPaintSafe(map, GIS_FLOW_PULSE_LAYER_ID, "line-opacity", resolved.opacity);
+      setPaintSafe(map, GIS_FLOW_PULSE_LAYER_ID, "line-blur", 0.35 + 0.25 * head);
     }
+
     if (map.getLayer(GIS_FLOW_GLOW_LAYER_ID)) {
       setPaintSafe(
         map,
         GIS_FLOW_GLOW_LAYER_ID,
         "line-opacity",
-        Math.min(1, resolved.opacity * (0.32 + 0.18 * wave)),
+        Math.min(0.45, resolved.opacity * (0.18 + 0.12 * head)),
       );
     }
+
     if (map.getLayer(GIS_FLOW_HUB_LAYER_ID)) {
       const hubPhase = ((now - start) % HUB_PULSE_CYCLE_MS) / HUB_PULSE_CYCLE_MS;
-      const pulse = 0.72 + 0.28 * Math.sin(hubPhase * Math.PI * 2);
-      setPaintSafe(map, GIS_FLOW_HUB_LAYER_ID, "circle-opacity", resolved.opacity * pulse);
-      setPaintSafe(map, GIS_FLOW_HUB_LAYER_ID, "circle-blur", 0.15 + 0.35 * pulse);
+      const pulse = 0.55 + 0.45 * Math.sin(hubPhase * Math.PI * 2);
+      setPaintSafe(map, GIS_FLOW_HUB_LAYER_ID, "circle-blur", 0.2 + 0.45 * pulse);
     }
+
     frameId = requestAnimationFrame(tick);
   };
 
   frameId = requestAnimationFrame(tick);
   return () => {
     if (frameId) cancelAnimationFrame(frameId);
+    resetFlowAnimationPaint(map, resolved);
   };
 }

@@ -16,7 +16,8 @@
 |----------|-----------|-------------|
 | **结果展示 / 取最新 N 条** | 数据 Tab · `dataBinding.resultLimit` | 直接渲染 `payload.rows`（已 LIMIT + 排序） |
 | **刷新频率** | 数据 Tab · `dataBinding.refreshMode` | 无需 schema 项 |
-| **标题/备注/标签/提示/图表配色** | 样式 Tab 六块 · `displayStyle` | 读 `payload.style` / `--vs-style-*` / `--vs-palette-*` |
+| **标题/备注/标签/提示** | 样式 Tab **独立六块** · `displayStyle` | 读 `payload.style` / `--vs-style-*`；**勿**嵌在 styleSchema |
+| **图表配色** | 样式 Tab 独立块 · 仅 palette/opacity/gradient | **不含**嵌套「图表标签/图表提示」（标签/提示见上两行独立块） |
 | **截断提示** | 壳层横幅 · `truncated`/`rowCap` | 勿自写「已采样」条 |
 | **widget 外壳** | 高级 Tab · `widgetStyle` | 勿在 schema 声明 `backgroundShow` 等 |
 

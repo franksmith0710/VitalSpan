@@ -244,10 +244,10 @@ const DEFAULT_GIS_OVERLAY_COLOR = "#2563eb";
 export const DEFAULT_GIS_FLOW: Required<
   Pick<GisProjectFlow, "widthMin" | "widthMax" | "opacity" | "scaleByMetric" | "autoFit" | "arcLift">
 > = {
-  widthMin: 4,
-  widthMax: 14,
-  opacity: 0.95,
-  scaleByMetric: true,
+  widthMin: 1,
+  widthMax: 2.5,
+  opacity: 0.88,
+  scaleByMetric: false,
   autoFit: true,
   arcLift: DEFAULT_FLOW_ARC_LIFT,
 };

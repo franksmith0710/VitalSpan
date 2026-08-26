@@ -77,8 +77,6 @@ export function CustomVizBackgroundStyleSection({
 
 export function CustomVizPaletteStyleSection({ config, dashboardStyle, onChange }: SectionProps) {
   const ds = readCustomVizDisplayStyle(config);
-  const labelVisible = readCustomVizLabelVisible(config, dashboardStyle);
-  const tooltipVisible = readCustomVizTooltipVisible(config, dashboardStyle);
 
   const patchRoot = (patch: Partial<CustomVizDisplayStyle>) =>
     onChange(patchCustomVizDisplayStyle(config, patch));
@@ -95,22 +93,8 @@ export function CustomVizPaletteStyleSection({ config, dashboardStyle, onChange 
         paletteOpacity={ds.paletteOpacity}
         seriesGradient={ds.seriesGradient ?? dashboardStyle?.seriesGradient ?? false}
         depthVisual={dashboardStyle?.depthVisual ?? "off"}
-        labelShow={labelVisible}
-        tooltipShow={tooltipVisible}
-        labelStyle={{
-          fontSize: ds.label?.fontSize ?? dashboardStyle?.chartLabelStyle?.fontSize ?? 12,
-          color: ds.label?.color,
-        }}
-        tooltipStyle={{
-          fontSize: ds.tooltip?.fontSize ?? dashboardStyle?.chartTooltipStyle?.fontSize ?? 12,
-          color: ds.tooltip?.color,
-          background: ds.tooltip?.background,
-        }}
-        labelColorFallback={resolveCustomVizLabelColor(config, dashboardStyle)}
-        tooltipColorFallback={resolveCustomVizTooltipColor(config, dashboardStyle)}
-        tooltipBackgroundFallback={resolveCustomVizTooltipBackground(config, dashboardStyle)}
-        showLabelToggle
-        showTooltipToggle
+        showLabelToggle={false}
+        showTooltipToggle={false}
         showOpacity
         showGradientToggle
         showDepthToggle={false}
@@ -124,18 +108,6 @@ export function CustomVizPaletteStyleSection({ config, dashboardStyle, onChange 
         onOpacityPreview={(opacityPercent) => patchRoot({ paletteOpacity: opacityPercent / 100 })}
         onSeriesGradientChange={(enabled) => patchRoot({ seriesGradient: enabled })}
         onDepthVisualChange={() => undefined}
-        onLabelShowChange={(show) =>
-          onChange(patchCustomVizDisplayStyleNested(config, "label", { show }))
-        }
-        onTooltipShowChange={(show) =>
-          onChange(patchCustomVizDisplayStyleNested(config, "tooltip", { show }))
-        }
-        onLabelStyleChange={(patch) =>
-          onChange(patchCustomVizDisplayStyleNested(config, "label", patch))
-        }
-        onTooltipStyleChange={(patch) =>
-          onChange(patchCustomVizDisplayStyleNested(config, "tooltip", patch))
-        }
       />
     </ChartInspectorSection>
   );
