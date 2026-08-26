@@ -139,11 +139,11 @@ def test_malicious_nested_json_rule_value_no_crash():
     assert result == []
 
 
-def test_filter_rows_unknown_op_keeps_row():
-    """T-ETL-09: filter_rows 未知 op 默认保留行。"""
+def test_filter_rows_unknown_op_drops_rows():
+    """T-ETL-09: filter_rows 未知 op 剔除全部行，避免静默放行。"""
     rows = [{"status": "active"}]
     rules = [{"type": "filter_rows", "column": "status", "op": "regex", "value": "active"}]
-    assert apply_rules(rows, rules) == [{"status": "active"}]
+    assert apply_rules(rows, rules) == []
 
 
 def test_cast_type_unknown_to_falls_back_to_str():

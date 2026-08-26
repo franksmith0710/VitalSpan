@@ -11,6 +11,8 @@ from app.auth.bypass import bypasses_rls
 from app.auth.deps import UserContext
 from app.auth.rls.hooks import prepare_query_rls
 from app.auth.rls.predicate import RlsConfigError, validate_column_name
+from app.core.config import get_settings
+from app.query.schemas import QueryError
 from app.query.rls.region_scope import build_region_scope_fragment, resolve_region_scope_prefix
 
 logger = logging.getLogger(__name__)
@@ -60,7 +62,13 @@ def apply_rls_to_sql(
         )
     except RlsConfigError:
         raise
-    except Exception:
+    except Exception as exc:
+        if get_settings().vitalspan_env != "development":
+            raise QueryError(
+                "RLS_CONFIG_INVALID",
+                "行级权限谓词生成失败，请检查 RLS 配置",
+                400,
+            ) from exc
         logger.warning("RLS predicate generation failed; degrading to 1=0", exc_info=True)
         fragment = "1=0"
 

@@ -58,6 +58,8 @@ class SyncRun(Base):
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     trace_id: Mapped[str] = mapped_column(String(64), nullable=False)
     retry_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    rows_truncated: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    consume_warning: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class EtlRuleSet(Base):

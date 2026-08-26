@@ -4,7 +4,8 @@ from typing import Any
 
 from app.core.config import get_settings
 from app.datasources.registry import ConnectorNotFoundError, registry
-from app.ingestion.models import SyncJob, decrypt_password
+from app.ingestion.models import INGESTION_MAX_ROWS, SyncJob, decrypt_password
+from app.ingestion.sync_types import SyncFetchResult
 from app.ingestion.sync_sql_builder import build_sync_select
 from app.query.capabilities import resolve_sql_dialect_type
 from app.query.rls.guard import validate_identifier
@@ -78,6 +79,11 @@ def _fetch_mysql_dialect_rows(job: SyncJob) -> list[dict[str, Any]]:
 
 def _fetch_postgresql_rows(job: SyncJob) -> list[dict[str, Any]]:
     return _fetch_registry_cursor_rows(job, job.source_type, "postgresql")
+
+
+def fetch_sql_rows_result(job: SyncJob, dialect: str) -> SyncFetchResult:
+    rows = fetch_sql_rows(job, dialect)
+    return SyncFetchResult(rows=rows, truncated=len(rows) >= INGESTION_MAX_ROWS)
 
 
 def fetch_sql_rows(job: SyncJob, dialect: str) -> list[dict[str, Any]]:

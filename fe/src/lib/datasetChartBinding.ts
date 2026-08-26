@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api";
+import { resetChartExecuteSharedInflight } from "@/lib/chartExecuteProbe";
 import { randomId } from "@/lib/randomId";
 import type { DatasetFieldKind } from "@/components/dashboard/datasetFieldClassification";
 import { parseQualifiedTable } from "@/lib/datasetTableUtils";
@@ -17,6 +18,7 @@ export type DatasetQueryConfigPayload = {
 
 type QueryConfigRecord = {
   id: string;
+  revision?: number;
   configType: string;
   refType?: string;
   refId?: string;
@@ -25,11 +27,17 @@ type QueryConfigRecord = {
 
 export type DatasetChartBinding = {
   configId: string;
+  revision?: number;
   dataSourceId?: string;
   columns?: string[];
   columnKinds?: Record<string, DatasetFieldKind>;
   schema?: string;
   table?: string;
+};
+
+export type DatasetBindResult = {
+  configId: string;
+  revision: number;
 };
 
 function parseColumnKinds(raw: unknown): Record<string, DatasetFieldKind> | undefined {
@@ -81,7 +89,15 @@ export async function fetchDatasetQueryConfig(configId: string): Promise<Dataset
   const schema = typeof payload.schema === "string" ? payload.schema : undefined;
   const table = typeof payload.table === "string" ? payload.table : undefined;
   const columnKinds = parseColumnKinds(payload.columnKinds);
-  return { configId: record.id, dataSourceId, columns, columnKinds, schema, table };
+  return {
+    configId: record.id,
+    revision: record.revision,
+    dataSourceId,
+    columns,
+    columnKinds,
+    schema,
+    table,
+  };
 }
 
 export async function resolveDatasetChartBinding(configId: string): Promise<DatasetChartBinding> {
@@ -97,7 +113,7 @@ export async function saveAndBindDatasetQueryConfig(params: {
   tableName: string;
   columns: string[];
   columnKinds?: Record<string, DatasetFieldKind>;
-}): Promise<string> {
+}): Promise<DatasetBindResult> {
   const { schema, table } = parseQualifiedTable(params.tableName);
   const payload = buildDatasetQueryPayload({
     dataSourceId: params.dataSourceId,
@@ -119,7 +135,7 @@ export async function saveAndBindDatasetQueryConfig(params: {
     refId = existing.refId ?? refId;
   }
 
-  const cfg = await apiFetch<{ id: string }>("/api/v1/query/configs", {
+  const cfg = await apiFetch<{ id: string; revision: number }>("/api/v1/query/configs", {
     method: "PUT",
     body: JSON.stringify({
       configType: "dataset_query",
@@ -137,7 +153,8 @@ export async function saveAndBindDatasetQueryConfig(params: {
     });
   }
 
-  return cfg.id;
+  resetChartExecuteSharedInflight();
+  return { configId: cfg.id, revision: cfg.revision ?? 1 };
 }
 
 /** @deprecated 使用 saveAndBindDatasetQueryConfig */
@@ -148,7 +165,7 @@ export async function createAndBindDatasetQueryConfig(params: {
   tableName: string;
   columns: string[];
   columnKinds?: Record<string, DatasetFieldKind>;
-}): Promise<string> {
+}): Promise<DatasetBindResult> {
   return saveAndBindDatasetQueryConfig(params);
 }
 
@@ -160,7 +177,7 @@ export async function persistDatasetBind(params: {
   tableName: string;
   selectedColumns: string[];
   columnKinds?: Record<string, DatasetFieldKind>;
-}): Promise<string> {
+}): Promise<DatasetBindResult> {
   return saveAndBindDatasetQueryConfig({
     datasetId: params.datasetId,
     boundConfigId: params.boundConfigId,

@@ -16,6 +16,18 @@ describe("mapApiError", () => {
     expect(localizeApiMessage("Connection successful")).toBe("数据库连接正常");
   });
 
+  it("maps QUERY_CHART_INVALID_FIELD by code", () => {
+    const err = new ApiRequestError("unknown field: metric_code", "QUERY_CHART_INVALID_FIELD");
+    expect(mapApiError(err)).toBe(
+      "图表使用了当前数据集不存在的字段，请检查时间范围或筛选配置",
+    );
+  });
+
+  it("maps unknown field prefix in message", () => {
+    expect(localizeApiMessage("unknown field: sale_date")).toBe(
+      "字段「sale_date」不存在于当前数据集，请检查时间范围或筛选配置",
+    );
+  });
   it("maps QUERY_TIMEOUT from Error with code property", () => {
     const err = Object.assign(new Error("Query timed out"), { code: "QUERY_TIMEOUT" });
     expect(mapApiError(err)).toBe("查询超时，请缩小数据范围");

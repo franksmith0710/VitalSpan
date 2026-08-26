@@ -15,24 +15,42 @@ from app.ingestion.sync_cancel import (
     finalize_cancelled,
     raise_if_cancel_requested,
 )
+from app.ingestion.sync_fetch import fetch_source_rows_result
+from app.ingestion.sync_types import SyncFetchResult
 from app.ingestion.sync_run_guard import (
     SyncRunSkipped,
     fail_run_for_guard,
     guard_api_sync_start,
     guard_scheduled_sync_start,
 )
-from app.ingestion.sync_fetch import compute_next_watermark, fetch_source_rows, validate_sync_table_names
 from app.ingestion.sync_write import write_analytics
 
 __all__ = ["run_job", "reconcile_stale_running_runs", "validate_sync_table_names", "INGESTION_MAX_ROWS"]
 
 from app.ingestion.models import INGESTION_MAX_ROWS  # noqa: E402
+from app.ingestion.sync_fetch import validate_sync_table_names  # noqa: E402
+
+_TRUNCATION_WARNING = (
+    f"已同步 {INGESTION_MAX_ROWS} 行，源数据可能更多（已达单次上限）。"
+    "请改用增量同步或缩小源表范围。"
+)
+
+
+def _coerce_fetch_result(raw: SyncFetchResult | list[dict[str, Any]]) -> SyncFetchResult:
+    if isinstance(raw, SyncFetchResult):
+        return raw
+    return SyncFetchResult(rows=raw)
 
 
 def _update_run(db: Session, run: SyncRun, **fields: Any) -> None:
     for key, value in fields.items():
         setattr(run, key, value)
     db.commit()
+
+
+def _run_still_active(db: Session, run: SyncRun) -> bool:
+    db.refresh(run)
+    return run.status in {"running", "cancelling"}
 
 
 def reconcile_stale_running_runs(*, max_age_seconds: int = 600) -> int:
@@ -98,27 +116,39 @@ def run_job(job_id: uuid.UUID, trace_id: str, *, run_id: uuid.UUID | None = None
         raise_if_cancel_requested(db, run)
         if not get_settings().analytics_database_url:
             raise RuntimeError("ANALYTICS_DB_NOT_CONFIGURED")
-        raw = fetch_source_rows(job)
+        fetch_result = _coerce_fetch_result(fetch_source_rows_result(job))
         raise_if_cancel_requested(db, run)
-        cleaned = apply_rules(raw, rules)
+        cleaned = apply_rules(fetch_result.rows, rules)
         raise_if_cancel_requested(db, run)
         count = write_analytics(job, cleaned)
         next_watermark = compute_next_watermark(job, cleaned)
         if next_watermark is not None:
             job.last_watermark = next_watermark
-        # 写入已完成后即使收到停止请求，也按成功落账（避免全量半成品）
+        if not _run_still_active(db, run):
+            db.close()
+            return run_id
+        consume_warning: str | None = None
+        if fetch_result.truncated:
+            consume_warning = _TRUNCATION_WARNING
+        from app.ingestion.sync_consume import best_effort_prepare_after_sync
+
+        prepare_warning = best_effort_prepare_after_sync(db)
+        if prepare_warning:
+            consume_warning = (
+                f"{consume_warning} {prepare_warning}".strip()
+                if consume_warning
+                else prepare_warning
+            )
         _update_run(
             db,
             run,
             status="succeeded",
             finished_at=datetime.now(timezone.utc),
             rows_synced=count,
+            rows_truncated=fetch_result.truncated,
+            consume_warning=consume_warning,
             error_message=None,
         )
-        db.commit()
-        from app.ingestion.sync_consume import best_effort_prepare_after_sync
-
-        best_effort_prepare_after_sync(db)
     except SyncCancelled:
         finalize_cancelled(db, run)
     except Exception as exc:  # noqa: BLE001 — 记录用户可读摘要
@@ -141,3 +171,6 @@ def run_job(job_id: uuid.UUID, trace_id: str, *, run_id: uuid.UUID | None = None
     finally:
         db.close()
     return run_id
+
+
+from app.ingestion.sync_fetch import compute_next_watermark  # noqa: E402

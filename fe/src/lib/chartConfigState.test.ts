@@ -43,15 +43,35 @@ describe("chartConfigState", () => {
     expect(isWidgetConfigReady(partial)).toBe(false);
   });
 
+  it("reconcile clears stale timeRange field absent from columns", () => {
+    const config = {
+      ...defaultChartConfig("table-info"),
+      timeRange: {
+        enabled: true,
+        mode: "relative" as const,
+        relativePreset: "last_30d" as const,
+        field: "metric_code",
+      },
+    };
+    const next = reconcileChartFields(config, ["sale_date", "amount", "quantity"]);
+    expect(next.timeRange).toEqual({
+      enabled: true,
+      mode: "relative",
+      relativePreset: "last_30d",
+      field: undefined,
+    });
+  });
   it("reconcile strips fields absent from columns", () => {
     const config = {
-      ...defaultChartConfig("bar"),
-      dimensions: [{ field: "old" }],
-      metrics: [{ field: "amount" }],
+      ...defaultChartConfig("line"),
+      axes: {
+        xAxis: [{ field: "old" }],
+        yAxis: [{ field: "amount" }],
+      },
     };
     const next = reconcileChartFields(config, ["amount"]);
-    expect(next.dimensions).toEqual([{ field: "" }]);
-    expect(next.metrics).toEqual([{ field: "amount" }]);
+    expect(next.axes?.xAxis).toEqual([{ field: "" }]);
+    expect(next.axes?.yAxis).toEqual([{ field: "amount" }]);
   });
 
   it("line chart is renderReady with category + metric only (optional slots empty)", () => {

@@ -139,7 +139,7 @@ export function DatasetBindPanel({
     }
     setSaving(true);
     try {
-      const configId = await persistDatasetBind({
+      const bindResult = await persistDatasetBind({
         datasetId,
         boundConfigId,
         dataSourceId,
@@ -151,7 +151,7 @@ export function DatasetBindPanel({
       await queryClient.invalidateQueries({ queryKey: ["query-config"] });
       seedKeyRef.current = "";
       toast.success(`出图字段已更新（${bindDraft.selectedColumns.length} 列）`);
-      onBound(configId);
+      onBound(bindResult.configId);
     } catch (err) {
       toast.error(mapApiError(err));
     } finally {

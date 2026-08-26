@@ -11,11 +11,12 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth.deps import UserContext
-from app.core.config import get_settings
 from app.datasources.metadata.service import list_columns
 from app.datasources.service import DataSourceError
 from app.ingestion.analytics_datasource import (
+    can_connect_analytics_pg,
     ensure_analytics_datasource,
+    resolve_analytics_connection,
     resolve_analytics_datasource_id,
 )
 from app.ingestion.models import SyncJob, EtlRuleSet
@@ -95,14 +96,18 @@ def _sync_dataset_display_name(job: SyncJob) -> str:
 
 def prepare_sync_consume(db: Session) -> PrepareResult:
     """幂等登记托管分析库数据源（仅使用服务端 ANALYTICS_DATABASE_URL）。"""
-    if not get_settings().analytics_database_url:
+    conn = resolve_analytics_connection()
+    if conn is None:
+        return PrepareResult(analytics_datasource_id=None, analytics_ready=False, created=False)
+    if not can_connect_analytics_pg(conn):
         return PrepareResult(analytics_datasource_id=None, analytics_ready=False, created=False)
     before = resolve_analytics_datasource_id(db)
     ds_id = ensure_analytics_datasource(db)
     created = before is None and ds_id is not None
+    ready = ds_id is not None and can_connect_analytics_pg(conn)
     return PrepareResult(
         analytics_datasource_id=ds_id,
-        analytics_ready=ds_id is not None,
+        analytics_ready=ready,
         created=created,
     )
 
@@ -121,8 +126,13 @@ def _etl_rules_count(db: Session, job_id: uuid.UUID) -> int:
 
 def resolve_consume_status(db: Session, job: SyncJob) -> ConsumePipelineStatus:
     """汇总同步任务的消费管道状态（不触发副作用）。"""
+    conn = resolve_analytics_connection()
     analytics_id = resolve_analytics_datasource_id(db)
-    analytics_ready = analytics_id is not None and bool(get_settings().analytics_database_url)
+    analytics_ready = (
+        analytics_id is not None
+        and conn is not None
+        and can_connect_analytics_pg(conn)
+    )
     dataset_id = _dataset_id_for_job(job)
     row = db.get(DatasetRecord, dataset_id)
     dataset_exists = row is not None
@@ -249,10 +259,18 @@ def ensure_dataset_for_sync_job(
     if row is None:
         raise SyncConsumeError("META_DATASET_CREATE_FAILED", "Dataset 创建失败", 500)
 
-    if row.origin != "sync_job" or row.sync_job_id != job.id:
-        row.origin = "sync_job"
-        row.sync_job_id = job.id
-        db.commit()
+    if not created:
+        if row.origin not in ("sync_job", None, "") or (
+            row.sync_job_id is not None and row.sync_job_id != job.id
+        ):
+            raise SyncConsumeError(
+                "SYNC_DATASET_CONFLICT",
+                f"Dataset「{dataset_id}」已存在且不属于本同步任务，请更换目标表名",
+                409,
+            )
+    row.origin = "sync_job"
+    row.sync_job_id = job.id
+    db.commit()
 
     if row.bound_config_id is not None:
         return EnsureDatasetResult(
@@ -326,9 +344,16 @@ def refresh_dataset_binding_for_sync_job(
     display_name = _sync_dataset_display_name(job)
     row.display_name = display_name
     row.table_source_datasource_id = ds_id
-    if row.origin != "sync_job" or row.sync_job_id != job.id:
-        row.origin = "sync_job"
-        row.sync_job_id = job.id
+    if row.origin not in ("sync_job", None, "") or (
+        row.sync_job_id is not None and row.sync_job_id != job.id
+    ):
+        raise SyncConsumeError(
+            "SYNC_DATASET_CONFLICT",
+            f"Dataset「{dataset_id}」已存在且不属于本同步任务，请更换目标表名",
+            409,
+        )
+    row.origin = "sync_job"
+    row.sync_job_id = job.id
     db.commit()
 
     all_columns = _list_table_columns(db, actor, ds_id, schema, table)
@@ -364,8 +389,8 @@ def refresh_dataset_binding_for_sync_job(
     )
 
 
-def best_effort_prepare_after_sync(db: Session) -> None:
-    """同步成功后 best-effort 登记分析库，失败仅记日志。"""
+def best_effort_prepare_after_sync(db: Session) -> str | None:
+    """同步成功后 best-effort 登记分析库；失败返回警告文案。"""
     try:
         result = prepare_sync_consume(db)
         if result.analytics_ready:
@@ -374,7 +399,9 @@ def best_effort_prepare_after_sync(db: Session) -> None:
                 result.analytics_datasource_id,
                 result.created,
             )
-        else:
-            logger.warning("sync_consume_auto_prepare skipped analytics not ready")
-    except Exception:
+            return None
+        logger.warning("sync_consume_auto_prepare skipped analytics not ready")
+        return "同步后自动准备出图环境未完成：托管分析库不可达或未配置"
+    except Exception as exc:
         logger.warning("sync_consume_auto_prepare_failed", exc_info=True)
+        return f"同步后自动准备出图环境失败：{exc}"[:500]

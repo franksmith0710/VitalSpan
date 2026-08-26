@@ -284,7 +284,7 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
         const connectorType =
           dsQuery.data?.items.find((d) => d.id === tableSourceId)?.type ?? "postgresql";
         try {
-          const configId = await persistDatasetBind({
+          const bindResult = await persistDatasetBind({
             datasetId: saved.datasetId,
             boundConfigId: datasetItem?.boundConfigId ?? boundConfigId,
             dataSourceId: tableSourceId,
@@ -298,7 +298,7 @@ export function DatasetFormPage({ mode }: { mode: "create" | "edit" }) {
               ? `Dataset 已创建，出图字段已绑定（${bindDraft.selectedColumns.length} 列）`
               : `Dataset 已保存，出图字段已更新（${bindDraft.selectedColumns.length} 列）`,
           );
-          await queryClient.invalidateQueries({ queryKey: ["query-config", configId] });
+          await queryClient.invalidateQueries({ queryKey: ["query-config", bindResult.configId] });
         } catch (bindErr) {
           toast.error(
             `Dataset 已保存，但出图字段绑定失败：${mapApiError(bindErr)}。请重试保存。`,

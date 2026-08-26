@@ -155,6 +155,7 @@ import { useDashboardCanvasState } from "@/hooks/useDashboardCanvasState";
 import { useWidgetSelection } from "@/hooks/useWidgetSelection";
 import { useUnsavedLeaveGuard } from "@/hooks/use-unsaved-leave-guard";
 import { Button, IconButton } from "@/components/ui/button";
+import { SaveFormButton } from "@/components/ui/save-form-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -1293,15 +1294,14 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
             className="hidden h-5 w-px shrink-0 bg-gray-200 dark:bg-gray-700 sm:block"
             aria-hidden
           />
-          <Button
+          <SaveFormButton
             type="button"
             variant="primary"
             size="sm"
-            disabled={saving || !isDirty}
+            isDirty={isDirty}
+            saving={saving}
             onClick={() => void handleSave()}
-          >
-            {saving ? "保存中…" : "保存"}
-          </Button>
+          />
           <IconButton
             type="button"
             variant="outline"
@@ -1830,15 +1830,15 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               <AlertDialogAction variant="outline" onClick={confirmLeave}>
                 放弃更改并离开
               </AlertDialogAction>
-              <Button
+              <SaveFormButton
                 type="button"
                 variant="primary"
                 size="sm"
-                disabled={saving}
+                isDirty={isDirty}
+                saving={saving}
+                saveLabel="保存并离开"
                 onClick={() => void handleSaveAndLeave()}
-              >
-                {saving ? "保存中…" : "保存并离开"}
-              </Button>
+              />
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

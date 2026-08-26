@@ -190,6 +190,8 @@ class SyncJobLastRun(BaseModel):
     started_at: str
     finished_at: str | None
     rows_synced: int | None
+    rows_truncated: bool = False
+    consume_warning: str | None = None
     error_message: str | None
 
 
@@ -293,6 +295,8 @@ class SyncRunItem(BaseModel):
     started_at: str
     finished_at: str | None
     rows_synced: int | None
+    rows_truncated: bool = False
+    consume_warning: str | None = None
     error_message: str | None
     trace_id: str
     retry_count: int
@@ -375,6 +379,8 @@ def _to_last_run(run: SyncRun | None) -> SyncJobLastRun | None:
         started_at=run.started_at.isoformat(),
         finished_at=run.finished_at.isoformat() if run.finished_at else None,
         rows_synced=run.rows_synced,
+        rows_truncated=bool(getattr(run, "rows_truncated", False)),
+        consume_warning=getattr(run, "consume_warning", None),
         error_message=run.error_message,
     )
 
@@ -807,7 +813,7 @@ def trigger_run(
                 "detail": None,
             },
         )
-    job = db.get(SyncJob, job_id)
+    job = db.scalar(select(SyncJob).where(SyncJob.id == job_id).with_for_update())
     if job is None:
         raise HTTPException(
             status_code=404,
@@ -900,6 +906,8 @@ def list_runs(
                 started_at=r.started_at.isoformat(),
                 finished_at=r.finished_at.isoformat() if r.finished_at else None,
                 rows_synced=r.rows_synced,
+                rows_truncated=bool(getattr(r, "rows_truncated", False)),
+                consume_warning=getattr(r, "consume_warning", None),
                 error_message=r.error_message,
                 trace_id=r.trace_id,
                 retry_count=r.retry_count,

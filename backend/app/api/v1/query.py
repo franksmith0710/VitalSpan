@@ -238,9 +238,10 @@ def get_dataset_routing(
 def validate_dataset_query(
     payload: dict,
     user: Annotated[UserContext, Depends(require_permission(PERM_DATASET_READ))],
+    db: Annotated[Session, Depends(_db)],
 ):
     try:
-        return validate_dataset_spec(payload, user.roles)
+        return validate_dataset_spec(payload, user.roles, session=db)
     except QueryError as exc:
         return _error_response(exc)
 
@@ -249,9 +250,10 @@ def validate_dataset_query(
 def post_dataset_execute_plan(
     payload: dict,
     user: Annotated[UserContext, Depends(require_permission(PERM_DATASET_READ))],
+    db: Annotated[Session, Depends(_db)],
 ):
     try:
-        return build_dataset_execute_plan(payload, user.roles)
+        return build_dataset_execute_plan(db, user, payload)
     except QueryError as exc:
         return _error_response(exc)
 

@@ -45,6 +45,19 @@ export function useStandardAnalysisEditor() {
   const [showSavedHint, setShowSavedHint] = useState(false);
   const savingRef = useRef(false);
 
+  const savedPack = useMemo(
+    () => (editingKey ? packs.find((pack) => pack.packKey === editingKey) : undefined),
+    [editingKey, packs],
+  );
+  const isDraftDirty = useMemo(() => {
+    const draftBody = JSON.stringify(buildStandardAnalysisSaveBody(draft));
+    if (isCreating) {
+      return draftBody !== JSON.stringify(buildStandardAnalysisSaveBody(createEmptyAnalysisPack()));
+    }
+    if (!savedPack) return false;
+    return draftBody !== JSON.stringify(buildStandardAnalysisSaveBody(savedPack));
+  }, [draft, isCreating, savedPack]);
+
   const effectiveBoundConfigId = draft.boundConfigId ?? "";
   const boundConfigQuery = useQuery({
     queryKey: ["reports", "standard-config-bound", effectiveBoundConfigId],
@@ -111,6 +124,7 @@ export function useStandardAnalysisEditor() {
 
   const onSave = async (): Promise<boolean> => {
     if (savingRef.current || upsert.isPending) return false;
+    if (!isCreating && !isDraftDirty) return false;
     if (!draft.packKey.trim()) {
       toast.error("请填写分析包标识", { id: "std-pack-save" });
       return false;
@@ -201,5 +215,6 @@ export function useStandardAnalysisEditor() {
     remove,
     showSavedHint,
     setShowSavedHint,
+    isDraftDirty,
   };
 }

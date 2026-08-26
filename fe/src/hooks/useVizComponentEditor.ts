@@ -67,6 +67,7 @@ export function useVizComponentEditor(componentId: string | undefined) {
 
   const save = useCallback(async (): Promise<boolean> => {
     if (!component || !widget) return false;
+    if (!isDirty) return false;
     setSaving(true);
     try {
       let thumbnailBlob: Blob | null = null;

@@ -7,7 +7,11 @@ import {
 import { parseQualifiedTable } from "./datasetTableUtils";
 
 const mockApiFetch = vi.fn();
+const mockResetCache = vi.fn();
 vi.mock("@/lib/api", () => ({ apiFetch: (...args: unknown[]) => mockApiFetch(...args) }));
+vi.mock("@/lib/chartExecuteProbe", () => ({
+  resetChartExecuteSharedInflight: () => mockResetCache(),
+}));
 
 describe("parseQualifiedTable", () => {
   it("splits schema.table", () => {
@@ -55,12 +59,14 @@ describe("resolveDatasetChartBinding", () => {
   it("reads dataSourceId from config payload", async () => {
     mockApiFetch.mockResolvedValue({
       id: "cfg-1",
+      revision: 2,
       configType: "dataset_query",
       payload: { dataSourceId: "ds-mysql" },
     });
     const binding = await resolveDatasetChartBinding("cfg-1");
     expect(binding).toEqual({
       configId: "cfg-1",
+      revision: 2,
       dataSourceId: "ds-mysql",
       columns: [],
       columnKinds: undefined,
@@ -74,15 +80,16 @@ describe("resolveDatasetChartBinding", () => {
 describe("saveAndBindDatasetQueryConfig", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
+    mockResetCache.mockClear();
     vi.stubGlobal("crypto", { randomUUID: () => "00000000-0000-4000-8000-000000000001" });
   });
 
   it("PUT config then POST bind for first bind", async () => {
     mockApiFetch
-      .mockResolvedValueOnce({ id: "cfg-new" })
+      .mockResolvedValueOnce({ id: "cfg-new", revision: 1 })
       .mockResolvedValueOnce({ boundConfigId: "cfg-new" });
 
-    const id = await saveAndBindDatasetQueryConfig({
+    const result = await saveAndBindDatasetQueryConfig({
       datasetId: "ds-demo",
       dataSourceId: "ds-1",
       connectorType: "mysql",
@@ -90,7 +97,8 @@ describe("saveAndBindDatasetQueryConfig", () => {
       columns: ["id"],
     });
 
-    expect(id).toBe("cfg-new");
+    expect(result).toEqual({ configId: "cfg-new", revision: 1 });
+    expect(mockResetCache).toHaveBeenCalled();
     expect(mockApiFetch).toHaveBeenNthCalledWith(
       1,
       "/api/v1/query/configs",
@@ -107,14 +115,15 @@ describe("saveAndBindDatasetQueryConfig", () => {
     mockApiFetch
       .mockResolvedValueOnce({
         id: "cfg-bound",
+        revision: 1,
         configType: "dataset_query",
         refType: "dataset",
         refId: "11111111-1111-4111-8111-111111111111",
         payload: {},
       })
-      .mockResolvedValueOnce({ id: "cfg-bound" });
+      .mockResolvedValueOnce({ id: "cfg-bound", revision: 2 });
 
-    const id = await saveAndBindDatasetQueryConfig({
+    const result = await saveAndBindDatasetQueryConfig({
       datasetId: "orders_clean_3",
       boundConfigId: "cfg-bound",
       dataSourceId: "ds-analytics",
@@ -123,15 +132,8 @@ describe("saveAndBindDatasetQueryConfig", () => {
       columns: ["id", "amount"],
     });
 
-    expect(id).toBe("cfg-bound");
+    expect(result).toEqual({ configId: "cfg-bound", revision: 2 });
     expect(mockApiFetch).toHaveBeenCalledTimes(2);
-    expect(mockApiFetch).toHaveBeenNthCalledWith(
-      2,
-      "/api/v1/query/configs",
-      expect.objectContaining({
-        method: "PUT",
-        body: expect.stringContaining('"refType":"dataset"'),
-      }),
-    );
+    expect(mockResetCache).toHaveBeenCalled();
   });
 });

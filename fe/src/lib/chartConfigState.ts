@@ -71,6 +71,16 @@ function reconcileAxisFields(
   return next;
 }
 
+function reconcileTimeRangeField(
+  timeRange: ChartViewConfig["timeRange"],
+  colSet: Set<string>,
+): ChartViewConfig["timeRange"] {
+  const field = timeRange?.field?.trim();
+  if (!timeRange?.enabled || !field) return timeRange;
+  if (colSet.has(field)) return timeRange;
+  return { ...timeRange, field: undefined };
+}
+
 export function reconcileChartFields(
   config: ChartViewConfig,
   availableColumns: string[],
@@ -79,7 +89,13 @@ export function reconcileChartFields(
   const reconcile = (refs: ChartFieldRef[] | undefined) =>
     (refs ?? []).map((r) => (r.field?.trim() && colSet.has(r.field) ? r : { field: "" }));
   const axes = reconcileAxisFields(config.axes, colSet);
-  const withAxes = { ...config, dimensions: reconcile(config.dimensions), metrics: reconcile(config.metrics), axes };
+  const withAxes = {
+    ...config,
+    dimensions: reconcile(config.dimensions),
+    metrics: reconcile(config.metrics),
+    axes,
+    timeRange: reconcileTimeRangeField(config.timeRange, colSet),
+  };
   return syncLegacyFieldsFromAxes(withAxes);
 }
 

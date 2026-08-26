@@ -191,6 +191,7 @@ def test_delete_sync_job_cascades_bound_dataset_and_config(client, auth_headers)
 
     with (
         patch("app.ingestion.sync_consume.ensure_analytics_datasource", return_value=analytics_id),
+        patch("app.ingestion.sync_consume.can_connect_analytics_pg", return_value=True),
         patch("app.ingestion.sync_consume.list_columns", return_value=mock_columns),
     ):
         ensured = client.post(

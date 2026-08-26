@@ -110,6 +110,7 @@ class QueryExecutor:
             "username": row.username,
             "password": password,
             "connect_timeout_sec": opts.connect_timeout_sec,
+            "read_timeout_sec": opts.read_timeout_sec,
             "ssl_mode": opts.ssl_mode,
         }
         return connector, kwargs, opts.pool_size
@@ -134,6 +135,11 @@ class QueryExecutor:
                 data_source_id, connector=connector, connect_kwargs=kwargs, pool_size=pool_size,
             ) as conn:
                 cur = conn.cursor()
+                if row.type in ("postgresql", "postgres"):
+                    from app.core.config import get_settings
+
+                    timeout_ms = int(get_settings().query_timeout_seconds * 1000)
+                    cur.execute(f"SET statement_timeout = {timeout_ms}")
                 if parameters:
                     cur.execute(final_sql, parameters)
                 else:

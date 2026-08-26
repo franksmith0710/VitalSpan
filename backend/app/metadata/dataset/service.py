@@ -303,6 +303,20 @@ def get_dataset(dataset_id: str, user: UserContext | None = None) -> DatasetItem
 
 def validate_dataset_draft(payload: DatasetItemIn) -> DatasetValidateOut:
     _validate_body(payload)
+    if payload.table_source_datasource_id is not None:
+        from app.datasources.models import DataSource, get_meta_session
+
+        session = get_meta_session()
+        try:
+            ds = session.get(DataSource, payload.table_source_datasource_id)
+            if ds is None or ds.deleted_at is not None:
+                raise DatasetError(
+                    "META_DATASET_SOURCE_MISSING",
+                    "Table source datasource not found",
+                    422,
+                )
+        finally:
+            session.close()
     return DatasetValidateOut(
         valid=True,
         dataset_id=payload.dataset_id,

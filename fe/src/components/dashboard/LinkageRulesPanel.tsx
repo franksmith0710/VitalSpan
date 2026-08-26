@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { Button } from "@/components/ui/button";
+import { SaveFormButton } from "@/components/ui/save-form-button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -82,6 +84,20 @@ export function LinkageRulesPanel({
 
   const chartWidgets = widgets.filter((w) => w.type === "chart");
 
+  const savedLinkageSnapshot = useMemo(
+    () =>
+      JSON.stringify({
+        rules: linkage?.linkageRules ?? [],
+        refreshMode: linkage?.refreshMode ?? "eager",
+      }),
+    [linkage],
+  );
+  const currentLinkageSnapshot = useMemo(
+    () => JSON.stringify({ rules, refreshMode }),
+    [rules, refreshMode],
+  );
+  const isDirty = currentLinkageSnapshot !== savedLinkageSnapshot;
+
   const handleRulesUpdate = (nextRules: LinkageRule[]) => {
     setRules(nextRules);
     if (draftMode) emitLinkage(nextRules);
@@ -119,6 +135,7 @@ export function LinkageRulesPanel({
   };
 
   const handleSave = async () => {
+    if (!isDirty) return;
     setSaving(true);
     setError(null);
     try {
@@ -132,6 +149,7 @@ export function LinkageRulesPanel({
         linkageRules: saved.linkageRules ?? rules,
         refreshMode: saved.refreshMode ?? payload.refreshMode,
       });
+      toast.success("联动规则已保存");
     } catch (err) {
       setError(mapApiError(err));
     } finally {
@@ -149,9 +167,15 @@ export function LinkageRulesPanel({
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">筛选联动</h3>
           {!draftMode ? (
-            <Button type="button" variant="primary" size="sm" disabled={saving} onClick={() => void handleSave()}>
-              {saving ? "保存中…" : "保存联动"}
-            </Button>
+            <SaveFormButton
+              type="button"
+              variant="primary"
+              size="sm"
+              isDirty={isDirty}
+              saving={saving}
+              saveLabel="保存联动"
+              onClick={() => void handleSave()}
+            />
           ) : null}
         </div>
       ) : null}

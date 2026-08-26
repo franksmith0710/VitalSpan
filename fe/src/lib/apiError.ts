@@ -100,6 +100,10 @@ const CODE_MESSAGES: Record<string, string> = {
   RUN_ALREADY_IN_PROGRESS: "该任务正在运行中，请稍后在运行历史中查看结果",
   SYNC_JOB_RUN_IN_PROGRESS: "任务正在运行中，请等待结束后再删除",
   SYNC_SOURCE_UNAVAILABLE: "任务引用的数据连接已删除或不可见，无法运行同步",
+  SYNC_TARGET_TABLE_CONFLICT: "目标表已被其他同步任务占用",
+  SYNC_TARGET_TABLE_BUSY: "目标表正在被其他同步任务写入，请稍后再试",
+  SYNC_CONSUME_NO_COLUMNS: "目标表无可用列，请确认同步已成功写入分析库",
+  SYNC_DATASET_CONFLICT: "Dataset 已存在且不属于本同步任务，请更换目标表名",
   RUN_NOT_IN_PROGRESS: "当前没有正在运行的同步可停止",
   INVALID_CRON: "Cron 表达式格式无效，请使用五段式如 0 2 * * *",
   TEST_IN_PROGRESS: "已有连接测试进行中，请稍候",
@@ -128,6 +132,7 @@ const CODE_MESSAGES: Record<string, string> = {
   QUERY_DATASET_NOT_READONLY: "Dataset 查询仅允许 SELECT",
   QUERY_DATASET_PLAN_INVALID_PARAMS: "Dataset 查询参数无效",
   QUERY_DATASET_CONFIG_MISMATCH: "数据集绑定与数据源不一致，请重新保存 Dataset 或联系管理员修复",
+  QUERY_CHART_INVALID_FIELD: "图表使用了当前数据集不存在的字段，请检查时间范围或筛选配置",
   BINDING_CHART_CONFLICT: "该图表已绑定其他查询",
   RLS_CONFIG_INVALID: "行级权限配置无效",
   PERMISSION_DENIED: "无权执行此操作",
@@ -141,6 +146,14 @@ const CODE_MESSAGES: Record<string, string> = {
   META_DATASET_INVALID_EXPRESSION: "计算字段表达式无效",
   META_DATASET_CONFIG_TYPE_INVALID: "只能绑定 dataset_query 类型的查询配置",
   META_DATASET_SYNC_BIND_LOCKED: "同步产物只能绑定托管分析库中的同步产出表",
+  META_DATASET_SOURCE_MISSING: "绑定的数据连接不存在或已删除",
+  META_DATASET_TRANSFORM_SYNC_LOCKED: "同步产物 Dataset 的查询清洗规则不可修改",
+  META_DATASET_TRANSFORM_INVALID: "查询清洗规则格式无效",
+  META_DATASET_TRANSFORM_NO_SOURCE: "请先绑定数据源与表后再配置查询清洗",
+  CONFIG_VERSION_CONFLICT: "查询配置已被他人修改，请刷新后重试",
+  CONFIG_INVALID_DATASET_QUERY: "查询配置不是有效的 dataset_query",
+  CONFIG_ACCESS_FORBIDDEN: "无权访问该查询配置",
+  QUERY_DATASET_NOT_BOUND: "Dataset 尚未绑定查询配置",
   META_DATASET_FORBIDDEN: "没有权限操作此 Dataset",
   META_DATASET_ID_MISMATCH: "Dataset ID 与路径不一致",
   META_DATASET_DEMO_PROTECTED: "官方示例 Dataset 不可修改或删除",
@@ -274,6 +287,7 @@ const EXACT_MESSAGE_MAP: Record<string, string> = {
 };
 
 const MESSAGE_PREFIX_MAP: Array<[RegExp, string]> = [
+  [/^unknown field: (.+)$/i, "字段「$1」不存在于当前数据集，请检查时间范围或筛选配置"],
   [/^relation ".*" does not exist/i, "源表不存在，请检查 Schema 与表名是否正确"],
   [/^templateKey not found:/i, "报表模板不存在"],
   [/^tableFqn not found:/i, "物理表不存在"],
@@ -313,7 +327,10 @@ export function localizeApiMessage(message: string): string {
   if (containsCjk(trimmed)) return trimmed;
   if (EXACT_MESSAGE_MAP[trimmed]) return EXACT_MESSAGE_MAP[trimmed];
   for (const [pattern, zh] of MESSAGE_PREFIX_MAP) {
-    if (pattern.test(trimmed)) return zh;
+    const match = trimmed.match(pattern);
+    if (match) {
+      return zh.replace(/\$(\d+)/g, (_, index) => match[Number(index)] ?? "");
+    }
   }
   if (isLikelyEnglishUserMessage(trimmed)) return GENERIC_FAILURE;
   return trimmed;

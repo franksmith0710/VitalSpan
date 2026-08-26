@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 from apscheduler.triggers.interval import IntervalTrigger
@@ -8,6 +10,8 @@ from sqlalchemy import select
 from app.ingestion.cron_validate import validate_schedule_cron
 from app.ingestion.models import SyncJob, get_meta_session
 from app.ingestion.sync_executor import reconcile_stale_running_runs, run_job
+
+logger = logging.getLogger(__name__)
 
 _scheduler: BackgroundScheduler | None = None
 
@@ -40,7 +44,13 @@ def refresh_all_jobs() -> None:
                     kwargs={"job_id": job.id, "trace_id": f"schedule-{job.id}"},
                     replace_existing=True,
                 )
-            except Exception:
+            except Exception as exc:
+                logger.warning(
+                    "sync_scheduler_skip_invalid_cron job_id=%s cron=%s err=%s",
+                    job.id,
+                    job.schedule_cron,
+                    exc,
+                )
                 continue
     finally:
         db.close()

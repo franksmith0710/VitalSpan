@@ -25,6 +25,7 @@ type DatasetListItem = {
   datasetId: string;
   displayName: string;
   boundConfigId?: string | null;
+  boundConfigRevision?: number | null;
 };
 
 function resolveDataMode(cfg: ChartViewConfig): "dataset" | "sql" {
@@ -121,6 +122,7 @@ export function useChartInspectorState(
         mode: "dataset" as const,
         datasetId,
         configId: boundId,
+        configRevision: ds?.boundConfigRevision ?? undefined,
         dataSourceId,
         sql: undefined,
         nativeBody: pickChartNativeBodyUi(current.nativeBody),
@@ -152,21 +154,24 @@ export function useChartInspectorState(
 
     const needsConfig = cfg.configId !== boundId;
     const needsDs = !cfg.dataSourceId;
-    if (!needsConfig && !needsDs) {
-      bindingSyncRef.current = `${cfg.datasetId}:${boundId}:${cfg.configId}:${cfg.dataSourceId}`;
+    const needsRevision = (cfg.configRevision ?? null) !== (ds?.boundConfigRevision ?? null);
+    if (!needsConfig && !needsDs && !needsRevision) {
+      bindingSyncRef.current = `${cfg.datasetId}:${boundId}:${cfg.configId}:${cfg.dataSourceId}:${ds?.boundConfigRevision ?? ""}`;
       return;
     }
 
-    const syncKey = `${cfg.datasetId}:${boundId}:${needsConfig}:${needsDs}`;
+    const syncKey = `${cfg.datasetId}:${boundId}:${needsConfig}:${needsDs}:${needsRevision}`;
     if (bindingSyncRef.current === syncKey) return;
 
     let cancelled = false;
     void (async () => {
       const current = readChartConfig();
       let dataSourceId = current.dataSourceId;
+      let bindingRevision: number | undefined;
       try {
         const binding = await resolveDatasetChartBinding(boundId);
         if (binding.dataSourceId) dataSourceId = binding.dataSourceId;
+        bindingRevision = binding.revision;
         setColumnKindOverrides(binding.columnKinds);
         setDatasetBindingError(null);
       } catch {
@@ -180,6 +185,7 @@ export function useChartInspectorState(
         ...readChartConfig(),
         mode: "dataset",
         configId: boundId,
+        configRevision: bindingRevision ?? ds?.boundConfigRevision ?? undefined,
         ...(dataSourceId ? { dataSourceId } : {}),
         nativeBody: pickChartNativeBodyUi(readChartConfig().nativeBody),
       });
@@ -203,6 +209,7 @@ export function useChartInspectorState(
       JSON.stringify(current.dimensions) === JSON.stringify(withOdBindings.dimensions) &&
       JSON.stringify(current.metrics) === JSON.stringify(withOdBindings.metrics) &&
       JSON.stringify(current.axes) === JSON.stringify(withOdBindings.axes) &&
+      JSON.stringify(current.timeRange) === JSON.stringify(withOdBindings.timeRange) &&
       JSON.stringify(current.nativeBody?.gisProject?.flow) ===
         JSON.stringify(withOdBindings.nativeBody?.gisProject?.flow);
     if (!same) emitChartChange(withOdBindings);

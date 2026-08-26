@@ -8,6 +8,8 @@ import { ListPagePagination, ListPageSection } from "@/components/layout/list-pa
 import { apiFetch } from "@/lib/api";
 import { hasCapability } from "@/lib/capabilities";
 import { localizeApiMessage, mapApiError } from "@/lib/apiError";
+import { isSourceUnavailable } from "@/lib/sourceHealth";
+import type { SourceHealth } from "@/lib/sourceHealth";
 import { sessionUserFromMe } from "@/lib/session";
 import { sliceListPage, useListPagination } from "@/lib/list-pagination";
 import { Badge } from "@/components/ui/badge";
@@ -26,6 +28,8 @@ type SyncRunItem = {
   started_at: string;
   finished_at: string | null;
   rows_synced: number | null;
+  rows_truncated?: boolean;
+  consume_warning?: string | null;
   error_message: string | null;
   trace_id: string;
   retry_count: number;
@@ -60,6 +64,7 @@ export function SyncJobHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
+  const [sourceHealth, setSourceHealth] = useState<SourceHealth>("none");
   const [sharedTargetJobNames, setSharedTargetJobNames] = useState<string[]>([]);
   const pagination = useListPagination();
 
@@ -72,11 +77,14 @@ export function SyncJobHistoryPage() {
         apiFetch<SyncRunListResponse>(
           `/api/v1/ingestion/sync-jobs/${id}/runs?limit=${RUNS_FETCH_LIMIT}`,
         ),
-        apiFetch<{ target_table: string; name: string }>(`/api/v1/ingestion/sync-jobs/${id}`),
+        apiFetch<{ target_table: string; name: string; source_health?: SourceHealth }>(
+          `/api/v1/ingestion/sync-jobs/${id}`,
+        ),
       ]);
       setRuns(data.items);
       setTargetTable(job.target_table);
       setJobName(job.name);
+      setSourceHealth(job.source_health ?? "none");
     } catch (err) {
       setError(mapApiError(err));
     } finally {
@@ -162,6 +170,8 @@ export function SyncJobHistoryPage() {
               variant="outline"
               size="sm"
               loading={retrying}
+              disabled={isSourceUnavailable(sourceHealth)}
+              title={isSourceUnavailable(sourceHealth) ? "数据源不可用，无法运行同步" : undefined}
               onClick={() => void handleRetry()}
             >
               <RotateCcw className="size-4" aria-hidden />
@@ -248,6 +258,16 @@ export function SyncJobHistoryPage() {
                             <TruncateHint title={localizeApiMessage(run.error_message)}>
                               {localizeApiMessage(run.error_message)}
                             </TruncateHint>
+                          ) : run.consume_warning ? (
+                            <TruncateHint title={run.consume_warning}>
+                              <span className="text-warning-600 dark:text-warning-400">
+                                {run.consume_warning}
+                              </span>
+                            </TruncateHint>
+                          ) : run.rows_truncated ? (
+                            <span className="text-warning-600 dark:text-warning-400">
+                              已达同步行数上限，可能仍有未同步数据
+                            </span>
                           ) : (
                             "—"
                           )}

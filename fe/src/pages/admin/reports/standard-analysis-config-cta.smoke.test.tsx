@@ -41,6 +41,7 @@ describe("StandardAnalysisConfigForm saved CTA", () => {
               columnOptions={[]}
               saving={false}
               deleting={false}
+              isDraftDirty={false}
               showSavedHint
               onChange={() => undefined}
               onSave={async () => true}

@@ -53,6 +53,7 @@ export function StandardAnalysisConfigPage() {
     remove,
     showSavedHint,
     setShowSavedHint,
+    isDraftDirty,
   } = editor;
 
   return (
@@ -144,6 +145,7 @@ export function StandardAnalysisConfigPage() {
               columnKinds={columnKinds}
               saving={upsert.isPending}
               deleting={remove.isPending}
+              isDraftDirty={isDraftDirty}
               showSavedHint={showSavedHint}
               onDismissSavedHint={() => setShowSavedHint(false)}
               onChange={(updater) => setDraft((current) => updater(current))}

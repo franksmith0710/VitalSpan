@@ -26,10 +26,13 @@ def test_raise_if_cancel_requested_on_cancelling():
         raise_if_cancel_requested(db, run)
 
 
+@patch("app.ingestion.sync_executor.guard_api_sync_start")
 @patch("app.ingestion.sync_executor.get_meta_session")
-@patch("app.ingestion.sync_executor.fetch_source_rows")
+@patch("app.ingestion.sync_executor.fetch_source_rows_result")
 @patch("app.ingestion.sync_executor.get_settings")
-def test_run_job_aborts_before_write_when_cancelled(mock_settings, mock_fetch, mock_session):
+def test_run_job_aborts_before_write_when_cancelled(
+    mock_settings, mock_fetch, mock_session, mock_guard,
+):
     mock_settings.return_value.analytics_database_url = "postgresql+psycopg://u:p@localhost:5433/a"
     mock_fetch.return_value = [{"id": 1}]
 

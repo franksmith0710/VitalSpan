@@ -4,6 +4,7 @@ import { CalendarClock, ChevronDown, ChevronRight, Database } from "lucide-react
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { SaveFormButton } from "@/components/ui/save-form-button";
 import { Input } from "@/components/ui/input";
 import { ListPageFooter } from "@/components/layout/list-page-kit";
 import {
@@ -31,6 +32,7 @@ type Props = {
   columnKinds?: Record<string, import("@/components/dashboard/datasetFieldClassification").DatasetFieldKind>;
   saving: boolean;
   deleting: boolean;
+  isDraftDirty: boolean;
   showSavedHint?: boolean;
   onDismissSavedHint?: () => void;
   onChange: (updater: (current: AnalysisPack) => AnalysisPack) => void;
@@ -104,6 +106,7 @@ export function StandardAnalysisConfigForm({
   columnKinds,
   saving,
   deleting,
+  isDraftDirty,
   showSavedHint,
   onDismissSavedHint,
   onChange,
@@ -327,9 +330,13 @@ export function StandardAnalysisConfigForm({
                 删除
               </Button>
             ) : null}
-            <Button type="submit" size="sm" loading={saving} loadingText="保存中…">
-              保存
-            </Button>
+            <SaveFormButton
+              type="submit"
+              size="sm"
+              isDirty={isDraftDirty}
+              allowSaveWhenClean={isCreating}
+              saving={saving}
+            />
           </div>
         </div>
       </ListPageFooter>

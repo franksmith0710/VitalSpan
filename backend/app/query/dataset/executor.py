@@ -1,7 +1,16 @@
 from __future__ import annotations
 
 import time
+import uuid
 
+from sqlalchemy.orm import Session
+
+from app.auth.deps import UserContext
+from app.datasources.acl import assert_visible
+from app.metadata.dataset.models import DatasetRecord
+from app.query.config_store.access import assert_config_readable
+from app.query.config_store.service import get_config_by_id
+from app.query.config_store.schemas import ConfigError
 from app.query.dataset.guard import validate_dataset_spec
 from app.query.dataset.schemas import DatasetExecutePlanOut, DatasetQuerySpec, ExecutePlanStep
 from app.query.schemas import QueryError
@@ -16,16 +25,68 @@ def _assert_safe_params(params: dict) -> None:
             raise QueryError("QUERY_DATASET_PLAN_INVALID_PARAMS", "Forbidden parameter key", 422)
 
 
-def build_dataset_execute_plan(raw: dict, roles: list[str]) -> DatasetExecutePlanOut:
-    validated = validate_dataset_spec(raw, roles)
+def build_dataset_execute_plan(
+    session: Session,
+    user: UserContext,
+    raw: dict,
+) -> DatasetExecutePlanOut:
+    validated = validate_dataset_spec(raw, user.roles, session=session)
     spec = DatasetQuerySpec.model_validate(raw)
     _assert_safe_params(spec.parameters)
-    steps = [
+    steps: list[ExecutePlanStep] = [
         ExecutePlanStep(step="path_resolve", status="pass", detail="dataset path resolved"),
-        ExecutePlanStep(step="acl_check", status="pass", detail="ACL passed"),
-        ExecutePlanStep(step="readonly_guard", status="pass", detail="readonly select only"),
-        ExecutePlanStep(step="plan_ready", status="pass", detail="stub plan ready"),
     ]
+
+    row = session.get(DatasetRecord, validated.dataset_id)
+    if row is None or row.bound_config_id is None:
+        steps.append(
+            ExecutePlanStep(step="acl_check", status="fail", detail="Dataset 未绑定查询配置"),
+        )
+        return DatasetExecutePlanOut(
+            datasetId=validated.dataset_id,
+            resolvedPath="dataset",
+            readonly=True,
+            steps=steps,
+        )
+
+    try:
+        record = get_config_by_id(session, row.bound_config_id)
+        assert_config_readable(user, record)
+        payload = record.payload if isinstance(record.payload, dict) else {}
+        ds_raw = payload.get("dataSourceId")
+        if not ds_raw:
+            raise QueryError("QUERY_DATASET_NOT_BOUND", "Dataset binding missing dataSourceId", 422)
+        assert_visible(session, user.roles, uuid.UUID(str(ds_raw)), is_root=user.is_root)
+        steps.append(ExecutePlanStep(step="acl_check", status="pass", detail="ACL passed"))
+    except (ConfigError, QueryError) as exc:
+        steps.append(ExecutePlanStep(step="acl_check", status="fail", detail=exc.message))
+        return DatasetExecutePlanOut(
+            datasetId=validated.dataset_id,
+            resolvedPath="dataset",
+            readonly=True,
+            steps=steps,
+        )
+    except Exception as exc:
+        from app.auth.resources.service import VisibilityError
+
+        if isinstance(exc, VisibilityError):
+            steps.append(ExecutePlanStep(step="acl_check", status="fail", detail=exc.message))
+            return DatasetExecutePlanOut(
+                datasetId=validated.dataset_id,
+                resolvedPath="dataset",
+                readonly=True,
+                steps=steps,
+            )
+        raise
+
+    steps.append(ExecutePlanStep(step="readonly_guard", status="pass", detail="readonly select only"))
+    steps.append(
+        ExecutePlanStep(
+            step="plan_ready",
+            status="pass",
+            detail=f"binding {row.bound_config_id} revision {record.revision}",
+        ),
+    )
     return DatasetExecutePlanOut(
         datasetId=validated.dataset_id,
         resolvedPath="dataset",
@@ -34,7 +95,7 @@ def build_dataset_execute_plan(raw: dict, roles: list[str]) -> DatasetExecutePla
     )
 
 
-def probe_execute_plan_budget_ms(raw: dict, roles: list[str]) -> float:
+def probe_execute_plan_budget_ms(session: Session, user: UserContext, raw: dict) -> float:
     start = time.perf_counter()
-    build_dataset_execute_plan(raw, roles)
+    build_dataset_execute_plan(session, user, raw)
     return (time.perf_counter() - start) * 1000.0

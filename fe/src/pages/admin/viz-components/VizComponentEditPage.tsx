@@ -4,6 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import { AdminPageShell } from "@/components/layout/admin-page-shell";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { Button } from "@/components/ui/button";
+import { SaveFormButton } from "@/components/ui/save-form-button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -158,15 +159,14 @@ export function VizComponentEditPage() {
             className="hidden h-5 w-px shrink-0 bg-gray-200 dark:bg-gray-700 sm:block"
             aria-hidden
           />
-          <Button
+          <SaveFormButton
             type="button"
             variant="primary"
             size="sm"
-            disabled={saving}
+            isDirty={isDirty}
+            saving={saving}
             onClick={() => void save()}
-          >
-            {saving ? "保存中…" : "保存"}
-          </Button>
+          />
         </>
       ) : null}
     </div>
@@ -229,15 +229,15 @@ export function VizComponentEditPage() {
               <AlertDialogAction variant="outline" onClick={confirmLeave}>
                 放弃更改并离开
               </AlertDialogAction>
-              <Button
+              <SaveFormButton
                 type="button"
                 variant="primary"
                 size="sm"
-                disabled={saving}
+                isDirty={isDirty}
+                saving={saving}
+                saveLabel="保存并离开"
                 onClick={() => void handleSaveAndLeave()}
-              >
-                {saving ? "保存中…" : "保存并离开"}
-              </Button>
+              />
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>

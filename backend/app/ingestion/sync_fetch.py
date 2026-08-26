@@ -3,8 +3,9 @@ from __future__ import annotations
 from typing import Any
 
 from app.ingestion.models import SyncJob
-from app.ingestion.sync_fetch_native import fetch_native_rows
-from app.ingestion.sync_fetch_sql import fetch_sql_rows
+from app.ingestion.sync_fetch_native import fetch_native_rows_result
+from app.ingestion.sync_fetch_sql import fetch_sql_rows_result
+from app.ingestion.sync_types import SyncFetchResult
 from app.ingestion.sync_source_capabilities import (
     is_sync_fetch_implemented,
     resolve_sql_dialect_for_sync,
@@ -54,16 +55,20 @@ def compute_next_watermark(job: SyncJob, rows: list[dict[str, Any]]) -> str | No
     return candidate if _watermark_greater(candidate, job.last_watermark) else job.last_watermark
 
 
-def fetch_source_rows(job: SyncJob) -> list[dict[str, Any]]:
+def fetch_source_rows_result(job: SyncJob) -> SyncFetchResult:
     if not is_sync_fetch_implemented(job.source_type):
         raise RuntimeError(sync_fetch_not_implemented_message(job.source_type))
     mode = resolve_sync_fetch_mode(job.source_type)
     if mode == "sql":
         dialect = resolve_sql_dialect_for_sync(job.source_type)
-        return fetch_sql_rows(job, dialect)
+        return fetch_sql_rows_result(job, dialect)
     if mode == "native":
-        return fetch_native_rows(job)
+        return fetch_native_rows_result(job)
     raise RuntimeError(sync_fetch_not_implemented_message(job.source_type))
+
+
+def fetch_source_rows(job: SyncJob) -> list[dict[str, Any]]:
+    return fetch_source_rows_result(job).rows
 
 
 # 兼容旧导入：等同 fetch_source_rows
