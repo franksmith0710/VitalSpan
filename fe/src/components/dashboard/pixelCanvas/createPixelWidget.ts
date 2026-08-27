@@ -12,7 +12,10 @@ import {
   type PaletteInsertType,
 } from "../createLayoutWidget";
 import { cloneLayoutWidget } from "../cloneLayoutWidget";
-import { resolvePixelLayoutWithActiveRect } from "./collisionLayout";
+import {
+  COLLISION_COMMIT_MIN_OVERLAP_PX,
+  resolvePixelLayoutWithActiveRect,
+} from "./collisionLayout";
 import { pixelWidgetToLayoutWidget } from "../dashboardCanvasMode";
 import type { DashboardCanvas, DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "../layoutUtils";
 import { insertPixelWidgetIntoTab } from "../layoutUtils";
@@ -204,6 +207,7 @@ function resolveInsert(
       width: draft.width,
       height: draft.height,
     },
+    { minOverlap: COLLISION_COMMIT_MIN_OVERLAP_PX },
   );
 }
 

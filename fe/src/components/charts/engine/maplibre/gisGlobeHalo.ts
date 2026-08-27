@@ -1,8 +1,8 @@
 import type { GisAtmospherePreset, GisProjection } from "@/components/charts/engine/maplibre/gisProject";
-import {
-  resolveGisProjectHalo,
-  type GisProjectHalo,
-} from "@/components/charts/engine/maplibre/gisProjectHalo";
+import { resolveGisEffectsSettings } from "@/components/charts/engine/maplibre/gisProjectEffects";
+import type { GisEffectsSettings } from "@/components/charts/engine/maplibre/gisProjectEffects";
+import type { GisProjectFog } from "@/components/charts/engine/maplibre/gisProject";
+import type { GisProjectHalo } from "@/components/charts/engine/maplibre/gisProjectHalo";
 import {
   bindMapRenderSync,
   isGlobeTransformProbeReady,
@@ -29,7 +29,9 @@ export function mountGisGlobeHaloOverlay(
   getContext: () => {
     preset: GisAtmospherePreset | undefined;
     projection: GisProjection | undefined;
-    halo: GisProjectHalo | undefined;
+    effects?: GisEffectsSettings;
+    halo?: GisProjectHalo;
+    fog?: GisProjectFog;
   },
 ): () => void {
   const enabled = () => getContext().projection === "globe";
@@ -105,8 +107,12 @@ export function mountGisGlobeHaloOverlay(
     }
     bindMapIfNeeded();
 
-    const { preset, halo: haloRaw } = getContext();
-    const halo = resolveGisProjectHalo(haloRaw, preset);
+    const atmosphereContext = getContext();
+    const effects = resolveGisEffectsSettings({
+      effects: atmosphereContext.effects,
+      halo: atmosphereContext.halo,
+      fog: atmosphereContext.fog,
+    });
 
     const overlay = resolvePaintOverlay();
     const { width, height } = readOverlayLayoutSize(overlay);
@@ -130,7 +136,7 @@ export function mountGisGlobeHaloOverlay(
 
     mapReady = true;
     canvas.style.display = "block";
-    drawGlobeAtmosphereHalo(ctx, width, height, limb, preset, halo);
+    drawGlobeAtmosphereHalo(ctx, width, height, limb, effects);
   };
 
   const bootLoop = () => {

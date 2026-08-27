@@ -12,9 +12,14 @@ import {
   normalizeGisProjectLayers,
   type GisProjectLayer,
 } from "@/components/charts/engine/maplibre/gisProjectLayers";
+import {
+  normalizeGisProjectEffects,
+  type GisEffectsSettings,
+} from "@/components/charts/engine/maplibre/gisProjectEffects";
 
 export type { GisProjectHalo } from "@/components/charts/engine/maplibre/gisProjectHalo";
 export type { GisProjectSun } from "@/components/charts/engine/maplibre/gisProjectSun";
+export type { GisEffectsSettings } from "@/components/charts/engine/maplibre/gisProjectEffects";
 export type { GisLayerKind, GisProjectLayer } from "@/components/charts/engine/maplibre/gisProjectLayers";
 
 /** gis-map 仅支持管理员登记的全球 PMTiles 外部底图。 */
@@ -240,7 +245,9 @@ export type GisProject = {
   layers?: GisProjectLayer[];
   /** 数据 Tab 当前编辑的图层 id */
   activeLayerId?: string;
-  /** GeoLibre 对齐的大气光晕参数 */
+  /** GeoLibre 对齐的大气光晕/深空（优先于 legacy halo/fog） */
+  effects?: GisEffectsSettings;
+  /** legacy：GeoLibre 对齐的大气光晕参数 */
   halo?: GisProjectHalo;
   /** GeoLibre「太阳」：驱动 MapLibre light 与日弧动画 */
   sun?: GisProjectSun;
@@ -482,6 +489,7 @@ function normalizeGisProject(raw: unknown): GisProject {
   const overlay = normalizeGisProjectOverlay(candidate.overlay);
   const layers = normalizeGisProjectLayers(candidate.layers);
   const halo = normalizeGisProjectHalo(candidate.halo);
+  const effects = normalizeGisProjectEffects(candidate.effects);
   const sun = normalizeGisProjectSun(candidate.sun);
   const mapControls = normalizeGisMapControls(candidate.mapControls);
   const activeLayerId =
@@ -512,6 +520,7 @@ function normalizeGisProject(raw: unknown): GisProject {
     overlay,
     layers,
     activeLayerId,
+    effects,
     halo,
     sun,
   };

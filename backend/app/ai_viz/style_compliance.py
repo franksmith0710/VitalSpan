@@ -43,6 +43,23 @@ _STYLE_KEY_USAGE_RE = re.compile(
     r"(?:\b(?:rs|st|style)\.)tooltipShow|\btooltipShow\s*===|\btooltipShow\s*!==|"
     r"placeTooltipNearPointer|class=\"tooltip\"|#tooltip|\.tooltip\b",
 )
+# 笛卡尔/折线类：用 rows 画线时须读 encoding 且类目轴排序（不限制曲线/视觉样式）
+_LINE_CHART_RE = re.compile(
+    r"d3\.line\s*\(|lineGen\s*=|areaGen\s*=|scalePoint\s*\(",
+)
+_CARTESIAN_PLOT_RE = re.compile(
+    r"d3\.line\s*\(|lineGen\s*=|areaGen\s*=|scalePoint\s*\(|scaleBand\s*\(",
+)
+_ROWS_PLOT_RE = re.compile(
+    r"p\.rows\.map|payload\.rows\.map|dataFromPayload\s*\(",
+)
+_ENCODING_MARKERS_RE = re.compile(
+    r"p\.encoding|payload\.encoding|encoding\.dimensions|encoding\.metrics|"
+    r"resolveBoundColumns|rowsToSeries",
+)
+_DOMAIN_SORT_MARKERS_RE = re.compile(
+    r"rowsToSeries|\.sort\s*\(\s*function|localeCompare\s*\(",
+)
 _HOST_GET_ELEMENT_BY_ID_RE = re.compile(r"\(\s*host\s*\|\|\s*document\s*\)\s*\.\s*getElementById\b")
 _DOCUMENT_GET_ELEMENT_BY_ID_RE = re.compile(r"\bdocument\s*\.\s*getElementById\b")
 _DOCUMENT_GET_ELEMENT_BY_ID_FALLBACK_RE = re.compile(r":\s*document\s*\.\s*getElementById\b")
@@ -289,6 +306,35 @@ def _collect_builtin_misroute_warnings(manifest: dict) -> list[StyleComplianceWa
     return []
 
 
+def _collect_data_contract_warnings(entry_html: str) -> list[StyleComplianceWarning]:
+    """Cartesian bundles must use platform encoding + sorted domain (data only, not visual style)."""
+    if not _ROWS_PLOT_RE.search(entry_html):
+        return []
+
+    warnings: list[StyleComplianceWarning] = []
+    if _CARTESIAN_PLOT_RE.search(entry_html) and not _ENCODING_MARKERS_RE.search(entry_html):
+        warnings.append(
+            StyleComplianceWarning(
+                code="AIVIZ_WARN_DATA_ENCODING",
+                message=(
+                    "笛卡尔/折线类 bundle 用 rows 绘图但未读 payload.encoding（或 resolveBoundColumns/"
+                    "rowsToSeries）；维/指标列可能猜错，与内置图数据不一致"
+                ),
+            )
+        )
+    if _LINE_CHART_RE.search(entry_html) and not _DOMAIN_SORT_MARKERS_RE.search(entry_html):
+        warnings.append(
+            StyleComplianceWarning(
+                code="AIVIZ_WARN_DATA_DOMAIN_SORT",
+                message=(
+                    "折线/面积用 rows 顺序连线但未对类目轴排序（或 rowsToSeries）；"
+                    "SQL 返回序可能导致折线回折、数据看起来「不对」"
+                ),
+            )
+        )
+    return warnings
+
+
 def _collect_style_keys_application_warnings(
     entry_html: str,
     manifest: dict,
@@ -366,6 +412,7 @@ def collect_bundle_style_compliance_warnings(
     warnings.extend(_collect_resize_lifecycle_warnings(entry_html, runtime))
     warnings.extend(_collect_builtin_misroute_warnings(manifest))
     warnings.extend(_collect_style_keys_application_warnings(entry_html, manifest))
+    warnings.extend(_collect_data_contract_warnings(entry_html))
 
     has_style_payload = bool(_STYLE_PAYLOAD_RE.search(combined))
     has_style_tokens = bool(_STYLE_TOKEN_RE.search(combined))

@@ -1,4 +1,7 @@
-import { resolvePixelLayoutWithActiveRect } from "./collisionLayout";
+import {
+  COLLISION_COMMIT_MIN_OVERLAP_PX,
+  resolvePixelLayoutWithActiveRect,
+} from "./collisionLayout";
 import type { PixelPoint } from "./geometry";
 import { defaultPixelSizeForWidget } from "./createPixelWidget";
 import type { DashboardLayoutV2, PixelLayoutWidget } from "../layoutUtils";
@@ -56,7 +59,12 @@ export function unparkPixelWidgetFromTab(
     w.id === widgetId ? unparked : w,
   );
 
-  return resolvePixelLayoutWithActiveRect({ ...layout, widgets }, widgetId, placement);
+  return resolvePixelLayoutWithActiveRect(
+    { ...layout, widgets },
+    widgetId,
+    placement,
+    { minOverlap: COLLISION_COMMIT_MIN_OVERLAP_PX },
+  );
 }
 
 /** 落点已离开所属 Tab 外框时可 unpark */

@@ -16,6 +16,9 @@ export type CollisionLayoutOptions = {
 /** 拖动/落位碰撞缓冲：XY 双向重叠均须超过此值才推挤邻块 */
 export const PIXEL_COLLISION_OVERLAP_BUFFER_PX = 40;
 
+/** 松手/落位提交：任意重叠即触发碰撞推挤（忽略预览缓冲） */
+export const COLLISION_COMMIT_MIN_OVERLAP_PX = 0;
+
 const PACK_SCAN_STEP = 8;
 
 const DEFAULT_OPTIONS: Required<Omit<CollisionLayoutOptions, "skipVerticalCompact">> & {

@@ -99,7 +99,7 @@ import {
   readChartGeo3dStyle,
   type ChartDeStyle,
 } from "@/lib/chartDeStyle";
-import { DeAttrSliderField } from "./deAttrSlider";
+import { ChartDeAttrSliderField as DeAttrSliderField } from "./deAttrSlider";
 import {
   ChartInspectorSection,
   INSPECTOR_SECTION_GAP,

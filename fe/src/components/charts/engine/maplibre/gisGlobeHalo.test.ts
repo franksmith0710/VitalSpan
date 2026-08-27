@@ -1,9 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
+import {
+  DEFAULT_GIS_EFFECTS_SETTINGS,
+  normalizeGisEffectsSettings,
+} from "@/components/charts/engine/maplibre/gisGeolibreEffectsSettings";
 import { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
-import { GEOLIBRE_HALO_OUTER_SCALE } from "@/components/charts/engine/maplibre/gisGlobeHaloStops";
 
 describe("gisGlobeHalo GeoLibre draw", () => {
-  it("draws screen-blended halo below map without punching the globe", () => {
+  it("draws screen-blended halo arc with HALO_STOP_SHAPE", () => {
     const gradient = { addColorStop: vi.fn() };
     const ctx = {
       clearRect: vi.fn(),
@@ -13,11 +16,16 @@ describe("gisGlobeHalo GeoLibre draw", () => {
       arc: vi.fn(),
       fill: vi.fn(),
       createRadialGradient: vi.fn(() => gradient),
-      fillRect: vi.fn(),
       globalCompositeOperation: "",
     } as unknown as CanvasRenderingContext2D;
 
-    drawGlobeAtmosphereHalo(ctx, 400, 300, { x: 200, y: 150, radius: 120 }, "night");
+    drawGlobeAtmosphereHalo(
+      ctx,
+      400,
+      300,
+      { x: 200, y: 150, radius: 120 },
+      DEFAULT_GIS_EFFECTS_SETTINGS,
+    );
 
     expect(ctx.createRadialGradient).toHaveBeenCalledWith(
       200,
@@ -25,10 +33,19 @@ describe("gisGlobeHalo GeoLibre draw", () => {
       120,
       200,
       150,
-      120 * GEOLIBRE_HALO_OUTER_SCALE,
+      120 * DEFAULT_GIS_EFFECTS_SETTINGS.haloExtent,
     );
-    expect(ctx.fill).not.toHaveBeenCalled();
-    expect(ctx.fillRect).toHaveBeenCalledWith(0, 0, 400, 300);
-    expect(ctx.restore).toHaveBeenCalled();
+    expect(ctx.beginPath).toHaveBeenCalled();
+    expect(ctx.arc).toHaveBeenCalledWith(
+      200,
+      150,
+      120 * DEFAULT_GIS_EFFECTS_SETTINGS.haloExtent,
+      0,
+      Math.PI * 2,
+    );
+    expect(ctx.fill).toHaveBeenCalled();
+    expect(ctx.globalCompositeOperation).toBe("screen");
+    expect(gradient.addColorStop).toHaveBeenCalled();
+    expect(normalizeGisEffectsSettings({ haloExtent: 99 }).haloExtent).toBe(4);
   });
 });

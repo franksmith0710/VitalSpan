@@ -1,13 +1,5 @@
 import type { StyleSpecification } from "maplibre-gl";
 import { gisFogToMapLibreSky } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
-import {
-  computeSunLightFromMinutes,
-  resolveSunNightShadow,
-} from "@/components/charts/engine/maplibre/gisSunLight";
-import {
-  resolveGisProjectSun,
-  type GisProjectSun,
-} from "@/components/charts/engine/maplibre/gisProjectSun";
 import type {
   GisAtmospherePreset,
   GisProjectFog,
@@ -291,15 +283,4 @@ export function startGisGlobeAutoRotate(
     map.off("pitchstart", pauseForInteraction);
     map.off("pitchend", resumeAfterInteraction);
   };
-}
-
-export function applyGisSunLight(
-  map: MapLibreMap,
-  sun: GisProjectSun | undefined,
-  timeMinutes: number,
-) {
-  if (!map.isStyleLoaded()) return;
-  const resolved = resolveGisProjectSun(sun);
-  if (!resolved.enabled) return;
-  map.setLight(computeSunLightFromMinutes(timeMinutes, resolveSunNightShadow(sun)));
 }

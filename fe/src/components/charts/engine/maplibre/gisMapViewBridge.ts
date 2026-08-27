@@ -2,12 +2,15 @@ import type { GisProjectFog, GisProjectView, GisProjection, GisAtmospherePreset 
 import type { GisBasemapLayerVisibility } from "@/components/charts/engine/maplibre/gisProject";
 import type { GisProjectHalo } from "@/components/charts/engine/maplibre/gisProjectHalo";
 import type { GisProjectSun } from "@/components/charts/engine/maplibre/gisProjectSun";
+import type { GisEffectsSettings } from "@/components/charts/engine/maplibre/gisProjectEffects";
+import type { GisSunSettings } from "@/components/charts/engine/maplibre/gisSunPosition";
 
 export type GisMapAtmosphereContext = {
   projection?: GisProjection;
   atmospherePreset?: GisAtmospherePreset;
   fog?: GisProjectFog;
   halo?: GisProjectHalo;
+  effects?: GisEffectsSettings;
 };
 
 export type GisMapBasemapPatch = {
@@ -22,7 +25,8 @@ export type GisMapViewLiveControl = {
   applyAtmosphere?: (ctx: GisMapAtmosphereContext) => boolean;
   applyBasemapPatch?: (patch: GisMapBasemapPatch) => boolean;
   syncLayers?: () => boolean;
-  applySun?: (sun: GisProjectSun | undefined, timeMinutes: number) => boolean;
+  applySun?: (sun: GisProjectSun | undefined, patch?: Partial<GisProjectSun>) => boolean;
+  getSunSettings?: () => GisSunSettings | null;
 };
 
 const liveControlByWidgetId = new Map<string, GisMapViewLiveControl>();
@@ -64,6 +68,14 @@ export function syncGisMapViewLayers(widgetId: string): boolean {
   return liveControlByWidgetId.get(widgetId)?.syncLayers?.() ?? false;
 }
 
-export function applyGisMapSun(widgetId: string, sun: GisProjectSun | undefined, timeMinutes: number): boolean {
-  return liveControlByWidgetId.get(widgetId)?.applySun?.(sun, timeMinutes) ?? false;
+export function applyGisMapSun(
+  widgetId: string,
+  sun: GisProjectSun | undefined,
+  patch?: Partial<GisProjectSun>,
+): boolean {
+  return liveControlByWidgetId.get(widgetId)?.applySun?.(sun, patch) ?? false;
+}
+
+export function getGisMapSunSettings(widgetId: string): GisSunSettings | null {
+  return liveControlByWidgetId.get(widgetId)?.getSunSettings?.() ?? null;
 }

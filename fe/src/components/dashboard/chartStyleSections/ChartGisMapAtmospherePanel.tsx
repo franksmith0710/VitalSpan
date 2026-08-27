@@ -7,28 +7,29 @@ import {
   INSPECTOR_SECTION_GAP,
   InspectorFieldLabel,
 } from "@/components/dashboard/inspectorCompact";
+import { readGisProject, writeGisProject } from "@/components/charts/engine/maplibre/gisProject";
 import {
-  GIS_ATMOSPHERE_PRESETS,
-  readGisProject,
-  writeGisProject,
-  type GisProjectFog,
-} from "@/components/charts/engine/maplibre/gisProject";
+  DEFAULT_GIS_EFFECTS_SETTINGS,
+  GIS_HALO_EXTENT_MAX,
+  GIS_HALO_EXTENT_MIN,
+  GIS_HALO_OPACITY_MAX,
+  GIS_HALO_OPACITY_MIN,
+} from "@/components/charts/engine/maplibre/gisGeolibreEffectsSettings";
 import {
-  DEFAULT_GIS_HALO_COLOR,
-  GEOLIBRE_HALO_RANGE_DEFAULT,
-} from "@/components/charts/engine/maplibre/gisGlobeHaloStops";
-import { resolveGisProjectHalo, type GisProjectHalo } from "@/components/charts/engine/maplibre/gisProjectHalo";
+  resolveGisEffectsSettings,
+  type GisEffectsSettings,
+} from "@/components/charts/engine/maplibre/gisProjectEffects";
 import { applyGisMapViewAtmosphere } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 
 const ATMOSPHERE_HINT =
-  "对标 GeoLibre「大气效果」：光晕与深空色；仅球面地球生效。";
+  "对标 GeoLibre「大气效果」：光晕颜色/范围/强度与深空色；仅球面地球生效。";
 
 export function ChartGisMapAtmospherePanel() {
   const { cfg, widget, mutateChartConfig } = useChartInspector();
   const project = readGisProject(cfg);
-  const resolvedHalo = useMemo(
-    () => resolveGisProjectHalo(project.halo, project.atmospherePreset),
-    [project.atmospherePreset, project.halo],
+  const resolved = useMemo(
+    () => resolveGisEffectsSettings(project),
+    [project.effects, project.fog, project.halo],
   );
 
   const patchProject = useCallback(
@@ -39,44 +40,30 @@ export function ChartGisMapAtmospherePanel() {
   );
 
   const previewAtmosphere = useCallback(
-    (patch: { fog?: GisProjectFog; halo?: GisProjectHalo }) => {
-      const preset = project.atmospherePreset ?? "night";
-      const baseFog = project.fog ?? GIS_ATMOSPHERE_PRESETS[preset];
+    (effects: GisEffectsSettings) => {
       applyGisMapViewAtmosphere(widget.id, {
-        atmospherePreset: preset,
+        atmospherePreset: project.atmospherePreset,
         projection: project.projection,
-        fog: patch.fog ?? baseFog,
-        halo: patch.halo ?? project.halo,
+        effects,
+        fog: project.fog,
+        halo: project.halo,
       });
     },
     [project.atmospherePreset, project.fog, project.halo, project.projection, widget.id],
   );
 
-  const patchHalo = useCallback(
-    (patch: Partial<GisProjectHalo>) => {
-      const nextHalo = { ...project.halo, ...patch };
-      previewAtmosphere({ halo: nextHalo });
-      patchProject({ halo: nextHalo });
+  const patchEffects = useCallback(
+    (patch: Partial<GisEffectsSettings>) => {
+      const nextEffects = { ...project.effects, ...patch };
+      previewAtmosphere(nextEffects);
+      patchProject({ effects: nextEffects, halo: undefined });
     },
-    [patchProject, previewAtmosphere, project.halo],
-  );
-
-  const patchSpaceColor = useCallback(
-    (spaceColor: string) => {
-      const preset = project.atmospherePreset ?? "night";
-      const base = project.fog ?? GIS_ATMOSPHERE_PRESETS[preset];
-      const nextFog = { ...base, "space-color": spaceColor };
-      previewAtmosphere({ fog: nextFog });
-      patchProject({ fog: nextFog });
-    },
-    [patchProject, previewAtmosphere, project.atmospherePreset, project.fog],
+    [patchProject, previewAtmosphere, project.effects],
   );
 
   const resetDefaults = () => {
-    const preset = project.atmospherePreset ?? "night";
-    const fog = { ...GIS_ATMOSPHERE_PRESETS[preset] };
-    previewAtmosphere({ fog, halo: undefined });
-    patchProject({ fog, halo: undefined });
+    previewAtmosphere({});
+    patchProject({ effects: undefined, halo: undefined });
   };
 
   if (project.projection !== "globe") {
@@ -93,37 +80,37 @@ export function ChartGisMapAtmospherePanel() {
         <p className="text-theme-xs text-brand-500">已启用</p>
         <div className="flex min-w-0 items-center gap-2">
           <ChartPaletteColorSwatch
-            value={resolvedHalo.color}
+            value={resolved.haloColor}
             aria-label="光晕颜色"
-            onChange={(color) => patchHalo({ color })}
+            onChange={(haloColor) => patchEffects({ haloColor })}
           />
           <InspectorFieldLabel label="光晕颜色" />
         </div>
         <InspectorSliderField
           label="光晕范围"
-          value={Math.round(resolvedHalo.outerScale * 100) / 100}
-          min={1}
-          max={6}
+          value={Math.round(resolved.haloExtent * 100) / 100}
+          min={GIS_HALO_EXTENT_MIN}
+          max={GIS_HALO_EXTENT_MAX}
           step={0.05}
           unit="x"
-          onChange={(outerScale) => patchHalo({ outerScale })}
+          onChange={(haloExtent) => patchEffects({ haloExtent })}
         />
         <InspectorSliderField
           label="光晕强度"
-          value={Math.round(resolvedHalo.opacity * 100)}
-          min={0}
-          max={100}
+          value={Math.round(resolved.haloOpacity * 100)}
+          min={Math.round(GIS_HALO_OPACITY_MIN * 100)}
+          max={Math.round(GIS_HALO_OPACITY_MAX * 100)}
           step={1}
           unit="%"
-          onChange={(opacity) => patchHalo({ opacity: opacity / 100 })}
+          onChange={(opacity) => patchEffects({ haloOpacity: opacity / 100 })}
         />
         <div className="flex min-w-0 items-center gap-2">
           <ChartPaletteColorSwatch
-            value={project.fog?.["space-color"] ?? "#0b0b19"}
+            value={resolved.spaceColor}
             aria-label="太空颜色"
-            onChange={patchSpaceColor}
+            onChange={(spaceColor) => patchEffects({ spaceColor })}
           />
-          <InspectorFieldLabel label="太空颜色" hint="MapLibre fog space-color" />
+          <InspectorFieldLabel label="太空颜色" hint="深空 radial backdrop 中心色" />
         </div>
         <button
           type="button"
@@ -133,7 +120,8 @@ export function ChartGisMapAtmospherePanel() {
           恢复默认设置
         </button>
         <p className="text-[10px] text-gray-400">
-          默认光晕色 {DEFAULT_GIS_HALO_COLOR} · 范围 {GEOLIBRE_HALO_RANGE_DEFAULT}x
+          默认光晕 {DEFAULT_GIS_EFFECTS_SETTINGS.haloColor} · 范围{" "}
+          {DEFAULT_GIS_EFFECTS_SETTINGS.haloExtent}x · 深空 {DEFAULT_GIS_EFFECTS_SETTINGS.spaceColor}
         </p>
       </div>
     </ChartInspectorSection>

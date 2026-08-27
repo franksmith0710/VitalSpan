@@ -108,9 +108,8 @@
     {
       "match": ["趋势", "折线", "trend", "动态趋势"],
       "workflow": "2",
-      "template": "trend-line",
       "runtime": "d3",
-      "reason": "笛卡尔趋势用 P1 trend-line d3 金样（wf2）"
+      "reason": "炫丽趋势 customViz（wf2）；起盘 generic-blank-d3；trend-line 金样仅参考动画/视觉，禁止整包抄"
     },
     {
       "match": ["滚动表", "明细表", "scrolling-table", "多维明细"],

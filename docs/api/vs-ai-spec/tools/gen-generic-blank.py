@@ -9,6 +9,25 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 EXAMPLES = ROOT / "examples"
 
+# 数据壳层（勿删）：Agent 只改 renderBusiness；视觉样式不限，但绘图须用 encoding + 排序轴域
+DATA_HELPERS = (
+    "function resolveBoundColumns(p){var cols=p.columns||[];var enc=(p&&p.encoding)||{};"
+    "var dims=enc.dimensions||[];var metrics=enc.metrics||[];"
+    "var di=dims[0]?cols.indexOf(dims[0]):-1;var mi=metrics[0]?cols.indexOf(metrics[0]):-1;"
+    "if(di<0){di=cols.findIndex(function(c,i){return p.rows[0]&&typeof p.rows[0][i]==='string';});"
+    "if(di<0)di=0;}if(mi<0){mi=cols.findIndex(function(c,i){return i!==di&&p.rows[0]&&typeof p.rows[0][i]==='number';});"
+    "if(mi<0)mi=di===0?1:0;}return{dimIdx:di,metricIdx:mi,dimField:dims[0]||cols[di]||'',"
+    "metricField:metrics[0]||cols[mi]||''};}"
+    "function rowsToSeries(p,opts){opts=opts||{};if(!p||!p.rows||!p.rows.length)return[];"
+    "var bc=resolveBoundColumns(p);"
+    "var pts=p.rows.map(function(r){return{category:String(r[bc.dimIdx]!=null?r[bc.dimIdx]:''),"
+    "value:Number(r[bc.metricIdx])||0,row:r};}).filter(function(d){return!isNaN(d.value);});"
+    "if(opts.sort!==false){pts.sort(function(a,b){return a.category.localeCompare(b.category,undefined,{numeric:true});});}"
+    "return pts;}"
+    "function monotoneCurve(d3,smooth){if(!smooth||!d3.curveMonotoneX)return d3.curveLinear;"
+    "return d3.curveMonotoneX;}"
+)
+
 HTML_SHELL = (
     '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8">'
     '<meta name="viewport" content="width=device-width,initial-scale=1.0">'
@@ -37,7 +56,8 @@ HTML_SHELL = (
     "tooltipColor:st.tooltipColor||hostVar('--dashboard-text-primary','#e2e8f0'),"
     "tooltipBg:st.tooltipBackground||'rgba(15,23,42,0.95)',"
     "seriesGradient:st.seriesGradient===true,palette:palette}}"
-    "function bindingStatus(p){if(!p)return'unbound';"
+    + DATA_HELPERS
+    + "function bindingStatus(p){if(!p)return'unbound';"
     "return p.bindingStatus||((p.rows&&p.rows.length)?'bound':'unbound')}"
     "function statusHint(p){var st=bindingStatus(p);"
     "if(st==='error')return(p&&p.error)||'数据加载失败';"
@@ -77,7 +97,8 @@ D3_SHELL = (
     "for(var i=palette.length;i<8;i++){var c=hostVar('--vs-palette-'+i,'');if(c)palette.push(c)}"
     "return{accentColor:st.accentColor||palette[0]||hostVar('--vs-style-accent-color','#2563eb'),"
     "labelShow:st.labelShow!==false,tooltipShow:st.tooltipShow!==false,palette:palette}}"
-    "function bindingStatus(p){if(!p)return'unbound';"
+    + DATA_HELPERS
+    + "function bindingStatus(p){if(!p)return'unbound';"
     "return p.bindingStatus||((p.rows&&p.rows.length)?'bound':'unbound')}"
     "function statusHint(p){var st=bindingStatus(p);"
     "if(st==='error')return(p&&p.error)||'数据加载失败';"

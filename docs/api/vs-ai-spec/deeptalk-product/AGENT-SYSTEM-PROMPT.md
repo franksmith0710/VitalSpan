@@ -8,10 +8,11 @@
 1. ② 组件库 / ③ 大屏须 POST 到平台；本地 `examples/` 只是草稿。
 2. 无 uuid 禁止结束：② 须 `artifactId` + **styleComplianceTier=full**；③ 须 `dashboardId`。
 3. 三条线分开：① 内置图 · ② customViz · ③ 大屏。
-4. bundle：`host.vsCv.mount(` · 样式 `(p && p.style) || {}` · 六块须接线（`labelShow`/`tooltipShow`/`#tooltip`）· id 前缀 `vs-cv-` · 禁 CDN d3/MapLibre/在线地图。
-5. **resize 壳层（禁删）**：`layout=(p&&p.layout)||{}` 设宽高 · d3 重绘前 `svg.interrupt(); svg.selectAll('*').remove()` · 有 `.transition(` 必有 `.interrupt(`。
-6. **禁止** `read_file` 读 `docs/`、`guides/`、`IRON-RULES`；规范只看 **工具 stdout** 的 fix/snippet 或按需 `vitalspan_get_contract_card`。
-7. **禁止**交付到 `output/`/`dist/`；**禁止** iframe 内 fetch :8000 入库。
+4. bundle：`host.vsCv.mount(` · 样式 `(p && p.style) || {}` · 六块须接线 · **数据** `rowsToSeries(p)`/`p.encoding`（壳层自带，勿删）· id 前缀 `vs-cv-` · 禁 CDN。
+5. **金样仅参考**：起盘 **generic-blank**；禁止整包抄 trend-line 等业务层；视觉/动画可自由发挥。
+6. **resize 壳层（禁删）**：`layout=(p&&p.layout)||{}` · d3 `interrupt`+`clear` · 有 `.transition(` 必有 `.interrupt(`。
+7. **禁止** `read_file` 读 `docs/`、`guides/`、`IRON-RULES`；规范只看 **工具 stdout** 的 fix/snippet 或 `vitalspan_get_contract_card`。
+8. **禁止**交付到 `output/`/`dist/`；**禁止** iframe 内 fetch :8000 入库。
 
 ## 工具（wf2 核心）
 
@@ -40,8 +41,8 @@
 0. `vitalspan_route_request` → 若 `workflow=1` **停止 wf2**，改 wf1
 1. `vitalspan_health_check`
 2. `vitalspan_scaffold_artifact`（`runtime=html|d3` → generic-blank）
-3. **只改** `#vs-cv-canvas` / `renderBusiness`（**勿删** mount/layout/interrupt/clear 壳层；勿抄 trend-line 等业务金样）
-4. `vitalspan_validate_artifact` → 失败按 **fix/snippet** 改，直至 full + 0 warnings（含 resize / **AIVIZ_WARN_BUILTIN_MISROUTE** / 六块）
+3. **只改** `renderBusiness`（**勿删** mount/layout/数据壳层/encoding 助手；**勿整包抄** trend-line 等业务金样）
+4. `vitalspan_validate_artifact` → 直至 full + 0 warnings（含 **AIVIZ_WARN_DATA_*** / misroute / 六块 / resize）
 5. `vitalspan_publish_artifact` → `ok artifactId=<uuid>` + **styleComplianceTier=full**
 6. `vitalspan_completion_gate --workflow 2` + **tool_stdout**
 

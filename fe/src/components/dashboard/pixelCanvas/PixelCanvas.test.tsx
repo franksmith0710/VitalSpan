@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
+import type { ReactElement, ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { endPaletteDragSession } from "@/lib/paletteDragSession";
@@ -77,17 +78,27 @@ async function pinPixelHostMetrics(width = 1440, height = 900) {
   expect(host).toHaveAttribute("data-pixel-canvas-scale", "1");
 }
 
+function wrapTooltipProvider(children: ReactNode) {
+  return <TooltipProvider delayDuration={0}>{children}</TooltipProvider>;
+}
+
+function renderPixelCanvas(ui: ReactElement) {
+  return render(wrapTooltipProvider(ui));
+}
+
+function rerenderPixelCanvas(rerender: (ui: React.ReactNode) => void, ui: ReactElement) {
+  rerender(wrapTooltipProvider(ui));
+}
+
 async function renderCanvas(mode: "edit" | "view", onLayoutChange = vi.fn()) {
-  render(
-    <TooltipProvider delayDuration={0}>
-      <PixelCanvas
-        mode={mode}
-        layout={layout}
-        selectedIds={new Set(["w1"])}
-        onLayoutChange={onLayoutChange}
-        renderWidget={(item) => <button data-pixel-no-drag>{item.title}</button>}
-      />
-    </TooltipProvider>,
+  renderPixelCanvas(
+    <PixelCanvas
+      mode={mode}
+      layout={layout}
+      selectedIds={new Set(["w1"])}
+      onLayoutChange={onLayoutChange}
+      renderWidget={(item) => <button data-pixel-no-drag>{item.title}</button>}
+    />,
   );
   await pinPixelHostMetrics();
   return onLayoutChange;
@@ -110,16 +121,14 @@ describe("PixelCanvas", () => {
       widgets: [widget, blocker],
     };
     const onChange = vi.fn();
-    render(
-      <TooltipProvider delayDuration={0}>
-        <PixelCanvas
-          mode="edit"
-          layout={stackedLayout}
-          selectedIds={new Set(["w1"])}
-          onLayoutChange={onChange}
-          renderWidget={(item) => <span>{item.title}</span>}
-        />
-      </TooltipProvider>,
+    renderPixelCanvas(
+      <PixelCanvas
+        mode="edit"
+        layout={stackedLayout}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
     );
     await pinPixelHostMetrics();
     const shape = screen.getByTestId("pixel-shape-w1");
@@ -169,8 +178,7 @@ describe("PixelCanvas", () => {
       widgets: [widget, blocker],
     };
     const onChange = vi.fn();
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={stackedLayout}
         styleConfig={{ surfaceKind: "data-screen" }}
@@ -214,8 +222,7 @@ describe("PixelCanvas", () => {
       styleConfig: { surfaceKind: "data-screen" },
     };
     const onChange = vi.fn();
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={dataScreenLayout}
         styleConfig={{ surfaceKind: "data-screen" }}
@@ -271,8 +278,7 @@ describe("PixelCanvas", () => {
     const onChange = vi.fn((next: DashboardLayoutV2) => {
       currentLayout = next;
     });
-    const { rerender } = render(
-      <PixelCanvas
+    const { rerender } = renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={currentLayout}
         styleConfig={{ surfaceKind: "data-screen" }}
@@ -298,8 +304,7 @@ describe("PixelCanvas", () => {
     const resized = onChange.mock.calls[0][0].widgets.find((item: PixelLayoutWidget) => item.id === "w1");
     expect(resized).toMatchObject({ width: 320, height: 220 });
 
-    rerender(
-      <PixelCanvas
+    rerenderPixelCanvas(rerender, <PixelCanvas
         mode="edit"
         layout={currentLayout}
         styleConfig={{ surfaceKind: "data-screen" }}
@@ -327,8 +332,7 @@ describe("PixelCanvas", () => {
       styleConfig: { surfaceKind: "data-screen" },
     };
     const onChange = vi.fn();
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={dataScreenLayout}
         styleConfig={{ surfaceKind: "data-screen" }}
@@ -378,8 +382,7 @@ describe("PixelCanvas", () => {
       canvas: { width: 1920, height: 1080 },
       styleConfig: { surfaceKind: "data-screen" },
     };
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={dataScreenLayout}
         styleConfig={{ surfaceKind: "data-screen" }}
@@ -422,8 +425,7 @@ describe("PixelCanvas", () => {
       styleConfig: { surfaceKind: "data-screen" },
     };
     const onChange = vi.fn();
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={dataScreenLayout}
         styleConfig={{ surfaceKind: "data-screen" }}
@@ -484,8 +486,7 @@ describe("PixelCanvas", () => {
       styleConfig: { surfaceKind: "data-screen" },
     };
     const onChange = vi.fn();
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={dataScreenLayout}
         styleConfig={{ surfaceKind: "data-screen" }}
@@ -530,8 +531,7 @@ describe("PixelCanvas", () => {
       styleConfig: { surfaceKind: "data-screen" },
     };
     const onChange = vi.fn();
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={dataScreenLayout}
         styleConfig={{ surfaceKind: "data-screen" }}
@@ -591,16 +591,14 @@ describe("PixelCanvas", () => {
       widgets: [widget, blocker],
     };
     const onChange = vi.fn();
-    render(
-      <TooltipProvider delayDuration={0}>
-        <PixelCanvas
-          mode="edit"
-          layout={stackedLayout}
-          selectedIds={new Set(["w1"])}
-          onLayoutChange={onChange}
-          renderWidget={(item) => <span>{item.title}</span>}
-        />
-      </TooltipProvider>,
+    renderPixelCanvas(
+      <PixelCanvas
+        mode="edit"
+        layout={stackedLayout}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
     );
     await pinPixelHostMetrics();
     const shape = screen.getByTestId("pixel-shape-w1");
@@ -647,8 +645,7 @@ describe("PixelCanvas", () => {
     const onChange = vi.fn((next: DashboardLayoutV2) => {
       currentLayout = next;
     });
-    const { rerender } = render(
-      <PixelCanvas
+    const { rerender } = renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={currentLayout}
         selectedIds={new Set(["w1"])}
@@ -675,8 +672,7 @@ describe("PixelCanvas", () => {
     });
 
     expect(onChange).toHaveBeenCalledTimes(1);
-    rerender(
-      <PixelCanvas
+    rerenderPixelCanvas(rerender, <PixelCanvas
         mode="edit"
         layout={currentLayout}
         selectedIds={new Set(["w1"])}
@@ -767,14 +763,31 @@ describe("PixelCanvas", () => {
       clientY: 0,
       button: 0,
     });
-    fireEvent.pointerMove(document, {
-      pointerId: 8,
-      clientX: 100,
-      clientY: 100,
-    });
     fireEvent.pointerCancel(document, { pointerId: 8 });
 
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it("commits moved geometry on pointercancel to avoid losing the last frame", async () => {
+    const onChange = await renderCanvas("edit");
+    fireEvent.pointerDown(screen.getByLabelText("调整组件大小：右下"), {
+      pointerId: 18,
+      clientX: 0,
+      clientY: 0,
+      button: 0,
+    });
+    fireEvent.pointerMove(document, {
+      pointerId: 18,
+      clientX: 100,
+      clientY: 100,
+    });
+    await flushPixelPointerFrames();
+    fireEvent.pointerCancel(document, { pointerId: 18 });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const resized = onChange.mock.calls[0][0].widgets[0];
+    expect(resized.width).toBeGreaterThan(300);
+    expect(resized.height).toBeGreaterThan(200);
   });
 
   it("commits the last live rectangle on document pointerup", async () => {
@@ -816,8 +829,7 @@ describe("PixelCanvas", () => {
 
   it("clears selection when clicking blank canvas content outside the stage", () => {
     const onClearSelection = vi.fn();
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={layout}
         selectedIds={new Set(["w1"])}
@@ -833,8 +845,7 @@ describe("PixelCanvas", () => {
 
   it("clears selection when clicking blank host padding", () => {
     const onClearSelection = vi.fn();
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={layout}
         selectedIds={new Set(["w1"])}
@@ -849,8 +860,7 @@ describe("PixelCanvas", () => {
   });
 
   it("shows DE edit chrome only in edit mode", () => {
-    const { unmount } = render(
-      <PixelCanvas
+    const { unmount } = renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={layout}
         selectedIds={new Set(["w1"])}
@@ -863,8 +873,7 @@ describe("PixelCanvas", () => {
     expect(screen.getAllByRole("button", { name: /^调整组件大小：/ })).toHaveLength(8);
     unmount();
 
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="view"
         layout={layout}
         selectedIds={new Set(["w1"])}
@@ -877,8 +886,7 @@ describe("PixelCanvas", () => {
   });
 
   it("toggles auxiliary grid overlay and mark-line snap from chrome config", () => {
-    const { rerender } = render(
-      <PixelCanvas
+    const { rerender } = renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={layout}
         styleConfig={{ chrome: { showAuxiliaryGrid: true } }}
@@ -889,8 +897,7 @@ describe("PixelCanvas", () => {
     expect(screen.getByTestId("pixel-canvas-aux-grid")).toBeInTheDocument();
     expect(screen.getByTestId("canvas-mark-line")).toBeInTheDocument();
 
-    rerender(
-      <PixelCanvas
+    rerenderPixelCanvas(rerender, <PixelCanvas
         mode="edit"
         layout={layout}
         styleConfig={{ chrome: { showAuxiliaryGrid: false } }}
@@ -920,8 +927,7 @@ describe("PixelCanvas", () => {
       ],
     };
     const onChange = vi.fn();
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={spacedLayout}
         styleConfig={{ chrome: { showAuxiliaryGrid: false } }}
@@ -956,8 +962,7 @@ describe("PixelCanvas", () => {
     async (hostScaleFactor, expectedScale) => {
     const hostWidth = 1440 * hostScaleFactor;
     const hostHeight = 320 * expectedScale;
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={{ ...layout, widgets: [{ ...widget, x: 0 }], canvas: { width: 1440, height: 320 } }}
         selectedIds={new Set(["w1"])}
@@ -989,8 +994,7 @@ describe("PixelCanvas", () => {
   it("edit mode fills host width even when scaleMode is component", async () => {
     const hostWidth = 1189;
     const hostHeight = 400;
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         scaleMode="component"
         layout={layout}
@@ -1032,16 +1036,14 @@ describe("PixelCanvas", () => {
       widgets: [{ ...widget, y: 80 }, blocker],
     };
     const onChange = vi.fn();
-    render(
-      <TooltipProvider delayDuration={0}>
-        <PixelCanvas
-          mode="edit"
-          layout={stackedLayout}
-          selectedIds={new Set(["w1"])}
-          onLayoutChange={onChange}
-          renderWidget={(item) => <span>{item.title}</span>}
-        />
-      </TooltipProvider>,
+    renderPixelCanvas(
+      <PixelCanvas
+        mode="edit"
+        layout={stackedLayout}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
     );
     await pinPixelHostMetrics();
     const shape = screen.getByTestId("pixel-shape-w1");
@@ -1064,16 +1066,14 @@ describe("PixelCanvas", () => {
 
   it("commits last drag frame when pointerup coords differ from last move", async () => {
     const onChange = vi.fn();
-    render(
-      <TooltipProvider delayDuration={0}>
-        <PixelCanvas
-          mode="edit"
-          layout={layout}
-          selectedIds={new Set(["w1"])}
-          onLayoutChange={onChange}
-          renderWidget={(item) => <span>{item.title}</span>}
-        />
-      </TooltipProvider>,
+    renderPixelCanvas(
+      <PixelCanvas
+        mode="edit"
+        layout={layout}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
     );
     await pinPixelHostMetrics();
     const handle = screen.getByLabelText("调整组件大小：右下");
@@ -1110,16 +1110,14 @@ describe("PixelCanvas", () => {
       widgets: [{ ...widget, y: 80 }, blocker],
     };
     const onChange = vi.fn();
-    render(
-      <TooltipProvider delayDuration={0}>
-        <PixelCanvas
-          mode="edit"
-          layout={stackedLayout}
-          selectedIds={new Set(["w1"])}
-          onLayoutChange={onChange}
-          renderWidget={(item) => <span>{item.title}</span>}
-        />
-      </TooltipProvider>,
+    renderPixelCanvas(
+      <PixelCanvas
+        mode="edit"
+        layout={stackedLayout}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
     );
     await pinPixelHostMetrics();
     const shape = screen.getByTestId("pixel-shape-w1");
@@ -1142,8 +1140,7 @@ describe("PixelCanvas", () => {
 
   it("auto-scrolls canvas host when dragging near the bottom edge", async () => {
     const onChange = vi.fn();
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={layout}
         selectedIds={new Set(["w1"])}
@@ -1190,8 +1187,7 @@ describe("PixelCanvas", () => {
 
   it("reports the visible canonical viewport after resize and scroll", async () => {
     const onViewportChange = vi.fn();
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={layout}
         onViewportChange={onViewportChange}
@@ -1224,8 +1220,7 @@ describe("PixelCanvas", () => {
       ...layout,
       widgets: [{ ...widget, locked: true }],
     };
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={lockedLayout}
         selectedIds={new Set(["w1"])}
@@ -1242,8 +1237,7 @@ describe("PixelCanvas", () => {
       widgets: [{ ...widget, locked: true }],
     };
     const onChange = vi.fn();
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={lockedLayout}
         selectedIds={new Set(["w1"])}
@@ -1262,8 +1256,7 @@ describe("PixelCanvas", () => {
       widgets: [{ ...widget, locked: true }],
     };
     const onChange = vi.fn();
-    render(
-      <PixelCanvas
+    renderPixelCanvas(<PixelCanvas
         mode="edit"
         layout={lockedLayout}
         selectedIds={new Set(["w1"])}

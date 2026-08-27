@@ -62,6 +62,7 @@ var svg = host.vsCv.d3.select(host.querySelector("#vs-cv-chart"));
 |----|------|
 | 样式 | `var st = (p && p.style) \|\| {}`；禁 `getStyle()` / 自造 style 事件 |
 | 列/行 | `p.columns` · `p.rows`；维/指字段名用 `p.encoding.dimensions` / `.metrics` |
+| 笛卡尔数据 | scaffold 自带 **`rowsToSeries(p)`** · **`resolveBoundColumns(p)`**（勿删）；折线/面积绘图前须排序轴域 |
 | 尺寸 | 读 `p.layout.width` / `p.layout.height`；禁仅 `clientWidth \|\| 320` 作唯一依据 |
 | 生命周期 | **必须** `host.vsCv.mount(render)`（html / d3 均如此） |
 | d3 重绘 | **必须** `svg.interrupt()` → `svg.selectAll('*').remove()` → 再绘制 |
@@ -78,7 +79,14 @@ var svg = host.vsCv.d3.select(host.querySelector("#vs-cv-chart"));
 | `AIVIZ_WARN_D3_INTERRUPT` | 有 transition 但未 interrupt |
 | `AIVIZ_WARN_D3_CLEAR` | d3 重绘未清空旧图层 |
 
-Agent **只改** `renderBusiness` / 业务 DOM；**禁止**删除 scaffold 自带的 mount/layout/interrupt/clear 壳层。
+数据契约（**不限制视觉样式**，只卡与内置图一致的数据语义）：
+
+| code | 含义 |
+|------|------|
+| `AIVIZ_WARN_DATA_ENCODING` | 折线/面积用 rows 但未读 encoding / rowsToSeries |
+| `AIVIZ_WARN_DATA_DOMAIN_SORT` | 折线/面积未排序类目轴（SQL 行序会导致回折） |
+
+Agent **只改** `renderBusiness`；**禁止**删除 scaffold 数据壳层；**禁止**整包抄金样业务层。
 
 ## 4. 容器自适应与溢出（DeepTalk 组件通用）
 

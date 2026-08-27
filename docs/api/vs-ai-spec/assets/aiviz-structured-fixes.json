@@ -44,6 +44,16 @@
     "snippet": "if (rs.tooltipShow) { dots.on('mouseenter', ... placeTooltipNearPointer ...) }",
     "contractRef": "style.read"
   },
+  "AIVIZ_WARN_DATA_ENCODING": {
+    "fix": "折线/面积用 scaffold 自带 rowsToSeries(p) 或 resolveBoundColumns；勿猜列下标",
+    "snippet": "var data = rowsToSeries(p).map(function(d){ return { time: d.category, value: d.value }; });",
+    "contractRef": "data.encoding"
+  },
+  "AIVIZ_WARN_DATA_DOMAIN_SORT": {
+    "fix": "连线前须 localeCompare 排序或直接用 rowsToSeries(p)（默认 sort）",
+    "snippet": "data.sort(function(a,b){ return a.category.localeCompare(b.category, undefined, {numeric:true}); });",
+    "contractRef": "data.encoding"
+  },
   "AIVIZ_MISSING_ENTRY": {
     "fix": "files 须含 manifest.entry 指向的 HTML",
     "snippet": "\"files\": { \"index.html\": \"<!DOCTYPE html>...\" }",

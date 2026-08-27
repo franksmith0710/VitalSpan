@@ -40,7 +40,7 @@ import {
   resolveEffectivePaletteColors,
 } from "@/lib/chartDeStyle";
 import { useChartInspector } from "./chartInspectorContext";
-import { DeAttrSliderField } from "./deAttrSlider";
+import { ChartDeAttrSliderField } from "./deAttrSlider";
 import { WIDGET_BORDER_RECOMMENDED } from "./dashboardStyleConfig";
 import {
   INSPECTOR_CTRL,
@@ -440,7 +440,7 @@ export function ChartAdvancedMapBubbleSection() {
             swatches={WIDGET_BORDER_RECOMMENDED}
             onChange={(next) => patchGeo({ bubbleEffectColor: next })}
           />
-          <DeAttrSliderField
+          <ChartDeAttrSliderField
             label="动效速率"
             compact
             value={geo.bubbleEffectSpeed}
@@ -451,7 +451,7 @@ export function ChartAdvancedMapBubbleSection() {
             ariaLabel="动效速率"
             onChange={(bubbleEffectSpeed) => patchGeo({ bubbleEffectSpeed })}
           />
-          <DeAttrSliderField
+          <ChartDeAttrSliderField
             label="水波环数"
             compact
             value={geo.bubbleEffectRingCount}

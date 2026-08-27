@@ -27,7 +27,7 @@ import {
 const HINT_AUXILIARY_GRID =
   "编辑态在画布上显示点阵参考线；下方细项可配置碰撞与组件对齐（仅像素/大屏）。";
 const HINT_COLLISION_OVERLAP =
-  "两组件在宽、高方向重叠均超过该像素时，才触发碰撞推挤与落点回弹。";
+  "拖动过程中，两组件在宽、高方向重叠均超过该像素时才预览推挤邻块；松手后任意重叠都会触发碰撞整理。";
 const HINT_MARK_LINE_SNAP =
   "拖拽时显示参考线，并与其他组件的边或中心对齐；与「重合阈值」控制的碰撞推挤无关。";
 const HINT_SNAP_TARGETS = "选择要对齐到边线还是中心线。";

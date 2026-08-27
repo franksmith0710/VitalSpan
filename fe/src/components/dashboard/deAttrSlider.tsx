@@ -48,13 +48,15 @@ export type DeProgressSliderProps = {
   className?: string;
   disabled?: boolean;
   onChange: (value: number) => void;
+  /** 拖动过程中每帧提交 onChange（图表样式栏即时预览） */
+  liveUpdate?: boolean;
   /** 拖拽过程中每帧预览（用于标签即时刷新，不触发重渲染链） */
   onPreview?: (value: number | null) => void;
 };
 
 /**
  * DataEase el-slider--small 对标：细轨道 + 品牌色进度 + 圆形滑块
- * 拖拽时仅更新本地 draft；松手后一次性提交，避免拖动卡顿。
+ * 默认松手提交；图表样式栏传 liveUpdate 实现拖动即时生效。
  */
 export function DeProgressSlider({
   value,
@@ -65,16 +67,20 @@ export function DeProgressSlider({
   ariaValuetext,
   className,
   disabled = false,
+  liveUpdate = false,
   onChange,
   onPreview,
 }: DeProgressSliderProps) {
   const clamped = clampValue(value, min, max);
   const [draft, setDraft] = useState<number | null>(null);
   const draggingRef = useRef(false);
+  const activePointerIdRef = useRef<number | null>(null);
   const startValueRef = useRef(clamped);
+  const lastCommittedRef = useRef(clamped);
   const draftRef = useRef<number | null>(null);
   const onChangeRef = useRef(onChange);
   const onPreviewRef = useRef(onPreview);
+  const unbindDocumentEndRef = useRef<(() => void) | null>(null);
 
   onChangeRef.current = onChange;
   onPreviewRef.current = onPreview;
@@ -87,33 +93,61 @@ export function DeProgressSlider({
     if (!draggingRef.current) {
       setDraft(null);
       draftRef.current = null;
+      lastCommittedRef.current = clamped;
     }
   }, [clamped]);
 
-  const beginDrag = useCallback(() => {
-    draggingRef.current = true;
-    startValueRef.current = draftRef.current ?? clamped;
-  }, [clamped]);
+  const unbindDocumentEnd = useCallback(() => {
+    unbindDocumentEndRef.current?.();
+    unbindDocumentEndRef.current = null;
+  }, []);
+
+  const commitValue = useCallback((next: number) => {
+    if (next === lastCommittedRef.current) return;
+    lastCommittedRef.current = next;
+    onChangeRef.current(next);
+  }, []);
 
   const endDrag = useCallback(() => {
     if (!draggingRef.current) return;
     draggingRef.current = false;
+    activePointerIdRef.current = null;
+    unbindDocumentEnd();
     const final = draftRef.current ?? startValueRef.current;
     draftRef.current = null;
     setDraft(null);
     onPreviewRef.current?.(null);
-    if (final !== startValueRef.current) {
-      onChangeRef.current(final);
+    if (!liveUpdate || final !== lastCommittedRef.current) {
+      commitValue(final);
     }
-  }, []);
+  }, [commitValue, liveUpdate, unbindDocumentEnd]);
+
+  const beginDrag = useCallback(
+    (pointerId: number) => {
+      draggingRef.current = true;
+      activePointerIdRef.current = pointerId;
+      startValueRef.current = draftRef.current ?? clamped;
+      const onDocEnd = (event: PointerEvent) => {
+        if (event.pointerId !== activePointerIdRef.current) return;
+        endDrag();
+      };
+      document.addEventListener("pointerup", onDocEnd);
+      document.addEventListener("pointercancel", onDocEnd);
+      unbindDocumentEndRef.current = () => {
+        document.removeEventListener("pointerup", onDocEnd);
+        document.removeEventListener("pointercancel", onDocEnd);
+      };
+    },
+    [clamped, endDrag],
+  );
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const next = Number(e.target.value);
     draftRef.current = next;
     setDraft(next);
     onPreviewRef.current?.(next);
-    if (!draggingRef.current) {
-      onChangeRef.current(next);
+    if (liveUpdate || !draggingRef.current) {
+      commitValue(next);
     }
   };
 
@@ -121,7 +155,7 @@ export function DeProgressSlider({
     if (disabled) return;
     e.stopPropagation();
     e.currentTarget.setPointerCapture(e.pointerId);
-    beginDrag();
+    beginDrag(e.pointerId);
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLInputElement>) => {
@@ -182,6 +216,7 @@ type DeSliderInlineRowProps = {
   labelTone?: "field" | "muted" | "compact";
   disabled?: boolean;
   className?: string;
+  liveUpdate?: boolean;
   onChange: (value: number) => void;
   onPreview?: (value: number | null) => void;
 };
@@ -200,6 +235,7 @@ function DeSliderInlineRow({
   labelTone = "muted",
   disabled = false,
   className,
+  liveUpdate = false,
   onChange,
   onPreview,
 }: DeSliderInlineRowProps) {
@@ -253,6 +289,7 @@ function DeSliderInlineRow({
         max={max}
         step={step}
         disabled={disabled}
+        liveUpdate={liveUpdate}
         ariaLabel={ariaLabel ?? label}
         ariaValuetext={display}
         onPreview={(value) => {
@@ -283,6 +320,7 @@ function DeSliderStackedRow({
   unit = "",
   ariaLabel,
   className,
+  liveUpdate = false,
   onChange,
   onPreview,
 }: DeSliderStackedRowProps) {
@@ -307,6 +345,7 @@ function DeSliderStackedRow({
         min={min}
         max={max}
         step={step}
+        liveUpdate={liveUpdate}
         ariaLabel={ariaLabel ?? label}
         ariaValuetext={display}
         onPreview={(value) => {
@@ -407,6 +446,7 @@ export function ChartDeSliderField({
   const [preview, setPreview] = useState<number | null>(null);
   const shown = preview ?? clamped;
   const display = unit ? `${shown}${unit}` : String(shown);
+  const liveUpdate = true;
 
   if (layout === "inline") {
     return (
@@ -573,6 +613,8 @@ export type DeAttrSliderFieldProps = {
   labelTone?: DeSliderInlineRowProps["labelTone"];
   ariaLabel?: string;
   className?: string;
+  /** 图表样式栏：拖动即时提交 */
+  liveUpdate?: boolean;
   onChange: (value: number) => void;
   onPreviewChange?: (value: number | null) => void;
 };
@@ -592,6 +634,7 @@ export function DeAttrSliderField({
   labelTone = "field",
   ariaLabel,
   className,
+  liveUpdate = false,
   onChange,
   onPreviewChange,
 }: DeAttrSliderFieldProps) {
@@ -616,6 +659,7 @@ export function DeAttrSliderField({
           step={step}
           unit={unit}
           ariaLabel={ariaLabel}
+          liveUpdate={liveUpdate}
           onChange={onChange}
           onPreview={onPreviewChange}
         />
@@ -631,12 +675,20 @@ export function DeAttrSliderField({
           ariaLabel={ariaLabel}
           density={resolvedDensity}
           labelTone={labelTone}
+          liveUpdate={liveUpdate}
           onChange={onChange}
           onPreview={onPreviewChange}
         />
       )}
     </div>
   );
+}
+
+/** 图表样式栏 DeAttr 布局滑块：拖动即时生效 */
+export function ChartDeAttrSliderField(
+  props: Omit<DeAttrSliderFieldProps, "liveUpdate">,
+) {
+  return <DeAttrSliderField {...props} liveUpdate />;
 }
 
 export type DashboardConfigSliderProps = Omit<DeAttrSliderFieldProps, "hint" | "compact"> & {

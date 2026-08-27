@@ -21,11 +21,12 @@ import {
 } from "@/components/charts/engine/maplibre/gisMapLayerStyle";
 import { buildGeoJsonBoundsKey, fitGisOverlayBounds } from "@/components/charts/engine/maplibre/gisMapOverlayFit";
 import { mountGisOverlayInteraction } from "@/components/charts/engine/maplibre/gisMapOverlayInteraction";
-import { applyGisGlobeToStyle, spaceBackdropForPreset } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
+import { applyGisGlobeToStyle } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
+import { spaceBackdropCss } from "@/components/charts/engine/maplibre/gisGeolibreEffectsSettings";
+import { resolveGisEffectsSettings } from "@/components/charts/engine/maplibre/gisProjectEffects";
 import {
   applyGlobeAtmosphere,
   applyGisMapStylePreservingCamera,
-  applyGisSunLight,
   buildGisConfiguredViewKey,
   mountGisMapControls,
   GLOBE_IDLE_ROTATION_DEG_PER_SEC,
@@ -33,6 +34,8 @@ import {
   syncGisMapView,
 } from "@/components/charts/engine/maplibre/gisMapRuntime";
 import { resolveGisProjectSun } from "@/components/charts/engine/maplibre/gisProjectSun";
+import { createGisSunEngine, applyGisSunLive } from "@/components/charts/engine/maplibre/gisSunRuntime";
+import type { GisSunEngine } from "@/components/charts/engine/maplibre/gisSunEngine";
 import { mountGisGlobeHaloOverlay } from "@/components/charts/engine/maplibre/gisGlobeHalo";
 import { mountGisStarfieldOverlay } from "@/components/charts/engine/maplibre/gisStarfield";
 import { registerGisMapViewLiveControl } from "@/components/charts/engine/maplibre/gisMapViewBridge";
@@ -78,6 +81,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const appliedStyleKeyRef = useRef<string | null>(null);
   const syncedViewKeyRef = useRef<string | null>(null);
   const overlayFitKeyRef = useRef<string | null>(null);
+  const sunEngineRef = useRef<GisSunEngine | null>(null);
   const project = useMemo(() => readGisProject(chartConfig), [chartConfig]);
   const projectRef = useRef(project);
   projectRef.current = project;
@@ -90,6 +94,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     () => JSON.stringify(resolveGisProjectSun(project.sun)),
     [project.sun],
   );
+  const sunEnabled = resolveGisProjectSun(project.sun).enabled;
   const [pmtilesStyle, setPmtilesStyle] = useState<StyleSpecification | null>(null);
   const [pmtilesLoading, setPmtilesLoading] = useState(false);
   const [pmtilesErrorHint, setPmtilesErrorHint] = useState<string | null>(null);
@@ -297,8 +302,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         preset: project.atmospherePreset ?? "night",
         fog: project.fog,
         halo: project.halo,
+        effects: project.effects,
       }),
-    [project.atmospherePreset, project.fog, project.halo, project.projection],
+    [project.atmospherePreset, project.effects, project.fog, project.halo, project.projection],
   );
   const configuredViewKey = useMemo(
     () => buildGisConfiguredViewKey(view),
@@ -306,8 +312,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   );
   const earthOpacity = project.earthOpacity ?? 1;
   const projection = project.projection ?? "globe";
+  const effectsSettings = useMemo(() => resolveGisEffectsSettings(project), [project.effects, project.fog, project.halo]);
   const hostBackground =
-    project.projection === "globe" ? spaceBackdropForPreset(project.atmospherePreset) : undefined;
+    project.projection === "globe" ? spaceBackdropCss(effectsSettings.spaceColor) : undefined;
 
   const applyConfiguredView = useCallback((map: MapLibreMap) => {
     const currentView = projectRef.current.view ?? DEFAULT_GIS_GLOBE_VIEW;
@@ -526,16 +533,28 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || project.projection !== "globe") return;
-    const apply = () =>
-      applyGisSunLight(map, project.sun, resolveGisProjectSun(project.sun).timeMinutes);
-    if (map.isStyleLoaded()) apply();
-    else map.once("load", apply);
-    map.on("style.load", apply);
-    return () => {
-      map.off("style.load", apply);
+    if (!map || project.projection !== "globe" || !sunEnabled) {
+      sunEngineRef.current?.destroy();
+      sunEngineRef.current = null;
+      return;
+    }
+    const mount = () => {
+      sunEngineRef.current?.destroy();
+      sunEngineRef.current = createGisSunEngine(map, projectRef.current.sun);
     };
-  }, [project.projection, project.sun, sunKey, styleKey]);
+    if (map.isStyleLoaded()) mount();
+    else map.once("load", mount);
+    return () => {
+      sunEngineRef.current?.destroy();
+      sunEngineRef.current = null;
+    };
+  }, [project.projection, styleKey, sunEnabled]);
+
+  useEffect(() => {
+    if (!sunEngineRef.current) return;
+    const { enabled: _enabled, ...settings } = resolveGisProjectSun(project.sun);
+    sunEngineRef.current.applySettings(settings);
+  }, [project.sun, sunKey]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -556,9 +575,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     return mountGisGlobeHaloOverlay(shell, () => mapRef.current, () => ({
       preset: projectRef.current.atmospherePreset,
       projection: projectRef.current.projection,
+      effects: projectRef.current.effects,
       halo: projectRef.current.halo,
+      fog: projectRef.current.fog,
     }));
-  }, [atmosphereKey, project.atmospherePreset, project.halo, project.projection]);
+  }, [atmosphereKey, project.atmospherePreset, project.effects, project.fog, project.halo, project.projection]);
 
   useEffect(() => {
     const shell = shellRef.current;
@@ -682,11 +703,19 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         const map = mapRef.current;
         if (!map) return false;
         const current = projectRef.current;
+        if (ctx.effects) {
+          projectRef.current = { ...current, effects: ctx.effects };
+        }
         if (ctx.halo) {
-          projectRef.current = { ...current, halo: ctx.halo };
+          projectRef.current = { ...projectRef.current, halo: ctx.halo };
         }
         if (ctx.fog) {
           projectRef.current = { ...projectRef.current, fog: ctx.fog };
+        }
+        const shell = shellRef.current;
+        if (shell && projectRef.current.projection === "globe") {
+          const spaceColor = resolveGisEffectsSettings(projectRef.current).spaceColor;
+          shell.style.background = spaceBackdropCss(spaceColor);
         }
         applyGlobeAtmosphere(
           map,
@@ -716,12 +745,26 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         syncLayersRuntime(map);
         return true;
       },
-      applySun: (sun, timeMinutes) => {
+      applySun: (sun, patch) => {
         const map = mapRef.current;
         if (!map) return false;
-        applyGisSunLight(map, sun, timeMinutes);
+        if (sun) {
+          projectRef.current = { ...projectRef.current, sun: { ...projectRef.current.sun, ...sun } };
+        }
+        const resolved = resolveGisProjectSun(projectRef.current.sun);
+        if (!resolved.enabled) {
+          sunEngineRef.current?.destroy();
+          sunEngineRef.current = null;
+          return true;
+        }
+        if (!sunEngineRef.current) {
+          sunEngineRef.current = createGisSunEngine(map, projectRef.current.sun);
+        } else {
+          applyGisSunLive(sunEngineRef.current, projectRef.current.sun, patch);
+        }
         return true;
       },
+      getSunSettings: () => sunEngineRef.current?.getSettings() ?? null,
     });
   }, [instanceKey, syncLayersRuntime]);
 

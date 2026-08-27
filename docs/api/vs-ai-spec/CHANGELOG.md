@@ -1,5 +1,12 @@
 # vs-ai-spec 变更
 
+## 2026-08-27 (数据契约 · 插件 v0.3.6)
+
+- generic-blank 壳层注入 `rowsToSeries` / `resolveBoundColumns` / `monotoneCurve`（勿删；只改 renderBusiness）
+- 入库 warn：`AIVIZ_WARN_DATA_ENCODING` · `AIVIZ_WARN_DATA_DOMAIN_SORT`（折线/面积数据语义；**不限制**视觉样式）
+- 路由：趋势 wf2 起盘 generic-blank-d3；trend-line **仅参考**
+- Agent：金样禁止整包抄；validate 须 0 warnings 含 DATA_*
+
 ## 2026-08-27 (内置图误路由 · 插件 v0.3.5)
 
 - `capability-routing.json` 补 wf1：treemap/pie/funnel/word-cloud/sunburst/heatmap/scatter/radar/gauge/liquid/bar/line 等

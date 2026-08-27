@@ -49,6 +49,7 @@ import { resolveComponentGapRuntime } from "../componentGapRuntime";
 import { auxiliaryGridPatternStyle, resolveDashboardAlignmentSnap, resolveDashboardChrome } from "../dashboardChromeConfig";
 import {
   allowsPixelWidgetOverlap,
+  COLLISION_COMMIT_MIN_OVERLAP_PX,
   resolvePixelLayoutWithActiveRect,
   widgetRect,
 } from "./collisionLayout";
@@ -530,7 +531,7 @@ export function PixelCanvas({
   );
 
   const resolveActiveAt = useCallback(
-    (widget: PixelLayoutWidget) =>
+    (widget: PixelLayoutWidget, phase: "preview" | "commit" = "preview") =>
       resolvePixelLayoutWithActiveRect(
         activeLayout,
         widget.id,
@@ -542,7 +543,10 @@ export function PixelCanvas({
         },
         {
           gap: gapRuntime.collisionGapPx,
-          minOverlap: collisionOverlapBufferPx,
+          minOverlap:
+            phase === "commit"
+              ? COLLISION_COMMIT_MIN_OVERLAP_PX
+              : collisionOverlapBufferPx,
         },
       ),
     [activeLayout, gapRuntime.collisionGapPx, collisionOverlapBufferPx],
@@ -726,7 +730,7 @@ export function PixelCanvas({
         return;
       }
 
-      const nextLayout = resolveActiveAt(boundedWidget);
+      const nextLayout = resolveActiveAt(boundedWidget, "commit");
       onLayoutChange(nextLayout);
       clearPreviewChrome(nextLayout);
       syncShapeGeometryFromLayout(nextLayout);

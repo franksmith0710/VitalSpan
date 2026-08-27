@@ -27,5 +27,10 @@
     "rule": "先 vitalspan_route_request；矩形树/饼图/漏斗/地图/sankey 等 → wf1 chartType，禁止 customViz 仿制",
     "misrouteWarn": "AIVIZ_WARN_BUILTIN_MISROUTE"
   },
+  "data": {
+    "id": "data.encoding",
+    "rule": "笛卡尔/折线绘图须 rowsToSeries(p) 或 resolveBoundColumns + localeCompare 排序；读 p.encoding；金样仅参考",
+    "warns": ["AIVIZ_WARN_DATA_ENCODING", "AIVIZ_WARN_DATA_DOMAIN_SORT"]
+  },
   "publishGate": "styleComplianceTier=full 且 warnings=0"
 }

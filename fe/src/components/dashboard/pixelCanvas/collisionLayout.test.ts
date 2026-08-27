@@ -11,7 +11,7 @@ import {
   resolvePixelCollisions,
   resolvePixelLayoutWithActiveRect,
 } from "./collisionLayout";
-import { insertPixelPaletteWidget } from "./createPixelWidget";
+import { insertPixelPaletteWidget, insertPixelPaletteWidgetAt } from "./createPixelWidget";
 
 const baseLayout = (widgets: PixelLayoutWidget[]): DashboardLayoutV2 => ({
   version: 2,
@@ -77,6 +77,39 @@ describe("collisionLayout", () => {
     expect(shallow.widgets.find((item) => item.id === "b")).toMatchObject({ y: 261 });
     const deep = resolvePixelCollisions(layout, "a", { x: 100, y: 110, width: 300, height: 200 });
     expect(deep.widgets.find((item) => item.id === "b")!.y).toBeGreaterThan(261);
+  });
+
+  it("pushes neighbors on commit when overlap is below the preview buffer", () => {
+    const layout = baseLayout([
+      widget("a", 100, 100, 300, 200, 1),
+      widget("b", 120, 261, 300, 200, 2),
+    ]);
+    const preview = resolvePixelCollisions(
+      layout,
+      "a",
+      { x: 100, y: 100, width: 300, height: 200 },
+      { minOverlap: 40 },
+    );
+    expect(preview.widgets.find((item) => item.id === "b")).toMatchObject({ y: 261 });
+    const committed = resolvePixelCollisions(
+      layout,
+      "a",
+      { x: 100, y: 100, width: 300, height: 200 },
+      { minOverlap: 0 },
+    );
+    expect(committed.widgets.find((item) => item.id === "b")!.y).toBeGreaterThan(261);
+  });
+
+  it("pushes neighbors on palette insert when overlap is below the preview buffer", () => {
+    const layout = baseLayout([
+      widget("blocker", 100, 250, 300, 200, 1),
+    ]);
+    const resolved = insertPixelPaletteWidgetAt("bar", layout, { x: 150, y: 220 });
+    const blocker = resolved.widgets.find((item) => item.id === "blocker")!;
+    const inserted = resolved.widgets.find((item) => item.id !== "blocker")!;
+    expect(inserted).toBeTruthy();
+    expect(blocker.y).toBeGreaterThan(250);
+    expect(layoutsOverlap(resolved, 0)).toBe(false);
   });
 
   it("keeps layout unchanged when there is no collision", () => {

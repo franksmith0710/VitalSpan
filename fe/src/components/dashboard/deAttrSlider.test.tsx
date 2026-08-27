@@ -44,7 +44,7 @@ describe("ChartDeSliderField", () => {
     expect(fill).toHaveStyle({ transform: "scaleX(0.5)" });
   });
 
-  it("commits once on pointer up after drag", () => {
+  it("commits once on pointer up after drag when liveUpdate is off", () => {
     const onChange = vi.fn();
     render(
       <DeProgressSlider
@@ -66,6 +66,31 @@ describe("ChartDeSliderField", () => {
     fireEvent.pointerUp(slider);
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange).toHaveBeenCalledWith(30);
+  });
+
+  it("emits on each change while dragging when liveUpdate is on", () => {
+    const onChange = vi.fn();
+    render(
+      <ChartDeSliderField
+        label="外径"
+        value={70}
+        min={0}
+        max={100}
+        unit="%"
+        onChange={onChange}
+      />,
+    );
+
+    const slider = screen.getByRole("slider", { name: "外径" });
+    fireEvent.pointerDown(slider);
+    fireEvent.change(slider, { target: { value: "80" } });
+    fireEvent.change(slider, { target: { value: "90" } });
+    expect(onChange).toHaveBeenCalledTimes(2);
+    expect(onChange).toHaveBeenNthCalledWith(1, 80);
+    expect(onChange).toHaveBeenNthCalledWith(2, 90);
+
+    fireEvent.pointerUp(slider);
+    expect(onChange).toHaveBeenCalledTimes(2);
   });
 
   it("uses fallback when value is undefined", () => {

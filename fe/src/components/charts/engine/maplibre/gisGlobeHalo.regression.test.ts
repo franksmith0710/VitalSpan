@@ -16,6 +16,8 @@ describe("gisGlobeHalo atmosphere sync regression", () => {
     expect(haloSource).not.toContain("resolveGlobeScreenBoundsFallback");
     expect(haloSource).toContain("isGlobeTransformProbeReady");
     expect(haloSource).toContain("if (!limb)");
+    expect(haloSource).not.toMatch(/const ctx = getContext\(\)/);
+    expect(haloSource).toContain("drawGlobeAtmosphereHalo(ctx");
     expect(layoutSource).toContain("禁止 viewport fallback");
     expect(layoutSource).toContain('"style.load"');
   });
