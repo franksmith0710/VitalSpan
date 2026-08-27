@@ -4,6 +4,7 @@ import {
   listGisProjectLayers,
   normalizeGisProjectLayers,
   patchGisProjectLayer,
+  resolveActiveGisProjectLayer,
   writeGisProjectLayers,
 } from "@/components/charts/engine/maplibre/gisProjectLayers";
 
@@ -48,5 +49,17 @@ describe("gisProjectLayers", () => {
     const patched = patchGisProjectLayer(project, layerId, { name: "业务散点" });
     expect(patched[0].id).toBe(layerId);
     expect(patched[0].name).toBe("业务散点");
+  });
+
+  it("resolveActiveGisProjectLayer prefers activeLayerId", () => {
+    const layers = normalizeGisProjectLayers([
+      { id: "a", name: "A", kind: "scatter" },
+      { id: "b", name: "B", kind: "heatmap" },
+    ]);
+    const project = readGisProject({
+      chartType: "gis-map",
+      nativeBody: { gisProject: { layers, activeLayerId: "b" } },
+    });
+    expect(resolveActiveGisProjectLayer(project).id).toBe("b");
   });
 });

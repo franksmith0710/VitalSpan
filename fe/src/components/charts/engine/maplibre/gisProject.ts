@@ -195,6 +195,8 @@ export type GisProject = {
   overlay?: GisProjectOverlay;
   /** 业务图层栈（散点/热力等） */
   layers?: GisProjectLayer[];
+  /** 数据 Tab 当前编辑的图层 id */
+  activeLayerId?: string;
   /** GeoLibre 对齐的大气光晕参数 */
   halo?: GisProjectHalo;
 };
@@ -435,6 +437,10 @@ function normalizeGisProject(raw: unknown): GisProject {
   const overlay = normalizeGisProjectOverlay(candidate.overlay);
   const layers = normalizeGisProjectLayers(candidate.layers);
   const halo = normalizeGisProjectHalo(candidate.halo);
+  const activeLayerId =
+    typeof candidate.activeLayerId === "string" && candidate.activeLayerId.trim()
+      ? candidate.activeLayerId.trim()
+      : undefined;
   return {
     basemap: "pmtiles",
     tileServiceId,
@@ -457,6 +463,7 @@ function normalizeGisProject(raw: unknown): GisProject {
         : undefined,
     overlay,
     layers,
+    activeLayerId,
     halo,
   };
 }
@@ -543,7 +550,10 @@ function normalizeGisView(input: unknown): GisProjectView | undefined {
   };
 }
 
-export { listGisProjectLayers } from "@/components/charts/engine/maplibre/gisProjectLayers";
+export {
+  listGisProjectLayers,
+  resolveActiveGisProjectLayer,
+} from "@/components/charts/engine/maplibre/gisProjectLayers";
 
 export function defaultGisProjectNativeBody(): Record<string, unknown> {
   return { gisProject: DEFAULT_GIS_PROJECT };

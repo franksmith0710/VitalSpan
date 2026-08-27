@@ -2,12 +2,21 @@ import type { GisProject, GisProjectOverlay } from "@/components/charts/engine/m
 
 export type GisLayerKind = "scatter" | "heatmap";
 
+/** 图层级字段覆写；留空则回退 chartConfig 数据 Tab 槽位。 */
+export type GisProjectLayerBinding = {
+  lngField?: string;
+  latField?: string;
+  metricField?: string;
+  labelField?: string;
+};
+
 export type GisProjectLayer = {
   id: string;
   name: string;
   visible?: boolean;
   opacity?: number;
   kind: GisLayerKind;
+  binding?: GisProjectLayerBinding;
   style?: GisProjectOverlay;
 };
 
@@ -45,7 +54,24 @@ export function normalizeGisProjectLayer(input: unknown): GisProjectLayer | null
   if (raw.style && typeof raw.style === "object") {
     layer.style = raw.style;
   }
+  const binding = normalizeGisProjectLayerBinding(raw.binding);
+  if (binding) layer.binding = binding;
   return layer;
+}
+
+function normalizeGisProjectLayerBinding(input: unknown): GisProjectLayerBinding | undefined {
+  if (!input || typeof input !== "object") return undefined;
+  const raw = input as GisProjectLayerBinding;
+  const next: GisProjectLayerBinding = {};
+  if (typeof raw.lngField === "string" && raw.lngField.trim()) next.lngField = raw.lngField.trim();
+  if (typeof raw.latField === "string" && raw.latField.trim()) next.latField = raw.latField.trim();
+  if (typeof raw.metricField === "string" && raw.metricField.trim()) {
+    next.metricField = raw.metricField.trim();
+  }
+  if (typeof raw.labelField === "string" && raw.labelField.trim()) {
+    next.labelField = raw.labelField.trim();
+  }
+  return Object.keys(next).length > 0 ? next : undefined;
 }
 
 export function normalizeGisProjectLayers(input: unknown): GisProjectLayer[] | undefined {
@@ -102,4 +128,13 @@ export function patchGisProjectLayer(
   return listGisProjectLayers(project).map((layer) =>
     layer.id === layerId ? { ...layer, ...patch, id: layer.id } : layer,
   );
+}
+
+export function resolveActiveGisProjectLayer(project: GisProject): GisProjectLayer {
+  const layers = listGisProjectLayers(project);
+  if (project.activeLayerId) {
+    const active = layers.find((layer) => layer.id === project.activeLayerId);
+    if (active) return active;
+  }
+  return layers[0]!;
 }

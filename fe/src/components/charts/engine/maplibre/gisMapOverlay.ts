@@ -1,6 +1,8 @@
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { activeFieldRefs } from "@/lib/chartConfigState";
 import { parseMetricValue } from "@/lib/buildChartRenderModel";
+import type { GisProjectLayerBinding } from "@/components/charts/engine/maplibre/gisProjectLayers";
+import type { GisProjectOverlay } from "@/components/charts/engine/maplibre/gisProject";
 
 export type GisOverlayPoint = {
   lng: number;
@@ -9,6 +11,11 @@ export type GisOverlayPoint = {
   value?: number;
   category?: string;
   color?: string;
+};
+
+export type BuildGisOverlayGeoJsonOptions = {
+  binding?: GisProjectLayerBinding;
+  overlayStyle?: GisProjectOverlay;
 };
 
 const DEFAULT_POINT_COLOR = "#2563eb";
@@ -28,28 +35,41 @@ function assignCategoryColors(
   return map;
 }
 
+function resolveOverlayFieldNames(
+  config: ChartViewConfig,
+  binding?: GisProjectLayerBinding,
+): { lngField?: string; latField?: string; labelField?: string; metricField?: string } {
+  const dims = activeFieldRefs(config.dimensions);
+  const metrics = activeFieldRefs(config.metrics);
+  return {
+    lngField: binding?.lngField ?? dims[0]?.field,
+    latField: binding?.latField ?? dims[1]?.field,
+    labelField: binding?.labelField ?? dims[2]?.field,
+    metricField: binding?.metricField ?? metrics[0]?.field,
+  };
+}
+
 export function buildGisOverlayGeoJson(
   config: ChartViewConfig,
   columns: string[],
   rows: (string | number | boolean | null)[][],
   chartColors?: string[],
+  options?: BuildGisOverlayGeoJsonOptions,
 ): GeoJSON.FeatureCollection | null {
-  const dims = activeFieldRefs(config.dimensions);
-  const metrics = activeFieldRefs(config.metrics);
-  if (dims.length < 2 || rows.length === 0) return null;
+  const { lngField, latField, labelField, metricField } = resolveOverlayFieldNames(
+    config,
+    options?.binding,
+  );
+  if (!lngField || !latField || rows.length === 0) return null;
 
-  const lngField = dims[0]!.field;
-  const latField = dims[1]!.field;
   const lngIdx = columns.indexOf(lngField);
   const latIdx = columns.indexOf(latField);
   if (lngIdx < 0 || latIdx < 0) return null;
 
-  const labelField = dims[2]?.field;
   const labelIdx = labelField ? columns.indexOf(labelField) : -1;
-  const metricField = metrics[0]?.field;
   const metricIdx = metricField ? columns.indexOf(metricField) : -1;
-  const overlay = config.nativeBody?.gisProject?.overlay;
-  const colorByCategory = overlay?.colorByCategory !== false;
+  const overlayStyle = options?.overlayStyle ?? config.nativeBody?.gisProject?.overlay;
+  const colorByCategory = overlayStyle?.colorByCategory !== false;
 
   const points: GisOverlayPoint[] = [];
 

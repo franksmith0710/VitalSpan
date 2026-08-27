@@ -77,20 +77,6 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const project = useMemo(() => readGisProject(chartConfig), [chartConfig]);
   const projectRef = useRef(project);
   projectRef.current = project;
-  const overlayGeoJson = useMemo(
-    () =>
-      chartConfig
-        ? buildGisOverlayGeoJson(
-            chartConfig,
-            viewModel.dataset.columns,
-            viewModel.dataset.rows,
-            styleContext.chartColors,
-          )
-        : null,
-    [chartConfig, styleContext.chartColors, viewModel.dataset.columns, viewModel.dataset.rows],
-  );
-  const overlayGeoJsonRef = useRef(overlayGeoJson);
-  overlayGeoJsonRef.current = overlayGeoJson;
   const [pmtilesStyle, setPmtilesStyle] = useState<StyleSpecification | null>(null);
   const [pmtilesLoading, setPmtilesLoading] = useState(false);
   const [pmtilesErrorHint, setPmtilesErrorHint] = useState<string | null>(null);
@@ -202,16 +188,36 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
   const gisLayers = useMemo(() => listGisProjectLayers(project), [project]);
   const layerEntries = useMemo((): GisLayerRuntimeEntry[] => {
+    if (!chartConfig) return [];
     return gisLayers.map((layer) => ({
       layer,
-      geoJson: overlayGeoJson,
+      geoJson: buildGisOverlayGeoJson(
+        chartConfig,
+        viewModel.dataset.columns,
+        viewModel.dataset.rows,
+        styleContext.chartColors,
+        { binding: layer.binding, overlayStyle: layer.style },
+      ),
       options: {
         flavor,
         overlay: layer.style,
         chartColors: styleContext.chartColors,
       },
     }));
-  }, [flavor, gisLayers, overlayGeoJson, styleContext.chartColors]);
+  }, [
+    chartConfig,
+    flavor,
+    gisLayers,
+    styleContext.chartColors,
+    viewModel.dataset.columns,
+    viewModel.dataset.rows,
+  ]);
+  const overlayGeoJson = useMemo(() => {
+    for (const entry of layerEntries) {
+      if (entry.geoJson?.features.length) return entry.geoJson;
+    }
+    return null;
+  }, [layerEntries]);
   const layerEntriesRef = useRef(layerEntries);
   layerEntriesRef.current = layerEntries;
   const layersStyleKey = useMemo(() => buildGisLayersStyleKey(layerEntries), [layerEntries]);
@@ -231,7 +237,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         fitGisOverlayBounds(map, fitCollections);
         overlayFitKeyRef.current = boundsKey;
       }
-    } else if (!overlayGeoJsonRef.current) {
+    } else if (!layerEntriesRef.current.some((entry) => entry.geoJson)) {
       overlayFitKeyRef.current = null;
     }
   }, []);

@@ -32,6 +32,7 @@ import {
   writeGisProjectLayers,
   type GisLayerKind,
   type GisProjectLayer,
+  type GisProjectLayerBinding,
 } from "@/components/charts/engine/maplibre/gisProjectLayers";
 import { resolveGisChartColors } from "@/lib/resolveGisChartColors";
 
@@ -55,12 +56,26 @@ export function ChartGisMapLayersPanel() {
   const { cfg, mutateChartConfig, dashboardStyle } = useChartInspector();
   const project = readGisProject(cfg);
   const layers = useMemo(() => listGisProjectLayers(project), [project]);
-  const [selectedLayerId, setSelectedLayerId] = useState(layers[0]?.id ?? "");
+  const [selectedLayerId, setSelectedLayerId] = useState(
+    project.activeLayerId ?? layers[0]?.id ?? "",
+  );
 
   useEffect(() => {
-    if (layers.some((layer) => layer.id === selectedLayerId)) return;
+    const preferred = project.activeLayerId ?? layers[0]?.id ?? "";
+    if (layers.some((layer) => layer.id === preferred)) {
+      setSelectedLayerId(preferred);
+      return;
+    }
     setSelectedLayerId(layers[0]?.id ?? "");
-  }, [layers, selectedLayerId]);
+  }, [layers, project.activeLayerId]);
+
+  const selectLayer = useCallback(
+    (layerId: string) => {
+      setSelectedLayerId(layerId);
+      mutateChartConfig((current) => writeGisProject(current, { activeLayerId: layerId }));
+    },
+    [mutateChartConfig],
+  );
 
   const selectedLayer = layers.find((layer) => layer.id === selectedLayerId) ?? layers[0];
   const paletteColors = useMemo(
@@ -97,17 +112,31 @@ export function ChartGisMapLayersPanel() {
     [patchSelectedLayer, selectedLayer],
   );
 
+  const patchSelectedBinding = useCallback(
+    (field: keyof GisProjectLayerBinding, value: string) => {
+      if (!selectedLayer) return;
+      const next = { ...(selectedLayer.binding ?? {}) };
+      const trimmed = value.trim();
+      if (trimmed) next[field] = trimmed;
+      else delete next[field];
+      patchSelectedLayer({
+        binding: Object.keys(next).length > 0 ? next : undefined,
+      });
+    },
+    [patchSelectedLayer, selectedLayer],
+  );
+
   const addLayer = (kind: GisLayerKind) => {
     const next = [...layers, defaultGisProjectLayer(kind)];
     commitLayers(next);
-    setSelectedLayerId(next[next.length - 1].id);
+    selectLayer(next[next.length - 1].id);
   };
 
   const removeSelectedLayer = () => {
     if (layers.length <= 1 || !selectedLayer) return;
     const next = layers.filter((layer) => layer.id !== selectedLayer.id);
     commitLayers(next);
-    setSelectedLayerId(next[0]?.id ?? "");
+    selectLayer(next[0]?.id ?? "");
   };
 
   const duplicateSelectedLayer = () => {
@@ -119,7 +148,7 @@ export function ChartGisMapLayersPanel() {
     copy.visible = selectedLayer.visible;
     const next = [...layers, copy];
     commitLayers(next);
-    setSelectedLayerId(copy.id);
+    selectLayer(copy.id);
   };
 
   return (
@@ -165,7 +194,7 @@ export function ChartGisMapLayersPanel() {
                   <button
                     type="button"
                     className="min-w-0 flex-1 truncate text-left text-theme-xs font-medium text-gray-800 dark:text-gray-100"
-                    onClick={() => setSelectedLayerId(layer.id)}
+                    onClick={() => selectLayer(layer.id)}
                   >
                     {layer.name}
                     <span className="ml-1 text-gray-400">({KIND_LABELS[layer.kind]})</span>
@@ -239,6 +268,55 @@ export function ChartGisMapLayersPanel() {
               checked={resolvedStyle.autoFit}
               onCheckedChange={(autoFit) => patchSelectedStyle({ autoFit })}
             />
+
+            <div className="grid gap-2 rounded-lg border border-dashed border-gray-200 p-2 dark:border-gray-800">
+              <InspectorFieldLabel
+                label="字段绑定"
+                hint="留空则使用数据 Tab 槽位；覆写后仅本图层生效"
+              />
+              <div className="grid grid-cols-2 gap-2">
+                <div className="grid gap-1">
+                  <InspectorFieldLabel label="经度字段" />
+                  <Input
+                    className={INSPECTOR_CTRL}
+                    value={selectedLayer.binding?.lngField ?? ""}
+                    placeholder="默认槽位"
+                    onChange={(event) => patchSelectedBinding("lngField", event.target.value)}
+                    aria-label="经度字段"
+                  />
+                </div>
+                <div className="grid gap-1">
+                  <InspectorFieldLabel label="纬度字段" />
+                  <Input
+                    className={INSPECTOR_CTRL}
+                    value={selectedLayer.binding?.latField ?? ""}
+                    placeholder="默认槽位"
+                    onChange={(event) => patchSelectedBinding("latField", event.target.value)}
+                    aria-label="纬度字段"
+                  />
+                </div>
+                <div className="grid gap-1">
+                  <InspectorFieldLabel label="指标字段" />
+                  <Input
+                    className={INSPECTOR_CTRL}
+                    value={selectedLayer.binding?.metricField ?? ""}
+                    placeholder="默认槽位"
+                    onChange={(event) => patchSelectedBinding("metricField", event.target.value)}
+                    aria-label="指标字段"
+                  />
+                </div>
+                <div className="grid gap-1">
+                  <InspectorFieldLabel label="标签字段" />
+                  <Input
+                    className={INSPECTOR_CTRL}
+                    value={selectedLayer.binding?.labelField ?? ""}
+                    placeholder="默认槽位"
+                    onChange={(event) => patchSelectedBinding("labelField", event.target.value)}
+                    aria-label="标签字段"
+                  />
+                </div>
+              </div>
+            </div>
 
             <ChartGisMapLayerStyleFields
               resolved={resolvedStyle}

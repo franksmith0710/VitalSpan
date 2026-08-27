@@ -51,4 +51,24 @@ describe("buildGisOverlayGeoJson", () => {
     expect(geojson?.features[0]?.properties?.sizeNorm).toBe(0);
     expect(geojson?.features[1]?.properties?.sizeNorm).toBe(1);
   });
+
+  it("uses layer binding field overrides when provided", () => {
+    const config = {
+      ...defaultChartConfig("gis-map"),
+      dimensions: [{ field: "lng" }, { field: "lat" }],
+      metrics: [{ field: "amount" }],
+    };
+    const geojson = buildGisOverlayGeoJson(
+      config,
+      ["longitude", "latitude", "amount"],
+      [[116.4, 39.9, 5]],
+      undefined,
+      { binding: { lngField: "longitude", latField: "latitude", metricField: "amount" } },
+    );
+    expect(geojson?.features).toHaveLength(1);
+    expect(geojson?.features[0]?.geometry).toEqual({
+      type: "Point",
+      coordinates: [116.4, 39.9],
+    });
+  });
 });

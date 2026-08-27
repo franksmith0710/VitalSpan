@@ -123,4 +123,21 @@
   - [x] `plugins/bar/index.ts` 示例包
   - [x] `pluginParity.test.ts` / `check:chart-plugin-parity`
 - **代码锚点**：`fe/src/components/charts/engine/plugins/types.ts` · `registry.ts` · `fe/src/components/charts/plugins/bar/`
+- **演化建议**：`plugins/bar/index.ts` 示例包
 - **演化建议**：其余类型逐步迁入 `plugins/<type>/`；ChartExplore 挂 demo 预览
+
+### [VIZ-003-GIS] gis-map 图层栈与球面大气（GeoLibre 子集）
+
+- **状态**：已实现（2026-08-27）
+- **goal_ref**：ADR-12 · GEO-IRON-01 B 路径
+- **期次**：二期 companion
+- **描述**：`chartType=gis-map` 薄 MapLibre + 登记 PMTiles；右侧样式 Tab 扩展 `gisProject.layers[]` 多图层（散点/热力）、高级大气/光晕参数、`activeLayerId` 数据 Tab 上下文；禁止 iframe GeoLibre 整应用。
+- **验收标准**：
+  - [x] `nativeBody.gisProject.layers[]` 读写 + legacy `overlay` 迁移（`gisProjectLayers.ts`）
+  - [x] 样式 Tab「GIS 图层」：列表/显隐/排序/类型/样式/字段 binding 覆写
+  - [x] `GisMapView` 多 source/layer runtime + heatmap（`gisMapLayerStyle.ts`）
+  - [x] 数据 Tab 显示当前编辑图层（`activeLayerId` + `ChartGisMapDataPanel`）
+  - [x] 球面大气面板：fog 细项、halo、自转速度（`ChartGisMapProjectPanel`）
+  - [ ] GeoLibre 远视图像素级对标（feature-truth T1 · PARTIAL）
+- **代码锚点**：`fe/src/components/charts/engine/maplibre/` · `ChartGisMapLayersPanel.tsx` · `ChartGisMapProjectPanel.tsx` · `docs/arch.md` ADR-12
+- **演化建议**：每层独立 Dataset binding（二期）；GeoLibre #230 椭圆球缘拟合
