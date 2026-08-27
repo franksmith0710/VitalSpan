@@ -130,20 +130,48 @@ export type HorizontalCategoryCartesianLayout = ChartSvgLayout & {
   yLayout: ReturnType<typeof resolveHorizontalCategoryAxisLayout>;
 };
 
+/** 固定坐标系 SVG 随容器 CSS 拉伸（paintMaxEdge / visualScale 降采样后仍填满 widget） */
+export function applyScalableChartSvgDisplay(
+  root: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+  coordWidth: number,
+  coordHeight: number,
+): void {
+  root
+    .attr("viewBox", `0 0 ${coordWidth} ${coordHeight}`)
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .style("display", "block")
+    .style("overflow", "visible");
+}
+
+/** 补齐未走 appendChartSvg 的渲染器（饼图/漏斗等） */
+export function normalizeEmbeddedChartSvgs(container: HTMLElement): void {
+  container.querySelectorAll<SVGSVGElement>("svg").forEach((svg) => {
+    if (svg.getAttribute("width") === "100%" && svg.hasAttribute("viewBox")) return;
+    const rawWidth = svg.getAttribute("width");
+    const rawHeight = svg.getAttribute("height");
+    if (!rawWidth || !rawHeight || rawWidth.includes("%")) return;
+    const coordWidth = Number.parseFloat(rawWidth);
+    const coordHeight = Number.parseFloat(rawHeight);
+    if (!(coordWidth > 0 && coordHeight > 0)) return;
+    applyScalableChartSvgDisplay(d3.select(svg), coordWidth, coordHeight);
+  });
+}
+
 /** 与 buildCartesianScene 一致：标准 SVG 根节点 + 允许轴标签溢出 */
 export function appendChartSvg(
   container: HTMLElement,
   width: number,
   height: number,
 ): d3.Selection<SVGSVGElement, unknown, null, undefined> {
-  return d3
+  const root = d3
     .select(container)
     .append("svg")
     .attr("class", "vs-chart-svg")
-    .attr("width", width)
-    .attr("height", height)
-    .attr("role", "img")
-    .style("overflow", "visible");
+    .attr("role", "img");
+  applyScalableChartSvgDisplay(root, width, height);
+  return root;
 }
 
 /** 纵轴类目图：抽稀横轴刻度 + 为旋转标签预留 bottom 边距 */
@@ -278,13 +306,9 @@ export function buildCartesianScene(opts: BuildCartesianSceneOptions): Cartesian
       .select(opts.container)
       .append("svg")
       .attr("class", "vs-chart-svg")
-      .attr("width", opts.width)
-      .attr("height", opts.height)
-      .attr("role", "img")
-      .style("overflow", "visible");
-  } else {
-    root.attr("width", opts.width).attr("height", opts.height);
+      .attr("role", "img");
   }
+  applyScalableChartSvgDisplay(root, opts.width, opts.height);
 
   let defs = root.select<SVGDefsElement>("defs");
   if (defs.empty()) defs = root.append("defs");
@@ -339,13 +363,9 @@ export function buildHorizontalCartesianScene(
       .select(opts.container)
       .append("svg")
       .attr("class", "vs-chart-svg")
-      .attr("width", opts.width)
-      .attr("height", opts.height)
-      .attr("role", "img")
-      .style("overflow", "visible");
-  } else {
-    root.attr("width", opts.width).attr("height", opts.height);
+      .attr("role", "img");
   }
+  applyScalableChartSvgDisplay(root, opts.width, opts.height);
 
   let defs = root.select<SVGDefsElement>("defs");
   if (defs.empty()) defs = root.append("defs");

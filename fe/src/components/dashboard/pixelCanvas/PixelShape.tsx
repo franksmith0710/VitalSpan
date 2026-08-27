@@ -571,17 +571,24 @@ export function PixelShape({
     return snapPointerRect(raw, event, active);
   };
 
+  const applyPendingMoveFrame = () => {
+    if (moveFrameRef.current !== null) {
+      cancelAnimationFrame(moveFrameRef.current);
+      moveFrameRef.current = null;
+    }
+    const pending = pendingMoveRef.current;
+    pendingMoveRef.current = null;
+    if (!pending) return;
+    applyDisplay(pending.rect);
+    onMarkGuidesChange?.(pending.guides.length > 0 ? pending.guides : null);
+    if (!suppressResizePreview || pending.active.kind === "move") {
+      onPreview?.(withRect(widget, pending.rect));
+    }
+  };
+
   const flushPointerFrame = () => {
     moveFrameRef.current = null;
-    const pending = pendingMoveRef.current;
-    if (!pending) return;
-    pendingMoveRef.current = null;
-    const { rect: next, guides, event: _event, active } = pending;
-    applyDisplay(next);
-    onMarkGuidesChange?.(guides.length > 0 ? guides : null);
-    if (!suppressResizePreview || active.kind === "move") {
-      onPreview?.(withRect(widget, next));
-    }
+    applyPendingMoveFrame();
   };
 
   const handlePointerMove = (event: PointerEvent) => {
@@ -614,21 +621,16 @@ export function PixelShape({
     const active = activeRef.current;
     if (!active) return;
     if (active.pointerId !== event.pointerId) return;
-    if (moveFrameRef.current !== null) {
-      cancelAnimationFrame(moveFrameRef.current);
-      moveFrameRef.current = null;
-    }
-    pendingMoveRef.current = null;
-    const finalSnap = commit
-      ? rectForPointer(event, active)
-      : { rect: active.startRect, guides: [] as MarkLineGuide[] };
-    const finalRect = finalSnap.rect;
+    applyPendingMoveFrame();
+    const movedFromStart = !pixelRectsNearlyEqual(displayRef.current, active.startRect);
+    const shouldCommit = commit || movedFromStart;
+    const finalRect = shouldCommit ? displayRef.current : active.startRect;
     releasePointerCapture(active, event.pointerId);
     activeRef.current = null;
     syncHint(null);
     onMarkGuidesChange?.(null);
     applyDisplay(finalRect);
-    if (commit) onCommit?.(withRect(widget, finalRect));
+    if (shouldCommit) onCommit?.(withRect(widget, finalRect));
     else onCancel?.(widget.id);
     setIsPlayer(false);
     onPlayingChange?.(false);

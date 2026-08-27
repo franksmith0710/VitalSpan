@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   appendChartSvg,
+  normalizeEmbeddedChartSvgs,
   resolveCategoryCartesianLayout,
   resolveHorizontalCategoryCartesianLayout,
 } from "@/components/charts/engine/d3/core/sceneGraph";
@@ -33,12 +34,28 @@ describe("sceneGraph layout helpers", () => {
     expect(layout.innerH).toBeGreaterThan(0);
   });
 
-  it("appendChartSvg creates vs-chart-svg with overflow visible", () => {
+  it("appendChartSvg creates scalable vs-chart-svg", () => {
     const container = document.createElement("div");
     const svg = appendChartSvg(container, 400, 300);
     expect(svg.attr("class")).toBe("vs-chart-svg");
     expect(svg.style("overflow")).toBe("visible");
-    expect(svg.attr("width")).toBe("400");
-    expect(svg.attr("height")).toBe("300");
+    expect(svg.attr("width")).toBe("100%");
+    expect(svg.attr("height")).toBe("100%");
+    expect(svg.attr("viewBox")).toBe("0 0 400 300");
+    expect(svg.attr("preserveAspectRatio")).toBe("xMidYMid meet");
+  });
+
+  it("normalizeEmbeddedChartSvgs upgrades legacy fixed-size svg roots", () => {
+    const container = document.createElement("div");
+    const legacy = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    legacy.setAttribute("width", "640");
+    legacy.setAttribute("height", "360");
+    container.appendChild(legacy);
+
+    normalizeEmbeddedChartSvgs(container);
+
+    expect(legacy.getAttribute("viewBox")).toBe("0 0 640 360");
+    expect(legacy.getAttribute("width")).toBe("100%");
+    expect(legacy.getAttribute("height")).toBe("100%");
   });
 });

@@ -203,4 +203,20 @@ describe("pixelMarkLine", () => {
     expect(result.rect.x).toBe(98);
     expect(result.guides).toEqual([]);
   });
+
+  it("does not snap resize edge back to anchor position", () => {
+    const anchor = { x: 100, y: 100, width: 300, height: 200 };
+    const active: PixelRect = { x: 100, y: 100, width: 300, height: 218 };
+    const neighborBelow: PixelRect = { x: 100, y: 300, width: 300, height: 200 };
+
+    const result = computeMarkLineSnap(active, [neighborBelow], {
+      threshold: 20,
+      dragDir: { isRightward: false, isDownward: true },
+      interactionKind: "s",
+      anchorRect: anchor,
+    });
+
+    expect(result.rect.height).toBe(218);
+    expect(result.guides).toEqual([]);
+  });
 });

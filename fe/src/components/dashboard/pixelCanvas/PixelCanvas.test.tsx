@@ -1,5 +1,6 @@
 import { act, cleanup, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { endPaletteDragSession } from "@/lib/paletteDragSession";
 import type { DashboardLayoutV2, LayoutWidget, PixelLayoutWidget } from "../layoutUtils";
 import { PIXEL_CANVAS_GUTTER, PIXEL_PREVIEW_THROTTLE_MS } from "./pixelCanvasHost";
@@ -78,13 +79,15 @@ async function pinPixelHostMetrics(width = 1440, height = 900) {
 
 async function renderCanvas(mode: "edit" | "view", onLayoutChange = vi.fn()) {
   render(
-    <PixelCanvas
-      mode={mode}
-      layout={layout}
-      selectedIds={new Set(["w1"])}
-      onLayoutChange={onLayoutChange}
-      renderWidget={(item) => <button data-pixel-no-drag>{item.title}</button>}
-    />,
+    <TooltipProvider delayDuration={0}>
+      <PixelCanvas
+        mode={mode}
+        layout={layout}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onLayoutChange}
+        renderWidget={(item) => <button data-pixel-no-drag>{item.title}</button>}
+      />
+    </TooltipProvider>,
   );
   await pinPixelHostMetrics();
   return onLayoutChange;
@@ -108,13 +111,15 @@ describe("PixelCanvas", () => {
     };
     const onChange = vi.fn();
     render(
-      <PixelCanvas
-        mode="edit"
-        layout={stackedLayout}
-        selectedIds={new Set(["w1"])}
-        onLayoutChange={onChange}
-        renderWidget={(item) => <span>{item.title}</span>}
-      />,
+      <TooltipProvider delayDuration={0}>
+        <PixelCanvas
+          mode="edit"
+          layout={stackedLayout}
+          selectedIds={new Set(["w1"])}
+          onLayoutChange={onChange}
+          renderWidget={(item) => <span>{item.title}</span>}
+        />
+      </TooltipProvider>,
     );
     await pinPixelHostMetrics();
     const shape = screen.getByTestId("pixel-shape-w1");
@@ -587,13 +592,15 @@ describe("PixelCanvas", () => {
     };
     const onChange = vi.fn();
     render(
-      <PixelCanvas
-        mode="edit"
-        layout={stackedLayout}
-        selectedIds={new Set(["w1"])}
-        onLayoutChange={onChange}
-        renderWidget={(item) => <span>{item.title}</span>}
-      />,
+      <TooltipProvider delayDuration={0}>
+        <PixelCanvas
+          mode="edit"
+          layout={stackedLayout}
+          selectedIds={new Set(["w1"])}
+          onLayoutChange={onChange}
+          renderWidget={(item) => <span>{item.title}</span>}
+        />
+      </TooltipProvider>,
     );
     await pinPixelHostMetrics();
     const shape = screen.getByTestId("pixel-shape-w1");
@@ -1026,13 +1033,15 @@ describe("PixelCanvas", () => {
     };
     const onChange = vi.fn();
     render(
-      <PixelCanvas
-        mode="edit"
-        layout={stackedLayout}
-        selectedIds={new Set(["w1"])}
-        onLayoutChange={onChange}
-        renderWidget={(item) => <span>{item.title}</span>}
-      />,
+      <TooltipProvider delayDuration={0}>
+        <PixelCanvas
+          mode="edit"
+          layout={stackedLayout}
+          selectedIds={new Set(["w1"])}
+          onLayoutChange={onChange}
+          renderWidget={(item) => <span>{item.title}</span>}
+        />
+      </TooltipProvider>,
     );
     await pinPixelHostMetrics();
     const shape = screen.getByTestId("pixel-shape-w1");
@@ -1053,6 +1062,38 @@ describe("PixelCanvas", () => {
     expect(moved!.y).toBeGreaterThan(80);
   });
 
+  it("commits last drag frame when pointerup coords differ from last move", async () => {
+    const onChange = vi.fn();
+    render(
+      <TooltipProvider delayDuration={0}>
+        <PixelCanvas
+          mode="edit"
+          layout={layout}
+          selectedIds={new Set(["w1"])}
+          onLayoutChange={onChange}
+          renderWidget={(item) => <span>{item.title}</span>}
+        />
+      </TooltipProvider>,
+    );
+    await pinPixelHostMetrics();
+    const handle = screen.getByLabelText("调整组件大小：右下");
+
+    fireEvent.pointerDown(handle, {
+      pointerId: 21,
+      clientX: 100,
+      clientY: 100,
+      button: 0,
+    });
+    fireEvent.pointerMove(document, { pointerId: 21, clientX: 160, clientY: 160 });
+    await flushPixelPointerFrames();
+    fireEvent.pointerUp(document, { pointerId: 21, clientX: 100, clientY: 100 });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const resized = onChange.mock.calls[0][0].widgets.find((item: PixelLayoutWidget) => item.id === "w1");
+    expect(resized!.width).toBeGreaterThan(300);
+    expect(resized!.height).toBeGreaterThan(200);
+  });
+
   it("keeps resize commit when overlap is still within collision buffer", async () => {
     const blocker: PixelLayoutWidget = {
       id: "w2",
@@ -1070,13 +1111,15 @@ describe("PixelCanvas", () => {
     };
     const onChange = vi.fn();
     render(
-      <PixelCanvas
-        mode="edit"
-        layout={stackedLayout}
-        selectedIds={new Set(["w1"])}
-        onLayoutChange={onChange}
-        renderWidget={(item) => <span>{item.title}</span>}
-      />,
+      <TooltipProvider delayDuration={0}>
+        <PixelCanvas
+          mode="edit"
+          layout={stackedLayout}
+          selectedIds={new Set(["w1"])}
+          onLayoutChange={onChange}
+          renderWidget={(item) => <span>{item.title}</span>}
+        />
+      </TooltipProvider>,
     );
     await pinPixelHostMetrics();
     const shape = screen.getByTestId("pixel-shape-w1");

@@ -246,14 +246,18 @@ function pickBestSnapCandidate(
   threshold: number,
   dragDir: DragDirection,
   kind: PixelInteractionKind,
-  options: Pick<MarkLineSnapOptions, "snapEdges" | "snapCenters">,
+  options: Pick<MarkLineSnapOptions, "snapEdges" | "snapCenters" | "anchorRect">,
 ): SnapCandidate | null {
+  const anchor = options.anchorRect;
   const axisCandidates = candidates.filter(
     (item) =>
       item.axis === axis &&
       item.distance <= threshold &&
       snapCandidateApplies(item, kind) &&
-      snapCandidateAllowed(item, options),
+      snapCandidateAllowed(item, options) &&
+      (kind === "move" ||
+        !anchor ||
+        resizeSnapAdvancesDrag(item, kind, anchor, dragDir)),
   );
   if (axisCandidates.length === 0) return null;
 
@@ -278,6 +282,41 @@ function movesNorth(kind: PixelInteractionKind): boolean {
 
 function movesSouth(kind: PixelInteractionKind): boolean {
   return kind === "move" || kind.includes("s");
+}
+
+/** resize 吸附不得把活动边拉回起点（否则松手像整段回弹） */
+export function resizeSnapAdvancesDrag(
+  snap: SnapCandidate,
+  kind: PixelInteractionKind,
+  anchor: PixelRect,
+  dragDir: DragDirection,
+): boolean {
+  if (kind === "move") return true;
+  const position = snap.position;
+  switch (snap.activeEdge) {
+    case "right": {
+      if (!movesEast(kind)) return false;
+      const anchorRight = anchor.x + anchor.width;
+      return dragDir.isRightward ? position > anchorRight : position < anchorRight;
+    }
+    case "bottom": {
+      if (!movesSouth(kind)) return false;
+      const anchorBottom = anchor.y + anchor.height;
+      return dragDir.isDownward ? position > anchorBottom : position < anchorBottom;
+    }
+    case "left": {
+      if (!movesWest(kind)) return false;
+      const anchorLeft = anchor.x;
+      return dragDir.isRightward ? position > anchorLeft : position < anchorLeft;
+    }
+    case "top": {
+      if (!movesNorth(kind)) return false;
+      const anchorTop = anchor.y;
+      return dragDir.isDownward ? position > anchorTop : position < anchorTop;
+    }
+    default:
+      return true;
+  }
 }
 
 /** resize 时仅吸附当前正在移动的那条边/轴 */
