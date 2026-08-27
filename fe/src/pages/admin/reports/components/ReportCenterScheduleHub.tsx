@@ -99,8 +99,8 @@ export function ReportCenterQuickAside({ schedules, loading, canManage }: HubPro
 
   if (loading) {
     return (
-      <aside className="space-y-4">
-        <div className={cardShell("p-5")}>
+      <aside className="space-y-3">
+        <div className={cardShell("p-4")}>
           <Skeleton className="mb-3 h-5 w-24" />
           <div className="space-y-3">
             {Array.from({ length: 3 }).map((_, i) => (
@@ -108,7 +108,7 @@ export function ReportCenterQuickAside({ schedules, loading, canManage }: HubPro
             ))}
           </div>
         </div>
-        <div className={cardShell("p-5")}>
+        <div className={cardShell("p-4")}>
           <Skeleton className="mb-3 h-5 w-20" />
           <div className="space-y-3">
             <Skeleton className="h-20 w-full rounded-xl" />
@@ -120,10 +120,10 @@ export function ReportCenterQuickAside({ schedules, loading, canManage }: HubPro
   }
 
   return (
-    <aside className="space-y-4">
-      <div className={cardShell("p-5")}>
+    <aside className="space-y-3">
+      <div className={cardShell("p-4")}>
         <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">运行概览</h2>
-        <div className="mt-3 grid gap-3">
+        <div className="mt-2.5 grid gap-2.5">
           <ScheduleStatCard label="调度任务" value={schedules.length} hint="看板/大屏 + 模板 + 标准分析" />
           <ScheduleStatCard label="已调度" value={active} hint="按 cron 自动执行" />
           <ScheduleStatCard label="看板/大屏" value={dashboardSchedules.length} hint="推荐主路径" />
@@ -133,9 +133,9 @@ export function ReportCenterQuickAside({ schedules, loading, canManage }: HubPro
         </div>
       </div>
 
-      <div className={cardShell("p-5")}>
+      <div className={cardShell("p-4")}>
         <h2 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">快捷创建</h2>
-        <div className="mt-3 grid gap-3">
+        <div className="mt-2.5 grid gap-2.5">
           <CreateEntryCard
             primary
             title="从看板/大屏创建"

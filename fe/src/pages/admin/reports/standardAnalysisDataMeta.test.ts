@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildStandardAnalysisDataMetaNote } from "./standardAnalysisDataMeta";
+import {
+  buildStandardAnalysisDataMetaNote,
+  buildStandardAnalysisDataWarningNote,
+} from "./standardAnalysisDataMeta";
 
 describe("buildStandardAnalysisDataMetaNote", () => {
   it("returns null when meta is absent", () => {
@@ -30,20 +33,42 @@ describe("buildStandardAnalysisDataMetaNote", () => {
       "基于 5,000 行样本聚合（已达查询上限 5,000 行），按周展示，仅保留最近 52 个时间点。",
     );
   });
+});
 
-  it("describes query limit reached without other hints", () => {
-    const note = buildStandardAnalysisDataMetaNote({
-      sampleBased: true,
-      sourceRowCount: 10000,
-      queryLimit: 10000,
-    });
-    expect(note).toBe("基于 10,000 行样本聚合（已达查询上限 10,000 行）。");
+describe("buildStandardAnalysisDataWarningNote", () => {
+  it("returns null for routine sample aggregation", () => {
+    expect(
+      buildStandardAnalysisDataWarningNote({
+        sampleBased: true,
+        sourceRowCount: 600,
+        queryLimit: 5000,
+        timeStepLabel: "按日",
+        pointCap: 90,
+        pointCapApplied: true,
+      }),
+    ).toBeNull();
   });
 
-  it("appends translation note when present", () => {
-    const note = buildStandardAnalysisDataMetaNote({
+  it("warns when query limit is reached", () => {
+    const note = buildStandardAnalysisDataWarningNote({
       sampleBased: true,
-      sourceRowCount: 100,
+      sourceRowCount: 5000,
+      queryLimit: 5000,
+    });
+    expect(note).toContain("查询已触达上限");
+    expect(note).toContain("5,000");
+  });
+
+  it("warns when top N is truncated", () => {
+    const note = buildStandardAnalysisDataWarningNote({
+      topN: 20,
+      topNTruncated: true,
+    });
+    expect(note).toContain("Top 20");
+  });
+
+  it("includes translation note when present", () => {
+    const note = buildStandardAnalysisDataWarningNote({
       translationNote: "部分码值未翻译（2 项）",
     });
     expect(note).toContain("部分码值未翻译");

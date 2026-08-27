@@ -15,6 +15,7 @@ import {
   drawHorizontalGrid,
 } from "@/components/charts/engine/d3/core/sceneGraph";
 import { normalizeCategoryAxisDomain } from "@/components/charts/engine/buildDatasetEncoding";
+import { valueAxisUpperBound } from "@/components/charts/engine/d3/core/axes";
 import { groupSeries, normalizeCartesianData, resolveDatumColor, resolveSeriesKeys, seriesDataKey } from "@/components/charts/engine/d3/core/series";
 import { themeFromConfig } from "@/components/charts/engine/d3/core/themeEngine";
 import { createTooltipLayer } from "@/components/charts/engine/d3/core/tooltipLayer";
@@ -115,7 +116,7 @@ export function renderD3AreaChart(container: HTMLElement, config: D3CartesianRen
   const maxVal = isStack
     ? (d3.max(wideRows, (row) => keys.reduce((sum, k) => sum + Number(row[k] ?? 0), 0)) ?? 0)
     : (d3.max(rowsInCategories(normalized, categories), (d) => Number(d.__value__)) ?? 0);
-  const y = d3.scaleLinear().domain([0, maxVal]).nice().range([innerH, 0]);
+  const y = d3.scaleLinear().domain([0, valueAxisUpperBound(maxVal)]).nice().range([innerH, 0]);
   const curve = smooth ? d3.curveMonotoneX : d3.curveLinear;
 
   drawHorizontalGrid(plot, { yScale: y, innerW, theme });

@@ -5,11 +5,13 @@ import { CalendarClock, LayoutTemplate, Monitor, Search, TrendingUp } from "luci
 import { AdminPageShell, AdminPageHeaderIcon } from "@/components/layout/admin-page-shell";
 import { Button } from "@/components/ui/button";
 import {
-  ADMIN_PAGE_SURFACE_CLASS,
+  LIST_PAGE_CONTENT_PAD_CLASS,
+  ListPageSection,
   ListPageTableFrame,
   ListPageToolbar,
   PageErrorBanner,
 } from "@/components/layout/list-page-kit";
+import { cn } from "@/lib/utils";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { SearchField } from "@/components/ui/search-field";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -226,6 +228,7 @@ export function ReportSchedulesPage() {
 
   return (
     <AdminPageShell
+      layout="list"
       title="调度与投递"
       icon={
         <AdminPageHeaderIcon>
@@ -235,33 +238,36 @@ export function ReportSchedulesPage() {
       description="管理看板/大屏 PDF、标准分析投递与文档模板的定时任务、执行历史与失败重试。"
       actions={<ReportCenterBackLink />}
     >
-      <div className="space-y-6">
-      {schedulesQuery.isError ? (
-        <PageErrorBanner
-          message={mapApiError(schedulesQuery.error)}
-          onRetry={() => void schedulesQuery.refetch()}
-        />
-      ) : null}
+      <ListPageSection className="min-h-0 flex-1">
+        {schedulesQuery.isError ? (
+          <div className="shrink-0 border-b border-gray-100 px-4 py-2.5 dark:border-white/[0.06]">
+            <PageErrorBanner
+              message={mapApiError(schedulesQuery.error)}
+              onRetry={() => void schedulesQuery.refetch()}
+            />
+          </div>
+        ) : null}
 
-      {isLoading ? <SchedulePageOverviewSkeleton /> : <SchedulePageOverview stats={stats} />}
+        <div className={cn(LIST_PAGE_CONTENT_PAD_CLASS, "space-y-3")}>
+          {isLoading ? <SchedulePageOverviewSkeleton /> : <SchedulePageOverview stats={stats} />}
 
-      {!isLoading ? (
-        <ScheduleRecentFailuresPanel
-          schedules={allItems}
-          onSelectSchedule={focusSchedule}
-          onRetry={(executionId, scheduleId) =>
-            void retryExecution
-              .mutateAsync({ executionId, scheduleId })
-              .then(() => focusSchedule(scheduleId))
-          }
-          retryPending={retryExecution.isPending}
-          retryPendingExecutionId={
-            retryExecution.isPending ? retryExecution.variables?.executionId : undefined
-          }
-        />
-      ) : null}
+          {!isLoading ? (
+            <ScheduleRecentFailuresPanel
+              schedules={allItems}
+              onSelectSchedule={focusSchedule}
+              onRetry={(executionId, scheduleId) =>
+                void retryExecution
+                  .mutateAsync({ executionId, scheduleId })
+                  .then(() => focusSchedule(scheduleId))
+              }
+              retryPending={retryExecution.isPending}
+              retryPendingExecutionId={
+                retryExecution.isPending ? retryExecution.variables?.executionId : undefined
+              }
+            />
+          ) : null}
+        </div>
 
-      <section className={ADMIN_PAGE_SURFACE_CLASS}>
         <ListPageToolbar
           filters={
             <>
@@ -333,8 +339,7 @@ export function ReportSchedulesPage() {
             />
           )}
         </ListPageTableFrame>
-      </section>
-      </div>
+      </ListPageSection>
     </AdminPageShell>
   );
 }

@@ -402,6 +402,14 @@ export function resolveNumericTickCount(innerSpan: number, min = 4, max = 12): n
   return Math.max(min, Math.min(max, Math.floor(innerSpan / scaleAxisLayoutPx(48))));
 }
 
+/** 折线/面积纵轴上界：在数据最大值之上预留 headroom，避免点标记贴顶被 clip 裁切 */
+export function valueAxisUpperBound(maxVal: number, headroomRatio = 0.12): number {
+  const safeMax = Number.isFinite(maxVal) ? Math.max(0, maxVal) : 0;
+  if (safeMax <= 0) return 1;
+  if (safeMax <= 4) return safeMax + 1;
+  return safeMax * (1 + headroomRatio);
+}
+
 const NUMERIC_TICK_LABEL_GAP_BASE_PX = 8;
 const NUMERIC_TICK_MIN_LABEL_BASE_PX = 44;
 

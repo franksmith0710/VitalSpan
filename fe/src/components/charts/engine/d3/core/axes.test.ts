@@ -18,6 +18,7 @@ import {
   resolveNumericTickCount,
   planNumericAxisTicks,
   distinctFormattedNumericTickValues,
+  valueAxisUpperBound,
 } from "@/components/charts/engine/d3/core/axes";
 import { nearestCategory } from "@/components/charts/engine/d3/core/interaction";
 import { setAxisFontSize } from "@/components/charts/engine/d3/core/chartVisualTokens";
@@ -304,6 +305,13 @@ describe("d3 core", () => {
     expect(ticks.length).toBeLessThanOrEqual(6);
     expect(ticks[0]).toBe(0);
     expect(ticks[ticks.length - 1]).toBeGreaterThanOrEqual(20_000);
+  });
+
+  it("valueAxisUpperBound leaves headroom above small integer peaks", () => {
+    expect(valueAxisUpperBound(0)).toBe(1);
+    expect(valueAxisUpperBound(2)).toBe(3);
+    expect(valueAxisUpperBound(4)).toBe(5);
+    expect(valueAxisUpperBound(100)).toBeCloseTo(112, 5);
   });
 
   it("distinctFormattedNumericTickValues drops duplicate integer labels on small domains", () => {

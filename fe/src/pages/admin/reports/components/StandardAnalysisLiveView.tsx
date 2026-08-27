@@ -25,7 +25,7 @@ import {
   humanizeSectionHeaders,
   isChartSection,
 } from "../standardAnalysisPresentation";
-import { buildStandardAnalysisDataMetaNote } from "../standardAnalysisDataMeta";
+import { buildStandardAnalysisDataWarningNote } from "../standardAnalysisDataMeta";
 import {
   normalizeColumns,
   normalizeRows,
@@ -77,7 +77,7 @@ export function StandardAnalysisLiveView({
   const showChartToggle = Boolean(chartSection);
   const timeSeriesWarning = detectSuspiciousTimeSeries(activeTheme, rawHeaders, liveRows);
   const mappedTimeField = pack.fieldMapping.createdAt?.trim();
-  const dataMetaNote = buildStandardAnalysisDataMetaNote(runData?.renderSpec.meta);
+  const dataWarning = buildStandardAnalysisDataWarningNote(runData?.renderSpec.meta);
 
   const handlePresentationModeChange = (mode: PresentationMode) => {
     setPresentationMode(mode);
@@ -111,9 +111,11 @@ export function StandardAnalysisLiveView({
 
   return (
     <ListPageTableFrame className="flex min-h-0 flex-1 flex-col">
-      {dataMetaNote ? (
-        <div className="border-b border-gray-200 px-5 py-3 text-theme-xs text-gray-500 dark:border-gray-800 dark:text-gray-400">
-          {dataMetaNote}
+      {dataWarning ? (
+        <div className="px-5 pt-3">
+          <Alert severity="warning" appearance="soft">
+            <AlertDescription>{dataWarning}</AlertDescription>
+          </Alert>
         </div>
       ) : null}
 

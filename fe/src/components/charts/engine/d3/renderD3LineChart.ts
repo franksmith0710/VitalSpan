@@ -36,6 +36,7 @@ import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentatio
 import { highlightCategoryDots, resolveSeriesAnchorY } from "@/components/charts/engine/d3/cartesian/renderCartesianBase";
 import type { D3CartesianDatum, D3CartesianRenderConfig } from "@/components/charts/engine/d3/types";
 import { normalizeCategoryAxisDomain } from "@/components/charts/engine/buildDatasetEncoding";
+import { valueAxisUpperBound } from "@/components/charts/engine/d3/core/axes";
 import { resolveCartesianLineWidth, resolveCartesianPointSize } from "@/lib/applyChartDeStyleBlocks";
 import { formatCartesianDatumLabel, sumCartesianLabelTotal } from "@/components/charts/engine/d3/core/cartesianDataLabel";
 
@@ -131,7 +132,7 @@ export function renderD3LineChart(container: HTMLElement, config: D3LineRenderCo
 
   const maxVal = d3.max(rowsInCategories(normalized, categories), (d) => Number(d.__value__)) ?? 0;
   const xScale = d3.scalePoint<string>().domain(categories).range([0, innerW]).padding(0.5);
-  const yScale = d3.scaleLinear().domain([0, maxVal]).nice().range([innerH, 0]);
+  const yScale = d3.scaleLinear().domain([0, valueAxisUpperBound(maxVal)]).nice().range([innerH, 0]);
 
   drawHorizontalGrid(plot, { yScale, innerW, theme });
   drawCartesianAxes({
@@ -348,7 +349,7 @@ function renderHorizontalLineFallback(
   const scene = buildCartesianScene({ container, width, height, showLegend: false });
   const maxVal = d3.max(normalized, (d) => Number(d.__value__)) ?? 0;
   const xScale = d3.scalePoint<string>().domain(categories).range([0, scene.innerH]).padding(0.5);
-  const yScale = d3.scaleLinear().domain([0, maxVal]).nice().range([0, scene.innerW]);
+  const yScale = d3.scaleLinear().domain([0, valueAxisUpperBound(maxVal)]).nice().range([0, scene.innerW]);
   const lineGen = buildLineGenerator(true, smooth, xScale, yScale);
   seriesGroups.forEach((series, i) => {
     const color = colorScale(series.name) ?? colors[0] ?? theme.accent;

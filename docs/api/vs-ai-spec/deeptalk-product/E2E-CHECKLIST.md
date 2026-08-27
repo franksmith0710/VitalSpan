@@ -27,9 +27,23 @@
 | delete | `vitalspan_delete_artifact` | `ok deleted`；仍被引用时 **409** |
 | delete dash | `vitalspan_delete_dashboard` | `ok deleted dashboardId=...` |
 | route | `vitalspan_route_request` | JSON `workflow` 1/2/3；wf2 含 `paradigm`/`runtime`，**无** wf2 `template` |
-| compose | `vitalspan_compose_dashboard` | `ok dashboardId=` + `layout widgets: N`（N≥1） |
+| compose | `vitalspan_compose_dashboard` | `ok dashboardId=` + `slots: chart X/X customViz Y/Y` + `layout widgets: N` |
 
-- [ ] DeepTalk Agent 已内置 [AGENT-SYSTEM-PROMPT.md](./AGENT-SYSTEM-PROMPT.md)
+### v0.4.0 体验场景（E1–E6 + E4a–c）
+
+| # | 场景 | 期望 |
+|---|------|------|
+| E1 | 「商务矩形树图」 | wf1 treemap + validate；5173 非文本列表 |
+| E2 | 标准柱/线 + deStyle | wf1 validate → compose manual |
+| E3 | 炫丽 trend/rank wf2 | artifactId + full tier；5173 样式 Tab + 手绑出数 |
+| E4 | 拼大屏柱+线+组件 | template + artifact_ids；manual 绑数 |
+| E4a | 驾驶舱 | `template=de-classic-cockpit`；stdout `chart 8/8` |
+| E4b | 加 customViz | publish 后 compose 带 artifact_ids |
+| E4c | 无 template | compose 成功 + `[warn] NO_TEMPLATE_GRID`；gate 仍过 |
+| E5 | output/ 交付 | gate **拒绝** |
+| E6 | scaffold 金样 | scaffold **拒绝** |
+
+- [ ] DeepTalk Agent 已内置 [AGENT-SYSTEM-PROMPT.md](./AGENT-SYSTEM-PROMPT.md)（≤300 行）
 
 ## 3. 完成 Gate
 
@@ -84,8 +98,8 @@ python executor/cli.py vitalspan_completion_gate --workflow 2 --agent-summary ".
 
 - [x] `examples/hex-kpi-grid.json`（验收金样 · 已 publish 可复测）
 - [x] validate → publish → `completion_gate wf2` 绿（CLI）
-- [x] `AGENT-SYSTEM-PROMPT.md` ≤80 行 · `DEEPTALK-AGENT-PROMPT.md` 已对齐
-- [x] 插件 **v0.3.7** sync + `release/vitalspan-v0.3.7.zip`（范式收口 · scaffold 仅 generic-blank · paradigm 路由）
+- [x] `AGENT-SYSTEM-PROMPT.md` ≤300 行 · `DEEPTALK-AGENT-PROMPT.md` 已对齐
+- [x] 插件 **v0.4.0** sync + `release/vitalspan-v0.4.0.zip`（wf3 模板填槽 · manual compose · HTTP validate）
 - [ ] DeepTalk 安装 zip 并重启 · 新 wf2 折线须 validate 0 warnings（含 DATA_ENCODING/SORT）
 
 ## VitalSpan CI 参考

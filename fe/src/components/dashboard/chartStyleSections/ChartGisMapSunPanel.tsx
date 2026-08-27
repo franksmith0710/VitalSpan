@@ -25,6 +25,7 @@ import {
   resolveGisProjectSun,
   type GisProjectSun,
 } from "@/components/charts/engine/maplibre/gisProjectSun";
+import { applyGisMapSun, getGisMapSunSettings } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 import { cn } from "@/lib/utils";
 
 const SUN_HINT =

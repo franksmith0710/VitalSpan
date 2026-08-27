@@ -278,11 +278,7 @@ export function StandardAnalysisConfigForm({
                   </SelectContent>
                 </Select>
               </ConfigField>
-              <ConfigField
-                id="snapshotRetentionPeriods"
-                label="保留期数"
-                hint="超出后自动清理最旧快照，避免存储膨胀。"
-              >
+              <ConfigField id="snapshotRetentionPeriods" label="保留期数">
                 <Select
                   value={String(draft.snapshotRetentionPeriods ?? 12)}
                   onValueChange={(value) =>

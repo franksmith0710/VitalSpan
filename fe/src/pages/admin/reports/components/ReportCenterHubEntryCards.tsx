@@ -35,7 +35,7 @@ function HubEntryCard({
     <Link
       to={href}
       aria-label={title}
-      className="group flex items-start gap-3 rounded-2xl border border-gray-200 bg-white p-4 shadow-theme-sm transition-colors hover:border-brand-200 hover:bg-brand-50/20 dark:border-gray-800 dark:bg-white/[0.03] dark:hover:border-brand-500/30 dark:hover:bg-brand-500/5"
+      className="group flex items-start gap-2.5 rounded-xl border border-gray-200 bg-gray-50/50 p-3 transition-colors hover:border-brand-200 hover:bg-brand-50/30 dark:border-gray-800 dark:bg-white/[0.02] dark:hover:border-brand-500/30 dark:hover:bg-brand-500/5"
     >
       <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gray-100 text-gray-600 dark:bg-white/[0.06] dark:text-gray-400">
         {icon}
@@ -73,7 +73,7 @@ export function ReportCenterHubEntryCards({
       : "面向业务对象的决策分析，支持周期快照对比。";
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+    <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
       <HubEntryCard
         icon={<TrendingUp className="size-5" aria-hidden />}
         title="标准分析"
