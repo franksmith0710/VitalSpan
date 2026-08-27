@@ -50,7 +50,6 @@ import { auxiliaryGridPatternStyle, resolveDashboardAlignmentSnap, resolveDashbo
 import {
   allowsPixelWidgetOverlap,
   resolvePixelLayoutWithActiveRect,
-  shouldRevertPixelDragCommit,
   widgetRect,
 } from "./collisionLayout";
 import type { PixelPoint, PixelRect } from "./geometry";
@@ -696,36 +695,6 @@ export function PixelCanvas({
     );
   }, []);
 
-  const shouldRevertCommit = useCallback(
-    (widgetId: string, finalRect: PixelRect, startRect: PixelRect) => {
-      const widget = activeLayout.widgets.find((item) => item.id === widgetId);
-      if (widget && widget.type !== "tabs" && !widget.parentTabsId) {
-        const host = resolveTabHostForWidgetDrop(activeLayout, finalRect, {
-          intent: tabInsertIntent,
-          dropBufferPx: TAB_PALETTE_DROP_BUFFER_PX,
-        });
-        if (host && host.id !== widgetId) return false;
-      }
-      if (allowWidgetOverlap) return false;
-      return shouldRevertPixelDragCommit(
-        finalRect,
-        startRect,
-        activeLayout.widgets
-          .filter((item) => item.id !== widgetId)
-          .map((item) => widgetRect(item)),
-        collisionOverlapBufferPx,
-        gapRuntime.collisionGapPx,
-      );
-    },
-    [
-      activeLayout,
-      allowWidgetOverlap,
-      gapRuntime.collisionGapPx,
-      collisionOverlapBufferPx,
-      tabInsertIntent,
-    ],
-  );
-
   const handleCommit = useCallback(
     (widget: PixelLayoutWidget) => {
       if (!onLayoutChange) return;
@@ -1062,9 +1031,6 @@ export function PixelCanvas({
                 onPreview={mode === "edit" ? handlePreview : undefined}
                 onCommit={handleCommit}
                 onCancel={handleCancel}
-                shouldRevertCommit={(finalRect, startRect) =>
-                  shouldRevertCommit(widget.id, finalRect, startRect)
-                }
                 onPlayingChange={(playing) => handlePlayingChange(widget.id, playing)}
                 onDragAutoScroll={mode === "edit" ? handleDragAutoScroll : undefined}
                 onMarkGuidesChange={

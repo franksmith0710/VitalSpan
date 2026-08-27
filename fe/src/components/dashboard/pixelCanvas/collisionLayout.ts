@@ -13,7 +13,7 @@ export type CollisionLayoutOptions = {
   skipVerticalCompact?: boolean;
 };
 
-/** 拖动/落位碰撞缓冲：XY 双向重叠均须超过此值才推挤邻块；未达则松手复原 */
+/** 拖动/落位碰撞缓冲：XY 双向重叠均须超过此值才推挤邻块 */
 export const PIXEL_COLLISION_OVERLAP_BUFFER_PX = 40;
 
 const PACK_SCAN_STEP = 8;
@@ -75,7 +75,7 @@ export function hasShallowOverlap(
   return rectsTouch(a, b, gap) && !rectsOverlap(a, b, gap, minOverlap);
 }
 
-/** 松手时落点仍在轻触区 → 应复原到拖动起点 */
+/** 拖动落点在轻触区（仅用于单测/文档；产品侧不再整段回弹） */
 export function shouldRevertPixelDragCommit(
   finalRect: PixelRect,
   _startRect: PixelRect,

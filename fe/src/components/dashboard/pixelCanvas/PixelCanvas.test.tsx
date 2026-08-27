@@ -1009,7 +1009,7 @@ describe("PixelCanvas", () => {
     });
   });
 
-  it("reverts to start position when released within collision buffer", async () => {
+  it("commits move when overlap is still within collision buffer", async () => {
     const blocker: PixelLayoutWidget = {
       id: "w2",
       type: "chart",
@@ -1048,8 +1048,53 @@ describe("PixelCanvas", () => {
     await flushPixelPointerFrames();
     fireEvent.pointerUp(shape, { pointerId: 13, clientX: 0, clientY: 20 });
 
-    expect(onChange).not.toHaveBeenCalled();
-    expect(shape).toHaveStyle({ top: "80px" });
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const moved = onChange.mock.calls[0][0].widgets.find((item: PixelLayoutWidget) => item.id === "w1");
+    expect(moved!.y).toBeGreaterThan(80);
+  });
+
+  it("keeps resize commit when overlap is still within collision buffer", async () => {
+    const blocker: PixelLayoutWidget = {
+      id: "w2",
+      type: "chart",
+      title: "下方",
+      order: 2,
+      x: 100,
+      y: 270,
+      width: 300,
+      height: 200,
+    };
+    const stackedLayout: DashboardLayoutV2 = {
+      ...layout,
+      widgets: [{ ...widget, y: 80 }, blocker],
+    };
+    const onChange = vi.fn();
+    render(
+      <PixelCanvas
+        mode="edit"
+        layout={stackedLayout}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    await pinPixelHostMetrics();
+    const shape = screen.getByTestId("pixel-shape-w1");
+    const handle = screen.getByLabelText("调整组件大小：下");
+
+    fireEvent.pointerDown(handle, {
+      pointerId: 14,
+      clientX: 0,
+      clientY: 0,
+      button: 0,
+    });
+    fireEvent.pointerMove(document, { pointerId: 14, clientX: 0, clientY: 20 });
+    await flushPixelPointerFrames();
+    fireEvent.pointerUp(shape, { pointerId: 14, clientX: 0, clientY: 20 });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const resized = onChange.mock.calls[0][0].widgets.find((item: PixelLayoutWidget) => item.id === "w1");
+    expect(resized!.height).toBeGreaterThan(200);
   });
 
   it("auto-scrolls canvas host when dragging near the bottom edge", async () => {

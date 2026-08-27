@@ -72,6 +72,7 @@ type ActiveInteraction = {
   startClient: { x: number; y: number };
   startRect: PixelRect;
   skipFirstMove: boolean;
+  captureTarget: HTMLElement | null;
 };
 
 type PixelShapeProps = {
@@ -87,8 +88,6 @@ type PixelShapeProps = {
   onPreview?: (widget: PixelLayoutWidget) => void;
   onCommit?: (widget: PixelLayoutWidget) => void;
   onCancel?: (widgetId: string) => void;
-  /** 落点仍在碰撞轻触区时松手复原 */
-  shouldRevertCommit?: (finalRect: PixelRect, startRect: PixelRect) => boolean;
   onPlayingChange?: (playing: boolean) => void;
   onMarkGuidesChange?: (guides: MarkLineGuide[] | null) => void;
   /** 编辑辅助网格：对齐参考线 + 20px 网格吸附 */
@@ -367,7 +366,6 @@ export function PixelShape({
   onPreview,
   onCommit,
   onCancel,
-  shouldRevertCommit,
   onPlayingChange,
   onMarkGuidesChange,
   markLinesEnabled = true,
@@ -602,6 +600,16 @@ export function PixelShape({
     moveFrameRef.current = requestAnimationFrame(flushPointerFrame);
   };
 
+  const releasePointerCapture = (active: ActiveInteraction, pointerId: number) => {
+    const target = active.captureTarget;
+    if (!target?.hasPointerCapture?.(pointerId)) return;
+    try {
+      target.releasePointerCapture(pointerId);
+    } catch {
+      // 浏览器已释放或目标已卸载
+    }
+  };
+
   const finish = (event: PointerEvent, commit: boolean) => {
     const active = activeRef.current;
     if (!active) return;
@@ -613,16 +621,14 @@ export function PixelShape({
     pendingMoveRef.current = null;
     const finalSnap = commit
       ? rectForPointer(event, active)
-      : { rect: widgetRect(widget), guides: [] as MarkLineGuide[] };
+      : { rect: active.startRect, guides: [] as MarkLineGuide[] };
     const finalRect = finalSnap.rect;
+    releasePointerCapture(active, event.pointerId);
     activeRef.current = null;
     syncHint(null);
     onMarkGuidesChange?.(null);
-    const revert =
-      commit && shouldRevertCommit?.(finalRect, active.startRect) === true;
-    const settledRect = revert ? active.startRect : finalRect;
-    applyDisplay(settledRect);
-    if (commit && !revert) onCommit?.(withRect(widget, finalRect));
+    applyDisplay(finalRect);
+    if (commit) onCommit?.(withRect(widget, finalRect));
     else onCancel?.(widget.id);
     setIsPlayer(false);
     onPlayingChange?.(false);
@@ -638,12 +644,28 @@ export function PixelShape({
     onSelect?.(widget.id, event.shiftKey);
     syncHint(null);
     const pointerId = event.pointerId;
+    if (activeRef.current) {
+      const pending = activeRef.current;
+      releasePointerCapture(pending, pending.pointerId);
+      activeRef.current = null;
+      onCommit?.(withRect(widget, displayRef.current));
+    }
+    const captureTarget =
+      event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+    if (captureTarget?.setPointerCapture) {
+      try {
+        captureTarget.setPointerCapture(pointerId);
+      } catch {
+        // 部分环境不支持或目标不可捕获
+      }
+    }
     activeRef.current = {
       pointerId,
       kind,
       startClient: { x: event.clientX, y: event.clientY },
       startRect: displayRef.current,
       skipFirstMove: true,
+      captureTarget,
     };
     setIsPlayer(true);
     onPlayingChange?.(true);
