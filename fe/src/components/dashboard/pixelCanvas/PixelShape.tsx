@@ -29,6 +29,7 @@ import { mergeWidgetOverrideStyle } from "../widgetRailStyleSections";
 import { resolveDashboardAlignmentSnap, resolveDashboardChrome } from "../dashboardChromeConfig";
 import {
   applyPixelInteraction,
+  preferAdvancedResizeRect,
   RESIZE_CURSORS,
   RESIZE_DIRECTIONS,
   RESIZE_LABELS,
@@ -548,11 +549,8 @@ export function PixelShape({
         snapEdges: alignmentSnap.snapEdges,
         snapCenters: alignmentSnap.snapCenters,
       });
+      rect = snapped.rect;
       guides = snapped.guides;
-      // 8/27 对齐吸附上线后：resize 改几何会把边拉回 anchor（松手复原/几乎拖不动）；仅 move 应用吸附
-      if (active.kind === "move") {
-        rect = snapped.rect;
-      }
     }
     return { rect, guides };
   };
@@ -632,7 +630,16 @@ export function PixelShape({
     if (!active) return;
     if (active.pointerId !== event.pointerId) return;
     applyPendingMoveFrame();
-    const finalRect = displayRef.current;
+    let finalRect = displayRef.current;
+    if (active.kind !== "move") {
+      const pointerRect = rectForPointer(event, active).rect;
+      finalRect = preferAdvancedResizeRect(
+        active.startRect,
+        displayRef.current,
+        pointerRect,
+        active.kind,
+      );
+    }
     const movedFromStart = !pixelRectsNearlyEqual(finalRect, active.startRect);
     const shouldCommit = commit || movedFromStart;
     const settledRect = shouldCommit ? finalRect : active.startRect;

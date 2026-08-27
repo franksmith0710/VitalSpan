@@ -1134,6 +1134,59 @@ describe("PixelCanvas", () => {
     expect(resized!.height).toBeGreaterThan(200);
   });
 
+  it("snaps move to neighbor edge when mark-line snap is enabled", async () => {
+    const neighbor: PixelLayoutWidget = {
+      id: "w2",
+      type: "chart",
+      title: "下",
+      order: 2,
+      x: 100,
+      y: 295,
+      width: 300,
+      height: 100,
+    };
+    const snapLayout: DashboardLayoutV2 = {
+      ...layout,
+      styleConfig: {
+        chrome: {
+          alignmentSnap: {
+            enableMarkLineSnap: true,
+            markLineThresholdPx: 16,
+            snapEdges: true,
+            snapCenters: false,
+          },
+        },
+      },
+      widgets: [widget, neighbor],
+    };
+    const onChange = vi.fn();
+    renderPixelCanvas(
+      <PixelCanvas
+        mode="edit"
+        layout={snapLayout}
+        styleConfig={snapLayout.styleConfig}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    await pinPixelHostMetrics();
+
+    fireEvent.pointerDown(screen.getByLabelText("拖动组件"), {
+      pointerId: 31,
+      clientX: 0,
+      clientY: 0,
+      button: 0,
+    });
+    fireEvent.pointerMove(document, { pointerId: 31, clientX: 0, clientY: 14 });
+    await flushPixelPointerFrames();
+    fireEvent.pointerUp(document, { pointerId: 31, clientX: 0, clientY: 14 });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const moved = onChange.mock.calls[0][0].widgets.find((item: PixelLayoutWidget) => item.id === "w1");
+    expect(moved!.y).toBe(95);
+  });
+
   it("keeps southeast resize with neighbors and alignment snap enabled", async () => {
     const neighbors: PixelLayoutWidget[] = [
       { id: "w2", type: "chart", title: "上", order: 2, x: 80, y: 20, width: 340, height: 50 },
