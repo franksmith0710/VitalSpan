@@ -183,7 +183,7 @@ export function mountGisStarfieldOverlay(
       ? resolveGlobeScreenBounds(map) ?? resolveGlobeScreenBoundsFallback(width, height)
       : resolveGlobeScreenBoundsFallback(width, height);
 
-    if (!shouldRenderGisStarfield(globe, width, height)) {
+    if (!shouldRenderGisStarfield(globe, width, height, map)) {
       canvas.style.display = "none";
       ctx.clearRect(0, 0, width, height);
       meteors = [];

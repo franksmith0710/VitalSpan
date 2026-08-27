@@ -608,7 +608,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       !map ||
       renderBasemap !== "pmtiles" ||
       project.projection !== "globe" ||
-      gisPaintState !== "ready"
+      gisPaintState !== "ready" ||
+      !effectsSettings.enabled
     ) {
       effectsEngineRef.current?.destroy();
       effectsEngineRef.current = null;
@@ -627,7 +628,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       effectsEngineRef.current?.destroy();
       effectsEngineRef.current = null;
     };
-  }, [gisPaintState, mapRuntimeEpoch, project.projection, renderBasemap, styleKey]);
+  }, [effectsSettings.enabled, gisPaintState, mapRuntimeEpoch, project.projection, renderBasemap, styleKey]);
 
   useEffect(() => {
     applyGisGeolibreEffectsSettings(effectsEngineRef.current, effectsSettings);

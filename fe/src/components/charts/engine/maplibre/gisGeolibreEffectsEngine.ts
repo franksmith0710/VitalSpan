@@ -15,7 +15,11 @@ import {
   buildGeolibreStarfieldTile,
   drawGeolibreStarfieldParallax,
 } from "@/components/charts/engine/maplibre/gisGeolibreEffectsStarfield";
-import { resolveGlobeLimbBoundsFromProject } from "@/components/charts/engine/maplibre/gisGlobeLayout";
+import {
+  resolveGlobeLimbBoundsFromProject,
+  resolveGlobeScreenBounds,
+  shouldRenderGisGlobeFarEffects,
+} from "@/components/charts/engine/maplibre/gisGlobeLayout";
 import { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
 
 type MapLibreMap = import("maplibre-gl").Map;
@@ -268,6 +272,16 @@ export class GisGeolibreEffectsEngine {
     );
   }
 
+  private isFarGlobeView(): boolean {
+    if (this.width <= 0 || this.height <= 0) return false;
+    return shouldRenderGisGlobeFarEffects(
+      this.map,
+      resolveGlobeScreenBounds(this.map),
+      this.width,
+      this.height,
+    );
+  }
+
   private drawHaloLayer(): void {
     if (this.width <= 0 || this.height <= 0) return;
     const limb = resolveGlobeLimbBoundsFromProject(this.map);
@@ -302,6 +316,11 @@ export class GisGeolibreEffectsEngine {
     }
 
     this.drawSpaceBackground();
+    if (!this.isFarGlobeView()) {
+      this.starsCtx.clearRect(0, 0, this.width, this.height);
+      this.comets = [];
+      return;
+    }
     if (this.starsDirty) {
       this.ensureStarfield();
       this.drawStarfield();

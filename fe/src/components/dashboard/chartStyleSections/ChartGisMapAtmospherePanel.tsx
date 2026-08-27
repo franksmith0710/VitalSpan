@@ -1,11 +1,11 @@
 import { useCallback, useMemo } from "react";
 import { useChartInspector } from "@/components/dashboard/chartInspectorContext";
-import { ChartPaletteColorSwatch } from "@/components/dashboard/chartPaletteShared";
 import { InspectorSliderField } from "@/components/dashboard/deAttrSlider";
 import {
   ChartInspectorSection,
   INSPECTOR_SECTION_GAP,
-  InspectorFieldLabel,
+  InspectorInlineColorRow,
+  InspectorSwitchRow,
 } from "@/components/dashboard/inspectorCompact";
 import { readGisProject, writeGisProject } from "@/components/charts/engine/maplibre/gisProject";
 import {
@@ -74,18 +74,25 @@ export function ChartGisMapAtmospherePanel() {
     );
   }
 
+  const controlsDisabled = !resolved.enabled;
+
   return (
     <ChartInspectorSection title="大气效果" hint={ATMOSPHERE_HINT} data-testid="chart-gis-map-atmosphere-panel">
       <div className={INSPECTOR_SECTION_GAP}>
-        <p className="text-theme-xs text-brand-500">已启用</p>
-        <div className="flex min-w-0 items-center gap-2">
-          <ChartPaletteColorSwatch
-            value={resolved.haloColor}
-            aria-label="光晕颜色"
-            onChange={(haloColor) => patchEffects({ haloColor })}
-          />
-          <InspectorFieldLabel label="光晕颜色" />
-        </div>
+        <InspectorSwitchRow
+          label="已启用"
+          checked={resolved.enabled}
+          onCheckedChange={(enabled) => patchEffects({ enabled })}
+        />
+        <InspectorInlineColorRow
+          label="光晕颜色"
+          value={resolved.haloColor}
+          allowClear={false}
+          onChange={(haloColor) => {
+            if (haloColor) patchEffects({ haloColor });
+          }}
+          className={controlsDisabled ? "pointer-events-none opacity-60" : undefined}
+        />
         <InspectorSliderField
           label="光晕范围"
           value={Math.round(resolved.haloExtent * 100) / 100}
@@ -93,6 +100,7 @@ export function ChartGisMapAtmospherePanel() {
           max={GIS_HALO_EXTENT_MAX}
           step={0.05}
           unit="x"
+          disabled={controlsDisabled}
           onChange={(haloExtent) => patchEffects({ haloExtent })}
         />
         <InspectorSliderField
@@ -102,16 +110,19 @@ export function ChartGisMapAtmospherePanel() {
           max={Math.round(GIS_HALO_OPACITY_MAX * 100)}
           step={1}
           unit="%"
+          disabled={controlsDisabled}
           onChange={(opacity) => patchEffects({ haloOpacity: opacity / 100 })}
         />
-        <div className="flex min-w-0 items-center gap-2">
-          <ChartPaletteColorSwatch
-            value={resolved.spaceColor}
-            aria-label="太空颜色"
-            onChange={(spaceColor) => patchEffects({ spaceColor })}
-          />
-          <InspectorFieldLabel label="太空颜色" hint="大气效果插件内的深空 radial 中心色（与光晕同一套设置）" />
-        </div>
+        <InspectorInlineColorRow
+          label="太空颜色"
+          hint="大气效果插件内的深空 radial 中心色（与光晕同一套设置）"
+          value={resolved.spaceColor}
+          allowClear={false}
+          onChange={(spaceColor) => {
+            if (spaceColor) patchEffects({ spaceColor });
+          }}
+          className={controlsDisabled ? "pointer-events-none opacity-60" : undefined}
+        />
         <button
           type="button"
           className="text-theme-xs text-brand-500 hover:underline"

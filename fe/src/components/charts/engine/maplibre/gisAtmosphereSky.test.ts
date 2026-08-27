@@ -45,11 +45,15 @@ describe("gisGlobeLayout", () => {
     expect(bounds.y).toBe(150);
   });
 
-  it("hides starfield when globe disc fills the viewport", () => {
+  it("hides starfield when zoomed in or globe disc fills the viewport", () => {
     const global = resolveGlobeScreenBoundsFallback(400, 300);
     expect(shouldRenderGisStarfield(global, 400, 300)).toBe(true);
-    const zoomed = { ...global, radius: 220 };
-    expect(shouldRenderGisStarfield(zoomed, 400, 300)).toBe(false);
+
+    const zoomedMap = { getZoom: () => 5 } as import("maplibre-gl").Map;
+    expect(shouldRenderGisStarfield(global, 400, 300, zoomedMap)).toBe(false);
+
+    const filled = { ...global, radius: 320 };
+    expect(shouldRenderGisStarfield(filled, 400, 300)).toBe(false);
   });
 });
 

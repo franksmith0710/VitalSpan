@@ -83,14 +83,31 @@ export function isInsideGlobeDisc(
   return dx * dx + dy * dy < r * r;
 }
 
-/** 全球远视图才显示星场；区域放大后隐藏，避免 overlay 伪影。 */
+/** zoom 超过此值视为区域视图，隐藏星场/光晕/流星（避免球缘伪影）。 */
+export const GIS_GLOBE_FAR_EFFECTS_MAX_ZOOM = 4.5;
+
+/** 全球远视图才显示星场/光晕/流星；区域放大后隐藏，避免球缘 overlay 伪影。 */
+export function shouldRenderGisGlobeFarEffects(
+  map: MapLibreMap | null,
+  globe: GlobeScreenBounds | null,
+  width: number,
+  height: number,
+): boolean {
+  if (width <= 0 || height <= 0) return false;
+  if (map && map.getZoom() > GIS_GLOBE_FAR_EFFECTS_MAX_ZOOM) return false;
+  if (!globe) return true;
+  const viewportMin = Math.min(width, height);
+  // 球盘几乎铺满视口时隐藏（与 zoom 互补，防止 halo 贴边伪影）
+  return globe.radius * 0.88 <= viewportMin * 0.92;
+}
+
 export function shouldRenderGisStarfield(
   globe: GlobeScreenBounds,
   width: number,
   height: number,
+  map: MapLibreMap | null = null,
 ): boolean {
-  const viewportMin = Math.min(width, height);
-  return globe.radius * 0.88 <= viewportMin * 0.46;
+  return shouldRenderGisGlobeFarEffects(map, globe, width, height);
 }
 
 export function bindMapRenderSync(map: MapLibreMap | null, paint: () => void): () => void {

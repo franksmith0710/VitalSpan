@@ -1,6 +1,7 @@
 /** 对齐 vendor/geolibre maplibre-effects.ts EffectsSettings（只读移植）。 */
 
 export type GisEffectsSettings = {
+  enabled?: boolean;
   haloColor?: string;
   haloExtent?: number;
   haloOpacity?: number;
@@ -8,6 +9,7 @@ export type GisEffectsSettings = {
 };
 
 export type ResolvedGisEffectsSettings = {
+  enabled: boolean;
   haloColor: string;
   haloExtent: number;
   haloOpacity: number;
@@ -15,10 +17,11 @@ export type ResolvedGisEffectsSettings = {
 };
 
 export const DEFAULT_GIS_EFFECTS_SETTINGS: ResolvedGisEffectsSettings = {
+  enabled: true,
   haloColor: "#4d9fe6",
   haloExtent: 2.8,
   haloOpacity: 1,
-  spaceColor: "#0c1b33",
+  spaceColor: "#000000",
 };
 
 export const GIS_HALO_EXTENT_MIN = 1.05;
@@ -96,6 +99,7 @@ export function normalizeGisEffectsSettings(
 ): ResolvedGisEffectsSettings {
   const candidate = (value ?? {}) as GisEffectsSettings;
   return {
+    enabled: candidate.enabled !== false,
     haloColor: isHex(candidate.haloColor) ? withHash(candidate.haloColor) : base.haloColor,
     haloExtent: clampNumber(
       candidate.haloExtent,
