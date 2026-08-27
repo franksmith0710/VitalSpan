@@ -991,6 +991,46 @@ describe("PixelCanvas", () => {
     },
   );
 
+  it("commits southeast resize at reduced canvas scale", async () => {
+    const hostWidth = 720;
+    const hostHeight = 450;
+    const onChange = vi.fn();
+    renderPixelCanvas(
+      <PixelCanvas
+        mode="edit"
+        layout={{ ...layout, widgets: [{ ...widget, x: 0, y: 0 }] }}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    const host = screen.getByTestId("pixel-canvas-host");
+    Object.defineProperties(host, {
+      clientWidth: { configurable: true, value: hostWidth },
+      clientHeight: { configurable: true, value: hostHeight },
+    });
+    await act(async () => {
+      triggerResizeObservers();
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    });
+    expect(host).toHaveAttribute("data-pixel-canvas-scale", "0.5");
+
+    fireEvent.pointerDown(screen.getByLabelText("调整组件大小：右下"), {
+      pointerId: 77,
+      clientX: 200,
+      clientY: 150,
+      button: 0,
+    });
+    fireEvent.pointerMove(document, { pointerId: 77, clientX: 260, clientY: 210 });
+    await flushPixelPointerFrames();
+    fireEvent.pointerUp(document, { pointerId: 77, clientX: 200, clientY: 150 });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const resized = onChange.mock.calls[0][0].widgets.find((item: PixelLayoutWidget) => item.id === "w1");
+    expect(resized!.width).toBeGreaterThan(300);
+    expect(resized!.height).toBeGreaterThan(200);
+  });
+
   it("edit mode fills host width even when scaleMode is component", async () => {
     const hostWidth = 1189;
     const hostHeight = 400;

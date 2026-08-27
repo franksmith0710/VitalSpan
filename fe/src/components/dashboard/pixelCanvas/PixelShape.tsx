@@ -29,7 +29,6 @@ import { mergeWidgetOverrideStyle } from "../widgetRailStyleSections";
 import { resolveDashboardAlignmentSnap, resolveDashboardChrome } from "../dashboardChromeConfig";
 import {
   applyPixelInteraction,
-  preferAdvancedResizeRect,
   RESIZE_CURSORS,
   RESIZE_DIRECTIONS,
   RESIZE_LABELS,
@@ -508,7 +507,7 @@ export function PixelShape({
   }, [widget.x, widget.y, widget.width, widget.height]);
 
   useLayoutEffect(() => {
-    if (!layoutStyleDeferred) return;
+    if (activeRef.current) return;
     syncOuterStyle(displayRef.current);
   }, [layoutStyleDeferred]);
 
@@ -633,27 +632,18 @@ export function PixelShape({
     if (!active) return;
     if (active.pointerId !== event.pointerId) return;
     applyPendingMoveFrame();
-    let finalRect = displayRef.current;
-    if (commit && active.kind !== "move") {
-      const pointerRect = rectForPointer(event, active).rect;
-      finalRect = preferAdvancedResizeRect(
-        active.startRect,
-        displayRef.current,
-        pointerRect,
-        active.kind,
-      );
-    }
+    const finalRect = displayRef.current;
     const movedFromStart = !pixelRectsNearlyEqual(finalRect, active.startRect);
     const shouldCommit = commit || movedFromStart;
-    if (!shouldCommit) finalRect = active.startRect;
+    const settledRect = shouldCommit ? finalRect : active.startRect;
     releasePointerCapture(active, event.pointerId);
     activeRef.current = null;
     syncHint(null);
     onMarkGuidesChange?.(null);
-    applyDisplay(finalRect);
+    applyDisplay(settledRect);
     if (shouldCommit) {
       lastSyncedPropsRectRef.current = null;
-      onCommit?.(withRect(widget, finalRect));
+      onCommit?.(withRect(widget, settledRect));
     } else onCancel?.(widget.id);
     setIsPlayer(false);
     onPlayingChange?.(false);

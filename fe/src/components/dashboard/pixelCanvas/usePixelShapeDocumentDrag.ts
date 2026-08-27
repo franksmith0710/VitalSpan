@@ -38,13 +38,13 @@ export function usePixelShapeDocumentDrag() {
       unbind();
     };
 
-    document.addEventListener("pointermove", onMove);
-    document.addEventListener("pointerup", onEnd);
-    document.addEventListener("pointercancel", onEnd);
+    document.addEventListener("pointermove", onMove, { capture: true });
+    document.addEventListener("pointerup", onEnd, { capture: true });
+    document.addEventListener("pointercancel", onEnd, { capture: true });
     cleanupRef.current = () => {
-      document.removeEventListener("pointermove", onMove);
-      document.removeEventListener("pointerup", onEnd);
-      document.removeEventListener("pointercancel", onEnd);
+      document.removeEventListener("pointermove", onMove, { capture: true });
+      document.removeEventListener("pointerup", onEnd, { capture: true });
+      document.removeEventListener("pointercancel", onEnd, { capture: true });
     };
   };
 
