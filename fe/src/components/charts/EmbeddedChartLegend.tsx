@@ -302,7 +302,8 @@ export function EmbeddedChartLegendShell({
   return (
     <div
       className={cn(
-        "flex h-full min-h-0 w-full min-w-0 overflow-hidden",
+        "flex h-full min-h-0 w-full min-w-0",
+        clipChart ? "overflow-hidden" : "overflow-visible",
         stackSlot ? "flex-col" : "flex-row",
       )}
       data-legend-position={position}

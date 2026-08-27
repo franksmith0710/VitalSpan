@@ -758,7 +758,9 @@ export function DashboardWidget({
             ) : null}
             <div className="relative z-[1] flex min-h-0 flex-1 flex-col">
               <WidgetShellLegendProvider>
-                <WidgetChartLegendShell>{chartBody}</WidgetChartLegendShell>
+                <WidgetChartLegendShell clipChart={mode !== "edit"}>
+                  {chartBody}
+                </WidgetChartLegendShell>
               </WidgetShellLegendProvider>
             </div>
             {gridShellPresentation ? (

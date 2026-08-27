@@ -248,7 +248,7 @@ export function ReportSchedulesPage() {
           </div>
         ) : null}
 
-        <div className={cn(LIST_PAGE_CONTENT_PAD_CLASS, "space-y-3")}>
+        <div className={cn(LIST_PAGE_CONTENT_PAD_CLASS, "shrink-0 space-y-3")}>
           {isLoading ? <SchedulePageOverviewSkeleton /> : <SchedulePageOverview stats={stats} />}
 
           {!isLoading ? (
@@ -304,7 +304,7 @@ export function ReportSchedulesPage() {
           }
         />
 
-        <ListPageTableFrame className="max-h-none flex-none overflow-visible py-0">
+        <ListPageTableFrame className="py-0">
           {isLoading ? (
             <div className="space-y-2 py-5">
               {Array.from({ length: 5 }).map((_, i) => (

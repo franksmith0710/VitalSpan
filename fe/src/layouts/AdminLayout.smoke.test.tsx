@@ -223,7 +223,7 @@ describe("AdminLayout smoke", () => {
     expect(main.className).not.toContain("overflow-y-auto");
   });
 
-  it("report center uses full-width scrollable main", () => {
+  it("report center uses fill-height main (aligned with templates workbench)", () => {
     render(
       <MemoryRouter initialEntries={["/admin/reports/center"]}>
         <Routes>
@@ -235,7 +235,26 @@ describe("AdminLayout smoke", () => {
     );
     const main = screen.getAllByRole("main")[0];
     expect(main.className).toContain("max-w-none");
-    expect(main.className).toContain("overflow-y-auto");
+    expect(main.className).toContain("overflow-hidden");
+    expect(main.className).toContain("p-1.5");
+    expect(main.className).not.toContain("overflow-y-auto");
+    expect(main.className).not.toContain("p-4");
+  });
+
+  it("report schedules uses fill-height main", () => {
+    render(
+      <MemoryRouter initialEntries={["/admin/reports/schedules"]}>
+        <Routes>
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route path="reports/schedules" element={<div>schedules</div>} />
+          </Route>
+        </Routes>
+      </MemoryRouter>,
+    );
+    const main = screen.getAllByRole("main")[0];
+    expect(main.className).toContain("overflow-hidden");
+    expect(main.className).toContain("p-1.5");
+    expect(main.className).not.toContain("overflow-y-auto");
   });
 
   it("report templates workbench uses fill-height main (no scroll jump on node switch)", () => {

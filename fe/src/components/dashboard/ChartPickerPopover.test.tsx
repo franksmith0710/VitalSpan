@@ -37,8 +37,16 @@ vi.mock("@/lib/aiVizArtifacts", async (importOriginal) => {
         },
       ],
     })),
+    deleteAiVizArtifact: vi.fn(async () => undefined),
   };
 });
+
+vi.mock("sonner", () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+  },
+}));
 
 vi.stubGlobal(
   "IntersectionObserver",
@@ -223,5 +231,28 @@ describe("ChartPickerPopover custom viz", () => {
     expect(within(tile).getByLabelText("样式合规警告")).toBeInTheDocument();
     expect(tile.getAttribute("title")).toContain("仅视觉");
     expect(tile.getAttribute("title")).toContain("样式面板与看板配色可能不会生效");
+  });
+
+  it("shows toast when artifact delete is blocked by dashboard references", async () => {
+    const { deleteAiVizArtifact } = await import("@/lib/aiVizArtifacts");
+    const { toast } = await import("sonner");
+    const { ApiRequestError } = await import("@/lib/api");
+    vi.mocked(deleteAiVizArtifact).mockRejectedValueOnce(
+      new ApiRequestError(
+        "组件仍被看板/大屏引用，请先移除 widget 或更换 artifactId",
+        "AIVIZ_IN_USE",
+        [{ field: "0", message: "" }] as never,
+      ),
+    );
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    renderPicker({ onInsertCustomViz: vi.fn() });
+    const popover = await screen.findByTestId("chart-picker-popover");
+    await userEvent.click(
+      within(popover).getByRole("button", { name: /从组件库移除 演示排名条/ }),
+    );
+
+    expect(deleteAiVizArtifact).toHaveBeenCalledWith("art-custom-1");
+    expect(toast.error).toHaveBeenCalled();
   });
 });

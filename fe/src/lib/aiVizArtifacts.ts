@@ -1,4 +1,5 @@
-import { apiFetch } from "@/lib/api";
+import { apiFetch, ApiRequestError } from "@/lib/api";
+import { mapApiError } from "@/lib/apiError";
 
 export type AiVizComplianceWarning = {
   code: string;
@@ -52,4 +53,25 @@ export function deleteAiVizArtifact(artifactId: string) {
   return apiFetch<void>(`/api/v1/ai-viz/artifacts/${encodeURIComponent(artifactId)}`, {
     method: "DELETE",
   });
+}
+
+type AiVizArtifactReferenceField = {
+  dashboardId?: string;
+  dashboardName?: string;
+  widgetId?: string;
+};
+
+/** 删除失败时拼接引用看板名称（AIVIZ_IN_USE） */
+export function formatAiVizArtifactDeleteError(err: unknown): string {
+  const base = mapApiError(err);
+  if (err instanceof ApiRequestError && err.code === "AIVIZ_IN_USE" && err.fields?.length) {
+    const names = err.fields
+      .map((field) => (field as AiVizArtifactReferenceField).dashboardName)
+      .filter((name): name is string => Boolean(name));
+    if (names.length > 0) {
+      const unique = [...new Set(names)];
+      return `${base}：${unique.join("、")}`;
+    }
+  }
+  return base;
 }

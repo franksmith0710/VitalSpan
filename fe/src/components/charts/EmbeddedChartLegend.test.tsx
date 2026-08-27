@@ -170,4 +170,21 @@ describe("EmbeddedChartLegendShell", () => {
       resolveVerticalLegendPageSize(120, 12, 4),
     );
   });
+
+  it("uses overflow-visible on chart area when clipChart is false", () => {
+    const { container } = render(
+      <EmbeddedChartLegendShell
+        position="bottom"
+        items={[{ name: "A", color: "#111" }]}
+        clipChart={false}
+      >
+        <div data-testid="chart-body">chart</div>
+      </EmbeddedChartLegendShell>,
+    );
+
+    const chart = screen.getByTestId("chart-body");
+    expect(chart.parentElement).toHaveClass("overflow-visible");
+    expect(chart.parentElement).not.toHaveClass("overflow-hidden");
+    expect(container.firstElementChild).toHaveClass("overflow-visible");
+  });
 });

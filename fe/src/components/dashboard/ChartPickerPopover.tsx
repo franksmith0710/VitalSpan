@@ -16,10 +16,11 @@ import { cn } from "@/lib/utils";
 import { chartTypeIcon } from "@/lib/chartTypeIcons";
 import type { CustomVizInsertPayload } from "@/components/dashboard/createLayoutWidget";
 import { setCustomVizDragData, type CustomVizDragPayload } from "@/lib/dashboardDnd";
-import { fetchAiVizArtifacts, deleteAiVizArtifact, AI_VIZ_STYLE_COMPLIANCE_LABELS, type AiVizArtifactMeta } from "@/lib/aiVizArtifacts";
+import { fetchAiVizArtifacts, deleteAiVizArtifact, formatAiVizArtifactDeleteError, AI_VIZ_STYLE_COMPLIANCE_LABELS, type AiVizArtifactMeta } from "@/lib/aiVizArtifacts";
 import { queryKeys } from "@/lib/queryKeys";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sparkles, Trash2, TriangleAlert } from "lucide-react";
+import { toast } from "sonner";
 import {
   ChartExploreCatalogTrigger,
   ChartExploreDrawer,
@@ -127,6 +128,9 @@ function CustomVizTile({
             e.stopPropagation();
             e.preventDefault();
             onRemove(item.artifactId);
+          }}
+          onPointerDown={(e) => {
+            e.stopPropagation();
           }}
         >
           <Trash2 className="size-3" strokeWidth={2} aria-hidden />
@@ -306,11 +310,22 @@ export function ChartPickerPopover({
   const customArtifacts = customArtifactsData?.items ?? [];
   const handleRemoveCustomArtifact = useCallback(
     (artifactId: string) => {
-      void deleteAiVizArtifact(artifactId).then(() => {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.aiViz.all });
-      });
+      const label =
+        customArtifacts.find((item) => item.artifactId === artifactId)?.manifest.displayName ??
+        "该组件";
+      if (!window.confirm(`确定从组件库移除「${label}」？\n若仍被看板/大屏引用，需先在布局中删除对应组件。`)) {
+        return;
+      }
+      void deleteAiVizArtifact(artifactId)
+        .then(() => {
+          toast.success(`已从组件库移除「${label}」`);
+          void queryClient.invalidateQueries({ queryKey: queryKeys.aiViz.all });
+        })
+        .catch((err: unknown) => {
+          toast.error(formatAiVizArtifactDeleteError(err));
+        });
     },
-    [queryClient],
+    [queryClient, customArtifacts],
   );
   const navSections = useMemo(
     () =>
