@@ -1,5 +1,4 @@
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -9,7 +8,7 @@ import {
 } from "@/components/ui/select";
 import { formatMetricValue } from "@/components/dashboard/dashboardStyleConfig";
 import { ChartDeAttrField } from "../chartInspectorDeFields";
-import { INSPECTOR_HINT, INSPECTOR_SELECT } from "../inspectorCompact";
+import { INSPECTOR_HINT, INSPECTOR_SELECT, InspectorSwitchRow } from "../inspectorCompact";
 import type { ChartLabelStyle } from "@/lib/chartDeStyle";
 
 const FORMAT_TYPES = [
@@ -80,32 +79,26 @@ export function ChartDeLabelContentFields({
   return (
     <>
       {showAllToggle ? (
-        <label className="flex items-center gap-2 border-b border-gray-100 py-2 text-[11px] text-gray-600 dark:border-white/[0.06] dark:text-gray-300">
-          <Checkbox
-            checked={label?.showAll === true}
-            onCheckedChange={(checked) => patchLabel({ showAll: checked === true })}
-          />
-          全量显示
-        </label>
+        <InspectorSwitchRow
+          label="全量显示"
+          checked={label?.showAll === true}
+          onCheckedChange={(checked) => patchLabel({ showAll: checked })}
+        />
       ) : null}
 
       {showDimensionOption ? (
-        <label className="flex items-center gap-2 border-b border-gray-100 py-2 text-[11px] text-gray-600 dark:border-white/[0.06] dark:text-gray-300">
-          <Checkbox
-            checked={showDimension}
-            onCheckedChange={(checked) => patchLabel({ showDimension: checked === true })}
-          />
-          维度
-        </label>
+        <InspectorSwitchRow
+          label="维度"
+          checked={showDimension}
+          onCheckedChange={(checked) => patchLabel({ showDimension: checked })}
+        />
       ) : null}
 
-      <label className="flex items-center gap-2 border-b border-gray-100 py-2 text-[11px] text-gray-600 dark:border-white/[0.06] dark:text-gray-300">
-        <Checkbox
-          checked={showIndicator}
-          onCheckedChange={(checked) => patchLabel({ showIndicator: checked === true })}
-        />
-        指标
-      </label>
+      <InspectorSwitchRow
+        label="指标"
+        checked={showIndicator}
+        onCheckedChange={(checked) => patchLabel({ showIndicator: checked })}
+      />
 
       {showIndicator ? (
         <div className="space-y-0 border-b border-gray-100 pb-2 pl-2 dark:border-white/[0.06]">
@@ -198,26 +191,22 @@ export function ChartDeLabelContentFields({
               </SelectContent>
             </Select>
           </ChartDeAttrField>
-          <label className="flex items-center gap-2 py-2 text-[11px] text-gray-600 dark:text-gray-300">
-            <Checkbox
-              checked={label?.thousandSeparator !== false}
-              onCheckedChange={(checked) => patchLabel({ thousandSeparator: checked === true })}
-            />
-            千分符
-          </label>
+          <InspectorSwitchRow
+            label="千分符"
+            checked={label?.thousandSeparator !== false}
+            onCheckedChange={(checked) => patchLabel({ thousandSeparator: checked })}
+          />
           <p className="px-0 py-1 text-[10px] text-gray-400">指标示例：{formatPreview}</p>
         </div>
       ) : null}
 
       {showPercentOption ? (
         <>
-          <label className="flex items-center gap-2 border-b border-gray-100 py-2 text-[11px] text-gray-600 dark:border-white/[0.06] dark:text-gray-300">
-            <Checkbox
-              checked={showPercent}
-              onCheckedChange={(checked) => patchLabel({ showPercent: checked === true })}
-            />
-            占比
-          </label>
+          <InspectorSwitchRow
+            label="占比"
+            checked={showPercent}
+            onCheckedChange={(checked) => patchLabel({ showPercent: checked })}
+          />
           {showPercent ? (
             <ChartDeAttrField label="保留小数">
               <Select

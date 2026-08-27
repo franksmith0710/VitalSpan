@@ -36,8 +36,12 @@ export function createPixelShapePreviewRegistry() {
     applyOne(widgetId: string, rect: PixelRect) {
       syncById.get(widgetId)?.(rect);
     },
-    reset(widgets: Array<{ id: string } & PixelRect>) {
+    reset(
+      widgets: Array<{ id: string } & PixelRect>,
+      options?: PixelShapePreviewApplyOptions,
+    ) {
       for (const widget of widgets) {
+        if (shouldSkipPreviewWidget(widget.id, options)) continue;
         const { id, x, y, width, height } = widget;
         syncById.get(id)?.({ x, y, width, height });
       }

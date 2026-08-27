@@ -8,6 +8,7 @@ import {
   resolveGisMapControls,
   resolveGisRenderableBasemap,
   DEFAULT_GIS_GLOBE_VIEW,
+  type ResolvedGisMapControls,
 } from "@/components/charts/engine/maplibre/gisProject";
 import { applyGisGraticule } from "@/components/charts/engine/maplibre/gisGraticule";
 import { applyBasemapRuntimePatch } from "@/components/charts/engine/maplibre/gisBasemapPalette";
@@ -90,6 +91,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const overlayFitKeyRef = useRef<string | null>(null);
   const sunEngineRef = useRef<GisSunEngine | null>(null);
   const effectsEngineRef = useRef<GisGeolibreEffectsEngine | null>(null);
+  const mapControlsDisposeRef = useRef<(() => void) | null>(null);
   const project = useMemo(() => readGisProject(chartConfig), [chartConfig]);
   const projectRef = useRef(project);
   projectRef.current = project;
@@ -98,6 +100,18 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     [project.mapControls, project.showControls],
   );
   const mapControlsKey = useMemo(() => JSON.stringify(mapControls), [mapControls]);
+
+  const remountMapControls = useCallback(async (controls: ResolvedGisMapControls) => {
+    const map = mapRef.current;
+    if (!map) return false;
+    mapControlsDisposeRef.current?.();
+    mapControlsDisposeRef.current = null;
+    mapControlsDisposeRef.current = await mountGisMapControls(map, controls);
+    if (map.isStyleLoaded()) {
+      applyGisGraticule(map, controls.graticule);
+    }
+    return true;
+  }, []);
   const sunKey = useMemo(
     () => JSON.stringify(resolveGisProjectSun(project.sun)),
     [project.sun],
@@ -454,43 +468,33 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || renderBasemap !== "pmtiles") return;
+    if (!map || renderBasemap !== "pmtiles" || gisPaintState !== "ready") return;
 
     let cancelled = false;
-    let disposeControls: (() => void) | undefined;
 
     const syncControls = () => {
-      void mountGisMapControls(map, mapControls).then((dispose) => {
-        if (cancelled) {
-          dispose();
-          return;
+      void remountMapControls(mapControls).then((ok) => {
+        if (cancelled && ok) {
+          mapControlsDisposeRef.current?.();
+          mapControlsDisposeRef.current = null;
         }
-        disposeControls = dispose;
       });
     };
 
+    const onStyleLoad = () => syncControls();
+
     if (map.isStyleLoaded()) syncControls();
     else map.once("load", syncControls);
+    map.on("style.load", onStyleLoad);
 
     return () => {
       cancelled = true;
-      disposeControls?.();
+      map.off("load", syncControls);
+      map.off("style.load", onStyleLoad);
+      mapControlsDisposeRef.current?.();
+      mapControlsDisposeRef.current = null;
     };
-  }, [mapBootstrapKey, mapControlsKey, renderBasemap]);
-
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || renderBasemap !== "pmtiles") return;
-
-    const syncGraticule = () => applyGisGraticule(map, mapControls.graticule);
-    if (map.isStyleLoaded()) syncGraticule();
-    else map.once("load", syncGraticule);
-    map.on("style.load", syncGraticule);
-
-    return () => {
-      map.off("style.load", syncGraticule);
-    };
-  }, [mapBootstrapKey, mapControls.graticule, mapControlsKey, renderBasemap, styleKey]);
+  }, [gisPaintState, mapBootstrapKey, mapControls, mapControlsKey, mapRuntimeEpoch, remountMapControls, renderBasemap]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -786,6 +790,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         });
         return true;
       },
+      applyMapControls: (controls) => {
+        void remountMapControls(controls);
+        return mapRef.current != null;
+      },
       syncLayers: () => {
         const map = mapRef.current;
         if (!map) return false;
@@ -813,7 +821,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       },
       getSunSettings: () => sunEngineRef.current?.getSettings() ?? null,
     });
-  }, [instanceKey, syncLayersRuntime]);
+  }, [instanceKey, remountMapControls, syncLayersRuntime]);
 
   const statusHint = pmtilesErrorHint ?? mapErrorHint;
   const dataHint = useMemo(

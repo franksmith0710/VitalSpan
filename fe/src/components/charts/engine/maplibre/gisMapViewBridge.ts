@@ -1,4 +1,4 @@
-import type { GisProjectFog, GisProjectView, GisProjection, GisAtmospherePreset } from "@/components/charts/engine/maplibre/gisProject";
+import type { GisProjectFog, GisProjectView, GisProjection, GisAtmospherePreset, ResolvedGisMapControls } from "@/components/charts/engine/maplibre/gisProject";
 import type { GisBasemapLayerVisibility } from "@/components/charts/engine/maplibre/gisProject";
 import type { GisProjectHalo } from "@/components/charts/engine/maplibre/gisProjectHalo";
 import type { GisProjectSun } from "@/components/charts/engine/maplibre/gisProjectSun";
@@ -24,6 +24,7 @@ export type GisMapViewLiveControl = {
   applyView: (view: GisProjectView) => boolean;
   applyAtmosphere?: (ctx: GisMapAtmosphereContext) => boolean;
   applyBasemapPatch?: (patch: GisMapBasemapPatch) => boolean;
+  applyMapControls?: (controls: ResolvedGisMapControls) => boolean;
   syncLayers?: () => boolean;
   applySun?: (sun: GisProjectSun | undefined, patch?: Partial<GisProjectSun>) => boolean;
   getSunSettings?: () => GisSunSettings | null;
@@ -62,6 +63,10 @@ export function applyGisMapViewAtmosphere(
 
 export function applyGisMapBasemapPatch(widgetId: string, patch: GisMapBasemapPatch): boolean {
   return liveControlByWidgetId.get(widgetId)?.applyBasemapPatch?.(patch) ?? false;
+}
+
+export function applyGisMapControls(widgetId: string, controls: ResolvedGisMapControls): boolean {
+  return liveControlByWidgetId.get(widgetId)?.applyMapControls?.(controls) ?? false;
 }
 
 export function syncGisMapViewLayers(widgetId: string): boolean {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -14,6 +14,7 @@ import {
   ChartInspectorSection,
   INSPECTOR_CTRL,
   INSPECTOR_SECTION_GAP,
+  INSPECTOR_SWITCH_SIZE,
   InspectorFieldLabel,
   InspectorSwitchRow,
 } from "@/components/dashboard/inspectorCompact";
@@ -171,13 +172,6 @@ export function ChartGisMapLayersPanel() {
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <Checkbox
-                    checked={layer.visible !== false}
-                    onCheckedChange={(checked) =>
-                      commitLayers(patchGisProjectLayer(project, layer.id, { visible: checked === true }))
-                    }
-                    aria-label={`显示 ${layer.name}`}
-                  />
                   <button
                     type="button"
                     className="min-w-0 flex-1 truncate text-left text-theme-xs font-medium text-gray-800 dark:text-gray-100"
@@ -186,6 +180,14 @@ export function ChartGisMapLayersPanel() {
                     {layer.name}
                     <span className="ml-1 text-gray-400">({KIND_LABELS[layer.kind]})</span>
                   </button>
+                  <Switch
+                    checked={layer.visible !== false}
+                    onCheckedChange={(checked) =>
+                      commitLayers(patchGisProjectLayer(project, layer.id, { visible: checked }))
+                    }
+                    aria-label={`显示 ${layer.name}`}
+                    size={INSPECTOR_SWITCH_SIZE}
+                  />
                   <div className="flex shrink-0 gap-1">
                     <button
                       type="button"

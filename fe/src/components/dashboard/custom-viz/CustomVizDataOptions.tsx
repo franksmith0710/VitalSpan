@@ -1,4 +1,3 @@
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -23,6 +22,7 @@ import {
 import type { CustomVizDataBinding } from "../layoutUtils";
 import { ChartResultLimitField } from "../ChartResultLimitField";
 import { DE_SELECT, DeAttrField, DeAttrForm } from "../dashboardInspectorUi";
+import { InspectorSwitchRow } from "../inspectorCompact";
 import { cn } from "@/lib/utils";
 
 type CustomVizDataOptionsProps = {
@@ -48,39 +48,34 @@ export function CustomVizDataOptions({ binding, onPatch }: CustomVizDataOptionsP
     <DeAttrForm className="border-t border-gray-100 pt-1 dark:border-white/[0.06]">
       <DeAttrField label="刷新频率" compact>
         <div className="space-y-1.5">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="custom-viz-refresh"
-              checked={refreshOn}
-              onCheckedChange={(checked) => setRefreshMode(checked === true ? "30s" : "off")}
-              aria-label="启用刷新频率"
-            />
-            {refreshOn ? (
-              <Select
-                value={refreshSelect}
-                onValueChange={(value) => {
-                  if (value === "custom") {
-                    setRefreshMode(buildCustomRefreshMode(60));
-                    return;
-                  }
-                  setRefreshMode(value);
-                }}
-              >
-                <SelectTrigger className={cn(DE_SELECT, "h-8 min-w-0 flex-1")} aria-label="刷新间隔">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {CHART_REFRESH_PRESET_OPTIONS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <span className="text-[11px] text-gray-400 dark:text-gray-500">未开启</span>
-            )}
-          </div>
+          <InspectorSwitchRow
+            label="启用刷新"
+            checked={refreshOn}
+            onCheckedChange={(checked) => setRefreshMode(checked ? "30s" : "off")}
+          />
+          {refreshOn ? (
+            <Select
+              value={refreshSelect}
+              onValueChange={(value) => {
+                if (value === "custom") {
+                  setRefreshMode(buildCustomRefreshMode(60));
+                  return;
+                }
+                setRefreshMode(value);
+              }}
+            >
+              <SelectTrigger className={cn(DE_SELECT, "h-8 min-w-0 w-full")} aria-label="刷新间隔">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CHART_REFRESH_PRESET_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : null}
           {refreshOn && isCustom ? (
             <div className="flex items-center gap-1.5">
               <Input

@@ -6,10 +6,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { formatMetricValue } from "@/components/dashboard/dashboardStyleConfig";
 import { ChartDeAttrField, ChartDeSegmentField, CHART_DE_INPUT } from "../chartInspectorDeFields";
-import { INSPECTOR_SELECT } from "../inspectorCompact";
+import { INSPECTOR_SELECT, InspectorSwitchRow } from "../inspectorCompact";
 import type { ChartDeStyle } from "@/lib/chartDeStyle";
 import type { ChartLiquidStyle } from "@/lib/chartDeStyleBlocks";
 import { resolveLiquidMetricFormat } from "@/lib/liquidLabelFormat";
@@ -117,13 +116,11 @@ export function ChartLiquidLabelFields({
         )}
       </div>
 
-      <label className="flex items-center gap-2 border-b border-gray-100 py-2 text-[11px] text-gray-600 dark:border-white/[0.06] dark:text-gray-300">
-        <Checkbox
-          checked={showMetric}
-          onCheckedChange={(checked) => patchLabel({ showMetric: checked === true })}
-        />
-        指标
-      </label>
+      <InspectorSwitchRow
+        label="指标"
+        checked={showMetric}
+        onCheckedChange={(checked) => patchLabel({ showMetric: checked })}
+      />
       {showMetric ? (
         <div className="space-y-0 border-b border-gray-100 pb-2 pl-2 dark:border-white/[0.06]">
           <ChartDeAttrField label="格式类型">
@@ -192,26 +189,22 @@ export function ChartLiquidLabelFields({
               />
             </ChartDeAttrField>
           ) : null}
-          <label className="flex items-center gap-2 py-2 text-[11px] text-gray-600 dark:text-gray-300">
-            <Checkbox
-              checked={metricFormat.thousandSeparator !== false}
-              onCheckedChange={(checked) =>
-                patchLabel({ metricThousandSeparator: checked === true, thousandSeparator: undefined })
-              }
-            />
-            千分符
-          </label>
+          <InspectorSwitchRow
+            label="千分符"
+            checked={metricFormat.thousandSeparator !== false}
+            onCheckedChange={(checked) =>
+              patchLabel({ metricThousandSeparator: checked, thousandSeparator: undefined })
+            }
+          />
           <p className="px-0 py-1 text-[10px] text-gray-400">指标示例：{metricPreview}</p>
         </div>
       ) : null}
 
-      <label className="flex items-center gap-2 border-b border-gray-100 py-2 text-[11px] text-gray-600 dark:border-white/[0.06] dark:text-gray-300">
-        <Checkbox
-          checked={showRatio}
-          onCheckedChange={(checked) => patchLabel({ showRatio: checked === true })}
-        />
-        占比
-      </label>
+      <InspectorSwitchRow
+        label="占比"
+        checked={showRatio}
+        onCheckedChange={(checked) => patchLabel({ showRatio: checked })}
+      />
       {showRatio ? (
         <div className="space-y-0 border-b border-gray-100 pb-2 pl-2 dark:border-white/[0.06]">
           <ChartDeAttrField label="保留小数">

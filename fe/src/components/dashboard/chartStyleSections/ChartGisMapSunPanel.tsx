@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Pause, Play, Repeat, SkipBack, SkipForward } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { useChartInspector } from "@/components/dashboard/chartInspectorContext";
 import { InspectorSliderField } from "@/components/dashboard/deAttrSlider";
@@ -9,6 +8,7 @@ import {
   INSPECTOR_CTRL,
   INSPECTOR_SECTION_GAP,
   InspectorFieldLabel,
+  InspectorSwitchRow,
 } from "@/components/dashboard/inspectorCompact";
 import { readGisProject, writeGisProject } from "@/components/charts/engine/maplibre/gisProject";
 import {
@@ -96,13 +96,11 @@ export function ChartGisMapSunPanel() {
   return (
     <ChartInspectorSection title="太阳" hint={SUN_HINT} data-testid="chart-gis-map-sun-panel">
       <div className={INSPECTOR_SECTION_GAP}>
-        <label className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-300">
-          <Checkbox
-            checked={resolved.enabled}
-            onCheckedChange={(checked) => setSun({ enabled: checked === true, playing: false })}
-          />
-          启用太阳光照
-        </label>
+        <InspectorSwitchRow
+          label="启用太阳光照"
+          checked={resolved.enabled}
+          onCheckedChange={(enabled) => setSun({ enabled, playing: false })}
+        />
         <div className="flex items-end gap-2">
           <div className="grid min-w-0 flex-1 gap-1">
             <InspectorFieldLabel label="日期" />

@@ -1,7 +1,6 @@
 import { Plus, Trash2 } from "lucide-react";
 import { TimeRangeConfig } from "@/components/charts/TimeRangeConfig";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -372,19 +371,15 @@ export function ChartAdvancedMapLinkageSection() {
               目标图表
               <InspectorHintTip text="未勾选时默认联动看板上其余全部图表；目标 SQL 须含对应占位符。" />
             </legend>
-            <div className="flex flex-wrap gap-3">
+            <div className="space-y-0">
               {chartTargets.length > 0 ? (
                 chartTargets.map((item) => (
-                  <label
+                  <InspectorSwitchRow
                     key={item.id}
-                    className="flex cursor-pointer items-center gap-2 text-theme-xs text-gray-700 dark:text-gray-300"
-                  >
-                    <Checkbox
-                      checked={(linkage.targetWidgetIds ?? []).includes(item.id)}
-                      onCheckedChange={(checked) => toggleTarget(item.id, checked === true)}
-                    />
-                    {item.title || item.id}
-                  </label>
+                    label={item.title || item.id}
+                    checked={(linkage.targetWidgetIds ?? []).includes(item.id)}
+                    onCheckedChange={(checked) => toggleTarget(item.id, checked)}
+                  />
                 ))
               ) : (
                 <p className="text-theme-xs text-gray-400">画布上暂无其他图表组件。</p>

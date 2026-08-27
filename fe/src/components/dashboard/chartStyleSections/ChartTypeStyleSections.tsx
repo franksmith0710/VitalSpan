@@ -6,7 +6,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Checkbox } from "@/components/ui/checkbox";
 import { TEXT_COLOR_RECOMMENDED, WIDGET_BORDER_RECOMMENDED } from "@/components/dashboard/dashboardStyleConfig";
 import { ChartPaletteDeParityFields } from "../chartPaletteDeParityFields";
 import { useChartInspector } from "../ChartInspectorContext";
@@ -102,29 +101,19 @@ export function ChartPieShapeSection() {
           onOpacityChange={patchPaletteOpacity}
           onOpacityPreview={patchPaletteOpacity}
         />
-        <div className="border-b border-gray-100 py-2 dark:border-white/[0.06]">
-          <label className="flex items-start gap-2 text-[11px] text-gray-600 dark:text-gray-300">
-            <Checkbox
-              checked={mergeOthers}
-              onCheckedChange={(checked) =>
-                patch({
-                  mergeOthers: checked === true,
-                  ...(checked === true && pie.topN == null
-                    ? { topN: DEFAULT_PIE_MERGE_TOP_N }
-                    : {}),
-                })
-              }
-              aria-label="合并数据"
-            />
-            <span>
-              <span className="font-medium">合并数据</span>
-              <span className="mt-0.5 block text-[10px] text-gray-500 dark:text-gray-400">
-                显示 Top N，其余合并为一项
-              </span>
-            </span>
-          </label>
-          {mergeOthers ? (
-            <div className="mt-2 pl-6">
+        <InspectorSwitchRow
+          label="合并数据"
+          hint="显示 Top N，其余合并为一项"
+          checked={mergeOthers}
+          onCheckedChange={(checked) =>
+            patch({
+              mergeOthers: checked,
+              ...(checked && pie.topN == null ? { topN: DEFAULT_PIE_MERGE_TOP_N } : {}),
+            })
+          }
+        />
+        {mergeOthers ? (
+          <div className="mt-2">
               <ChartDeSliderField
                 label="显示 Top"
                 value={pie.topN}
@@ -136,7 +125,6 @@ export function ChartPieShapeSection() {
               />
             </div>
           ) : null}
-        </div>
         <ChartDeSliderField
           label="外径"
           value={pie.outerRadiusPercent}

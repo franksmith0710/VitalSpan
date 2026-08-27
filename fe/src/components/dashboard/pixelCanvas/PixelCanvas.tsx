@@ -478,7 +478,7 @@ export function PixelCanvas({
   }, []);
 
   const clearPreviewChrome = useCallback(
-    (snapshot?: DashboardLayoutV2) => {
+    (snapshot?: DashboardLayoutV2, skipWidgetId?: string) => {
       // 大屏 designViewportLocked：stage/content 尺寸由 React style 固定；
       // removeProperty 会剥掉内联尺寸，而 canvas 尺寸 props 不变时 React 不会重刷 DOM → 0 高裁剪全画布。
       if (!designViewportLocked) {
@@ -495,6 +495,7 @@ export function PixelCanvas({
           id: widget.id,
           ...widgetRect(widget),
         })),
+        skipWidgetId ? { skipWidgetIds: skipWidgetId } : undefined,
       );
     },
     [activeLayout, designViewportLocked],
@@ -732,7 +733,7 @@ export function PixelCanvas({
 
       const nextLayout = resolveActiveAt(boundedWidget, "commit");
       onLayoutChange(nextLayout);
-      clearPreviewChrome(nextLayout);
+      clearPreviewChrome(nextLayout, boundedWidget.id);
       syncShapeGeometryFromLayout(nextLayout);
       endCollisionPreview();
       setPlayingWidgetId(null);

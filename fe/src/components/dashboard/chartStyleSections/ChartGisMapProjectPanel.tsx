@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -18,7 +17,7 @@ import {
   INSPECTOR_CTRL,
   INSPECTOR_SECTION_GAP,
   InspectorFieldLabel,
-  InspectorHintTip,
+  InspectorSwitchRow,
 } from "@/components/dashboard/inspectorCompact";
 import {
   DEFAULT_GIS_GLOBE_VIEW,
@@ -39,7 +38,7 @@ import {
   type GisMapControls,
   type GisViewDraftFields,
 } from "@/components/charts/engine/maplibre/gisProject";
-import { captureGisMapViewCamera, applyGisMapViewCamera, applyGisMapBasemapPatch } from "@/components/charts/engine/maplibre/gisMapViewBridge";
+import { captureGisMapViewCamera, applyGisMapViewCamera, applyGisMapBasemapPatch, applyGisMapControls } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 import {
   buildGisConfiguredViewKey,
   GLOBE_IDLE_ROTATION_DEG_PER_SEC,
@@ -237,12 +236,14 @@ export function ChartGisMapProjectPanel() {
       } else {
         delete next[key];
       }
+      const resolved = resolveGisMapControls({ mapControls: next, showControls: false });
+      applyGisMapControls(widget.id, resolved);
       patchProject({
         mapControls: Object.keys(next).length > 0 ? next : undefined,
         showControls: false,
       });
     },
-    [patchProject, project.mapControls],
+    [patchProject, project.mapControls, widget.id],
   );
 
   return (
@@ -352,13 +353,12 @@ export function ChartGisMapProjectPanel() {
                 ["landDetail", "陆地细节"],
               ] as const
             ).map(([key, label]) => (
-              <label key={key} className="flex items-center gap-2 text-theme-xs text-gray-700 dark:text-gray-300">
-                <Checkbox
-                  checked={project.basemapLayers?.[key] !== false}
-                  onCheckedChange={(checked) => patchBasemapLayers(key, checked === true)}
-                />
-                {label}
-              </label>
+              <InspectorSwitchRow
+                key={key}
+                label={label}
+                checked={project.basemapLayers?.[key] !== false}
+                onCheckedChange={(checked) => patchBasemapLayers(key, checked)}
+              />
             ))}
           </div>
 
@@ -543,7 +543,7 @@ export function ChartGisMapProjectPanel() {
         <div className="grid gap-2 rounded-lg border border-gray-200 p-2 dark:border-gray-800">
           <InspectorFieldLabel
             label="地图控件"
-            hint="对标 GeoLibre「地图控件」菜单；勾选后在地图角上显示对应 UI。"
+            hint="对标 GeoLibre「地图控件」：开启后在地图角显示导航、比例尺等 UI；经纬网为 overlay 图层。"
           />
           {(
             [
@@ -554,43 +554,29 @@ export function ChartGisMapProjectPanel() {
               ["graticule", "经纬网"],
             ] as const
           ).map(([key, label]) => (
-            <label
+            <InspectorSwitchRow
               key={key}
-              className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-300"
-            >
-              <Checkbox
-                checked={mapControls[key]}
-                onCheckedChange={(checked) => patchMapControl(key, checked === true)}
-              />
-              {label}
-            </label>
+              label={label}
+              checked={mapControls[key]}
+              onCheckedChange={(checked) => patchMapControl(key, checked)}
+            />
           ))}
         </div>
 
         <div className="grid gap-2 rounded-lg border border-gray-200 p-2 dark:border-gray-800">
-          <label className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-300">
-            <Checkbox
-              checked={project.buildings3d !== false}
-              onCheckedChange={(checked) =>
-                patchBasemapRuntime({ buildings3d: checked === true })
-              }
-            />
-            <span className="flex min-w-0 flex-1 items-center gap-1">
-              <span>建筑 3D 挤出</span>
-              <InspectorHintTip text="zoom ≥ 15；OSM 高度缺失时默认 10m；建议 pitch 45°–60°。" />
-            </span>
-          </label>
+          <InspectorSwitchRow
+            label="建筑 3D 挤出"
+            hint="zoom ≥ 15；OSM 高度缺失时默认 10m；建议 pitch 45°–60°。"
+            checked={project.buildings3d !== false}
+            onCheckedChange={(checked) => patchBasemapRuntime({ buildings3d: checked })}
+          />
           {project.projection === "globe" ? (
-            <label className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-300">
-              <Checkbox
-                checked={project.autoRotate === true}
-                onCheckedChange={(checked) => patchProject({ autoRotate: checked === true })}
-              />
-              <span className="flex min-w-0 flex-1 items-center gap-1">
-                <span>球面自转</span>
-                <InspectorHintTip text="沿地轴自西向东慢速旋转。" />
-              </span>
-            </label>
+            <InspectorSwitchRow
+              label="球面自转"
+              hint="沿地轴自西向东慢速旋转。"
+              checked={project.autoRotate === true}
+              onCheckedChange={(checked) => patchProject({ autoRotate: checked })}
+            />
           ) : null}
           {project.projection === "globe" && project.autoRotate ? (
             <InspectorSliderField

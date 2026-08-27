@@ -1,9 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   applyGisMapViewCamera,
+  applyGisMapControls,
   captureGisMapViewCamera,
   registerGisMapViewLiveControl,
 } from "@/components/charts/engine/maplibre/gisMapViewBridge";
+import { resolveGisMapControls } from "@/components/charts/engine/maplibre/gisProject";
 
 describe("gisMapViewBridge", () => {
   it("captures and applies registered camera by widget id", () => {
@@ -32,5 +34,19 @@ describe("gisMapViewBridge", () => {
     dispose();
     expect(captureGisMapViewCamera("w-gis")).toBeNull();
     expect(applyGisMapViewCamera("w-gis", next)).toBe(false);
+  });
+
+  it("applies map controls through live bridge", () => {
+    const applyMapControls = vi.fn(() => true);
+    const dispose = registerGisMapViewLiveControl("w-gis", { applyMapControls });
+    const controls = resolveGisMapControls({
+      mapControls: { navigation: true, scale: true },
+    });
+
+    expect(applyGisMapControls("w-gis", controls)).toBe(true);
+    expect(applyMapControls).toHaveBeenCalledWith(controls);
+
+    dispose();
+    expect(applyGisMapControls("w-gis", controls)).toBe(false);
   });
 });

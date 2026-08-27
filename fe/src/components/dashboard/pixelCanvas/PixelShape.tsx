@@ -29,6 +29,7 @@ import { mergeWidgetOverrideStyle } from "../widgetRailStyleSections";
 import { resolveDashboardAlignmentSnap, resolveDashboardChrome } from "../dashboardChromeConfig";
 import {
   applyPixelInteraction,
+  preferAdvancedResizeRect,
   RESIZE_CURSORS,
   RESIZE_DIRECTIONS,
   RESIZE_LABELS,
@@ -548,8 +549,11 @@ export function PixelShape({
         snapEdges: alignmentSnap.snapEdges,
         snapCenters: alignmentSnap.snapCenters,
       });
-      rect = snapped.rect;
       guides = snapped.guides;
+      // 8/27 对齐吸附上线后：resize 改几何会把边拉回 anchor（松手复原/几乎拖不动）；仅 move 应用吸附
+      if (active.kind === "move") {
+        rect = snapped.rect;
+      }
     }
     return { rect, guides };
   };
@@ -629,16 +633,28 @@ export function PixelShape({
     if (!active) return;
     if (active.pointerId !== event.pointerId) return;
     applyPendingMoveFrame();
-    const movedFromStart = !pixelRectsNearlyEqual(displayRef.current, active.startRect);
+    let finalRect = displayRef.current;
+    if (commit && active.kind !== "move") {
+      const pointerRect = rectForPointer(event, active).rect;
+      finalRect = preferAdvancedResizeRect(
+        active.startRect,
+        displayRef.current,
+        pointerRect,
+        active.kind,
+      );
+    }
+    const movedFromStart = !pixelRectsNearlyEqual(finalRect, active.startRect);
     const shouldCommit = commit || movedFromStart;
-    const finalRect = shouldCommit ? displayRef.current : active.startRect;
+    if (!shouldCommit) finalRect = active.startRect;
     releasePointerCapture(active, event.pointerId);
     activeRef.current = null;
     syncHint(null);
     onMarkGuidesChange?.(null);
     applyDisplay(finalRect);
-    if (shouldCommit) onCommit?.(withRect(widget, finalRect));
-    else onCancel?.(widget.id);
+    if (shouldCommit) {
+      lastSyncedPropsRectRef.current = null;
+      onCommit?.(withRect(widget, finalRect));
+    } else onCancel?.(widget.id);
     setIsPlayer(false);
     onPlayingChange?.(false);
   };

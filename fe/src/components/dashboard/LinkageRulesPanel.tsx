@@ -5,7 +5,6 @@ import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { Button } from "@/components/ui/button";
 import { SaveFormButton } from "@/components/ui/save-form-button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -17,6 +16,7 @@ import {
 } from "@/components/ui/select";
 import type { Linkage } from "./dashboardFilterUtils";
 import type { LayoutWidget } from "./layoutUtils";
+import { InspectorSwitchRow } from "./inspectorCompact";
 
 type LinkageRule = Linkage["linkageRules"][number];
 
@@ -275,16 +275,15 @@ export function LinkageRulesPanel({
         </div>
         <fieldset className="space-y-2">
           <legend className="text-theme-xs font-medium text-gray-600 dark:text-gray-400">目标图表</legend>
-          <div className="flex flex-wrap gap-3">
+          <div className="space-y-0">
             {chartWidgets.length > 0 ? (
               chartWidgets.map((w) => (
-                <label key={w.id} className="flex cursor-pointer items-center gap-2 text-theme-xs text-gray-700 dark:text-gray-300">
-                  <Checkbox
-                    checked={draft.targetWidgetIds.includes(w.id)}
-                    onCheckedChange={(checked) => toggleTarget(w.id, checked === true)}
-                  />
-                  {w.title}
-                </label>
+                <InspectorSwitchRow
+                  key={w.id}
+                  label={w.title}
+                  checked={draft.targetWidgetIds.includes(w.id)}
+                  onCheckedChange={(checked) => toggleTarget(w.id, checked)}
+                />
               ))
             ) : (
               <p className="text-theme-xs text-gray-400">画布上尚无图表组件。</p>

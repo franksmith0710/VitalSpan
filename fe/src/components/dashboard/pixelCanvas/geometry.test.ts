@@ -11,6 +11,7 @@ import {
   PIXEL_SHAPE_SELECTED_Z_BOOST,
   resolveScaleDesignHeight,
   findTopLevelWidgetsAtCanvasPoint,
+  preferAdvancedResizeRect,
   resolveNextStackedWidgetAtPoint,
   snapScaledContentWidth,
   scaledCanvasMetrics,
@@ -304,5 +305,13 @@ describe("stack pick at canvas point", () => {
       { id: "b", x: 0, y: 0, width: 200, height: 200, order: 1 },
     ];
     expect(findTopLevelWidgetsAtCanvasPoint(stacked, { x: 10, y: 10 })).toEqual(["b", "a"]);
+  });
+
+  it("prefers the resize rect that advanced further from the start", () => {
+    const start = { x: 100, y: 100, width: 300, height: 200 };
+    const pending = { x: 100, y: 100, width: 340, height: 240 };
+    const jittered = { x: 100, y: 100, width: 300, height: 200 };
+    expect(preferAdvancedResizeRect(start, pending, jittered, "se")).toEqual(pending);
+    expect(preferAdvancedResizeRect(start, jittered, pending, "se")).toEqual(pending);
   });
 });

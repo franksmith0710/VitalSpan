@@ -379,3 +379,31 @@ export function resolveNextStackedWidgetAtPoint(
   if (index < 0) return widgetIds[0];
   return widgetIds[(index + 1) % widgetIds.length];
 }
+
+/** resize 相对起点在各活动轴上的推进量（正=放大/外扩，负=缩小） */
+export function resizeAdvancementScore(
+  start: PixelRect,
+  rect: PixelRect,
+  kind: PixelInteractionKind,
+): number {
+  if (kind === "move") return 0;
+  let score = 0;
+  if (kind.includes("e")) score += rect.x + rect.width - (start.x + start.width);
+  if (kind.includes("w")) score += start.x - rect.x;
+  if (kind.includes("s")) score += rect.y + rect.height - (start.y + start.height);
+  if (kind.includes("n")) score += start.y - rect.y;
+  return score;
+}
+
+/** 松手提交：在 pending 与 pointerup 两路结果中取推进更远者，避免末帧吸附/抖动回拉 */
+export function preferAdvancedResizeRect(
+  start: PixelRect,
+  primary: PixelRect,
+  alternate: PixelRect,
+  kind: PixelInteractionKind,
+): PixelRect {
+  const primaryScore = resizeAdvancementScore(start, primary, kind);
+  const alternateScore = resizeAdvancementScore(start, alternate, kind);
+  if (alternateScore > primaryScore) return alternate;
+  return primary;
+}

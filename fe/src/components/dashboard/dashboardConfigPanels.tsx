@@ -14,8 +14,7 @@ import {
   type ColorScheme,
   type DashboardStyleConfig,
 } from "./dashboardStyleConfig";
-import { Checkbox } from "@/components/ui/checkbox";
-import { InspectorInlineColorRow } from "./inspectorCompact";
+import { InspectorInlineColorRow, InspectorSwitchRow } from "./inspectorCompact";
 import { DashboardCanvasBackgroundPanel } from "./dashboardCanvasBackgroundPanel";
 import { DashboardOverallConfigPanel } from "./dashboardOverallConfigPanel";
 import { DashboardThemeStylePanel } from "./dashboardThemeStylePanel";
@@ -349,15 +348,11 @@ export function DashboardWidgetStyleSections({
               onChange={(e) => patchNumberFormat({ unit: e.target.value || undefined })}
             />
           </div>
-          <label className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-400">
-            <Checkbox
-              checked={nf.thousandSeparator !== false}
-              onCheckedChange={(checked) =>
-                patchNumberFormat({ thousandSeparator: checked === true })
-              }
-            />
-            千分符
-          </label>
+          <InspectorSwitchRow
+            label="千分符"
+            checked={nf.thousandSeparator !== false}
+            onCheckedChange={(checked) => patchNumberFormat({ thousandSeparator: checked })}
+          />
           <p
             className="rounded-md bg-gray-50 px-2.5 py-2 text-theme-xs text-gray-600 dark:bg-white/[0.04] dark:text-gray-400"
             data-testid="dashboard-number-format-preview"

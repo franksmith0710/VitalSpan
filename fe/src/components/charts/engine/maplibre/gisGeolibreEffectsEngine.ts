@@ -27,7 +27,7 @@ type MapLibreMap = import("maplibre-gl").Map;
 const EFFECTS_MAP_CLASS = "vs-gis-geolibre-effects-map";
 const EFFECTS_STYLE_ID = "vs-gis-geolibre-effects-overlays";
 const MAP_CANVAS_Z = "4";
-const CONTROL_Z = "5";
+const CONTROL_Z = "6";
 
 function isGlobeProjection(map: MapLibreMap): boolean {
   try {
@@ -159,6 +159,10 @@ export class GisGeolibreEffectsEngine {
     const style = document.createElement("style");
     style.id = EFFECTS_STYLE_ID;
     style.textContent = `
+      .${EFFECTS_MAP_CLASS} .maplibregl-control-container { z-index: ${CONTROL_Z}; pointer-events: auto; }
+      .${EFFECTS_MAP_CLASS} .maplibregl-ctrl-top-right,
+      .${EFFECTS_MAP_CLASS} .maplibregl-ctrl-bottom-left,
+      .${EFFECTS_MAP_CLASS} .maplibregl-ctrl-bottom-right { pointer-events: auto; }
       .${EFFECTS_MAP_CLASS} .maplibregl-boxzoom { z-index: 6; }
       .${EFFECTS_MAP_CLASS} .maplibregl-marker { z-index: ${CONTROL_Z}; }
     `;

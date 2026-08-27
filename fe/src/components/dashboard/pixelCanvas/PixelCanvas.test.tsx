@@ -1094,6 +1094,73 @@ describe("PixelCanvas", () => {
     expect(resized!.height).toBeGreaterThan(200);
   });
 
+  it("keeps southeast resize with neighbors and alignment snap enabled", async () => {
+    const neighbors: PixelLayoutWidget[] = [
+      { id: "w2", type: "chart", title: "上", order: 2, x: 80, y: 20, width: 340, height: 50 },
+      { id: "w3", type: "chart", title: "右", order: 3, x: 420, y: 80, width: 200, height: 200 },
+      { id: "w4", type: "chart", title: "下", order: 4, x: 100, y: 290, width: 300, height: 180 },
+    ];
+    const crowdedLayout: DashboardLayoutV2 = {
+      ...layout,
+      styleConfig: {
+        chrome: {
+          alignmentSnap: {
+            enableMarkLineSnap: true,
+            markLineThresholdPx: 16,
+            snapEdges: true,
+            snapCenters: true,
+          },
+        },
+      },
+      widgets: [widget, ...neighbors],
+    };
+    let currentLayout = crowdedLayout;
+    const onChange = vi.fn((next: DashboardLayoutV2) => {
+      currentLayout = next;
+    });
+    const { rerender } = renderPixelCanvas(
+      <PixelCanvas
+        mode="edit"
+        layout={currentLayout}
+        styleConfig={crowdedLayout.styleConfig}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    await pinPixelHostMetrics();
+    const handle = screen.getByLabelText("调整组件大小：右下");
+    fireEvent.pointerDown(handle, {
+      pointerId: 55,
+      clientX: 400,
+      clientY: 280,
+      button: 0,
+    });
+    fireEvent.pointerMove(document, { pointerId: 55, clientX: 460, clientY: 340 });
+    await flushPixelPointerFrames();
+    fireEvent.pointerUp(document, { pointerId: 55, clientX: 400, clientY: 280 });
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const resized = onChange.mock.calls[0][0].widgets.find((item: PixelLayoutWidget) => item.id === "w1");
+    expect(resized!.width).toBeGreaterThan(300);
+    expect(resized!.height).toBeGreaterThan(200);
+
+    rerenderPixelCanvas(rerender, (
+      <PixelCanvas
+        mode="edit"
+        layout={currentLayout}
+        styleConfig={crowdedLayout.styleConfig}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={onChange}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    ));
+    expect(screen.getByTestId("pixel-shape-w1")).toHaveStyle({
+      width: `${resized!.width}px`,
+      height: `${resized!.height}px`,
+    });
+  });
+
   it("keeps resize commit when overlap is still within collision buffer", async () => {
     const blocker: PixelLayoutWidget = {
       id: "w2",
