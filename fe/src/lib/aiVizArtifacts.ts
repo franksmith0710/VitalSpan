@@ -84,21 +84,52 @@ export function deleteAiVizArtifact(artifactId: string, options?: { unlink?: boo
 }
 
 type AiVizArtifactReferenceField = {
+  field?: string;
+  message?: string;
   dashboardId?: string;
   dashboardName?: string;
   widgetId?: string;
 };
 
+function extractDashboardNamesFromFields(
+  fields: Array<Record<string, unknown>>,
+): string[] {
+  const names: string[] = [];
+  for (const field of fields) {
+    const legacy = field.dashboardName;
+    if (typeof legacy === "string" && legacy) {
+      names.push(legacy);
+      continue;
+    }
+    const message = field.message;
+    if (typeof message === "string") {
+      const match = message.match(/「([^」]+)」/);
+      if (match?.[1]) names.push(match[1]);
+    }
+  }
+  return [...new Set(names)];
+}
+
+/** 合规警告文案：避免技术路径直接进 tooltip */
+export function humanizeAiVizComplianceWarning(message: string): string {
+  if (/payload\.style|styleSchema|styleHooks|manifest\./i.test(message)) {
+    return "样式面板与看板配色可能不会生效";
+  }
+  if (message.length > 96) {
+    return `${message.slice(0, 93)}…`;
+  }
+  return message;
+}
+
 /** 删除失败时拼接引用看板名称（AIVIZ_IN_USE） */
 export function formatAiVizArtifactDeleteError(err: unknown): string {
   const base = mapApiError(err);
   if (err instanceof ApiRequestError && err.code === "AIVIZ_IN_USE" && err.fields?.length) {
-    const names = err.fields
-      .map((field) => (field as AiVizArtifactReferenceField).dashboardName)
-      .filter((name): name is string => Boolean(name));
+    const names = extractDashboardNamesFromFields(
+      err.fields as Array<Record<string, unknown>>,
+    );
     if (names.length > 0) {
-      const unique = [...new Set(names)];
-      return `${base}：${unique.join("、")}`;
+      return `${base}：${names.join("、")}`;
     }
   }
   return base;

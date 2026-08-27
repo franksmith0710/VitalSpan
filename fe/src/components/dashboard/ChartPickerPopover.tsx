@@ -16,11 +16,17 @@ import { cn } from "@/lib/utils";
 import { chartTypeIcon } from "@/lib/chartTypeIcons";
 import type { CustomVizInsertPayload } from "@/components/dashboard/createLayoutWidget";
 import { setCustomVizDragData, type CustomVizDragPayload } from "@/lib/dashboardDnd";
-import { fetchAiVizArtifacts, deleteAiVizArtifact, fetchAiVizArtifactReferences, buildAiVizArtifactDeleteConfirmMessage, formatAiVizArtifactDeleteError, formatAiVizArtifactDeleteSuccess, AI_VIZ_STYLE_COMPLIANCE_LABELS, type AiVizArtifactMeta } from "@/lib/aiVizArtifacts";
+import { fetchAiVizArtifacts, AI_VIZ_STYLE_COMPLIANCE_LABELS, humanizeAiVizComplianceWarning, type AiVizArtifactMeta } from "@/lib/aiVizArtifacts";
 import { queryKeys } from "@/lib/queryKeys";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sparkles, Trash2, TriangleAlert } from "lucide-react";
-import { toast } from "sonner";
+import { useAuth } from "@/context/auth-context";
+import { hasCapability } from "@/lib/capabilities";
+import { sessionUserFromMe } from "@/lib/session";
+import {
+  AiVizArtifactDeleteDialog,
+  type AiVizArtifactDeleteTarget,
+} from "@/components/dashboard/ai-viz/AiVizArtifactDeleteDialog";
 import {
   ChartExploreCatalogTrigger,
   ChartExploreDrawer,
@@ -70,7 +76,7 @@ function CustomVizTile({
   const tierLabel = AI_VIZ_STYLE_COMPLIANCE_LABELS[complianceTier];
   const warningHint =
     complianceWarnings.length > 0
-      ? `${tierLabel}\n${complianceWarnings.map((warning) => warning.message).join("\n")}`
+      ? `${tierLabel}\n${complianceWarnings.map((warning) => humanizeAiVizComplianceWarning(warning.message)).join("\n")}`
       : tierLabel !== AI_VIZ_STYLE_COMPLIANCE_LABELS.full
         ? tierLabel
         : undefined;
@@ -284,9 +290,15 @@ export function ChartPickerPopover({
   className,
 }: ChartPickerPopoverProps) {
   const queryClient = useQueryClient();
+  const { user: authUser } = useAuth();
+  const canRemoveCustomViz = hasCapability(
+    sessionUserFromMe(authUser ?? { username: "访客", roles: ["viewer"] }),
+    "dashboard:edit",
+  );
   const [catalog, setCatalog] = useState<ChartTypeCatalogItem[] | null>(null);
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [activeSectionId, setActiveSectionId] = useState<string>("quota");
+  const [deleteTarget, setDeleteTarget] = useState<AiVizArtifactDeleteTarget | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef(new Map<string, HTMLElement>());
   const scrollingByNavRef = useRef(false);
@@ -308,32 +320,12 @@ export function ChartPickerPopover({
     enabled: Boolean(onInsertCustomViz),
   });
   const customArtifacts = customArtifactsData?.items ?? [];
-  const handleRemoveCustomArtifact = useCallback(
-    (artifactId: string) => {
-      const label =
-        customArtifacts.find((item) => item.artifactId === artifactId)?.manifest.displayName ??
-        "该组件";
-      void fetchAiVizArtifactReferences(artifactId)
-        .then((refsPayload) => {
-          const references = refsPayload.references ?? [];
-          if (!window.confirm(buildAiVizArtifactDeleteConfirmMessage(label, references))) {
-            return undefined;
-          }
-          return deleteAiVizArtifact(artifactId, { unlink: references.length > 0 });
-        })
-        .then((result) => {
-          if (result === undefined) {
-            return;
-          }
-          toast.success(formatAiVizArtifactDeleteSuccess(label, result));
-          void queryClient.invalidateQueries({ queryKey: queryKeys.aiViz.all });
-        })
-        .catch((err: unknown) => {
-          toast.error(formatAiVizArtifactDeleteError(err));
-        });
-    },
-    [queryClient, customArtifacts],
-  );
+  const handleRemoveCustomArtifact = useCallback((artifactId: string) => {
+    const label =
+      customArtifacts.find((item) => item.artifactId === artifactId)?.manifest.displayName ??
+      "该组件";
+    setDeleteTarget({ artifactId, label });
+  }, [customArtifacts]);
   const navSections = useMemo(
     () =>
       onInsertCustomViz
@@ -449,7 +441,7 @@ export function ChartPickerPopover({
                 <h3 className="text-theme-sm font-semibold text-gray-800 dark:text-white/90">自定义</h3>
                 {customArtifacts.length === 0 ? (
                   <p className="text-theme-xs text-gray-500 dark:text-gray-400">
-                    暂无 AI 自定义组件，请先在 VS-AI 生成并保存。
+                    暂无 AI 自定义组件，请先在 AI 组件工作台生成并入库。
                   </p>
                 ) : (
                   <div className="grid grid-cols-4 gap-1">
@@ -458,7 +450,7 @@ export function ChartPickerPopover({
                         key={item.artifactId}
                         item={item}
                         onInsert={onInsertCustomViz}
-                        onRemove={handleRemoveCustomArtifact}
+                        onRemove={canRemoveCustomViz ? handleRemoveCustomArtifact : undefined}
                         onInserted={onInserted}
                         onPaletteDragStart={onPaletteDragStart}
                         onPaletteDragEnd={onPaletteDragEnd}
@@ -489,6 +481,16 @@ export function ChartPickerPopover({
     {!onOpenCatalog ? (
       <ChartExploreDrawer open={catalogOpen} onOpenChange={setCatalogOpen} />
     ) : null}
+    <AiVizArtifactDeleteDialog
+      target={deleteTarget}
+      open={Boolean(deleteTarget)}
+      onOpenChange={(open) => {
+        if (!open) setDeleteTarget(null);
+      }}
+      onDeleted={() => {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.aiViz.all });
+      }}
+    />
     </>
   );
 }

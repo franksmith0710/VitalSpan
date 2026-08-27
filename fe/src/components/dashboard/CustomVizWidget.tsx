@@ -156,7 +156,7 @@ export function CustomVizWidget({
     async function load() {
       const artifactId = cfg.artifactId?.trim();
       if (!artifactId) {
-        setLoadError("未配置 artifactId");
+        setLoadError("未绑定自定义组件，请在组件库中选择或重新配置");
         return;
       }
       const my = ++seq;

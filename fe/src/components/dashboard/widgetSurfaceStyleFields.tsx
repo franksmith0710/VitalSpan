@@ -99,7 +99,7 @@ export function WidgetSurfaceAppearanceFields({
         value={value.backdropBlur}
         fallback={0}
         min={0}
-        max={48}
+        max={64}
         step={1}
         unit="px"
         onChange={(backdropBlur) => onChange({ backdropBlur })}
@@ -184,6 +184,7 @@ export function WidgetSurfaceSpacingFields({
               max={64}
               step={1}
               unit="px"
+              liveUpdate={density === "narrow"}
               onChange={(next) => onChange({ [key]: next })}
             />
           ))}
@@ -226,6 +227,7 @@ export function WidgetSurfaceSpacingFields({
               max={48}
               step={1}
               unit="px"
+              liveUpdate={density === "narrow"}
               onChange={(next) => onChange({ [key]: next })}
             />
           ))}

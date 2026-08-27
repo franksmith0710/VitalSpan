@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { Filter, GripVertical, Plus } from "lucide-react";
 import type { ChartType } from "@/lib/chartViewConfig";
 import { setChartTypeDragData, setFilterWidgetDragData } from "@/lib/dashboardDnd";
@@ -145,7 +146,10 @@ export function WidgetPalette({ onInsert, embedded = false }: WidgetPaletteProps
   useEffect(() => {
     void fetchChartTypeCatalog()
       .then((items) => setCatalog(Array.isArray(items) ? items : null))
-      .catch(() => setCatalog(null));
+      .catch(() => {
+        setCatalog(null);
+        toast.message("图表目录加载失败，已使用本地内置列表");
+      });
   }, []);
 
   const groups = useMemo(() => {

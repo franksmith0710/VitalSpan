@@ -7,7 +7,6 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from subprocess_runner import run_tool
 from config import spec_pack_path
 
 

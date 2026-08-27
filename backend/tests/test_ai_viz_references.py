@@ -60,6 +60,9 @@ def test_delete_artifact_blocks_when_referenced() -> None:
         delete_artifact(db, aid, _actor(owner))
     assert exc.value.code == "AIVIZ_IN_USE"
     assert exc.value.status == 409
+    assert exc.value.fields
+    assert exc.value.fields[0]["field"] == "references[0].dashboardName"
+    assert "screen" in exc.value.fields[0]["message"]
     db.delete.assert_not_called()
 
 

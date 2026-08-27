@@ -43,13 +43,9 @@ describe("isAdminListFillRoute", () => {
 });
 
 describe("isAdminWideScrollRoute", () => {
-  it("matches report, governance, designer, metadata, and detail routes", () => {
+  it("matches report hub and detail routes not on fill list", () => {
     expect(isAdminWideScrollRoute("/admin/reports")).toBe(true);
-    expect(isAdminWideScrollRoute("/admin/reports/center")).toBe(true);
-    expect(isAdminWideScrollRoute("/admin/reports/templates")).toBe(true);
     expect(isAdminWideScrollRoute("/admin/reports/view/node-1")).toBe(true);
-    expect(isAdminWideScrollRoute("/admin/reports/standard/results")).toBe(true);
-    expect(isAdminWideScrollRoute("/admin/reports/standard/setup")).toBe(true);
     expect(isAdminWideScrollRoute("/admin/governance/tickets")).toBe(true);
     expect(isAdminWideScrollRoute("/admin/governance/publish")).toBe(true);
     expect(isAdminWideScrollRoute("/admin/designer")).toBe(true);
@@ -58,6 +54,15 @@ describe("isAdminWideScrollRoute", () => {
     expect(isAdminWideScrollRoute("/admin/themes/dash-1")).toBe(true);
     expect(isAdminWideScrollRoute("/admin/entities/overview")).toBe(true);
     expect(isAdminWideScrollRoute("/admin/ingestion/sync-jobs/j1/history")).toBe(true);
+  });
+
+  it("does not match fill list routes (fill takes precedence)", () => {
+    expect(isAdminWideScrollRoute("/admin/reports/center")).toBe(false);
+    expect(isAdminWideScrollRoute("/admin/reports/schedules")).toBe(false);
+    expect(isAdminWideScrollRoute("/admin/reports/templates")).toBe(false);
+    expect(isAdminWideScrollRoute("/admin/reports/templates/node-1")).toBe(false);
+    expect(isAdminWideScrollRoute("/admin/reports/standard/results")).toBe(false);
+    expect(isAdminWideScrollRoute("/admin/reports/standard/setup")).toBe(false);
   });
 
   it("does not match sync job form fill routes", () => {

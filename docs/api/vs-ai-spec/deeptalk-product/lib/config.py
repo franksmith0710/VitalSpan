@@ -1,4 +1,4 @@
-"""Load integrations/vitalspan config and apply env for vs-ai-spec tools."""
+"""Load deeptalk-product config for vs-ai-spec tools and CI helpers."""
 
 from __future__ import annotations
 
@@ -27,11 +27,11 @@ def integration_root() -> Path:
 def find_integration_root(start: Path | None = None) -> Path:
     here = start or Path.cwd()
     for candidate in (here, *here.parents):
-        if (candidate / "executor" / "cli.py").is_file() and (
-            candidate / "config.yaml.example"
+        if (candidate / "config.yaml.example").is_file() and (
+            candidate / "lib" / "completion_gate.py"
         ).is_file():
             return candidate
-        if (candidate / "integrations" / "vitalspan" / "executor" / "cli.py").is_file():
+        if (candidate / "integrations" / "vitalspan" / "lib" / "completion_gate.py").is_file():
             return candidate / "integrations" / "vitalspan"
     return integration_root()
 
@@ -99,11 +99,9 @@ def spec_pack_path(int_root: Path | None = None) -> Path:
     pack = root / cfg.spec_pack_dir
     if pack.is_dir() and (pack / "tools" / "publish-ai-viz-artifact.py").is_file():
         return pack
-    # Desktop MVP: integration at deeptalk-product/, spec pack is parent
     dev_pack = root.parent
     if (dev_pack / "tools" / "publish-ai-viz-artifact.py").is_file():
         return dev_pack
-    # cwd may be spec pack root (vs-ai-spec-deeptalk-test)
     cwd = Path.cwd()
     if (cwd / "tools" / "publish-ai-viz-artifact.py").is_file():
         return cwd

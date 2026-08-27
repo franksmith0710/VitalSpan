@@ -28,7 +28,7 @@ function MatrixTotalSummaryStrip({ matrixData }: { matrixData: CompareMatrixResu
 
   return (
     <div
-      className="flex shrink-0 flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-gray-200 px-5 py-3 dark:border-gray-800"
+      className="flex shrink-0 flex-wrap items-baseline gap-x-4 gap-y-1 border-b border-gray-200 px-4 py-3 dark:border-gray-800"
       data-testid="standard-analysis-matrix-total-summary"
     >
       <span className="text-theme-xs font-medium text-gray-600 dark:text-gray-300">总量趋势</span>
@@ -72,11 +72,11 @@ export function StandardAnalysisCompareMatrixView({
   };
 
   return (
-    <ListPageTableFrame className="flex min-h-0 flex-1 flex-col px-5 pb-5 pt-0">
+    <ListPageTableFrame className="flex min-h-0 flex-1 flex-col px-4 pb-5 pt-0">
       {matrixData && !isLoading ? <MatrixTotalSummaryStrip matrixData={matrixData} /> : null}
 
       {showChartToggle ? (
-        <div className="flex shrink-0 items-center justify-end px-5 pb-2 pt-3">
+        <div className="flex shrink-0 items-center justify-end px-4 pb-2 pt-3">
           <StandardAnalysisPresentationToggle
             mode={presentationMode}
             onChange={handlePresentationModeChange}
@@ -86,7 +86,7 @@ export function StandardAnalysisCompareMatrixView({
       ) : null}
 
       {presentationMode === "chart" && matrixData && rowCount > 0 ? (
-        <div className="flex min-h-0 flex-1 flex-col px-5 pb-2">
+        <div className="flex min-h-0 flex-1 flex-col px-4 pb-2">
           <StandardAnalysisCompareMatrixChart theme={activeTheme} matrixData={matrixData} />
         </div>
       ) : (

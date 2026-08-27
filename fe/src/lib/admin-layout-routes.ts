@@ -97,6 +97,8 @@ export function isAdminListFillRoute(pathname: string): boolean {
 }
 
 export function isAdminWideScrollRoute(pathname: string): boolean {
+  // fill 路由优先：避免与 ADMIN_WIDE_SCROLL_PATTERNS 中 /admin/reports 前缀重叠
+  if (isAdminListFillRoute(pathname)) return false;
   return ADMIN_WIDE_SCROLL_PATTERNS.some((pattern) => pattern.test(pathname));
 }
 

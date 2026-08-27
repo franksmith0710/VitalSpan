@@ -42,7 +42,7 @@ Agent 系统提示词：[AGENT-SYSTEM-PROMPT.md](./AGENT-SYSTEM-PROMPT.md) · �
 |------|----------|
 | **工作区 iframe 视图** | `instanceConfig.vitalspan`（向导写入）+ execTools 读 env 凭据 |
 | **Agent components.tools** | 环境变量 → 工作区 `config.json` / `local.config.json` → `assets/defaults.json` |
-| **全量 preflight / 金样 scaffold** | 可选 `VITALSPAN_ROOT` 或 Python CLI（见 [PREFLIGHT-DUAL-TRACK.md](./PREFLIGHT-DUAL-TRACK.md)） |
+| **全量 preflight / 金样 scaffold** | 可选 `VITALSPAN_ROOT` + `docs/api/vs-ai-spec/tools/*.py`（见 [PREFLIGHT-DUAL-TRACK.md](./PREFLIGHT-DUAL-TRACK.md)） |
 
 `config.yaml.example` 与 `integrations/vitalspan/` 路径仅 **开发/CI 备用**，见下文。
 
@@ -54,7 +54,7 @@ Agent 系统提示词：[AGENT-SYSTEM-PROMPT.md](./AGENT-SYSTEM-PROMPT.md) · �
 deeptalk/integrations/vitalspan/          # sync 目标（可选）
   config.yaml
   vs-ai-spec/
-  executor/cli.py
+  lib/                                    # completion_gate · route_request
 ```
 
 在 VitalSpan 仓根：

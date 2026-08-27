@@ -61,7 +61,7 @@ import {
 } from "@/components/dashboard/hubCardUi";
 import { cn } from "@/lib/utils";
 import { VizComponentsHubFilters } from "./VizComponentsHubFilters";
-import { VizComponentThumbnailBatchStudio } from "@/components/dashboard/viz-components/VizComponentThumbnailBatchStudio";
+import { AiVizArtifactsHubSection } from "@/components/dashboard/ai-viz/AiVizArtifactsHubSection";
 import { useVizComponentThumbnailBatch } from "@/hooks/useVizComponentThumbnailBatch";
 
 function ComponentCardSkeleton() {
@@ -333,6 +333,8 @@ export function VizComponentsHubPage() {
           />
         ) : null}
       </ListPageSection>
+
+      <AiVizArtifactsHubSection canManage={canCreate} className="mt-6 px-1" />
 
       <InsertVizComponentDialog
         open={Boolean(insertTarget)}

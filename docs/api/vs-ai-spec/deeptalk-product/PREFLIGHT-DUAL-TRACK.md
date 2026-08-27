@@ -8,7 +8,7 @@
 | 档位 | 触发条件 | 能力 | 输出 |
 |------|----------|------|------|
 | **轻量（默认）** | 未设 `VITALSPAN_ROOT` · 无 Python CLI | 插件 `preflight.ts`：manifest · mount · 禁止模式 · 体积 | `preflight ok (plugin local)`；可能 `[info]` 提示全量 |
-| **全量** | `VITALSPAN_ROOT` 或探测到 `executor/cli.py` / `publish-ai-viz-artifact.py` | Python 与 API 对齐的 styleCompliance · fieldSlots 等 | `styleComplianceTier=full` · warnings=0 |
+| **全量** | `VITALSPAN_ROOT` 或探测到 `tools/publish-ai-viz-artifact.py` | Python 与 API 对齐的 styleCompliance · fieldSlots 等 | `styleComplianceTier=full` · warnings=0 |
 
 **结论（当前实现，非缺陷）**：
 
@@ -32,7 +32,7 @@
 | 位置 | 角色 |
 |------|------|
 | `docs/api/vs-ai-spec/tools/*.py` | 金样 · CI · 桌面包 |
-| `deeptalk-product/executor/` | 开发/CI legacy cli |
+| `deeptalk-product/lib/` | completion_gate · route_request（CI 单测） |
 | `deeptalk-plugins/.../dist/*.js` | **产品 Agent 主路径** |
 
 wf3 gate：`ok dashboardId=` + `layout widgets: N`（N≥1）— 插件 TS 已实现；改 Python 侧时须同步。

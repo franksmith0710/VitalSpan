@@ -1034,6 +1034,11 @@
       "configTab": "style",
       "gate": "GATE",
       "sections": [
+        "gisProject",
+        "gisAtmosphere",
+        "gisSun",
+        "gisOverlay",
+        "gisLayers",
         "background",
         "title",
         "remark",
@@ -1785,7 +1790,7 @@
     {
       "id": "gis-map",
       "category": "chart",
-      "styleSections": "background → title → remark → tooltip",
+      "styleSections": "gisProject → gisAtmosphere → gisSun → gisOverlay → gisLayers → background → title → remark → tooltip",
       "inspectorCaps": "label, remark",
       "d3Matrix": "plugin-default",
       "paletteOpacity": "hidden",

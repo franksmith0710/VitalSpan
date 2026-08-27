@@ -35,9 +35,9 @@
 
 ```bash
 cd docs/api/vs-ai-spec/deeptalk-product
-python executor/cli.py vitalspan_scaffold_artifact --id my-x --name "名称"
-python executor/cli.py vitalspan_validate_artifact --file examples/my-x.json
-python executor/cli.py vitalspan_publish_artifact --file examples/my-x.json
+python tools/scaffold-custom-viz.py --id my-x --name "名称" --template generic-blank-html
+python tools/validate-ai-viz-bundle.py --file examples/my-x.json
+python tools/publish-ai-viz-artifact.py --file examples/my-x.json
 ```
 
 wf3 编排工具 **仅插件 Node**；CLI 未实现 compose 时会 `unknown tool`（预期）。

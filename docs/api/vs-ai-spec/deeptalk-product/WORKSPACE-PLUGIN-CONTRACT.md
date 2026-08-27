@@ -22,7 +22,7 @@
     → 正式 BI 编辑与验收：5173（artifactId / dashboardId）
 ```
 
-**禁止**再向客户/内部描述「对接 = 改 DeepTalk 源码 + `integrations/vitalspan/executor/cli.py`」。
+**禁止**再向客户/内部描述「对接 = 改 DeepTalk 源码 + `integrations/vitalspan/executor/`」（已移除 legacy executor）。
 
 ### 1.1 壳 iframe 与 VitalSpan「不做 BI 沙箱」（必读）
 
@@ -58,9 +58,8 @@ Task 文档中的「沙箱内取数」= **DeepTalk 插件视图 CSP**（`connect
 
 以下仅用于 VitalSpan 仓内联调、CI、无 DeepTalk 宿主时的脚本验真，**不得**写进对外产品对接说明：
 
-- `deeptalk-product/executor/cli.py`
-- `scripts/sync-vs-ai-spec-to-deeptalk-repo.ps1`
-- `integrations/vitalspan/` 目录结构
+- `docs/api/vs-ai-spec/tools/*.py` · `deeptalk-product/lib/`（gate/route CI）
+- `scripts/sync-vs-ai-spec-to-deeptalk-repo.ps1`（可选 sync 到 integrations/vitalspan）
 
 ---
 

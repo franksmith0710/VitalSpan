@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { DataTable, ListPageFooter, ListPageTableFrame } from "@/components/layout/list-page-kit";
 import { PanelEmptyState } from "@/components/ui/panel-empty-state";
 import { cn } from "@/lib/utils";
+import { STANDARD_ANALYSIS_CONTENT_PAD_CLASS } from "./standardAnalysisConfigUi";
 import type { AnalysisPack, AnalysisTheme, CompareResult } from "../useStandardAnalysis";
 import type { PresentationMode } from "../standardAnalysisPrefs";
 import {
@@ -132,15 +133,15 @@ export function StandardAnalysisCompareView({
   };
 
   return (
-    <ListPageTableFrame className="flex min-h-0 flex-1 flex-col px-5 pb-5 pt-0">
+    <ListPageTableFrame className={cn("flex min-h-0 flex-1 flex-col pb-5 pt-0", STANDARD_ANALYSIS_CONTENT_PAD_CLASS)}>
       {compareData && !isLoading ? (
-        <div className="px-5 pt-4">
+        <div className="px-4 pt-4">
           <CompareSemanticsBanner activeTheme={activeTheme} compareData={compareData} />
         </div>
       ) : null}
 
       {showChartToggle ? (
-        <div className="flex shrink-0 items-center justify-end px-5 pb-2">
+        <div className="flex shrink-0 items-center justify-end px-4 pb-2">
           <StandardAnalysisPresentationToggle
             mode={presentationMode}
             onChange={handlePresentationModeChange}
@@ -150,7 +151,7 @@ export function StandardAnalysisCompareView({
       ) : null}
 
       {!isLoading && compareData && !hasPreviousSnapshot(compareData) ? (
-        <div className="flex flex-1 items-center justify-center px-5 pb-6">
+        <div className="flex flex-1 items-center justify-center px-4 pb-6">
           <NoPreviousSnapshotState
             pack={pack}
             previousPeriodKey={compareData.previousPeriodKey}
@@ -160,7 +161,7 @@ export function StandardAnalysisCompareView({
           />
         </div>
       ) : presentationMode === "chart" && ready && compareData ? (
-        <div className="flex min-h-0 flex-1 flex-col px-5 pb-2">
+        <div className="flex min-h-0 flex-1 flex-col px-4 pb-2">
           <StandardAnalysisCompareChart theme={activeTheme} compareData={compareData} />
         </div>
       ) : (

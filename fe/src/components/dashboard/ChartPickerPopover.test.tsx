@@ -45,6 +45,12 @@ vi.mock("@/lib/aiVizArtifacts", async (importOriginal) => {
   };
 });
 
+vi.mock("@/context/auth-context", () => ({
+  useAuth: () => ({
+    user: { username: "editor", roles: ["admin"], permissions: ["dashboard:edit"] },
+  }),
+}));
+
 vi.mock("sonner", () => ({
   toast: {
     success: vi.fn(),
@@ -260,13 +266,14 @@ describe("ChartPickerPopover custom viz", () => {
         },
       ],
     });
-    vi.spyOn(window, "confirm").mockReturnValue(true);
 
+    const user = userEvent.setup();
     renderPicker({ onInsertCustomViz: vi.fn() });
     const popover = await screen.findByTestId("chart-picker-popover");
-    await userEvent.click(
+    await user.click(
       within(popover).getByRole("button", { name: /从组件库移除 演示排名条/ }),
     );
+    await user.click(await screen.findByRole("button", { name: "移除" }));
 
     expect(fetchAiVizArtifactReferences).toHaveBeenCalledWith("art-custom-1");
     expect(deleteAiVizArtifact).toHaveBeenCalledWith("art-custom-1", { unlink: true });
@@ -277,15 +284,16 @@ describe("ChartPickerPopover custom viz", () => {
     const { deleteAiVizArtifact } = await import("@/lib/aiVizArtifacts");
     const { toast } = await import("sonner");
     vi.mocked(deleteAiVizArtifact).mockRejectedValueOnce(new Error("network"));
-    vi.spyOn(window, "confirm").mockReturnValue(true);
 
+    const user = userEvent.setup();
     renderPicker({ onInsertCustomViz: vi.fn() });
     const popover = await screen.findByTestId("chart-picker-popover");
-    await userEvent.click(
+    await user.click(
       within(popover).getByRole("button", { name: /从组件库移除 演示排名条/ }),
     );
+    await user.click(await screen.findByRole("button", { name: "移除" }));
 
-    expect(deleteAiVizArtifact).toHaveBeenCalledWith("art-custom-1", { unlink: false });
+    expect(deleteAiVizArtifact).toHaveBeenCalledWith("art-custom-1", { unlink: true });
     expect(toast.error).toHaveBeenCalled();
   });
 });

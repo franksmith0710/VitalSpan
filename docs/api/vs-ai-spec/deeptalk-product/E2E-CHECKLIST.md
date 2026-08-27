@@ -69,20 +69,20 @@ vitalspan_completion_gate workflow=3 + tool_stdout（compose/upload 含 ok dashb
 - [ ] 趋势图问卷结束后 **自动 publish**，不再问「保存到 output/」
 - [ ] 任务结束必须报 `artifactId` / `dashboardId`，不得仅报本地路径
 
-## 6. 开发备用（可选 · CLI）
+## 6. 开发备用（可选 · vs-ai-spec tools）
 
-在 `integrations/vitalspan/`（sync 后）或 VitalSpan 仓 `deeptalk-product/executor/`：
+在 VitalSpan 仓 `docs/api/vs-ai-spec/`（或 sync 后的 `integrations/vitalspan/vs-ai-spec/`）：
 
 ```bash
-python executor/cli.py vitalspan_health_check
-python executor/cli.py vitalspan_scaffold_artifact --id hex-kpi-grid --name "六边形KPI"
+python tools/check-vitalspan-health.py
+python tools/scaffold-custom-viz.py --id hex-kpi-grid --name "六边形KPI" --template generic-blank-html
 python tools/build-hex-kpi-example.py
-python executor/cli.py vitalspan_validate_artifact --file examples/hex-kpi-grid.json
-python executor/cli.py vitalspan_publish_artifact --file examples/hex-kpi-grid.json
-python executor/cli.py vitalspan_completion_gate --workflow 2 --agent-summary "..." --tool-stdout "<publish stdout>"
+python tools/validate-ai-viz-bundle.py --file examples/hex-kpi-grid.json
+python tools/publish-ai-viz-artifact.py --file examples/hex-kpi-grid.json
+python deeptalk-product/lib/completion_gate.py --workflow 2 --agent-summary "..." --tool-stdout "<publish stdout>"
 ```
 
-与插件工具输出语义应对齐；**不作为**客户交付验收主路径。
+与插件工具输出语义应对齐；**不作为**客户交付验收主路径。`deeptalk-product/executor/` 已移除。
 
 ## 7. L3-ZeroRef 闭环（VitalSpan 仓 · 2026-08-26）
 

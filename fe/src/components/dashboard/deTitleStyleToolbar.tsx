@@ -11,7 +11,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { TitleStyleConfig } from "./dashboardStyleConfig";
 import { CHART_FONT_SIZE_OPTIONS, resolveChartFontSizeOptions } from "@/lib/chartFontSizes";
-import { DashboardConfigSlider } from "./deAttrSlider";
+import { ChartDeAttrSliderField } from "./deAttrSlider";
 
 /** @deprecated 使用 CHART_FONT_SIZE_OPTIONS */
 export const CHART_TITLE_FONT_SIZES: readonly number[] = [...CHART_FONT_SIZE_OPTIONS];
@@ -151,12 +151,12 @@ export function DeTitleStyleToolbar({
         <Divider />
 
         <div className="min-w-0 flex-1 px-1">
-          <DashboardConfigSlider
+          <ChartDeAttrSliderField
             compact
             label="字间距"
             value={value.letterSpacing}
             fallback={0}
-            min={0}
+            min={-2}
             max={8}
             step={1}
             unit="px"

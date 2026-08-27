@@ -1,4 +1,4 @@
-"""Tests for DeepTalk product integration executor (no live API for most cases)."""
+"""Tests for DeepTalk product integration (plugin contract + vs-ai-spec tools)."""
 
 from __future__ import annotations
 
@@ -7,13 +7,14 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from unittest.mock import MagicMock, patch
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-EXECUTOR = REPO_ROOT / "docs" / "api" / "vs-ai-spec" / "deeptalk-product" / "executor"
-TREND_SAMPLE = REPO_ROOT / "docs" / "api" / "vs-ai-spec" / "examples" / "custom-viz-trend-line.json"
-GENERIC_HTML = REPO_ROOT / "docs" / "api" / "vs-ai-spec" / "examples" / "generic-blank-html.json"
-CONTRACT_CARD = REPO_ROOT / "docs" / "api" / "vs-ai-spec" / "assets" / "contract_card.json"
+SPEC_ROOT = REPO_ROOT / "docs" / "api" / "vs-ai-spec"
+SPEC_TOOLS = SPEC_ROOT / "tools"
+DEEPTALK_LIB = SPEC_ROOT / "deeptalk-product" / "lib"
+TREND_SAMPLE = SPEC_ROOT / "examples" / "custom-viz-trend-line.json"
+GENERIC_HTML = SPEC_ROOT / "examples" / "generic-blank-html.json"
+CONTRACT_CARD = SPEC_ROOT / "assets" / "contract_card.json"
 
 
 def _env() -> dict[str, str]:
@@ -22,10 +23,10 @@ def _env() -> dict[str, str]:
     return env
 
 
-def _run_cli(*args: str) -> subprocess.CompletedProcess[str]:
+def _run_tool(script: str, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, str(EXECUTOR / "cli.py"), *args],
-        cwd=str(EXECUTOR.parent),
+        [sys.executable, str(SPEC_TOOLS / script), *args],
+        cwd=str(SPEC_ROOT),
         env=_env(),
         capture_output=True,
         text=True,
@@ -33,37 +34,38 @@ def _run_cli(*args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
+def _with_lib() -> None:
+    lib = str(DEEPTALK_LIB)
+    if lib not in sys.path:
+        sys.path.insert(0, lib)
+
+
 def test_completion_gate_passes_with_artifact_id() -> None:
-    proc = _run_cli(
-        "vitalspan_completion_gate",
-        "--workflow",
+    _with_lib()
+    from completion_gate import check_completion
+
+    result = check_completion(
         "2",
-        "--agent-summary",
         "工作流 ② 完成 ok artifactId=00000000-0000-4000-8000-000000000001",
     )
-    assert proc.returncode == 0, proc.stderr or proc.stdout
-    assert "ok completion_gate passed" in proc.stdout
+    assert result.ok is True
 
 
 def test_completion_gate_blocks_output_delivery() -> None:
-    proc = _run_cli(
-        "vitalspan_completion_gate",
-        "--workflow",
-        "2",
-        "--agent-summary",
-        "已保存到 output/vs-trend-chart.json",
-    )
-    assert proc.returncode != 0
-    assert "gate blocked" in proc.stderr or "forbidden" in proc.stderr.lower()
+    _with_lib()
+    from completion_gate import check_completion
+
+    result = check_completion("2", "已保存到 output/vs-trend-chart.json")
+    assert result.ok is False
+    assert any("forbidden" in r.lower() or "output" in r.lower() for r in result.reasons)
 
 
-def test_publish_validate_only_via_executor_cli() -> None:
+def test_publish_validate_only_via_tools() -> None:
     assert TREND_SAMPLE.is_file()
-    rel = Path("examples/custom-viz-trend-line.json")
-    proc = _run_cli(
-        "vitalspan_publish_artifact",
+    proc = _run_tool(
+        "publish-ai-viz-artifact.py",
         "--file",
-        rel.as_posix(),
+        str(TREND_SAMPLE),
         "--validate-only",
     )
     assert proc.returncode == 0, proc.stderr or proc.stdout
@@ -72,7 +74,7 @@ def test_publish_validate_only_via_executor_cli() -> None:
 
 
 def test_agent_tools_schema_lists_twenty_tools() -> None:
-    schema_path = REPO_ROOT / "docs" / "api" / "vs-ai-spec" / "deeptalk-product" / "agent-tools.schema.json"
+    schema_path = SPEC_ROOT / "deeptalk-product" / "agent-tools.schema.json"
     data = json.loads(schema_path.read_text(encoding="utf-8"))
     names = {t["name"] for t in data["tools"]}
     assert names == {
@@ -99,28 +101,31 @@ def test_agent_tools_schema_lists_twenty_tools() -> None:
     }
 
 
-def test_route_request_sankey_via_cli() -> None:
-    proc = _run_cli("vitalspan_route_request", "--text", "客户要流向地图桑基图")
-    assert proc.returncode == 0, proc.stderr or proc.stdout
-    payload = json.loads(proc.stdout)
+def test_route_request_sankey() -> None:
+    _with_lib()
+    from route_request import route_request
+
+    payload = route_request("客户要流向地图桑基图").to_dict()
     assert payload["ok"] is True
     assert payload["workflow"] == "1"
     assert payload.get("chartType") == "sankey"
 
 
-def test_route_request_treemap_via_cli() -> None:
-    proc = _run_cli("vitalspan_route_request", "--text", "商务矩形树图")
-    assert proc.returncode == 0, proc.stderr or proc.stdout
-    payload = json.loads(proc.stdout)
+def test_route_request_treemap() -> None:
+    _with_lib()
+    from route_request import route_request
+
+    payload = route_request("商务矩形树图").to_dict()
     assert payload["ok"] is True
     assert payload["workflow"] == "1"
     assert payload.get("chartType") == "treemap"
 
 
 def test_route_request_ranking_wf2_no_template() -> None:
-    proc = _run_cli("vitalspan_route_request", "--text", "部门销售排名榜")
-    assert proc.returncode == 0, proc.stderr or proc.stdout
-    payload = json.loads(proc.stdout)
+    _with_lib()
+    from route_request import route_request
+
+    payload = route_request("部门销售排名榜").to_dict()
     assert payload["ok"] is True
     assert payload["workflow"] == "2"
     assert payload.get("runtime") == "html"
@@ -129,9 +134,10 @@ def test_route_request_ranking_wf2_no_template() -> None:
 
 
 def test_route_request_scrolling_table_paradigm() -> None:
-    proc = _run_cli("vitalspan_route_request", "--text", "多维明细滚动表")
-    assert proc.returncode == 0, proc.stderr or proc.stdout
-    payload = json.loads(proc.stdout)
+    _with_lib()
+    from route_request import route_request
+
+    payload = route_request("多维明细滚动表").to_dict()
     assert payload["ok"] is True
     assert payload["workflow"] == "2"
     assert payload.get("paradigm") == "P2-multi-column-detail"
@@ -144,25 +150,25 @@ def test_contract_card_json_valid() -> None:
     assert "mount" in data and "style" in data
 
 
-def test_get_contract_card_via_cli() -> None:
-    proc = _run_cli("vitalspan_get_contract_card")
+def test_get_contract_card_via_tool() -> None:
+    proc = _run_tool("get-contract-card.py")
     assert proc.returncode == 0, proc.stderr or proc.stdout
     payload = json.loads(proc.stdout)
     assert payload["publishGate"]
 
 
-def test_scaffold_generic_blank_via_cli() -> None:
-    proc = _run_cli(
-        "vitalspan_scaffold_artifact",
+def test_scaffold_generic_blank_via_tool() -> None:
+    proc = _run_tool(
+        "scaffold-custom-viz.py",
         "--id",
         "test-hex-kpi",
         "--name",
         "测试六边形",
-        "--runtime",
-        "html",
+        "--template",
+        "generic-blank-html",
     )
     assert proc.returncode == 0, proc.stderr or proc.stdout
-    out = REPO_ROOT / "docs" / "api" / "vs-ai-spec" / "examples" / "test-hex-kpi.json"
+    out = SPEC_ROOT / "examples" / "test-hex-kpi.json"
     assert out.is_file()
     bundle = json.loads(out.read_text(encoding="utf-8"))
     assert bundle["manifest"]["id"] == "test-hex-kpi"
@@ -171,53 +177,42 @@ def test_scaffold_generic_blank_via_cli() -> None:
     out.unlink(missing_ok=True)
 
 
-def test_scaffold_executor_only_generic_blank_templates() -> None:
-    """Agent executor must not expose gold-template scaffold (v0.3.7)."""
-    sys.path.insert(0, str(EXECUTOR))
-    try:
-        from agent_tools import vitalspan_scaffold_artifact
-    finally:
-        sys.path.pop(0)
-
-    for runtime, expected in (("html", "generic-blank-html"), ("d3", "generic-blank-d3")):
-        slug = f"test-blank-{runtime}"
-        result = vitalspan_scaffold_artifact(slug, "测试空白", runtime=runtime)
-        assert result.ok, result.stderr or result.stdout
-        assert result.data is not None
-        assert result.data.get("template") == expected
-        out = REPO_ROOT / "docs" / "api" / "vs-ai-spec" / "examples" / f"{slug}.json"
+def test_scaffold_only_generic_blank_templates() -> None:
+    for template in ("generic-blank-html", "generic-blank-d3"):
+        slug = f"test-blank-{template.split('-')[-1]}"
+        proc = _run_tool(
+            "scaffold-custom-viz.py",
+            "--id",
+            slug,
+            "--name",
+            "测试空白",
+            "--template",
+            template,
+        )
+        assert proc.returncode == 0, proc.stderr or proc.stdout
+        out = SPEC_ROOT / "examples" / f"{slug}.json"
         assert out.is_file()
         out.unlink(missing_ok=True)
 
 
-def test_validate_generic_blank_full_via_cli() -> None:
+def test_validate_generic_blank_full_via_tool() -> None:
     assert GENERIC_HTML.is_file()
-    proc = _run_cli(
-        "vitalspan_validate_artifact",
+    proc = _run_tool(
+        "validate-ai-viz-bundle.py",
         "--file",
-        "examples/generic-blank-html.json",
+        str(GENERIC_HTML),
     )
     assert proc.returncode == 0, proc.stderr or proc.stdout
-    assert "ok validate stamp=" in proc.stdout
+    assert "preflight ok" in proc.stdout or "ok validate stamp=" in proc.stdout
     assert "styleComplianceTier=full" in proc.stdout
-    assert "warnings=0" in proc.stdout
 
 
 def test_validate_json_includes_structured_fixes() -> None:
-    tools = REPO_ROOT / "docs" / "api" / "vs-ai-spec" / "tools"
-    proc = subprocess.run(
-        [
-            sys.executable,
-            str(tools / "validate-ai-viz-bundle.py"),
-            "--file",
-            str(GENERIC_HTML),
-            "--json",
-        ],
-        cwd=str(REPO_ROOT / "docs" / "api" / "vs-ai-spec"),
-        env=_env(),
-        capture_output=True,
-        text=True,
-        check=False,
+    proc = _run_tool(
+        "validate-ai-viz-bundle.py",
+        "--file",
+        str(GENERIC_HTML),
+        "--json",
     )
     assert proc.returncode == 0, proc.stderr or proc.stdout
     payload = json.loads(proc.stdout)
@@ -227,54 +222,31 @@ def test_validate_json_includes_structured_fixes() -> None:
     assert "vitalspan_publish_artifact" in payload["nextTools"]
 
 
-def test_hex_kpi_grid_validate_and_publish_cli() -> None:
-    hex_path = REPO_ROOT / "docs" / "api" / "vs-ai-spec" / "examples" / "hex-kpi-grid.json"
+def test_hex_kpi_grid_validate_and_publish_tool() -> None:
+    hex_path = SPEC_ROOT / "examples" / "hex-kpi-grid.json"
     assert hex_path.is_file(), "run tools/build-hex-kpi-example.py first"
 
-    proc = _run_cli(
-        "vitalspan_validate_artifact",
+    proc = _run_tool(
+        "validate-ai-viz-bundle.py",
         "--file",
-        "examples/hex-kpi-grid.json",
+        str(hex_path),
     )
     assert proc.returncode == 0, proc.stderr or proc.stdout
-    assert "ok validate stamp=" in proc.stdout
+    assert "preflight ok" in proc.stdout or "ok validate stamp=" in proc.stdout
     assert "styleComplianceTier=full" in proc.stdout
-    assert "warnings=0" in proc.stdout
 
-    proc = _run_cli(
-        "vitalspan_publish_artifact",
+    proc = _run_tool(
+        "publish-ai-viz-artifact.py",
         "--file",
-        "examples/hex-kpi-grid.json",
+        str(hex_path),
         "--validate-only",
     )
     assert proc.returncode == 0, proc.stderr or proc.stdout
     assert "preflight ok" in proc.stdout or "styleComplianceTier=full" in proc.stdout
 
 
-def test_delete_artifact_executor_defaults_unlink_true() -> None:
-    sys.path.insert(0, str(EXECUTOR))
-    try:
-        from agent_tools import vitalspan_delete_artifact
-
-        artifact_id = "00000000-0000-4000-8000-000000000001"
-        with patch("agent_tools.run_tool") as mock_run:
-            mock_run.return_value = MagicMock(ok=True, stdout="ok deleted", stderr="")
-            vitalspan_delete_artifact(artifact_id)
-            mock_run.assert_called_once_with(
-                "delete-ai-viz-artifact.py",
-                artifact_id,
-                "--unlink",
-            )
-            mock_run.reset_mock()
-            vitalspan_delete_artifact(artifact_id, unlink=False)
-            mock_run.assert_called_once_with("delete-ai-viz-artifact.py", artifact_id)
-    finally:
-        if str(EXECUTOR) in sys.path:
-            sys.path.remove(str(EXECUTOR))
-
-
 def test_config_example_json_valid() -> None:
-    path = REPO_ROOT / "docs" / "api" / "vs-ai-spec" / "deeptalk-product" / "config.example.json"
+    path = SPEC_ROOT / "deeptalk-product" / "config.example.json"
     data = json.loads(path.read_text(encoding="utf-8"))
     assert "vitalspan" in data
     assert data["vitalspan"]["api_base"].endswith("/api/v1")

@@ -1,6 +1,10 @@
 import type { ReactNode } from "react";
 import { Label } from "@/components/ui/label";
+import { LIST_PAGE_CONTENT_PAD_CLASS } from "@/components/layout/list-page-kit";
 import { cn } from "@/lib/utils";
+
+/** 标准分析工作台内容区横向内边距（与报表中心列表页对齐） */
+export const STANDARD_ANALYSIS_CONTENT_PAD_CLASS = LIST_PAGE_CONTENT_PAD_CLASS;
 
 export function ConfigSection({
   title,

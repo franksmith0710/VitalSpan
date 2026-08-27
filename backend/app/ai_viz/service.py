@@ -179,15 +179,14 @@ def delete_artifact(
     if refs and not unlink:
         detail = [
             {
-                "dashboardId": str(item.dashboard_id),
-                "dashboardName": item.dashboard_name,
-                "widgetId": item.widget_id,
+                "field": f"references[{index}].dashboardName",
+                "message": f"仍被看板「{item.dashboard_name}」引用",
             }
-            for item in refs
+            for index, item in enumerate(refs)
         ]
         raise AiVizError(
             "AIVIZ_IN_USE",
-            "组件仍被看板/大屏引用，请先移除 widget 或更换 artifactId",
+            "组件仍被看板/大屏引用，请先从布局中移除对应组件",
             409,
             fields=detail,
         )

@@ -67,7 +67,7 @@ const CODE_MESSAGES: Record<string, string> = {
   VIZ_COMPONENT_UNSUPPORTED_WIDGET: "该组件类型无法发布到组件库",
 
   // AI 自定义组件（artifact 库）
-  AIVIZ_IN_USE: "组件仍被看板/大屏引用，请先在布局中移除对应组件或更换 artifactId",
+  AIVIZ_IN_USE: "组件仍被看板/大屏引用，请先从布局中移除对应组件",
   AIVIZ_FORBIDDEN: "无权删除该自定义组件",
   AIVIZ_NOT_FOUND: "自定义组件不存在或已被删除",
   DASH_OVERVIEW_FORBIDDEN: "无权访问实体总览",

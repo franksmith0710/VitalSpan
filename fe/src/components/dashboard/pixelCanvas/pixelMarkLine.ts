@@ -1,4 +1,5 @@
 import type { PixelCanvasBounds, PixelInteractionKind, PixelRect } from "./geometry";
+import { DEFAULT_MARK_LINE_THRESHOLD_PX } from "../dashboardChromeConfig";
 
 export type MarkLineId = "xt" | "xc" | "xb" | "yl" | "yc" | "yr";
 
@@ -14,7 +15,7 @@ export type DragDirection = {
 };
 
 /** 对齐吸附：屏幕像素阈值（换算为画布坐标后随 scale 放大，缩放手感一致） */
-export const MARK_LINE_SCREEN_THRESHOLD_PX = 10;
+export const MARK_LINE_SCREEN_THRESHOLD_PX = DEFAULT_MARK_LINE_THRESHOLD_PX;
 
 /** @deprecated 仅测试对照 DE 原始 3px */
 export const MARK_LINE_CANVAS_THRESHOLD_PX = 3;

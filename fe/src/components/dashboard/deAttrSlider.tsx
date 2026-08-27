@@ -743,8 +743,12 @@ export function DashboardConfigGridSlider({
   unit = "",
   ariaLabel,
   className,
+  liveUpdate = false,
   onChange,
-}: Omit<DashboardConfigSliderProps, "compact">) {
+  onPreviewChange,
+}: Omit<DashboardConfigSliderProps, "compact"> & {
+  liveUpdate?: boolean;
+}) {
   return (
     <div className={cn("min-w-0 py-1", className)}>
       <DeSliderStackedRow
@@ -755,7 +759,9 @@ export function DashboardConfigGridSlider({
         step={step}
         unit={unit}
         ariaLabel={ariaLabel}
+        liveUpdate={liveUpdate}
         onChange={onChange}
+        onPreview={onPreviewChange}
       />
     </div>
   );
