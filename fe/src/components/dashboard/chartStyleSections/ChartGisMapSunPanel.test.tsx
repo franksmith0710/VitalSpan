@@ -54,7 +54,7 @@ describe("ChartGisMapSunPanel projection", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "太阳" }));
-    expect(screen.getByText("启用太阳光照")).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "启用太阳光照" })).toBeChecked();
     expect(screen.queryByText("请先将投影设为「球面地球」。")).not.toBeInTheDocument();
   });
 
@@ -67,6 +67,6 @@ describe("ChartGisMapSunPanel projection", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "太阳" }));
-    expect(screen.getByText("启用太阳光照")).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "启用太阳光照" })).toBeChecked();
   });
 });

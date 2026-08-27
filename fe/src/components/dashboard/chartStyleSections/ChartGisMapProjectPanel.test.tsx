@@ -6,13 +6,22 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LayoutWidget } from "../layoutUtils";
 import { ChartInspectorProvider } from "../ChartInspectorProvider";
 import { ChartGisMapProjectPanel } from "./ChartGisMapProjectPanel";
-import { registerGisMapViewLiveControl } from "@/components/charts/engine/maplibre/gisMapViewBridge";
+import { applyGisMapControls, registerGisMapViewLiveControl } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 
 vi.mock("@/lib/tileServices", () => ({
   listTileServices: vi.fn(async () => [
     { id: "planet-z15", name: "Planet Z15", enabled: true },
   ]),
 }));
+
+vi.mock("@/components/charts/engine/maplibre/gisMapViewBridge", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/components/charts/engine/maplibre/gisMapViewBridge")>();
+  return {
+    ...actual,
+    applyGisMapControls: vi.fn(() => true),
+    applyGisMapBasemapPatch: vi.fn(() => true),
+  };
+});
 
 function gisWidget(): LayoutWidget {
   return {
@@ -171,5 +180,32 @@ describe("ChartGisMapProjectPanel initial view", () => {
     } finally {
       dispose();
     }
+  });
+});
+
+describe("ChartGisMapProjectPanel map controls", () => {
+  it("uses inspector switches and live-applies navigation control", async () => {
+    vi.mocked(applyGisMapControls).mockClear();
+    const user = userEvent.setup();
+    renderPanel(<ChartGisMapProjectPanel />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("chart-gis-map-project-panel")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByRole("button", { name: "GIS 底图" }));
+
+    expect(screen.getByRole("switch", { name: "导航与指南针" })).not.toBeChecked();
+    expect(screen.getByRole("switch", { name: "全屏" })).not.toBeChecked();
+    expect(screen.getByRole("switch", { name: "比例尺" })).not.toBeChecked();
+    expect(screen.getByRole("switch", { name: "归属信息" })).toBeChecked();
+    expect(screen.getByRole("switch", { name: "经纬网" })).not.toBeChecked();
+
+    await user.click(screen.getByRole("switch", { name: "导航与指南针" }));
+
+    expect(vi.mocked(applyGisMapControls)).toHaveBeenCalledWith(
+      "w-gis",
+      expect.objectContaining({ navigation: true }),
+    );
   });
 });
