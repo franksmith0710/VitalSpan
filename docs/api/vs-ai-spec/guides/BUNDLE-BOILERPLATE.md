@@ -111,9 +111,9 @@ html, body { height: 100%; overflow: hidden; }
 
 - 外层 `overflow: hidden` 防止撑破 widget 壳；**滚动发生在组件内 designated 区域**
 - 禁止「固定 px 布局 + 忽略 layout 变化」；禁止为塞满而 `flex:1` 压扁每一行到不可读
-- 特例：P1/P2 **自动滚动**范式（`scrolling-table` 等）用动画 viewport，不用用户手滚
+- 特例：P1/P2 **自动滚动**交互用动画 viewport，不用用户手滚（参考 `scrolling-table` 金样写法）
 
-金样：`examples/custom-viz-podium-leaderboard.json` · `examples/scrolling-table.bundle.html`
+参考金样（勿整包 scaffold）：`examples/custom-viz-podium-leaderboard.json` · `examples/scrolling-table.bundle.html`
 
 ## 5. 预检告警码
 
@@ -126,15 +126,15 @@ html, body { height: 100%; overflow: hidden; }
 
 修复提示见 `assets/aiviz-publish-hints.json`。
 
-## 6. 金样
+## 6. 参考金样（Agent 起盘仅 generic-blank）
 
-| 范式 | 模板 | 可编辑 `.bundle.html` |
-|------|------|------------------------|
-| P2 流动明细 | `scrolling-table` | `examples/scrolling-table.bundle.html` |
-| P4 通用 DOM | `html-minimal` | `examples/html-minimal.bundle.html` |
-| P1 滚动条图 | `dynamic-scroll-chart` | `examples/dynamic-scroll-chart.bundle.html` |
+| 范式 | 参考 id | 查阅要点 |
+|------|---------|----------|
+| P2 流动明细 | `scrolling-table` | fieldSlots · 自动滚动 viewport |
+| P4 通用 DOM | `html-minimal` | KPI/DOM 布局 |
+| P1 笛卡尔 | `ranking-bar` · `trend-line` | encoding · 动画 · d3 接线 |
 
-脚手架：`python tools/scaffold-custom-viz.py --id my-x --name 名称 --template scrolling-table`
+Agent：`python tools/scaffold-custom-viz.py --id my-x --name 名称`（默认 generic-blank-html）；维护者/CI 才 `--template scrolling-table` 等。
 
 ## 7. 平台六块（displayStyle）消费清单
 

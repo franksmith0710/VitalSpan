@@ -25,7 +25,7 @@ import {
   resolveGisProjectSun,
   type GisProjectSun,
 } from "@/components/charts/engine/maplibre/gisProjectSun";
-import { applyGisMapSun, getGisMapSunSettings } from "@/components/charts/engine/maplibre/gisMapViewBridge";
+import { cn } from "@/lib/utils";
 
 const SUN_HINT =
   "对标 GeoLibre「太阳」：引擎内 play/tick、NOAA 位置与夜半球 canvas 遮罩。";
@@ -110,11 +110,12 @@ export function ChartGisMapSunPanel() {
           />
           启用太阳光照
         </label>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="grid gap-1">
+        <div className="flex items-end gap-2">
+          <div className="grid min-w-0 flex-1 gap-1">
             <InspectorFieldLabel label="日期" />
             <Input
-              className={INSPECTOR_CTRL}
+              className={cn(INSPECTOR_CTRL, "min-w-0 w-full px-2")}
+              size="sm"
               type="date"
               value={date}
               onChange={(event) => {
@@ -124,10 +125,11 @@ export function ChartGisMapSunPanel() {
               aria-label="日期"
             />
           </div>
-          <div className="grid gap-1">
+          <div className="grid w-[7.5rem] shrink-0 gap-1">
             <InspectorFieldLabel label="时间" />
             <Input
-              className={INSPECTOR_CTRL}
+              className={cn(INSPECTOR_CTRL, "min-w-0 w-full px-2 tabular-nums")}
+              size="sm"
               type="time"
               value={time}
               onChange={(event) => {

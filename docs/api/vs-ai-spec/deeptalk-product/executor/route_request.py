@@ -19,18 +19,23 @@ class RouteResult:
     chart_type: str | None = None
     template: str | None = None
     runtime: str | None = None
+    paradigm: str | None = None
     redirect: str | None = None
 
     def to_dict(self) -> dict:
-        return {
+        out = {
             "ok": self.ok,
             "workflow": self.workflow,
             "reason": self.reason,
             "chartType": self.chart_type,
-            "template": self.template,
             "runtime": self.runtime,
             "redirect": self.redirect,
         }
+        if self.paradigm:
+            out["paradigm"] = self.paradigm
+        if self.template:
+            out["template"] = self.template
+        return out
 
 
 def _routing_path() -> Path:
@@ -62,6 +67,7 @@ def route_request(text: str) -> RouteResult:
             chart_type=rule.get("chartType"),
             template=rule.get("template"),
             runtime=rule.get("runtime"),
+            paradigm=rule.get("paradigm"),
             redirect=rule.get("redirect"),
         )
 

@@ -49,7 +49,7 @@ HINTS: dict[str, str] = {
     ),
     "AIVIZ_WARN_DETAIL_TABLE_METRICS": (
         "fieldSlots 与 P2 多维明细范式不符：dimensions.max>1 时须 metrics.min=0,max=0；"
-        "换 scrolling-table 金样或改 manifest（与组件 id 无关）"
+        "generic-blank 起盘后改 manifest；参考 scrolling-table 金样 fieldSlots（勿整包 scaffold）"
     ),
     "AIVIZ_WARN_DOM_HOST_LOOKUP": (
         "禁止 (host||document).getElementById；用 host.querySelector('#vs-cv-*')"

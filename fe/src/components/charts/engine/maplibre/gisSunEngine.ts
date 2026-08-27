@@ -1,4 +1,4 @@
-import type { CanvasSource, LightSpecification } from "maplibre-gl";
+import type { CanvasSource, LightSpecification, SkySpecification } from "maplibre-gl";
 import {
   advanceGisSunClock,
   MS_PER_MINUTE,
@@ -32,6 +32,7 @@ export class GisSunEngine {
   private readonly map: MapLibreMap;
   private settings: GisSunSettings;
   private readonly previousLight: LightSpecification | undefined;
+  private readonly previousSky: SkySpecification | undefined;
   private readonly nightCanvas: HTMLCanvasElement;
   private readonly nightContext: CanvasRenderingContext2D | null;
   private nightImageData: ImageData | null = null;
@@ -59,6 +60,16 @@ export class GisSunEngine {
       saved = undefined;
     }
     this.previousLight = saved;
+    let skySaved: SkySpecification | undefined;
+    try {
+      skySaved = map.getSky();
+      if (skySaved && typeof skySaved["atmosphere-blend"] === "number") {
+        map.setSky({ ...skySaved, "atmosphere-blend": 0 });
+      }
+    } catch {
+      skySaved = undefined;
+    }
+    this.previousSky = skySaved;
     this.nightCanvas = document.createElement("canvas");
     this.nightCanvas.width = NIGHT_CANVAS_WIDTH;
     this.nightCanvas.height = NIGHT_CANVAS_HEIGHT;
@@ -90,6 +101,7 @@ export class GisSunEngine {
     this.removeLayers();
     try {
       if (this.previousLight) this.map.setLight(this.previousLight);
+      if (this.previousSky) this.map.setSky(this.previousSky);
     } catch {
       /* style tearing down */
     }
@@ -100,6 +112,14 @@ export class GisSunEngine {
     if (!this.map.getSource(NIGHT_SOURCE_ID)) {
       this.ensureLayers();
       this.render();
+    }
+    try {
+      const sky = this.map.getSky();
+      if (sky && sky["atmosphere-blend"] !== 0) {
+        this.map.setSky({ ...sky, "atmosphere-blend": 0 });
+      }
+    } catch {
+      /* style without sky */
     }
   }
 

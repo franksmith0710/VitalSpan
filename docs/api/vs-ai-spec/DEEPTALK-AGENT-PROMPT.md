@@ -7,9 +7,10 @@
 
 ## wf2（从零新组件 · 与 AGENT-SYSTEM-PROMPT 一致）
 
+0. `vitalspan_route_request` → 看 `workflow`/`runtime`/`paradigm`；**忽略** route 遗留 `template`
 1. `vitalspan_health_check`
 2. `vitalspan_scaffold_artifact`（默认 **generic-blank-***）
-3. **只改** `renderBusiness` / `#vs-cv-canvas`（勿抄 trend-line 金样）
+3. **只改** `renderBusiness` / `#vs-cv-canvas`（金样仅参考，勿整包 scaffold）
 4. `vitalspan_validate_artifact` → 失败看 **fix/snippet**（或 `vitalspan_get_contract_card`）
 5. `vitalspan_publish_artifact` → **`ok artifactId=`** + **`styleComplianceTier=full`**
 6. `vitalspan_completion_gate --workflow 2` + **tool_stdout**

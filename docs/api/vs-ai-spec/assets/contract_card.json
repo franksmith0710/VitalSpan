@@ -32,5 +32,11 @@
     "rule": "笛卡尔/折线绘图须 rowsToSeries(p) 或 resolveBoundColumns + localeCompare 排序；读 p.encoding；金样仅参考",
     "warns": ["AIVIZ_WARN_DATA_ENCODING", "AIVIZ_WARN_DATA_DOMAIN_SORT"]
   },
-  "publishGate": "styleComplianceTier=full 且 warnings=0"
+  "publishGate": "styleComplianceTier=full 且 warnings=0",
+  "guidance": {
+    "id": "guidance.layers",
+    "rule": "L0 硬契约 · L1 数据/生命周期 warn · L2 金样仅参考 · L3 Agent 自主 renderBusiness",
+    "scaffold": "仅 generic-blank-*；route 返回的 paradigm/runtime 供 fieldSlots 对齐，禁止整包抄金样",
+    "validate": "失败读 fix/snippet 自愈；5173 绑定同数据集验收真源"
+  }
 }

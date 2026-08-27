@@ -1,5 +1,12 @@
 # vs-ai-spec 变更
 
+## 2026-08-27 (范式收口 · 插件 v0.3.7)
+
+- `custom-viz-paradigms.json` v2：`referenceSamples` + `scaffoldPolicy`；Agent **仅** generic-blank 起盘
+- `capability-routing.json`：wf2 去 `template` 强制；补 `paradigm`；折线/排名不与 wf1 抢路由
+- `route_request` 透传 `paradigm`；Agent **忽略** route 遗留 `template`
+- 文档/contract/hints/SKILL：「抄金样」→ 参考 + generic-blank；插件 `scaffoldArtifact` 拒非 generic-blank
+
 ## 2026-08-27 (数据契约 · 插件 v0.3.6)
 
 - generic-blank 壳层注入 `rowsToSeries` / `resolveBoundColumns` / `monotoneCurve`（勿删；只改 renderBusiness）

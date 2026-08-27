@@ -28,10 +28,14 @@ import {
   applyGlobeAtmosphere,
   applyGisMapStylePreservingCamera,
   buildGisConfiguredViewKey,
+  captureGisMapCamera,
+  mountGisLiveCameraTracking,
   mountGisMapControls,
   GLOBE_IDLE_ROTATION_DEG_PER_SEC,
+  restoreGisMapCamera,
   startGisGlobeAutoRotate,
   syncGisMapView,
+  type GisMapCamera,
 } from "@/components/charts/engine/maplibre/gisMapRuntime";
 import { resolveGisProjectSun } from "@/components/charts/engine/maplibre/gisProjectSun";
 import { createGisSunEngine, applyGisSunLive } from "@/components/charts/engine/maplibre/gisSunRuntime";
@@ -80,6 +84,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   onPaintReadyRef.current = onPaintReady;
   const appliedStyleKeyRef = useRef<string | null>(null);
   const syncedViewKeyRef = useRef<string | null>(null);
+  const liveCameraRef = useRef<GisMapCamera | null>(null);
   const overlayFitKeyRef = useRef<string | null>(null);
   const sunEngineRef = useRef<GisSunEngine | null>(null);
   const project = useMemo(() => readGisProject(chartConfig), [chartConfig]);
@@ -181,8 +186,6 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     };
   }, [
     flavor,
-    project.basemapLayers,
-    project.buildings3d,
     project.labelLang,
     project.landColor,
     project.waterColor,
@@ -268,18 +271,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         labelLang: project.labelLang,
         landColor: project.landColor,
         waterColor: project.waterColor,
-        basemapLayers: project.basemapLayers,
-        buildings3d: project.buildings3d,
         projection: project.projection,
-        atmospherePreset: project.atmospherePreset,
         layersStyleKey,
       }),
     [
       flavor,
       layersStyleKey,
-      project.atmospherePreset,
-      project.basemapLayers,
-      project.buildings3d,
       project.labelLang,
       project.landColor,
       project.projection,
@@ -292,7 +289,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     if (!pmtilesStyle) return null;
     const withLayers = appendGisProjectLayersToStyle(pmtilesStyle, layerEntries);
     return applyGisGlobeToStyle(withLayers, project.projection, project.atmospherePreset);
-  }, [layerEntries, pmtilesStyle, project.atmospherePreset, project.projection]);
+  }, [layerEntries, pmtilesStyle, project.projection]);
 
   const styleKey = mapStyleKey;
   const atmosphereKey = useMemo(
@@ -322,6 +319,18 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     if (syncedViewKeyRef.current === key) return;
     if (!syncGisMapView(map, currentView)) return;
     syncedViewKeyRef.current = key;
+    liveCameraRef.current = captureGisMapCamera(map);
+  }, []);
+
+  const resolveInitialView = useCallback(() => {
+    if (liveCameraRef.current) return liveCameraRef.current;
+    const configured = projectRef.current.view ?? DEFAULT_GIS_GLOBE_VIEW;
+    return {
+      center: configured.center,
+      zoom: configured.zoom,
+      bearing: configured.bearing ?? 0,
+      pitch: configured.pitch ?? 0,
+    };
   }, []);
 
   useEffect(() => {
@@ -331,28 +340,34 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     let cancelled = false;
     let map: MapLibreMap | null = null;
     let resyncDataLayers: (() => void) | undefined;
+    let disposeLiveCamera: (() => void) | undefined;
     setGisPaintState("loading");
 
     void (async () => {
       const maplibregl = await loadMapLibreRuntime();
       if (cancelled || !hostRef.current) return;
 
-      const initialView = projectRef.current.view ?? DEFAULT_GIS_GLOBE_VIEW;
+      const initialView = resolveInitialView();
 
       map = new maplibregl.Map({
         container: host,
         style,
         center: initialView.center,
         zoom: initialView.zoom,
-        bearing: initialView.bearing ?? 0,
-        pitch: initialView.pitch ?? 0,
+        bearing: initialView.bearing,
+        pitch: initialView.pitch,
         attributionControl: false,
         transformRequest: gisMapTransformRequest,
         canvasContextAttributes: { preserveDrawingBuffer: true },
       });
       mapRef.current = map;
       appliedStyleKeyRef.current = styleKey;
-      syncedViewKeyRef.current = null;
+      syncedViewKeyRef.current = liveCameraRef.current
+        ? buildGisConfiguredViewKey(initialView)
+        : null;
+      disposeLiveCamera = mountGisLiveCameraTracking(map, (camera) => {
+        liveCameraRef.current = camera;
+      });
 
       // style.load 仅重挂散点层（8/25 febfba53 模式）；勿在此 reload PMTiles 或重复 patch 底图。
       resyncDataLayers = () => {
@@ -395,7 +410,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           fog: current.fog,
           atmospherePreset: current.atmospherePreset,
         });
-        applyConfiguredView(map);
+        if (liveCameraRef.current) {
+          restoreGisMapCamera(map, liveCameraRef.current);
+        } else {
+          applyConfiguredView(map);
+        }
         syncLayersRuntime(map);
         setMapRuntimeEpoch((epoch) => epoch + 1);
         map.resize();
@@ -414,6 +433,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       cancelled = true;
       setMapErrorHint(null);
       setGisPaintState("pending");
+      if (map) {
+        liveCameraRef.current = captureGisMapCamera(map);
+        disposeLiveCamera?.();
+      }
       if (map && resyncDataLayers) {
         map.off("style.load", resyncDataLayers);
       }
@@ -422,7 +445,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       appliedStyleKeyRef.current = null;
       syncedViewKeyRef.current = null;
     };
-  }, [applyConfiguredView, mapBootstrapKey, renderBasemap]);
+  }, [applyConfiguredView, mapBootstrapKey, renderBasemap, resolveInitialView]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -469,27 +492,32 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     if (!map || !style) return;
     if (appliedStyleKeyRef.current === styleKey) return;
 
-    applyGisMapStylePreservingCamera(map, style, () => {
-      applyBasemapRuntimePatch(map, {
-        basemapLayers: project.basemapLayers,
-        buildings3d: project.buildings3d !== false,
-        earthOpacity,
-      });
-      applyGlobeAtmosphere(
-        map,
-        {
-          projection: project.projection,
-          fog: project.fog,
-          atmospherePreset: project.atmospherePreset,
-        },
-        { preserveCamera: true },
-      );
-      syncLayersRuntime(map);
-      setMapRuntimeEpoch((epoch) => epoch + 1);
-      map.resize();
-      setGisPaintState("ready");
-      onPaintReadyRef.current?.();
-    });
+    applyGisMapStylePreservingCamera(
+      map,
+      style,
+      () => {
+        applyBasemapRuntimePatch(map, {
+          basemapLayers: project.basemapLayers,
+          buildings3d: project.buildings3d !== false,
+          earthOpacity,
+        });
+        applyGlobeAtmosphere(
+          map,
+          {
+            projection: project.projection,
+            fog: project.fog,
+            atmospherePreset: project.atmospherePreset,
+          },
+          { preserveCamera: true },
+        );
+        syncLayersRuntime(map);
+        setMapRuntimeEpoch((epoch) => epoch + 1);
+        map.resize();
+        setGisPaintState("ready");
+        onPaintReadyRef.current?.();
+      },
+      liveCameraRef.current,
+    );
     appliedStyleKeyRef.current = styleKey;
   }, [
     earthOpacity,
@@ -697,6 +725,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         const map = mapRef.current;
         if (!map || !syncGisMapView(map, nextView)) return false;
         syncedViewKeyRef.current = buildGisConfiguredViewKey(nextView);
+        liveCameraRef.current = {
+          center: nextView.center,
+          zoom: nextView.zoom,
+          bearing: nextView.bearing ?? 0,
+          pitch: nextView.pitch ?? 0,
+        };
         return true;
       },
       applyAtmosphere: (ctx) => {

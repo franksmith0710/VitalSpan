@@ -10,10 +10,10 @@ DeepTalk **不必**猜 70 步。固定流程：**脚手架 → 改 render → �
 REM 0) 健康检查
 python tools\check-vitalspan-health.py
 
-REM 1) 从金样复制（禁止从零写 manifest）
+REM 1) 脚手架（Agent 仅 generic-blank；金样用 list/get 参考，禁止整包 scaffold）
 python tools\scaffold-custom-viz.py --id my-widget --name 我的组件
-REM 专用范式才指定 template，例如流动表：
-REM python tools\scaffold-custom-viz.py --id my-scroll --name 流动表 --template scrolling-table
+python tools\scaffold-custom-viz.py --id my-trend --name 趋势 --template generic-blank-d3
+REM 维护者/CI 才用 --template scrolling-table 等；DeepTalk Agent 勿用
 
 REM 2) 改 examples\my-scroll-table.bundle.html 或 JSON 内 index.html
 REM    保留：host.vsCv.mount · (p&&p.style) · id=vs-cv-* · fieldSlots
@@ -28,18 +28,19 @@ REM 必须看到: ok artifactId=... styleComplianceTier=full warnings: none
 
 插件：`vitalspan_publish_artifact` **会先跑本地预检**（v0.2.7+），失败直接返回「修复提示」，禁止盲试 POST。
 
-## 2. 范式 × 金样（全部 5 套 scaffold · 禁止混用）
+## 2. 范式 × 参考金样（Agent 起盘仅 generic-blank）
 
-| 范式 | 何时用 | template | runtime | dimensions | metrics |
-|------|--------|----------|---------|------------|---------|
-| **P1 笛卡尔** | 类别 + 数值；排名/趋势 | `ranking-bar` · `trend-line` | html / d3 | min≥1，通常 max=1 | min≥1 |
-| **P2 多维明细** | 多列平铺、无聚合 | **`scrolling-table`** | html | min≥1，max>1 | **min=0, max=0** |
-| **P3 滚动条** | 单列文案 + 等级 | `alert-feed` | html | min=1, max=1 | min=1, max=1 |
-| **P4 通用 DOM** | KPI/简单双列/未定 | `html-minimal` | html | min≥1 | min≥1 |
+| 范式 | 何时用 | Agent scaffold | 参考金样（勿整包抄） | runtime | fieldSlots 要点 |
+|------|--------|----------------|----------------------|---------|-----------------|
+| **P5 开放** | 默认 / 新形态 | `generic-blank-*` | — | html / d3 | dim max=1, metrics 1–8 |
+| **P1 笛卡尔** | 排名/趋势/对比 | `generic-blank-*` | ranking-bar · trend-line | html / d3 | dim max=1, metrics max=1 |
+| **P2 多维明细** | 多列平铺 | `generic-blank-html` + **改 fieldSlots** | scrolling-table | html | dim max>1, **metrics 0** |
+| **P3 滚动条** | 单列文案 | `generic-blank-html` | alert-feed | html | 1×1 |
+| **P4 通用 DOM** | KPI/未定 | `generic-blank-html` | html-minimal · hex-kpi-grid | html | 按需 |
 
-DeepTalk 插件真源：`deeptalk-plugins/plugins/vitalspan/assets/custom-viz-paradigms.json`
+DeepTalk 插件真源：`assets/custom-viz-paradigms.json`（`referenceSamples` ≠ scaffold）
 
-**不要**为每个业务 id 新建金样；在 scaffold 出的 `examples/<id>.json` 上改 HTML，**fieldSlots 须与范式一致**。
+**不要**为每个业务 id 新建金样；在 generic-blank 上只改 `renderBusiness`，**fieldSlots 须与范式一致**。
 
 ## 3. manifest 必填（缺一 422）
 

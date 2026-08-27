@@ -25,7 +25,7 @@ POST/PUT `/api/v1/ai-viz/artifacts` 成功仍返回 `warnings[]`（不阻断入�
 | `AIVIZ_WARN_STYLE_COMPLIANCE` | 全 bundle 未引用 `payload.style` / `p.style` **且** 无 `--vs-style-*` / `--vs-palette-*` | 样式面板与看板配色可能不生效 |
 | `AIVIZ_WARN_LAYOUT_FALLBACK` | 仅 `clientWidth \|\| 320` 且无 `payload.layout` | 拖放 resize 可能留白 |
 | `AIVIZ_WARN_PLATFORM_DUPLICATE_STYLE` | styleSchema 声明 `maxItems`/`refreshMode`/六块键等与平台检查器重复 | 删 schema 项；条数用数据 Tab「结果展示」→ `payload.rows` |
-| `AIVIZ_WARN_PLATFORM_STYLE_KEYS` | 读了 `p.style` 但未消费六块键或 `--vs-palette-*` | 复制 `BUNDLE-BOILERPLATE.md` §7 `resolveStyle` 模板 |
+| `AIVIZ_WARN_PLATFORM_STYLE_KEYS` | 读了 `p.style` 但未消费六块键或 `--vs-palette-*` | 用 scaffold 壳层 `resolveStyle`（见 BUNDLE-BOILERPLATE §7） |
 | `AIVIZ_WARN_DOM_HOST_LOOKUP` | entry 含 `(host\|\|document).getElementById` | 宿主 div 上无效，预览可能空白 |
 | `AIVIZ_WARN_DOM_DOCUMENT_LOOKUP` | entry 含 `document.getElementById` | 多实例抢节点 |
 
@@ -65,13 +65,13 @@ CSS 侧优先：
 | 在 schema 重复声明 `backgroundShow` / `titleShow` | 与平台六块冲突，行为难预测 |
 | bundle 自画标题栏 | 与 pixel/grid 外壳重复 |
 
-## 官方金样
+## 官方参考金样
 
-`docs/api/vs-ai-spec/examples/custom-viz-*.json` 须 **零 warnings**（CI 门禁）。推荐复制：
+`docs/api/vs-ai-spec/examples/custom-viz-*.json` 须 **零 warnings**（CI 门禁）。Agent **起盘 generic-blank**；下列仅 **参考** fieldSlots/动画/数据接线（禁止整包 scaffold）：
 
 - 排名条：`custom-viz-ranking-bar-medal.json`
 - 动态趋势：`custom-viz-trend-line.json`
-- KPI 卡片：`custom-viz-pulse-kpi.json`
+- KPI 卡片：`custom-viz-pulse-kpi.json` · `hex-kpi-grid.json`
 - 环形进度：`custom-viz-ring-progress.json`
 
 ## API 响应

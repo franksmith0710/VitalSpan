@@ -32,7 +32,6 @@ import {
   writeGisProjectLayers,
   type GisLayerKind,
   type GisProjectLayer,
-  type GisProjectLayerBinding,
 } from "@/components/charts/engine/maplibre/gisProjectLayers";
 import { syncGisMapViewLayers } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 import { resolveGisChartColors } from "@/lib/resolveGisChartColors";
@@ -110,20 +109,6 @@ export function ChartGisMapLayersPanel() {
     (stylePatch: GisProjectOverlay) => {
       if (!selectedLayer) return;
       patchSelectedLayer({ style: { ...selectedLayer.style, ...stylePatch } });
-    },
-    [patchSelectedLayer, selectedLayer],
-  );
-
-  const patchSelectedBinding = useCallback(
-    (field: keyof GisProjectLayerBinding, value: string) => {
-      if (!selectedLayer) return;
-      const next = { ...(selectedLayer.binding ?? {}) };
-      const trimmed = value.trim();
-      if (trimmed) next[field] = trimmed;
-      else delete next[field];
-      patchSelectedLayer({
-        binding: Object.keys(next).length > 0 ? next : undefined,
-      });
     },
     [patchSelectedLayer, selectedLayer],
   );
@@ -270,55 +255,6 @@ export function ChartGisMapLayersPanel() {
               checked={resolvedStyle.autoFit}
               onCheckedChange={(autoFit) => patchSelectedStyle({ autoFit })}
             />
-
-            <div className="grid gap-2 rounded-lg border border-dashed border-gray-200 p-2 dark:border-gray-800">
-              <InspectorFieldLabel
-                label="字段绑定"
-                hint="留空则使用数据 Tab 槽位；覆写后仅本图层生效"
-              />
-              <div className="grid grid-cols-2 gap-2">
-                <div className="grid gap-1">
-                  <InspectorFieldLabel label="经度字段" />
-                  <Input
-                    className={INSPECTOR_CTRL}
-                    value={selectedLayer.binding?.lngField ?? ""}
-                    placeholder="默认槽位"
-                    onChange={(event) => patchSelectedBinding("lngField", event.target.value)}
-                    aria-label="经度字段"
-                  />
-                </div>
-                <div className="grid gap-1">
-                  <InspectorFieldLabel label="纬度字段" />
-                  <Input
-                    className={INSPECTOR_CTRL}
-                    value={selectedLayer.binding?.latField ?? ""}
-                    placeholder="默认槽位"
-                    onChange={(event) => patchSelectedBinding("latField", event.target.value)}
-                    aria-label="纬度字段"
-                  />
-                </div>
-                <div className="grid gap-1">
-                  <InspectorFieldLabel label="指标字段" />
-                  <Input
-                    className={INSPECTOR_CTRL}
-                    value={selectedLayer.binding?.metricField ?? ""}
-                    placeholder="默认槽位"
-                    onChange={(event) => patchSelectedBinding("metricField", event.target.value)}
-                    aria-label="指标字段"
-                  />
-                </div>
-                <div className="grid gap-1">
-                  <InspectorFieldLabel label="标签字段" />
-                  <Input
-                    className={INSPECTOR_CTRL}
-                    value={selectedLayer.binding?.labelField ?? ""}
-                    placeholder="默认槽位"
-                    onChange={(event) => patchSelectedBinding("labelField", event.target.value)}
-                    aria-label="标签字段"
-                  />
-                </div>
-              </div>
-            </div>
 
             <ChartGisMapLayerStyleFields
               resolved={resolvedStyle}

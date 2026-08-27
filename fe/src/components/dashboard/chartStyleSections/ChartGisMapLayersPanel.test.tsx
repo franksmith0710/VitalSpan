@@ -1,6 +1,6 @@
 import { type ReactElement } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LayoutWidget } from "../layoutUtils";
@@ -79,28 +79,6 @@ describe("ChartGisMapLayersPanel", () => {
           }),
         }),
       );
-    });
-  });
-
-  it("writes layer binding lngField override", async () => {
-    const onChange = vi.fn();
-    renderPanel(<ChartGisMapLayersPanel />, onChange);
-    const user = userEvent.setup();
-
-    await waitFor(() => {
-      expect(screen.getByTestId("chart-gis-map-layers-panel")).toBeInTheDocument();
-    });
-
-    await user.click(screen.getByRole("button", { name: "GIS 图层" }));
-    fireEvent.change(screen.getByLabelText("经度字段"), { target: { value: "longitude" } });
-
-    await waitFor(() => {
-      const matched = onChange.mock.calls.some(([config]) =>
-        config.nativeBody?.gisProject?.layers?.some(
-          (layer: { binding?: { lngField?: string } }) => layer.binding?.lngField === "longitude",
-        ),
-      );
-      expect(matched).toBe(true);
     });
   });
 });

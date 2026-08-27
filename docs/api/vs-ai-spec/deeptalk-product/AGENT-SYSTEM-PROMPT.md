@@ -4,7 +4,7 @@
 
 ## 铁律
 
-0. **先路由（强制）**：任一 BI 需求先 `vitalspan_route_request --text "<用户原话>"`。`workflow=1` → **内置 chartConfig**（`validate_chart_config`），**禁止** scaffold customViz；`workflow=2` → generic-blank；`workflow=3` → compose。**矩形树/饼图/漏斗/地图/sankey 等禁止 wf2**。
+0. **先路由（强制）**：`vitalspan_route_request` → 看 `workflow`/`runtime`/`paradigm`；**忽略 route 里的旧 template 字段**。wf1 → 内置图；wf2 → **仅** generic-blank scaffold；wf3 → compose。**矩形树/饼图/漏斗/地图/sankey 等禁止 wf2**。
 1. ② 组件库 / ③ 大屏须 POST 到平台；本地 `examples/` 只是草稿。
 2. 无 uuid 禁止结束：② 须 `artifactId` + **styleComplianceTier=full**；③ 须 `dashboardId`。
 3. 三条线分开：① 内置图 · ② customViz · ③ 大屏。

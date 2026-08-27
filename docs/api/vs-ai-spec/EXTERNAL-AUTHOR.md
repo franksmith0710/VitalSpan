@@ -28,7 +28,7 @@
 | 步 | 动作 | 成功标志 |
 |----|------|----------|
 | 0 | `python tools/check-vitalspan-health.py` | ok |
-| 1 | 读 `00-REQUIREMENTS` + `PLATFORM-SLA`；d3 照抄 `custom-viz-d3-bundle.json` 的 `mount` | — |
+| 1 | 读 `00-REQUIREMENTS` + `PLATFORM-SLA`；d3 参考 `custom-viz-d3-bundle.json` 的 `mount`；起盘 generic-blank | — |
 | 2 | 草稿 `examples/<name>.json`（禁止 `output/` 当交付目录） | JSON 合法 |
 | 3 | **`python tools/publish-ai-viz-artifact.py --file examples/<name>.json`** | **`ok artifactId=<uuid>`** |
 

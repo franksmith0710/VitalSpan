@@ -39,8 +39,9 @@ export function applyGisMapStylePreservingCamera(
   map: MapLibreMap,
   style: StyleSpecification,
   onReady?: () => void,
+  cameraOverride?: GisMapCamera | null,
 ) {
-  const camera = captureGisMapCamera(map);
+  const camera = cameraOverride ?? captureGisMapCamera(map);
   map.setStyle(style);
   map.once("style.load", () => {
     const restore = () => restoreGisMapCamera(map, camera);
@@ -52,6 +53,24 @@ export function applyGisMapStylePreservingCamera(
       onReady?.();
     });
   });
+}
+
+/** 编辑态：拖拽后的实时相机优先于尚未写回的 gisProject.view。 */
+export function mountGisLiveCameraTracking(
+  map: MapLibreMap,
+  onCameraChange: (camera: GisMapCamera) => void,
+): () => void {
+  const sync = () => onCameraChange(captureGisMapCamera(map));
+  map.on("moveend", sync);
+  map.on("zoomend", sync);
+  map.on("rotateend", sync);
+  map.on("pitchend", sync);
+  return () => {
+    map.off("moveend", sync);
+    map.off("zoomend", sync);
+    map.off("rotateend", sync);
+    map.off("pitchend", sync);
+  };
 }
 
 /** 球面模式下 areTilesLoaded 可能长期 false；首帧 idle 即可视为可展示。 */

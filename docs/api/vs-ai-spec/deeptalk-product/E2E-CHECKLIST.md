@@ -26,7 +26,7 @@
 | refs | `vitalspan_list_artifact_dashboard_refs` | 被引用时列出 dashboardId |
 | delete | `vitalspan_delete_artifact` | `ok deleted`；仍被引用时 **409** |
 | delete dash | `vitalspan_delete_dashboard` | `ok deleted dashboardId=...` |
-| route | `vitalspan_route_request` | JSON `workflow` 1/2/3 |
+| route | `vitalspan_route_request` | JSON `workflow` 1/2/3；wf2 含 `paradigm`/`runtime`，**无** wf2 `template` |
 | compose | `vitalspan_compose_dashboard` | `ok dashboardId=` + `layout widgets: N`（N≥1） |
 
 - [ ] DeepTalk Agent 已内置 [AGENT-SYSTEM-PROMPT.md](./AGENT-SYSTEM-PROMPT.md)
@@ -85,7 +85,7 @@ python executor/cli.py vitalspan_completion_gate --workflow 2 --agent-summary ".
 - [x] `examples/hex-kpi-grid.json`（验收金样 · 已 publish 可复测）
 - [x] validate → publish → `completion_gate wf2` 绿（CLI）
 - [x] `AGENT-SYSTEM-PROMPT.md` ≤80 行 · `DEEPTALK-AGENT-PROMPT.md` 已对齐
-- [x] 插件 **v0.3.6** sync + `release/vitalspan-v0.3.6.zip`（数据契约 rowsToSeries · DATA_* lint · 金样仅参考）
+- [x] 插件 **v0.3.7** sync + `release/vitalspan-v0.3.7.zip`（范式收口 · scaffold 仅 generic-blank · paradigm 路由）
 - [ ] DeepTalk 安装 zip 并重启 · 新 wf2 折线须 validate 0 warnings（含 DATA_ENCODING/SORT）
 
 ## VitalSpan CI 参考

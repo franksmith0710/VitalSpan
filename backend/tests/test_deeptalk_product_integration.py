@@ -116,6 +116,27 @@ def test_route_request_treemap_via_cli() -> None:
     assert payload.get("chartType") == "treemap"
 
 
+def test_route_request_ranking_wf2_no_template() -> None:
+    proc = _run_cli("vitalspan_route_request", "--text", "部门销售排名榜")
+    assert proc.returncode == 0, proc.stderr or proc.stdout
+    payload = json.loads(proc.stdout)
+    assert payload["ok"] is True
+    assert payload["workflow"] == "2"
+    assert payload.get("runtime") == "html"
+    assert payload.get("paradigm") == "P1-cartesian"
+    assert "template" not in payload
+
+
+def test_route_request_scrolling_table_paradigm() -> None:
+    proc = _run_cli("vitalspan_route_request", "--text", "多维明细滚动表")
+    assert proc.returncode == 0, proc.stderr or proc.stdout
+    payload = json.loads(proc.stdout)
+    assert payload["ok"] is True
+    assert payload["workflow"] == "2"
+    assert payload.get("paradigm") == "P2-multi-column-detail"
+    assert "template" not in payload
+
+
 def test_contract_card_json_valid() -> None:
     data = json.loads(CONTRACT_CARD.read_text(encoding="utf-8"))
     assert data["version"] == 1
@@ -145,7 +166,27 @@ def test_scaffold_generic_blank_via_cli() -> None:
     bundle = json.loads(out.read_text(encoding="utf-8"))
     assert bundle["manifest"]["id"] == "test-hex-kpi"
     assert "renderBusiness" in bundle["files"]["index.html"]
+    assert "rowsToSeries" in bundle["files"]["index.html"]
     out.unlink(missing_ok=True)
+
+
+def test_scaffold_executor_only_generic_blank_templates() -> None:
+    """Agent executor must not expose gold-template scaffold (v0.3.7)."""
+    sys.path.insert(0, str(EXECUTOR))
+    try:
+        from agent_tools import vitalspan_scaffold_artifact
+    finally:
+        sys.path.pop(0)
+
+    for runtime, expected in (("html", "generic-blank-html"), ("d3", "generic-blank-d3")):
+        slug = f"test-blank-{runtime}"
+        result = vitalspan_scaffold_artifact(slug, "测试空白", runtime=runtime)
+        assert result.ok, result.stderr or result.stdout
+        assert result.data is not None
+        assert result.data.get("template") == expected
+        out = REPO_ROOT / "docs" / "api" / "vs-ai-spec" / "examples" / f"{slug}.json"
+        assert out.is_file()
+        out.unlink(missing_ok=True)
 
 
 def test_validate_generic_blank_full_via_cli() -> None:

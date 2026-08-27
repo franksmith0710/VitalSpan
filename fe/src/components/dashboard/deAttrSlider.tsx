@@ -469,6 +469,7 @@ export function ChartDeSliderField({
           density="narrow"
           labelTone="field"
           disabled={disabled}
+          liveUpdate={liveUpdate}
           onChange={onChange}
           onPreview={onPreviewChange}
         />
@@ -501,6 +502,7 @@ export function ChartDeSliderField({
         max={max}
         step={step}
         disabled={disabled}
+        liveUpdate={liveUpdate}
         ariaLabel={ariaLabel ?? label}
         ariaValuetext={display}
         onPreview={(value) => {
@@ -809,6 +811,7 @@ export function DeAttrSubSliderRow({
           min={min}
           max={max}
           step={step}
+          liveUpdate
           ariaLabel={ariaLabel}
           ariaValuetext={display}
           onPreview={handlePreview}

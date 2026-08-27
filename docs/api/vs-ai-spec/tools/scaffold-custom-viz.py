@@ -3,6 +3,7 @@
 
   python tools/scaffold-custom-viz.py --id my-widget --name 我的组件
   python tools/scaffold-custom-viz.py --id my-widget --name 我的组件 --template generic-blank-d3
+  # 维护者/CI 才用金样 template；DeepTalk Agent 须走 vitalspan_scaffold_artifact（仅 generic-blank）
   python tools/scaffold-custom-viz.py --id my-scroll-table --name 我的流动表 --template scrolling-table
 
 Then edit renderBusiness / #vs-cv-canvas in examples/<id>.json, then validate + publish:
@@ -45,7 +46,7 @@ def main() -> None:
         "--template",
         default=DEFAULT_TEMPLATE,
         choices=sorted(TEMPLATES.keys()),
-        help="gold template (default generic-blank-html; trend-line/ranking-bar only when that paradigm applies)",
+        help="gold template (default generic-blank-html; Agent 工具仅 generic-blank；金样 template 仅维护者/CI)",
     )
     parser.add_argument("--out", type=Path, default=None, help="output json path")
     args = parser.parse_args()

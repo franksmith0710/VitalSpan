@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   advanceGlobeLongitude,
+  applyGisMapStylePreservingCamera,
   GLOBE_IDLE_ROTATION_DEG_PER_SEC,
   markGisMapPaintReady,
+  mountGisLiveCameraTracking,
   normalizeGlobeLongitude,
   REAL_EARTH_ROTATION_DEG_PER_SEC,
   whenGisMapStyleReady,
@@ -67,6 +69,67 @@ describe("whenGisMapStyleReady", () => {
     styleLoaded = true;
     handlers.get("style.load")?.();
     expect(run).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("applyGisMapStylePreservingCamera", () => {
+  it("restores override camera after style.load", () => {
+    const jumpTo = vi.fn();
+    const resize = vi.fn();
+    const handlers = new Map<string, () => void>();
+    const map = {
+      getCenter: () => ({ lng: 1, lat: 2 }),
+      getZoom: () => 3,
+      getBearing: () => 4,
+      getPitch: () => 5,
+      setStyle: vi.fn(),
+      once: vi.fn((event: string, cb: () => void) => {
+        handlers.set(event, cb);
+      }),
+      resize,
+      jumpTo,
+    };
+    const override = {
+      center: [116.4, 39.9] as [number, number],
+      zoom: 8,
+      bearing: 10,
+      pitch: 30,
+    };
+
+    applyGisMapStylePreservingCamera(map as never, {} as never, undefined, override);
+    handlers.get("style.load")?.();
+
+    expect(jumpTo).toHaveBeenCalledWith({
+      center: override.center,
+      zoom: override.zoom,
+      bearing: override.bearing,
+      pitch: override.pitch,
+    });
+  });
+});
+
+describe("mountGisLiveCameraTracking", () => {
+  it("syncs camera on moveend", () => {
+    const handlers = new Map<string, () => void>();
+    const map = {
+      on: vi.fn((event: string, cb: () => void) => {
+        handlers.set(event, cb);
+      }),
+      off: vi.fn(),
+      getCenter: () => ({ lng: 120, lat: 30 }),
+      getZoom: () => 6,
+      getBearing: () => 0,
+      getPitch: () => 0,
+    };
+    const onCameraChange = vi.fn();
+    mountGisLiveCameraTracking(map as never, onCameraChange);
+    handlers.get("moveend")?.();
+    expect(onCameraChange).toHaveBeenCalledWith({
+      center: [120, 30],
+      zoom: 6,
+      bearing: 0,
+      pitch: 0,
+    });
   });
 });
 
