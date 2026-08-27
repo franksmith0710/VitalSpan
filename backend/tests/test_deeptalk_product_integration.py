@@ -7,6 +7,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import MagicMock, patch
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXECUTOR = REPO_ROOT / "docs" / "api" / "vs-ai-spec" / "deeptalk-product" / "executor"
@@ -248,6 +249,28 @@ def test_hex_kpi_grid_validate_and_publish_cli() -> None:
     )
     assert proc.returncode == 0, proc.stderr or proc.stdout
     assert "preflight ok" in proc.stdout or "styleComplianceTier=full" in proc.stdout
+
+
+def test_delete_artifact_executor_defaults_unlink_true() -> None:
+    sys.path.insert(0, str(EXECUTOR))
+    try:
+        from agent_tools import vitalspan_delete_artifact
+
+        artifact_id = "00000000-0000-4000-8000-000000000001"
+        with patch("agent_tools.run_tool") as mock_run:
+            mock_run.return_value = MagicMock(ok=True, stdout="ok deleted", stderr="")
+            vitalspan_delete_artifact(artifact_id)
+            mock_run.assert_called_once_with(
+                "delete-ai-viz-artifact.py",
+                artifact_id,
+                "--unlink",
+            )
+            mock_run.reset_mock()
+            vitalspan_delete_artifact(artifact_id, unlink=False)
+            mock_run.assert_called_once_with("delete-ai-viz-artifact.py", artifact_id)
+    finally:
+        if str(EXECUTOR) in sys.path:
+            sys.path.remove(str(EXECUTOR))
 
 
 def test_config_example_json_valid() -> None:

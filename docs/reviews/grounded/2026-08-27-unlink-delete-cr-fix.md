@@ -7,7 +7,7 @@
 
 | ID | 级别 | 状态 | 说明 |
 |----|------|------|------|
-| P1-1 | P1 | 已修 | 插件 `vitalspan_delete_artifact` 默认 `unlink=true`，stdout 含 `ok unlinked` |
+| P1-1 executor 默认 unlink | ✅ | `agent_tools` 默认 `unlink=True`；CLI 改 `--no-unlink`  opt-out |
 | P1-2 | P1 | 已修 | CLI `delete-ai-viz-artifact.py --unlink` + `vitalspan_http.delete_artifact(unlink=)` |
 | P2-1 | P2 | 已修 | `scan_artifact_in_layouts` 单次扫表；delete 路径仅 1 次 `select(Dashboard)` |
 | P2-2 | P2 | 已修 | `F17-AIVIZ` AIVIZ-018、`AGENT-SYSTEM-PROMPT`、E2E 清单、agent-tools.schema |
