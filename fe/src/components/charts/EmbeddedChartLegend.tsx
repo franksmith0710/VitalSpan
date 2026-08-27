@@ -291,7 +291,7 @@ export function EmbeddedChartLegendShell({
     <div
       ref={chartAreaRef}
       className={cn(
-        "relative z-[1] min-h-0 min-w-0 flex-1 basis-0 pb-0.5",
+        "relative z-[1] min-h-0 min-w-0 flex flex-1 basis-0 flex-col",
         clipChart ? "overflow-hidden" : "overflow-visible",
       )}
     >

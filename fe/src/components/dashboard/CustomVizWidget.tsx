@@ -30,6 +30,7 @@ import { buildCustomVizRuntimePayload, injectCustomVizPayload } from "./custom-v
 import type { CustomVizHostElement } from "./custom-viz/customVizRuntime";
 import { resolveDashboardChrome } from "./dashboardChromeConfig";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { gridWidgetShellClassName, GridWidgetShellFrame, resolveGridWidgetShell } from "./widgetRailStyleSections";
 
 async function loadCustomVizArtifact(artifactId: string): Promise<{
@@ -303,7 +304,13 @@ export function CustomVizWidget({
 
   if (inShapeShell) {
     return (
-      <div className="relative flex size-full min-h-0 flex-col overflow-hidden" onClick={onSelect}>
+      <div
+        className={cn(
+          "relative flex size-full min-h-0 flex-col",
+          mode === "edit" ? "overflow-visible" : "overflow-hidden",
+        )}
+        onClick={onSelect}
+      >
         {body}
       </div>
     );

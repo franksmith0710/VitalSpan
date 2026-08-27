@@ -524,7 +524,7 @@ export function DashboardWidget({
     ) : readyChartConfig ? (
       <DashboardChartMountGate widgetId={widget.id} selected={selected} mode={mode} shell={shell}>
         {({ queryEnabled, renderEnabled, mountGateStatus, onMountReady, viewportRef }) => (
-          <div ref={viewportRef} className="flex min-h-0 min-w-0 flex-1 flex-col">
+          <div ref={viewportRef} className="flex h-full min-h-0 min-w-0 flex-1 flex-col">
             <ChartRenderer
               embedded
               gridSpan={gridSize}
@@ -576,7 +576,12 @@ export function DashboardWidget({
 
   if (inShapeShell) {
     return (
-      <div className="relative flex h-full min-h-0 flex-col overflow-hidden">
+      <div
+        className={cn(
+          "relative flex h-full min-h-0 flex-col",
+          mode === "edit" ? "overflow-visible" : "overflow-hidden",
+        )}
+      >
         {nested && mode === "edit" ? (
           <TabNestedDragRail widgetId={widget.id} className="h-full w-7" />
         ) : null}
@@ -602,7 +607,7 @@ export function DashboardWidget({
               : undefined
           }
           className={cn(
-            "dashboard-no-drag flex min-h-0 flex-1 flex-col",
+            "dashboard-no-drag flex h-full min-h-0 min-w-0 flex-1 flex-col",
             mode === "edit" && "cursor-pointer",
             nested && mode === "edit" && "pl-7",
           )}

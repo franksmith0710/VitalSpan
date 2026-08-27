@@ -32,6 +32,7 @@ import {
   PanelEmptyStateSteps,
 } from "@/components/ui/panel-empty-state";
 import { VizComponentCard } from "@/components/dashboard/viz-components/VizComponentCard";
+import { VizComponentThumbnailBatchStudio } from "@/components/dashboard/viz-components/VizComponentThumbnailBatchStudio";
 import { InsertVizComponentDialog } from "@/components/dashboard/viz-components/InsertVizComponentDialog";
 import { ComponentReferencesDialog } from "@/components/dashboard/viz-components/ComponentReferencesDialog";
 import { CreateVizComponentButton } from "@/components/dashboard/viz-components/CreateVizComponentDialog";
@@ -61,8 +62,9 @@ import {
 } from "@/components/dashboard/hubCardUi";
 import { cn } from "@/lib/utils";
 import { VizComponentsHubFilters } from "./VizComponentsHubFilters";
-import { AiVizArtifactsHubSection } from "@/components/dashboard/ai-viz/AiVizArtifactsHubSection";
+import { AiVizArtifactsHubGrid } from "@/components/dashboard/ai-viz/AiVizArtifactsHubGrid";
 import { useVizComponentThumbnailBatch } from "@/hooks/useVizComponentThumbnailBatch";
+import { fetchAiVizArtifacts } from "@/lib/aiVizArtifacts";
 
 function ComponentCardSkeleton() {
   return (
@@ -122,6 +124,13 @@ export function VizComponentsHubPage() {
   const [deleteTarget, setDeleteTarget] = useState<VizComponentListItem | null>(null);
   const pagination = useListPagination(20, [surfaceTab, widgetFilter, q]);
   const thumbnailBatch = useVizComponentThumbnailBatch(canManage);
+  const showAiVizArtifacts = canCreate && widgetFilter === "customViz";
+
+  const aiVizQuery = useQuery({
+    queryKey: queryKeys.aiViz.list({ limit: 50, offset: 0 }),
+    queryFn: () => fetchAiVizArtifacts(50, 0),
+    enabled: showAiVizArtifacts,
+  });
 
   const listQuery = useQuery({
     queryKey: queryKeys.vizComponents.list({
@@ -180,6 +189,10 @@ export function VizComponentsHubPage() {
     publishMutation.isPending || archiveMutation.isPending || deleteMutation.isPending;
   const items = listQuery.data?.items ?? [];
   const total = listQuery.data?.total ?? 0;
+  const aiVizArtifactCount = aiVizQuery.data?.items.length ?? 0;
+  const hasAiVizArtifacts = showAiVizArtifacts && (aiVizQuery.isLoading || aiVizArtifactCount > 0);
+  const showHubEmpty =
+    !listQuery.isLoading && !listQuery.isError && items.length === 0 && !hasAiVizArtifacts;
 
   const handleBatchThumbnails = async () => {
     if (thumbnailBatch.running) {
@@ -285,12 +298,20 @@ export function VizComponentsHubPage() {
                 <ComponentCardSkeleton key={i} />
               ))}
             </div>
-          ) : listQuery.isError ? null : items.length === 0 ? (
+          ) : listQuery.isError ? null : showHubEmpty ? (
             <ListGhostEmptyState
               layout="cards"
               icon={<Boxes className="size-8" aria-hidden />}
-              title={VIZ_COMPONENTS_HUB.emptyTitle}
-              description={VIZ_COMPONENTS_HUB.emptyDescription}
+              title={
+                widgetFilter === "customViz"
+                  ? "暂无自定义组件"
+                  : VIZ_COMPONENTS_HUB.emptyTitle
+              }
+              description={
+                widgetFilter === "customViz"
+                  ? "在 AI 组件工作台生成并入库后，将显示在此处；也可从看板/大屏编辑页发布自定义组件到组织库。"
+                  : VIZ_COMPONENTS_HUB.emptyDescription
+              }
               action={
                 <div className="flex flex-wrap justify-center gap-2">
                   {canCreate ? <CreateVizComponentButton /> : null}
@@ -305,20 +326,27 @@ export function VizComponentsHubPage() {
               footer={<PanelEmptyStateSteps steps={EMPTY_STEPS} />}
             />
           ) : (
-            <div className={LIST_PAGE_CARD_GRID_CLASS}>
-              {items.map((item) => (
-                <VizComponentCard
-                  key={item.id}
-                  item={item}
-                  canManage={canManage}
-                    pending={pending}
-                    onInsert={() => setInsertTarget(item)}
-                    onViewReferences={() => setReferencesTarget(item)}
-                    onPublish={() => publishMutation.mutate(item.id)}
-                    onArchive={() => archiveMutation.mutate(item.id)}
-                    onDelete={() => setDeleteTarget(item)}
-                />
-              ))}
+            <div className="space-y-4">
+              {showAiVizArtifacts ? (
+                <AiVizArtifactsHubGrid canManage={canCreate} enabled={showAiVizArtifacts} />
+              ) : null}
+              {items.length > 0 ? (
+                <div className={LIST_PAGE_CARD_GRID_CLASS}>
+                  {items.map((item) => (
+                    <VizComponentCard
+                      key={item.id}
+                      item={item}
+                      canManage={canManage}
+                      pending={pending}
+                      onInsert={() => setInsertTarget(item)}
+                      onViewReferences={() => setReferencesTarget(item)}
+                      onPublish={() => publishMutation.mutate(item.id)}
+                      onArchive={() => archiveMutation.mutate(item.id)}
+                      onDelete={() => setDeleteTarget(item)}
+                    />
+                  ))}
+                </div>
+              ) : null}
             </div>
           )}
         </ListPageTableFrame>
@@ -333,8 +361,6 @@ export function VizComponentsHubPage() {
           />
         ) : null}
       </ListPageSection>
-
-      <AiVizArtifactsHubSection canManage={canCreate} className="mt-6 px-1" />
 
       <InsertVizComponentDialog
         open={Boolean(insertTarget)}

@@ -885,6 +885,10 @@ export const ChartRenderer = memo(function ChartRenderer({
   };
 
   const embeddedClip = embedded && !dashboardEditMode;
+  const embeddedRootClass = cn(
+    "relative flex h-full min-h-0 w-full min-w-0 flex-1 flex-col",
+    embeddedClip ? "overflow-hidden" : "overflow-visible",
+  );
   const body = !loading && !error && (!empty || isMapChart) ? (
     <div
       className={
@@ -959,7 +963,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       })
     ) {
       return (
-        <div ref={bodyRef} className="relative h-full min-h-0 w-full min-w-0 overflow-hidden">
+        <div ref={bodyRef} className={embeddedRootClass}>
           <Skeleton
             className="absolute inset-0 rounded-lg"
             aria-busy="true"
@@ -977,7 +981,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       !gisBasemapOnly;
     const showDataError = error && !gisBasemapOnly && !isGisMapChart;
     return (
-      <div ref={bodyRef} className="relative h-full min-h-0 w-full min-w-0 overflow-hidden">
+      <div ref={bodyRef} className={embeddedRootClass}>
         {isGisMapChart ? (
           <>
             {body}
