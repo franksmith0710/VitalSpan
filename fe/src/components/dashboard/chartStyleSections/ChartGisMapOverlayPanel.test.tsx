@@ -7,6 +7,10 @@ import type { LayoutWidget } from "../layoutUtils";
 import { ChartInspectorProvider } from "../ChartInspectorProvider";
 import { ChartGisMapOverlayPanel } from "./ChartGisMapOverlayPanel";
 
+vi.mock("@/components/charts/engine/maplibre/gisMapViewBridge", () => ({
+  syncGisMapViewLayers: vi.fn(() => true),
+}));
+
 function gisWidget(): LayoutWidget {
   return {
     id: "w-gis-overlay",
@@ -54,7 +58,7 @@ describe("ChartGisMapOverlayPanel", () => {
     });
   });
 
-  it("writes showLabels false to gisProject.overlay", async () => {
+  it("writes showLabels false to active layer style", async () => {
     const onChange = vi.fn();
     renderPanel(<ChartGisMapOverlayPanel />, onChange);
     const user = userEvent.setup();
@@ -71,7 +75,11 @@ describe("ChartGisMapOverlayPanel", () => {
         expect.objectContaining({
           nativeBody: expect.objectContaining({
             gisProject: expect.objectContaining({
-              overlay: expect.objectContaining({ showLabels: false }),
+              layers: expect.arrayContaining([
+                expect.objectContaining({
+                  style: expect.objectContaining({ showLabels: false }),
+                }),
+              ]),
             }),
           }),
         }),
@@ -79,7 +87,7 @@ describe("ChartGisMapOverlayPanel", () => {
     });
   });
 
-  it("writes scaleByMetric false to gisProject.overlay", async () => {
+  it("writes scaleByMetric false to active layer style", async () => {
     const onChange = vi.fn();
     renderPanel(<ChartGisMapOverlayPanel />, onChange);
     const user = userEvent.setup();
@@ -96,7 +104,11 @@ describe("ChartGisMapOverlayPanel", () => {
         expect.objectContaining({
           nativeBody: expect.objectContaining({
             gisProject: expect.objectContaining({
-              overlay: expect.objectContaining({ scaleByMetric: false }),
+              layers: expect.arrayContaining([
+                expect.objectContaining({
+                  style: expect.objectContaining({ scaleByMetric: false }),
+                }),
+              ]),
             }),
           }),
         }),
@@ -104,7 +116,7 @@ describe("ChartGisMapOverlayPanel", () => {
     });
   });
 
-  it("writes labelMinZoom to gisProject.overlay", async () => {
+  it("writes labelMinZoom to active layer style", async () => {
     const onChange = vi.fn();
     renderPanel(<ChartGisMapOverlayPanel />, onChange);
     const user = userEvent.setup();
@@ -122,7 +134,11 @@ describe("ChartGisMapOverlayPanel", () => {
         expect.objectContaining({
           nativeBody: expect.objectContaining({
             gisProject: expect.objectContaining({
-              overlay: expect.objectContaining({ labelMinZoom: 6 }),
+              layers: expect.arrayContaining([
+                expect.objectContaining({
+                  style: expect.objectContaining({ labelMinZoom: 6 }),
+                }),
+              ]),
             }),
           }),
         }),
@@ -130,7 +146,7 @@ describe("ChartGisMapOverlayPanel", () => {
     });
   });
 
-  it("clears overlay on reset", async () => {
+  it("clears layer style on reset", async () => {
     const widget = gisWidget();
     widget.chartConfig.nativeBody = {
       gisProject: {
@@ -159,15 +175,10 @@ describe("ChartGisMapOverlayPanel", () => {
     await user.click(screen.getByRole("button", { name: /恢复默认/ }));
 
     await waitFor(() => {
-      expect(onChange).toHaveBeenCalledWith(
-        expect.objectContaining({
-          nativeBody: expect.objectContaining({
-            gisProject: expect.not.objectContaining({
-              overlay: expect.anything(),
-            }),
-          }),
-        }),
-      );
+      const nextConfig = onChange.mock.calls.at(-1)?.[0];
+      const gisProject = nextConfig?.nativeBody?.gisProject;
+      expect(gisProject?.overlay).toBeUndefined();
+      expect(gisProject?.layers?.[0]?.style).toBeUndefined();
     });
   });
 });

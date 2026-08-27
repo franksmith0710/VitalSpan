@@ -1,6 +1,6 @@
 import { type ReactElement } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { LayoutWidget } from "../layoutUtils";
@@ -92,22 +92,15 @@ describe("ChartGisMapLayersPanel", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "GIS 图层" }));
-    await user.type(screen.getByRole("textbox", { name: "经度字段" }), "longitude");
+    fireEvent.change(screen.getByLabelText("经度字段"), { target: { value: "longitude" } });
 
     await waitFor(() => {
-      expect(onChange).toHaveBeenCalledWith(
-        expect.objectContaining({
-          nativeBody: expect.objectContaining({
-            gisProject: expect.objectContaining({
-              layers: expect.arrayContaining([
-                expect.objectContaining({
-                  binding: expect.objectContaining({ lngField: "longitude" }),
-                }),
-              ]),
-            }),
-          }),
-        }),
+      const matched = onChange.mock.calls.some(([config]) =>
+        config.nativeBody?.gisProject?.layers?.some(
+          (layer: { binding?: { lngField?: string } }) => layer.binding?.lngField === "longitude",
+        ),
       );
+      expect(matched).toBe(true);
     });
   });
 });

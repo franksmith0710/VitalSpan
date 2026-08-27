@@ -22,6 +22,8 @@ type VizComponentChartPreviewShellProps = {
   children: ReactNode;
   /** 列表卡片缩略图：隐藏组件内标题栏，避免与卡片正文重复 */
   compact?: boolean;
+  /** 编辑预览：内容区贴边，避免 p-2 挤压图表可视区域 */
+  flushContent?: boolean;
 };
 
 /** 组件库编辑预览：栅格看板 view 态外壳（含装饰边框 overlay），与 DashboardWidget 一致 */
@@ -29,6 +31,7 @@ export function VizComponentChartPreviewShell({
   widget,
   children,
   compact = false,
+  flushContent = false,
 }: VizComponentChartPreviewShellProps) {
   const chartConfig = widget.chartConfig;
   const scheme = resolveWidgetEffectiveScheme(undefined);
@@ -89,7 +92,10 @@ export function VizComponentChartPreviewShell({
         </p>
       ) : null}
       <div
-        className={cn("relative z-[1] flex min-h-0 flex-1 flex-col", !compact && "p-2")}
+        className={cn(
+          "relative z-[1] flex min-h-0 flex-1 flex-col",
+          !compact && !flushContent && "p-2",
+        )}
         style={content.style}
       >
         <WidgetShellBackgroundLayers layers={content} prefix="viz-chart-content" />

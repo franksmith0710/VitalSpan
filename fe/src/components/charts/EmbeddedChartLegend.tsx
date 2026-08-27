@@ -15,6 +15,7 @@ import {
   type ChartLegendHAlign,
   type ChartLegendVAlign,
 } from "@/lib/chartLegendPresentation";
+import { PIXEL_LAYOUT_GEOMETRY_COMMITTED } from "@/components/dashboard/pixelCanvas/pixelShapeLiveResize";
 import { cn } from "@/lib/utils";
 
 export type ChartLegendItem = { name: string; color: string };
@@ -214,6 +215,8 @@ type EmbeddedChartLegendShellProps = {
   textColor?: string;
   items: ChartLegendItem[];
   children: ReactNode;
+  /** false：编辑预览等场景，避免 overflow-hidden 裁切轴标签 */
+  clipChart?: boolean;
 };
 
 /** 看板内嵌：图例贴在组件外框 pixel-shape-inner（含标题区），flex 分区不叠在图表上 */
@@ -228,12 +231,26 @@ export function EmbeddedChartLegendShell({
   textColor,
   items,
   children,
+  clipChart = true,
 }: EmbeddedChartLegendShellProps) {
   const [page, setPage] = useState(0);
+  const chartAreaRef = useRef<HTMLDivElement>(null);
   const itemsKey = useMemo(() => items.map((item) => item.name).join("\0"), [items]);
 
   useEffect(() => {
     setPage(0);
+  }, [itemsKey, position, orient]);
+
+  useEffect(() => {
+    const node = chartAreaRef.current;
+    if (!node || typeof ResizeObserver === "undefined") return;
+    const notify = () => {
+      document.dispatchEvent(new CustomEvent(PIXEL_LAYOUT_GEOMETRY_COMMITTED));
+    };
+    const observer = new ResizeObserver(notify);
+    observer.observe(node);
+    notify();
+    return () => observer.disconnect();
   }, [itemsKey, position, orient]);
 
   const sideSlot = position === "left" || position === "right";
@@ -271,7 +288,13 @@ export function EmbeddedChartLegendShell({
   );
 
   const chartArea = (
-    <div className="relative z-[1] min-h-0 min-w-0 flex-1 basis-0 overflow-hidden pb-0.5">
+    <div
+      ref={chartAreaRef}
+      className={cn(
+        "relative z-[1] min-h-0 min-w-0 flex-1 basis-0 pb-0.5",
+        clipChart ? "overflow-hidden" : "overflow-visible",
+      )}
+    >
       {children}
     </div>
   );

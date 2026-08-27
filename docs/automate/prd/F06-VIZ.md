@@ -123,7 +123,6 @@
   - [x] `plugins/bar/index.ts` 示例包
   - [x] `pluginParity.test.ts` / `check:chart-plugin-parity`
 - **代码锚点**：`fe/src/components/charts/engine/plugins/types.ts` · `registry.ts` · `fe/src/components/charts/plugins/bar/`
-- **演化建议**：`plugins/bar/index.ts` 示例包
 - **演化建议**：其余类型逐步迁入 `plugins/<type>/`；ChartExplore 挂 demo 预览
 
 ### [VIZ-003-GIS] gis-map 图层栈与球面大气（GeoLibre 子集）

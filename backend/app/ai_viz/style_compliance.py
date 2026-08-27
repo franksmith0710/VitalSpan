@@ -20,6 +20,29 @@ _EXPLICIT_CHART_SIZE_RE = re.compile(
 )
 _D3_TRANSITION_RE = re.compile(r"\.transition\s*\(")
 _D3_INTERRUPT_RE = re.compile(r"\.interrupt\s*\(")
+
+# manifest.id/displayName 暗示内置 chartType 时，禁止 customViz 仿制（如「矩形树图」文本列表）
+_BUILTIN_CHART_MISROUTE: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"矩形树|treemap|树图", re.I), "treemap"),
+    (re.compile(r"圆角矩形树|circle[\s-]?packing|打包图", re.I), "circle-packing"),
+    (re.compile(r"饼图|pie|donut|环形图|玫瑰图", re.I), "pie"),
+    (re.compile(r"漏斗|funnel", re.I), "funnel"),
+    (re.compile(r"词云|word[\s-]?cloud", re.I), "word-cloud"),
+    (re.compile(r"旭日|sunburst", re.I), "sunburst"),
+    (re.compile(r"热力图|heatmap|heat[\s-]?map", re.I), "heatmap"),
+    (re.compile(r"散点|scatter|气泡图", re.I), "scatter"),
+    (re.compile(r"雷达|radar", re.I), "radar"),
+    (re.compile(r"仪表盘|gauge|仪表图", re.I), "gauge"),
+    (re.compile(r"水球|liquid|水位图", re.I), "liquid"),
+    (re.compile(r"sankey|桑基|流向图", re.I), "sankey"),
+    (re.compile(r"关系图|力导向|graph图", re.I), "graph"),
+    (re.compile(r"地图|choropleth|gis[\s-]?map", re.I), "gis-map"),
+)
+_STYLE_KEY_USAGE_RE = re.compile(
+    r"(?:\b(?:rs|st|style)\.)labelShow|\blabelShow\s*===|\blabelShow\s*!==|"
+    r"(?:\b(?:rs|st|style)\.)tooltipShow|\btooltipShow\s*===|\btooltipShow\s*!==|"
+    r"placeTooltipNearPointer|class=\"tooltip\"|#tooltip|\.tooltip\b",
+)
 _HOST_GET_ELEMENT_BY_ID_RE = re.compile(r"\(\s*host\s*\|\|\s*document\s*\)\s*\.\s*getElementById\b")
 _DOCUMENT_GET_ELEMENT_BY_ID_RE = re.compile(r"\bdocument\s*\.\s*getElementById\b")
 _DOCUMENT_GET_ELEMENT_BY_ID_FALLBACK_RE = re.compile(r":\s*document\s*\.\s*getElementById\b")
@@ -250,6 +273,53 @@ def _collect_resize_lifecycle_warnings(
     return warnings
 
 
+def _collect_builtin_misroute_warnings(manifest: dict) -> list[StyleComplianceWarning]:
+    label = f"{manifest.get('id', '')} {manifest.get('displayName', '')}"
+    for pattern, chart_type in _BUILTIN_CHART_MISROUTE:
+        if pattern.search(label):
+            return [
+                StyleComplianceWarning(
+                    code="AIVIZ_WARN_BUILTIN_MISROUTE",
+                    message=(
+                        f"组件名/ID 暗示内置图 {chart_type}；应走 wf1 chartType={chart_type} + "
+                        "validate_chart_config，禁止 customViz 用 DOM 文本列表仿制"
+                    ),
+                )
+            ]
+    return []
+
+
+def _collect_style_keys_application_warnings(
+    entry_html: str,
+    manifest: dict,
+) -> list[StyleComplianceWarning]:
+    if has_valid_style_hooks(manifest):
+        return []
+    misroute = bool(_collect_builtin_misroute_warnings(manifest))
+    row_dump = bool(
+        re.search(
+            r"rows\.forEach|for\s*\(\s*var\s+\w+\s*=\s*0[^;]*<\s*rows\.length|p\.rows\.map|"
+            r"\.map\s*\(\s*function\s*\(\s*\w+\s*\)\s*\{[^}]*textContent",
+            entry_html,
+        )
+    )
+    if not misroute and not row_dump:
+        return []
+    if _STYLE_KEY_USAGE_RE.search(entry_html):
+        return []
+    if not _STYLE_PAYLOAD_RE.search(entry_html):
+        return []
+    return [
+        StyleComplianceWarning(
+            code="AIVIZ_WARN_STYLE_KEYS_NOT_APPLIED",
+            message=(
+                "bundle 未接线 labelShow/tooltipShow（显隐、#tooltip、placeTooltipNearPointer）；"
+                "样式 Tab 标签/提示不会生效"
+            ),
+        )
+    ]
+
+
 def _collect_platform_style_consumption_warnings(
     combined: str,
     manifest: dict,
@@ -294,6 +364,8 @@ def collect_bundle_style_compliance_warnings(
     warnings.extend(_collect_platform_style_consumption_warnings(combined, manifest))
 
     warnings.extend(_collect_resize_lifecycle_warnings(entry_html, runtime))
+    warnings.extend(_collect_builtin_misroute_warnings(manifest))
+    warnings.extend(_collect_style_keys_application_warnings(entry_html, manifest))
 
     has_style_payload = bool(_STYLE_PAYLOAD_RE.search(combined))
     has_style_tokens = bool(_STYLE_TOKEN_RE.search(combined))

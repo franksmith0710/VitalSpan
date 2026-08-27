@@ -34,10 +34,11 @@ import {
   type GisProjectLayer,
   type GisProjectLayerBinding,
 } from "@/components/charts/engine/maplibre/gisProjectLayers";
+import { syncGisMapViewLayers } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 import { resolveGisChartColors } from "@/lib/resolveGisChartColors";
 
 const LAYERS_HINT =
-  "多图层叠加在 PMTiles 底图之上；散点需绑定经度/纬度，热力层需指标。图层顺序靠上者优先绘制。";
+  "多图层叠加在 PMTiles 底图之上；散点/热力样式亦可在「散点叠加」快捷编辑。图层顺序靠上者优先绘制。";
 
 const KIND_LABELS: Record<GisLayerKind, string> = {
   scatter: "散点",
@@ -53,7 +54,7 @@ function moveLayer(layers: GisProjectLayer[], fromIndex: number, toIndex: number
 }
 
 export function ChartGisMapLayersPanel() {
-  const { cfg, mutateChartConfig, dashboardStyle } = useChartInspector();
+  const { cfg, widget, mutateChartConfig, dashboardStyle } = useChartInspector();
   const project = readGisProject(cfg);
   const layers = useMemo(() => listGisProjectLayers(project), [project]);
   const [selectedLayerId, setSelectedLayerId] = useState(
@@ -92,8 +93,9 @@ export function ChartGisMapLayersPanel() {
       mutateChartConfig((current) =>
         writeGisProject(current, writeGisProjectLayers(readGisProject(current), nextLayers)),
       );
+      syncGisMapViewLayers(widget.id);
     },
-    [mutateChartConfig],
+    [mutateChartConfig, widget.id],
   );
 
   const patchSelectedLayer = useCallback(

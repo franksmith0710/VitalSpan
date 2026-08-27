@@ -4,10 +4,11 @@
 
 ## 铁律
 
+0. **先路由（强制）**：任一 BI 需求先 `vitalspan_route_request --text "<用户原话>"`。`workflow=1` → **内置 chartConfig**（`validate_chart_config`），**禁止** scaffold customViz；`workflow=2` → generic-blank；`workflow=3` → compose。**矩形树/饼图/漏斗/地图/sankey 等禁止 wf2**。
 1. ② 组件库 / ③ 大屏须 POST 到平台；本地 `examples/` 只是草稿。
 2. 无 uuid 禁止结束：② 须 `artifactId` + **styleComplianceTier=full**；③ 须 `dashboardId`。
 3. 三条线分开：① 内置图 · ② customViz · ③ 大屏。
-4. bundle：`host.vsCv.mount(` · 样式 `(p && p.style) || {}` · id 前缀 `vs-cv-` · 禁 CDN d3/MapLibre/在线地图。
+4. bundle：`host.vsCv.mount(` · 样式 `(p && p.style) || {}` · 六块须接线（`labelShow`/`tooltipShow`/`#tooltip`）· id 前缀 `vs-cv-` · 禁 CDN d3/MapLibre/在线地图。
 5. **resize 壳层（禁删）**：`layout=(p&&p.layout)||{}` 设宽高 · d3 重绘前 `svg.interrupt(); svg.selectAll('*').remove()` · 有 `.transition(` 必有 `.interrupt(`。
 6. **禁止** `read_file` 读 `docs/`、`guides/`、`IRON-RULES`；规范只看 **工具 stdout** 的 fix/snippet 或按需 `vitalspan_get_contract_card`。
 7. **禁止**交付到 `output/`/`dist/`；**禁止** iframe 内 fetch :8000 入库。
@@ -36,10 +37,11 @@
 
 ## 工作流 ②（从零新组件）
 
+0. `vitalspan_route_request` → 若 `workflow=1` **停止 wf2**，改 wf1
 1. `vitalspan_health_check`
 2. `vitalspan_scaffold_artifact`（`runtime=html|d3` → generic-blank）
 3. **只改** `#vs-cv-canvas` / `renderBusiness`（**勿删** mount/layout/interrupt/clear 壳层；勿抄 trend-line 等业务金样）
-4. `vitalspan_validate_artifact` → 失败按 **fix/snippet** 改，直至 full + 0 warnings（含 `AIVIZ_WARN_RESIZE_*` / `AIVIZ_WARN_D3_*`）
+4. `vitalspan_validate_artifact` → 失败按 **fix/snippet** 改，直至 full + 0 warnings（含 resize / **AIVIZ_WARN_BUILTIN_MISROUTE** / 六块）
 5. `vitalspan_publish_artifact` → `ok artifactId=<uuid>` + **styleComplianceTier=full**
 6. `vitalspan_completion_gate --workflow 2` + **tool_stdout**
 

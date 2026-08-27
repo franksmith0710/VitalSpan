@@ -10,6 +10,8 @@
   "AIVIZ_WARN_RESIZE_LAYOUT": "render 须读 payload.layout.width/height；勿仅用 clientWidth",
   "AIVIZ_WARN_D3_INTERRUPT": "d3 重绘前 svg.interrupt()；有 .transition( 必须 interrupt",
   "AIVIZ_WARN_D3_CLEAR": "d3 每次 render 须 svg.selectAll('*').remove() 清空旧图层",
+  "AIVIZ_WARN_BUILTIN_MISROUTE": "应走 wf1 内置 chartType（如 treemap），禁止 customViz 文本列表仿制",
+  "AIVIZ_WARN_STYLE_KEYS_NOT_APPLIED": "须接线 labelShow/tooltipShow、#tooltip、placeTooltipNearPointer",
   "AIVIZ_WARN_STYLE_COMPLIANCE": "render 读 (p&&p.style)||{}；styleSchema 每项加中文 title",
   "AIVIZ_WARN_DETAIL_TABLE_METRICS": "fieldSlots 与 P2 不符：dimensions.max>1 时 metrics 须 min=0,max=0",
   "AIVIZ_WARN_DOM_HOST_LOOKUP": "禁止 (host||document).getElementById；用 host.querySelector('#vs-cv-*')",

@@ -1,5 +1,12 @@
 # vs-ai-spec 变更
 
+## 2026-08-27 (内置图误路由 · 插件 v0.3.5)
+
+- `capability-routing.json` 补 wf1：treemap/pie/funnel/word-cloud/sunburst/heatmap/scatter/radar/gauge/liquid/bar/line 等
+- 入库 warn：`AIVIZ_WARN_BUILTIN_MISROUTE` · `AIVIZ_WARN_STYLE_KEYS_NOT_APPLIED`（误路由 + 文本列表 dump）
+- Agent 铁律：**先 route_request**；矩形树/饼图等 **禁止 wf2 customViz**
+- 插件 **v0.3.5**：轻量 preflight 同步误路由 422
+
 ## 2026-08-26 (customViz resize 生命周期门禁 · 插件 v0.3.4)
 
 - 入库 warn/DeepTalk 拦：`AIVIZ_WARN_RESIZE_LAYOUT` · `AIVIZ_WARN_D3_INTERRUPT` · `AIVIZ_WARN_D3_CLEAR`（`style_compliance.py`）

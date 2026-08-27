@@ -5,9 +5,11 @@ import {
   readGisProject,
   listGisProjectLayers,
   resolveGisOverlayStyle,
+  resolveGisMapControls,
   resolveGisRenderableBasemap,
   DEFAULT_GIS_GLOBE_VIEW,
 } from "@/components/charts/engine/maplibre/gisProject";
+import { applyGisGraticule } from "@/components/charts/engine/maplibre/gisGraticule";
 import { applyBasemapRuntimePatch } from "@/components/charts/engine/maplibre/gisBasemapPalette";
 import { buildPmtilesStyle } from "@/components/charts/engine/maplibre/gisMapStyle";
 import {
@@ -77,6 +79,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const project = useMemo(() => readGisProject(chartConfig), [chartConfig]);
   const projectRef = useRef(project);
   projectRef.current = project;
+  const mapControls = useMemo(
+    () => resolveGisMapControls(project),
+    [project.mapControls, project.showControls],
+  );
+  const mapControlsKey = useMemo(() => JSON.stringify(mapControls), [mapControls]);
   const [pmtilesStyle, setPmtilesStyle] = useState<StyleSpecification | null>(null);
   const [pmtilesLoading, setPmtilesLoading] = useState(false);
   const [pmtilesErrorHint, setPmtilesErrorHint] = useState<string | null>(null);
@@ -278,8 +285,14 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
   const styleKey = mapStyleKey;
   const atmosphereKey = useMemo(
-    () => `${project.projection ?? "mercator"}:${project.atmospherePreset ?? "day"}`,
-    [project.atmospherePreset, project.projection],
+    () =>
+      JSON.stringify({
+        projection: project.projection ?? "globe",
+        preset: project.atmospherePreset ?? "night",
+        fog: project.fog,
+        halo: project.halo,
+      }),
+    [project.atmospherePreset, project.fog, project.halo, project.projection],
   );
   const configuredViewKey = useMemo(
     () => buildGisConfiguredViewKey(view),
@@ -406,7 +419,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     let disposeControls: (() => void) | undefined;
 
     const syncControls = () => {
-      void mountGisMapControls(map, project.showControls === true).then((dispose) => {
+      void mountGisMapControls(map, mapControls).then((dispose) => {
         if (cancelled) {
           dispose();
           return;
@@ -422,7 +435,21 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       cancelled = true;
       disposeControls?.();
     };
-  }, [mapBootstrapKey, project.showControls, renderBasemap]);
+  }, [mapBootstrapKey, mapControlsKey, renderBasemap]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || renderBasemap !== "pmtiles") return;
+
+    const syncGraticule = () => applyGisGraticule(map, mapControls.graticule);
+    if (map.isStyleLoaded()) syncGraticule();
+    else map.once("load", syncGraticule);
+    map.on("style.load", syncGraticule);
+
+    return () => {
+      map.off("style.load", syncGraticule);
+    };
+  }, [mapBootstrapKey, mapControls.graticule, mapControlsKey, renderBasemap, styleKey]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -632,8 +659,40 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         syncedViewKeyRef.current = buildGisConfiguredViewKey(nextView);
         return true;
       },
+      applyAtmosphere: (ctx) => {
+        const map = mapRef.current;
+        if (!map) return false;
+        const current = projectRef.current;
+        applyGlobeAtmosphere(
+          map,
+          {
+            projection: ctx.projection ?? current.projection,
+            fog: ctx.fog ?? current.fog,
+            atmospherePreset: ctx.atmospherePreset ?? current.atmospherePreset,
+          },
+          { preserveCamera: true },
+        );
+        return true;
+      },
+      applyBasemapPatch: (patch) => {
+        const map = mapRef.current;
+        if (!map) return false;
+        const current = projectRef.current;
+        applyBasemapRuntimePatch(map, {
+          basemapLayers: patch.basemapLayers ?? current.basemapLayers,
+          buildings3d: patch.buildings3d ?? current.buildings3d !== false,
+          earthOpacity: patch.earthOpacity ?? current.earthOpacity ?? 1,
+        });
+        return true;
+      },
+      syncLayers: () => {
+        const map = mapRef.current;
+        if (!map) return false;
+        syncLayersRuntime(map);
+        return true;
+      },
     });
-  }, [instanceKey]);
+  }, [instanceKey, syncLayersRuntime]);
 
   const statusHint = pmtilesErrorHint ?? mapErrorHint;
   const dataHint = useMemo(

@@ -220,7 +220,7 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| POST | `/api/v1/charts/validate` | ChartViewConfig 预校验；422 时 `detail.fields: [{field, message}]` | 内部 | 一期 | VIZ-001 | 已实现 | `backend/app/api/v1/charts.py` |
+| POST | `/api/v1/charts/validate` | ChartViewConfig 预校验；422 时 `detail.fields: [{field, message}]`；`chartType=gis-map` 时 `nativeBody.gisProject` 可含 `layers[]`/`activeLayerId`/`halo`/`fog`（FE 归一化，BE 透传） | 内部 | 一期 | VIZ-001 | 已实现 | `backend/app/api/v1/charts.py` |
 | GET | `/api/v1/charts/types` | 图表类型 catalog（~40 DE type + deprecated/migratesTo）；只读 | 内部 | 一期 | VIZ-003 | 已实现 | `backend/app/api/v1/charts.py` · `backend/app/viz/builtin/` |
 | POST | `/api/v1/charts/render-spec` | 校验并归一为引擎无关 render-spec；非法 type → 422 `CHART_INVALID_TYPE` | 内部 | 一期 | VIZ-008 | 已实现（骨架） | `backend/app/api/v1/charts.py` |
 | POST | `/api/v1/charts/embed/validate` | 图表嵌入配置校验（目标唯一性 + origin 白名单） | 内部 | 一期 | VIZ-006 | 已实现（骨架） | `backend/app/api/v1/charts.py` |

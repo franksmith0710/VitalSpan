@@ -39,14 +39,16 @@ import {
   normalizeGisProjectView,
   parseGisViewDraft,
   readGisProject,
+  resolveGisMapControls,
   writeGisProject,
   type GisAtmospherePreset,
   type GisBasemapFlavor,
   type GisLabelLang,
+  type GisMapControls,
   type GisProjectFog,
   type GisViewDraftFields,
 } from "@/components/charts/engine/maplibre/gisProject";
-import { captureGisMapViewCamera, applyGisMapViewCamera } from "@/components/charts/engine/maplibre/gisMapViewBridge";
+import { captureGisMapViewCamera, applyGisMapViewCamera, applyGisMapViewAtmosphere, applyGisMapBasemapPatch } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 import {
   buildGisConfiguredViewKey,
   GLOBE_IDLE_ROTATION_DEG_PER_SEC,
@@ -223,25 +225,77 @@ export function ChartGisMapProjectPanel() {
   };
 
   const applyAtmospherePreset = (preset: GisAtmospherePreset) => {
+    const fog = GIS_ATMOSPHERE_PRESETS[preset];
+    applyGisMapViewAtmosphere(widget.id, {
+      atmospherePreset: preset,
+      fog,
+      projection: project.projection,
+    });
     patchProject({
       atmospherePreset: preset,
-      fog: GIS_ATMOSPHERE_PRESETS[preset],
+      fog,
     });
   };
 
   const patchFog = (patch: Partial<GisProjectFog>) => {
     const preset = project.atmospherePreset ?? "night";
     const base = project.fog ?? GIS_ATMOSPHERE_PRESETS[preset];
-    patchProject({ fog: { ...base, ...patch } });
+    const nextFog = { ...base, ...patch };
+    applyGisMapViewAtmosphere(widget.id, {
+      fog: nextFog,
+      atmospherePreset: preset,
+      projection: project.projection,
+    });
+    patchProject({ fog: nextFog });
+  };
+
+  const patchBasemapRuntime = (patch: Parameters<typeof applyGisMapBasemapPatch>[1]) => {
+    applyGisMapBasemapPatch(widget.id, patch);
+    patchProject(patch);
+  };
+
+  const applyEarthOpacity = (opacityPercent: number) => {
+    const earthOpacity = Math.max(0, Math.min(100, opacityPercent)) / 100;
+    applyGisMapBasemapPatch(widget.id, { earthOpacity });
+    patchProject({ earthOpacity });
   };
 
   const patchHalo = (patch: Partial<GisProjectHalo>) => {
     patchProject({ halo: { ...project.halo, ...patch } });
   };
 
+  const patchBasemapLayers = (key: keyof NonNullable<typeof project.basemapLayers>, checked: boolean) => {
+    const next = { ...project.basemapLayers };
+    if (checked) delete next[key];
+    else next[key] = false;
+    const basemapLayers = Object.keys(next).length > 0 ? next : undefined;
+    applyGisMapBasemapPatch(widget.id, { basemapLayers });
+    patchProject({ basemapLayers });
+  };
+
   const resolvedHalo = useMemo(
     () => resolveGisProjectHalo(project.halo, project.atmospherePreset),
     [project.atmospherePreset, project.halo],
+  );
+  const mapControls = useMemo(() => resolveGisMapControls(project), [project]);
+
+  const patchMapControl = useCallback(
+    (key: keyof GisMapControls, enabled: boolean) => {
+      const next: GisMapControls = { ...project.mapControls };
+      if (key === "attribution") {
+        if (enabled) delete next.attribution;
+        else next.attribution = false;
+      } else if (enabled) {
+        next[key] = true;
+      } else {
+        delete next[key];
+      }
+      patchProject({
+        mapControls: Object.keys(next).length > 0 ? next : undefined,
+        showControls: false,
+      });
+    },
+    [patchProject, project.mapControls],
   );
 
   const [advancedAtmosphereOpen, setAdvancedAtmosphereOpen] = useState(false);
@@ -356,14 +410,7 @@ export function ChartGisMapProjectPanel() {
               <label key={key} className="flex items-center gap-2 text-theme-xs text-gray-700 dark:text-gray-300">
                 <Checkbox
                   checked={project.basemapLayers?.[key] !== false}
-                  onCheckedChange={(checked) => {
-                    const next = { ...project.basemapLayers };
-                    if (checked === true) delete next[key];
-                    else next[key] = false;
-                    patchProject({
-                      basemapLayers: Object.keys(next).length > 0 ? next : undefined,
-                    });
-                  }}
+                  onCheckedChange={(checked) => patchBasemapLayers(key, checked === true)}
                 />
                 {label}
               </label>
@@ -468,6 +515,25 @@ export function ChartGisMapProjectPanel() {
                 />
                 <div className="flex min-w-0 items-center gap-2">
                   <ChartPaletteColorSwatch
+                    value={project.fog?.color ?? GIS_ATMOSPHERE_PRESETS[project.atmospherePreset ?? "night"].color}
+                    aria-label="大气颜色"
+                    onChange={(color) => patchFog({ color })}
+                  />
+                  <InspectorFieldLabel label="大气颜色" hint="MapLibre fog color" />
+                </div>
+                <div className="flex min-w-0 items-center gap-2">
+                  <ChartPaletteColorSwatch
+                    value={
+                      project.fog?.["high-color"] ??
+                      GIS_ATMOSPHERE_PRESETS[project.atmospherePreset ?? "night"]["high-color"]
+                    }
+                    aria-label="高空颜色"
+                    onChange={(highColor) => patchFog({ "high-color": highColor })}
+                  />
+                  <InspectorFieldLabel label="高空颜色" hint="MapLibre fog high-color" />
+                </div>
+                <div className="flex min-w-0 items-center gap-2">
+                  <ChartPaletteColorSwatch
                     value={project.fog?.["space-color"] ?? "#0b0b19"}
                     aria-label="深空底色"
                     onChange={(spaceColor) => patchFog({ "space-color": spaceColor })}
@@ -517,12 +583,10 @@ export function ChartGisMapProjectPanel() {
               step={1}
               unit="%"
               ariaLabel="地球不透明度"
-              onChange={(opacityPercent) =>
-                patchProject({ earthOpacity: Math.max(0, Math.min(100, opacityPercent)) / 100 })
-              }
+              onChange={(opacityPercent) => applyEarthOpacity(opacityPercent)}
               onPreviewChange={(opacityPercent) => {
                 if (opacityPercent == null) return;
-                patchProject({ earthOpacity: Math.max(0, Math.min(100, opacityPercent)) / 100 });
+                applyEarthOpacity(opacityPercent);
               }}
             />
           ) : null}
@@ -643,17 +707,39 @@ export function ChartGisMapProjectPanel() {
         </div>
 
         <div className="grid gap-2 rounded-lg border border-gray-200 p-2 dark:border-gray-800">
-          <label className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-300">
-            <Checkbox
-              checked={project.showControls === true}
-              onCheckedChange={(checked) => patchProject({ showControls: checked === true })}
-            />
-            显示缩放与比例尺控件
-          </label>
+          <InspectorFieldLabel
+            label="地图控件"
+            hint="对标 GeoLibre「地图控件」菜单；勾选后在地图角上显示对应 UI。"
+          />
+          {(
+            [
+              ["navigation", "导航与指南针"],
+              ["fullscreen", "全屏"],
+              ["scale", "比例尺"],
+              ["attribution", "归属信息"],
+              ["graticule", "经纬网"],
+            ] as const
+          ).map(([key, label]) => (
+            <label
+              key={key}
+              className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-300"
+            >
+              <Checkbox
+                checked={mapControls[key]}
+                onCheckedChange={(checked) => patchMapControl(key, checked === true)}
+              />
+              {label}
+            </label>
+          ))}
+        </div>
+
+        <div className="grid gap-2 rounded-lg border border-gray-200 p-2 dark:border-gray-800">
           <label className="flex items-center gap-2 text-theme-xs text-gray-600 dark:text-gray-300">
             <Checkbox
               checked={project.buildings3d !== false}
-              onCheckedChange={(checked) => patchProject({ buildings3d: checked === true })}
+              onCheckedChange={(checked) =>
+                patchBasemapRuntime({ buildings3d: checked === true })
+              }
             />
             <span className="flex min-w-0 flex-1 items-center gap-1">
               <span>建筑 3D 挤出</span>

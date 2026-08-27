@@ -34,6 +34,16 @@
     "snippet": "svg.selectAll('*').remove();",
     "contractRef": "layout.resize"
   },
+  "AIVIZ_WARN_BUILTIN_MISROUTE": {
+    "fix": "先 route_request；workflow=1 用 validate_chart_config + layout chartConfig",
+    "snippet": "vitalspan_route_request --text \"矩形树图\" → chartType=treemap workflow=1",
+    "contractRef": "route.required"
+  },
+  "AIVIZ_WARN_STYLE_KEYS_NOT_APPLIED": {
+    "fix": "render 读 st.labelShow/st.tooltipShow；DOM 用 .value-label 与 #tooltip",
+    "snippet": "if (rs.tooltipShow) { dots.on('mouseenter', ... placeTooltipNearPointer ...) }",
+    "contractRef": "style.read"
+  },
   "AIVIZ_MISSING_ENTRY": {
     "fix": "files 须含 manifest.entry 指向的 HTML",
     "snippet": "\"files\": { \"index.html\": \"<!DOCTYPE html>...\" }",

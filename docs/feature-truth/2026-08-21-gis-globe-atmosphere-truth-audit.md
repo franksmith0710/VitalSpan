@@ -182,3 +182,23 @@ ChartGisMapProjectPanel → writeGisProject → GisMapView
 | B-new | `gisProject.layers[]` 多图层 | **CHAIN** — `gisProjectLayers.test.ts` + 样式 Tab UI |
 
 **仍待 P0**：与 [web.geolibre.app](https://web.geolibre.app/) 远视图 side-by-side 截图对标（T1）；GeoLibre #230 椭圆拟合完整移植（T2）。
+
+---
+
+## 9. 复验记录（2026-08-27 · 收口 B3/B4/B2）
+
+| 字段 | 值 |
+|------|-----|
+| 日期 | 2026-08-27 |
+| 变更 | `activeLayerId` + 图层级 `binding` · 数据 Tab 当前图层提示 · LayersPanel UI 单测 · PRD VIZ-003-GIS · api validate 说明 |
+| 单测 | maplibre 101+ · `ChartGisMapLayersPanel.test.tsx` 3 条 · `gisMapOverlay` binding case |
+| 总体判定 | **PARTIAL 7.5/10 · B**（计划六阶段代码收口；T1 GeoLibre 像素对标仍 PARTIAL） |
+
+| ID | 2026-08-27 | 判定 |
+|----|------------|------|
+| B3 多图层字段 | `binding` 覆写 + `activeLayerId` 数据 Tab | **CHAIN→UI** |
+| B4 文档 | `F06-VIZ` VIZ-003-GIS + `docs/api/README.md` | **DONE** |
+| B2 Layers 单测 | `ChartGisMapLayersPanel.test.tsx` | **UI** |
+| A3 T1/T2 | 无 side-by-side 像素 diff | **PARTIAL** |
+
+**逐一校验（计划全文）**：**否** — T1 GeoLibre 远视图 BROWSER 像素对标未 REAL。

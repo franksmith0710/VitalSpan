@@ -32,7 +32,7 @@ const FALLBACK_FIELD_RULES: Record<string, ChartFieldRule> = {
     maxDimensions: 3,
     minMetrics: 0,
     maxMetrics: 1,
-    note: "底图无需字段；可选经/纬散点或热力层（gisProject.layers[]）",
+    note: "底图无需字段；可选经/纬散点或热力层（gisProject.layers[] · activeLayerId · 图层级 binding 覆写）",
   },
   heatmap: { minDimensions: 2, maxDimensions: 2, minMetrics: 1, maxMetrics: 1 },
   kpi: { minDimensions: 0, maxDimensions: 0, minMetrics: 1, maxMetrics: 1 },

@@ -40,6 +40,8 @@ HINTS: dict[str, str] = {
         "d3 重绘前 svg.interrupt()，再 selectAll('*').remove()；有 .transition( 必须 interrupt"
     ),
     "AIVIZ_WARN_D3_CLEAR": "d3 每次 render 须 svg.selectAll('*').remove() 清空旧图层",
+    "AIVIZ_WARN_BUILTIN_MISROUTE": "应 wf1 chartType，禁止 customViz 仿制内置图（如 treemap 文本列表）",
+    "AIVIZ_WARN_STYLE_KEYS_NOT_APPLIED": "须接线 labelShow/tooltipShow、#tooltip、placeTooltipNearPointer",
     "AIVIZ_WARN_STYLE_COMPLIANCE": (
         "render 内读 var st = (p && p.style) || {}；styleSchema 每项加中文 title"
     ),

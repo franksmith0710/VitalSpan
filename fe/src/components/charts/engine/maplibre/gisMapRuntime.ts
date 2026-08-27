@@ -1,6 +1,11 @@
 import type { StyleSpecification } from "maplibre-gl";
 import { gisFogToMapLibreSky } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
-import type { GisAtmospherePreset, GisProjectFog, GisProjection } from "@/components/charts/engine/maplibre/gisProject";
+import type {
+  GisAtmospherePreset,
+  GisProjectFog,
+  GisProjection,
+  ResolvedGisMapControls,
+} from "@/components/charts/engine/maplibre/gisProject";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
@@ -190,20 +195,40 @@ export function advanceGlobeLongitude(lng: number, speedDegPerSec: number, delta
 
 export async function mountGisMapControls(
   map: MapLibreMap,
-  showControls: boolean,
+  controls: ResolvedGisMapControls,
 ): Promise<() => void> {
   const maplibregl = await import("maplibre-gl");
-  const nav = new maplibregl.NavigationControl({ visualizePitch: true });
-  const scale = new maplibregl.ScaleControl({ maxWidth: 96, unit: "metric" });
-  if (showControls) {
+  const mounted: import("maplibre-gl").IControl[] = [];
+
+  if (controls.navigation) {
+    const nav = new maplibregl.NavigationControl({ visualizePitch: true });
     map.addControl(nav, "top-right");
-    map.addControl(scale, "bottom-left");
+    mounted.push(nav);
   }
+  if (controls.fullscreen) {
+    const fullscreen = new maplibregl.FullscreenControl();
+    map.addControl(fullscreen, "top-right");
+    mounted.push(fullscreen);
+  }
+  if (controls.scale) {
+    const scale = new maplibregl.ScaleControl({ maxWidth: 96, unit: "metric" });
+    map.addControl(scale, "bottom-left");
+    mounted.push(scale);
+  }
+  if (controls.attribution) {
+    const attribution = new maplibregl.AttributionControl({ compact: true });
+    map.addControl(attribution, "bottom-right");
+    mounted.push(attribution);
+  }
+
   map.resize();
   return () => {
-    if (showControls) {
-      map.removeControl(nav);
-      map.removeControl(scale);
+    for (const control of mounted) {
+      try {
+        map.removeControl(control);
+      } catch {
+        /* map 已销毁 */
+      }
     }
     map.resize();
   };

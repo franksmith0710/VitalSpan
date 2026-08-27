@@ -22,5 +22,10 @@
     "layout": "尺寸优先读 p.layout，禁仅 clientWidth||320"
   },
   "forbidden": ["MapLibre", "在线地图瓦片", "javascript:", "onclick=", "onmouseenter="],
+  "routing": {
+    "id": "route.required",
+    "rule": "先 vitalspan_route_request；矩形树/饼图/漏斗/地图/sankey 等 → wf1 chartType，禁止 customViz 仿制",
+    "misrouteWarn": "AIVIZ_WARN_BUILTIN_MISROUTE"
+  },
   "publishGate": "styleComplianceTier=full 且 warnings=0"
 }

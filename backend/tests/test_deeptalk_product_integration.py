@@ -107,6 +107,15 @@ def test_route_request_sankey_via_cli() -> None:
     assert payload.get("chartType") == "sankey"
 
 
+def test_route_request_treemap_via_cli() -> None:
+    proc = _run_cli("vitalspan_route_request", "--text", "商务矩形树图")
+    assert proc.returncode == 0, proc.stderr or proc.stdout
+    payload = json.loads(proc.stdout)
+    assert payload["ok"] is True
+    assert payload["workflow"] == "1"
+    assert payload.get("chartType") == "treemap"
+
+
 def test_contract_card_json_valid() -> None:
     data = json.loads(CONTRACT_CARD.read_text(encoding="utf-8"))
     assert data["version"] == 1

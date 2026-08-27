@@ -3,9 +3,18 @@ import { estimateWidgetBodyHeight } from "@/components/dashboard/gridLayoutAdapt
 import { dwState } from "@/components/dashboard/dashboardWidgetTypography";
 import { cn } from "@/lib/utils";
 
-export function embeddedChartSurface(children: ReactNode) {
+type EmbeddedChartSurfaceOptions = {  clip?: boolean;
+};
+
+export function embeddedChartSurface(children: ReactNode, options?: EmbeddedChartSurfaceOptions) {
+  const clip = options?.clip !== false;
   return (
-    <div className="embedded-chart-live-surface absolute inset-0 min-h-0 overflow-hidden">
+    <div
+      className={cn(
+        "embedded-chart-live-surface absolute inset-0 min-h-0",
+        clip ? "overflow-hidden" : "overflow-visible",
+      )}
+    >
       {children}
     </div>
   );

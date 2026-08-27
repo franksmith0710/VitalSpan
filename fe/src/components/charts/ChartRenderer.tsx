@@ -810,7 +810,7 @@ export const ChartRenderer = memo(function ChartRenderer({
     }
 
     const wrapEmbedded = (node: ReactNode) =>
-      embedded ? embeddedChartSurface(node) : node;
+      embedded ? embeddedChartSurface(node, { clip: !dashboardEditMode }) : node;
 
     if (isCanvasChartType(localConfig.chartType)) {
       const chartType = localConfig.chartType;
@@ -884,13 +884,14 @@ export const ChartRenderer = memo(function ChartRenderer({
       : <p className="text-theme-sm text-gray-500">暂不支持的图表类型</p>;
   };
 
+  const embeddedClip = embedded && !dashboardEditMode;
   const body = !loading && !error && (!empty || isMapChart) ? (
     <div
       className={
         mode === "config"
           ? "grid gap-4 lg:grid-cols-2"
           : embedded
-            ? "relative h-full min-h-0 w-full overflow-hidden"
+            ? cn("relative h-full min-h-0 w-full", embeddedClip ? "overflow-hidden" : "overflow-visible")
             : ""
       }
     >
@@ -903,7 +904,12 @@ export const ChartRenderer = memo(function ChartRenderer({
       ) : null}
       <div
         className={
-          embedded ? "absolute inset-0 flex min-h-0 flex-col overflow-hidden" : undefined
+          embedded
+            ? cn(
+                "absolute inset-0 flex min-h-0 flex-col",
+                embeddedClip ? "overflow-hidden" : "overflow-visible",
+              )
+            : undefined
         }
       >
         {embedded && effectiveDrillStack.length > 0 ? (
@@ -928,7 +934,13 @@ export const ChartRenderer = memo(function ChartRenderer({
             }}
           />
         ) : null}
-        <div className={embedded ? "relative min-h-0 flex-1 overflow-hidden" : undefined}>
+        <div
+          className={
+            embedded
+              ? cn("relative min-h-0 flex-1", embeddedClip ? "overflow-hidden" : "overflow-visible")
+              : undefined
+          }
+        >
           {renderBody()}
         </div>
       </div>

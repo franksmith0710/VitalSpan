@@ -43,6 +43,14 @@ export function readChartPaintSize(
 ): { width: number; height: number } | null {
   const scale = options.visualScale && options.visualScale > 0 ? options.visualScale : 1;
   if (options.fill) {
+    const width = el.clientWidth;
+    const height = el.clientHeight;
+    if (width > 0 && height > 0) {
+      return {
+        width: Math.max(1, Math.round(width / scale)),
+        height: Math.max(1, Math.round(height / scale)),
+      };
+    }
     const rect = el.getBoundingClientRect();
     if (rect.width > 0 && rect.height > 0) {
       return {

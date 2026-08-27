@@ -3,7 +3,13 @@ import { EmbeddedChartLegendShell } from "@/components/charts/EmbeddedChartLegen
 import { useWidgetShellLegend } from "@/components/dashboard/pixelCanvas/widgetShellLegendContext";
 
 /** 栅格/像素画布共用：消费 ChartRenderer 发布的 shell 图例状态 */
-export function WidgetChartLegendShell({ children }: { children: ReactNode }) {
+export function WidgetChartLegendShell({
+  children,
+  clipChart = true,
+}: {
+  children: ReactNode;
+  clipChart?: boolean;
+}) {
   const legendCtx = useWidgetShellLegend();
   const legend = legendCtx?.state;
   const legendItems = legend?.visible && legend.items.length > 0 ? legend.items : [];
@@ -19,6 +25,7 @@ export function WidgetChartLegendShell({ children }: { children: ReactNode }) {
       iconSize={legend?.iconSize ?? 6}
       textColor={legend?.textColor}
       items={legendItems}
+      clipChart={clipChart}
     >
       {children}
     </EmbeddedChartLegendShell>

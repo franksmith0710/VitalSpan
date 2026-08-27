@@ -137,6 +137,42 @@ export type GisBasemapLayerVisibility = {
   landDetail?: boolean;
 };
 
+/** 对标 GeoLibre「地图控件」菜单的可挂载 UI（非整应用 iframe）。 */
+export type GisMapControls = {
+  /** 导航 + 指南针（NavigationControl） */
+  navigation?: boolean;
+  /** 全屏（FullscreenControl） */
+  fullscreen?: boolean;
+  /** 比例尺（ScaleControl） */
+  scale?: boolean;
+  /** 归属信息（AttributionControl） */
+  attribution?: boolean;
+  /** 经纬网 overlay */
+  graticule?: boolean;
+};
+
+export type ResolvedGisMapControls = Required<GisMapControls>;
+
+const DEFAULT_GIS_MAP_CONTROLS: ResolvedGisMapControls = {
+  navigation: false,
+  fullscreen: false,
+  scale: false,
+  attribution: true,
+  graticule: false,
+};
+
+export function resolveGisMapControls(project: Pick<GisProject, "mapControls" | "showControls">): ResolvedGisMapControls {
+  const legacy = project.showControls === true;
+  const raw = project.mapControls;
+  return {
+    navigation: raw?.navigation ?? legacy ?? DEFAULT_GIS_MAP_CONTROLS.navigation,
+    fullscreen: raw?.fullscreen ?? DEFAULT_GIS_MAP_CONTROLS.fullscreen,
+    scale: raw?.scale ?? legacy ?? DEFAULT_GIS_MAP_CONTROLS.scale,
+    attribution: raw?.attribution ?? DEFAULT_GIS_MAP_CONTROLS.attribution,
+    graticule: raw?.graticule ?? DEFAULT_GIS_MAP_CONTROLS.graticule,
+  };
+}
+
 export type GisProjectOverlay = {
   /** 散点填充色；缺省取图表 palette 首色 */
   color?: string;
@@ -185,8 +221,10 @@ export type GisProject = {
   autoRotate?: boolean;
   /** 自转速度（度/秒）；默认大屏慢速 ≈8 分钟/圈 */
   autoRotateSpeed?: number;
-  /** 显示缩放/罗盘/比例尺控件 */
+  /** 显示缩放/罗盘/比例尺控件（legacy；优先 mapControls） */
   showControls?: boolean;
+  /** GeoLibre 对齐的地图 UI 控件开关 */
+  mapControls?: GisMapControls;
   /** 矢量底图建筑 3D 挤出（高 zoom） */
   buildings3d?: boolean;
   /** 地球表面（矢量底图）不透明度 0–1，默认 1；不影响星空/大气 */
@@ -437,6 +475,7 @@ function normalizeGisProject(raw: unknown): GisProject {
   const overlay = normalizeGisProjectOverlay(candidate.overlay);
   const layers = normalizeGisProjectLayers(candidate.layers);
   const halo = normalizeGisProjectHalo(candidate.halo);
+  const mapControls = normalizeGisMapControls(candidate.mapControls);
   const activeLayerId =
     typeof candidate.activeLayerId === "string" && candidate.activeLayerId.trim()
       ? candidate.activeLayerId.trim()
@@ -456,6 +495,7 @@ function normalizeGisProject(raw: unknown): GisProject {
     autoRotate: candidate.autoRotate === true,
     autoRotateSpeed: Number.isFinite(autoRotateSpeed) && autoRotateSpeed > 0 ? autoRotateSpeed : undefined,
     showControls: candidate.showControls === true,
+    mapControls,
     buildings3d: candidate.buildings3d !== false,
     earthOpacity:
       Number.isFinite(earthOpacityRaw) && earthOpacityRaw >= 0 && earthOpacityRaw <= 1
@@ -507,6 +547,18 @@ function normalizeBasemapFlavor(input: unknown): GisBasemapFlavor {
     return input as GisBasemapFlavor;
   }
   return DEFAULT_GIS_PROJECT.basemapFlavor ?? "light";
+}
+
+function normalizeGisMapControls(input: unknown): GisMapControls | undefined {
+  if (!input || typeof input !== "object") return undefined;
+  const raw = input as GisMapControls;
+  const next: GisMapControls = {};
+  if (raw.navigation === true) next.navigation = true;
+  if (raw.fullscreen === true) next.fullscreen = true;
+  if (raw.scale === true) next.scale = true;
+  if (raw.attribution === false) next.attribution = false;
+  if (raw.graticule === true) next.graticule = true;
+  return Object.keys(next).length > 0 ? next : undefined;
 }
 
 function normalizeBasemapLayerVisibility(input: unknown): GisBasemapLayerVisibility | undefined {

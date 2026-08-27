@@ -8,6 +8,7 @@ import {
   formatGisViewScalar,
   parseGisViewDraft,
   readGisProject,
+  resolveGisMapControls,
   resolveGisRenderableBasemap,
 } from "@/components/charts/engine/maplibre/gisProject";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
@@ -89,6 +90,23 @@ describe("gisProject", () => {
     expect(readGisProject(config).basemap).toBe("pmtiles");
     expect(readGisProject(config).tileServiceId).toBe(DEFAULT_PMTILES_TILE_SERVICE_ID);
     expect(readGisProject(config).basemapFlavor).toBe("light");
+  });
+
+  it("resolveGisMapControls merges legacy showControls and granular mapControls", () => {
+    expect(resolveGisMapControls({ showControls: true })).toMatchObject({
+      navigation: true,
+      scale: true,
+    });
+    expect(
+      resolveGisMapControls({
+        mapControls: { navigation: true, fullscreen: true, graticule: true },
+      }),
+    ).toMatchObject({
+      navigation: true,
+      fullscreen: true,
+      graticule: true,
+      attribution: true,
+    });
   });
 
   it("normalizes basemap flavor and optional flags", () => {

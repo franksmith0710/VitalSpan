@@ -73,21 +73,27 @@ export function VizComponentLivePreview({
 
   const chartWidth = Math.max(size.width, 120);
   const chartHeight = Math.max(size.height, 96);
+  const isEditPreview = !compact && !lazy;
   const chartConfig = widget.type === "chart" ? widget.chartConfig : undefined;
   const drillEnabled = Boolean(chartConfig && isGeoMapChartType(chartConfig.chartType));
 
   return (
     <div
       ref={setContainerRef}
-      className={cn("relative h-full min-h-0 w-full", className)}
+      className={cn(
+        "relative flex h-full min-h-0 w-full flex-col",
+        isEditPreview && "flex-1",
+        className,
+      )}
       data-testid="viz-component-live-preview"
       data-live={active ? "true" : "false"}
-      {...(!compact && !lazy ? { [VIZ_COMPONENT_THUMBNAIL_CAPTURE_ATTR]: "" } : {})}
+      {...(isEditPreview ? { [VIZ_COMPONENT_THUMBNAIL_CAPTURE_ATTR]: "" } : {})}
     >
       {widget.type === "chart" && widget.chartConfig ? (
         <VizComponentChartPreviewShell
           widget={widget as LayoutWidget & { chartConfig: NonNullable<typeof widget.chartConfig> }}
           compact={compact}
+          flushContent={isEditPreview}
         >
           {(() => {
             const chartNode = (
@@ -111,7 +117,9 @@ export function VizComponentLivePreview({
             if (effectivePreviewProfile === "card") return chartNode;
             return (
               <WidgetShellLegendProvider>
-                <WidgetChartLegendShell>{chartNode}</WidgetChartLegendShell>
+                <WidgetChartLegendShell clipChart={!isEditPreview}>
+                  {chartNode}
+                </WidgetChartLegendShell>
               </WidgetShellLegendProvider>
             );
           })()}
