@@ -27,7 +27,6 @@ import {
   formatGisViewDraftFromView,
   GIS_VIEW_BOUNDS,
   GIS_VIEW_DECIMALS,
-  GIS_ATMOSPHERE_PRESET_ORDER,
   GIS_ATMOSPHERE_PRESETS,
   GIS_BASEMAP_FLAVORS,
   normalizeGisProjectView,
@@ -35,13 +34,12 @@ import {
   readGisProject,
   resolveGisMapControls,
   writeGisProject,
-  type GisAtmospherePreset,
   type GisBasemapFlavor,
   type GisLabelLang,
   type GisMapControls,
   type GisViewDraftFields,
 } from "@/components/charts/engine/maplibre/gisProject";
-import { captureGisMapViewCamera, applyGisMapViewCamera, applyGisMapViewAtmosphere, applyGisMapBasemapPatch } from "@/components/charts/engine/maplibre/gisMapViewBridge";
+import { captureGisMapViewCamera, applyGisMapViewCamera, applyGisMapBasemapPatch } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 import {
   buildGisConfiguredViewKey,
   GLOBE_IDLE_ROTATION_DEG_PER_SEC,
@@ -59,11 +57,6 @@ const FLAVOR_LABELS: Record<GisBasemapFlavor, string> = {
   grayscale: "灰度",
   white: "留白",
   black: "纯黑",
-};
-
-const ATMOSPHERE_LABELS: Record<GisAtmospherePreset, string> = {
-  day: "白昼",
-  night: "黑夜",
 };
 
 const GIS_SECTION_HINT =
@@ -209,19 +202,6 @@ export function ChartGisMapProjectPanel() {
     event.preventDefault();
     commit();
     event.currentTarget.blur();
-  };
-
-  const applyAtmospherePreset = (preset: GisAtmospherePreset) => {
-    const fog = GIS_ATMOSPHERE_PRESETS[preset];
-    applyGisMapViewAtmosphere(widget.id, {
-      atmospherePreset: preset,
-      fog,
-      projection: project.projection,
-    });
-    patchProject({
-      atmospherePreset: preset,
-      fog,
-    });
   };
 
   const patchBasemapRuntime = (patch: Parameters<typeof applyGisMapBasemapPatch>[1]) => {
@@ -404,11 +384,10 @@ export function ChartGisMapProjectPanel() {
               value={project.projection ?? "mercator"}
               onValueChange={(projection) => {
                 if (projection === "globe") {
-                  const preset = project.atmospherePreset ?? "night";
                   patchProject({
                     projection: "globe",
-                    atmospherePreset: preset,
-                    fog: project.fog ?? GIS_ATMOSPHERE_PRESETS[preset],
+                    atmospherePreset: "night",
+                    fog: project.fog ?? GIS_ATMOSPHERE_PRESETS.night,
                     view: project.view ?? DEFAULT_GIS_GLOBE_VIEW,
                   });
                   return;
@@ -425,27 +404,6 @@ export function ChartGisMapProjectPanel() {
               </SelectContent>
             </Select>
           </div>
-
-          {project.projection === "globe" ? (
-            <div className="grid gap-1.5">
-              <InspectorFieldLabel label="大气预设" hint="黑夜含星空与流星；白昼无星点。" />
-              <Select
-                value={project.atmospherePreset ?? "night"}
-                onValueChange={(preset) => applyAtmospherePreset(preset as GisAtmospherePreset)}
-              >
-                <SelectTrigger className={INSPECTOR_CTRL} aria-label="大气预设">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {GIS_ATMOSPHERE_PRESET_ORDER.map((preset) => (
-                    <SelectItem key={preset} value={preset}>
-                      {ATMOSPHERE_LABELS[preset]}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          ) : null}
 
           {project.projection === "globe" ? (
             <InspectorSliderField

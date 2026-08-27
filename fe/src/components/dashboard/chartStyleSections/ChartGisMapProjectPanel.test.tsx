@@ -55,30 +55,15 @@ function renderPanel(ui: ReactElement, onChange = vi.fn()) {
 afterEach(cleanup);
 
 describe("ChartGisMapProjectPanel atmosphere wiring", () => {
-  it("switches atmosphere preset to day in gisProject", async () => {
-    const onChange = vi.fn();
-    renderPanel(<ChartGisMapProjectPanel />, onChange);
-    const user = userEvent.setup();
+  it("does not expose day atmosphere preset selector", async () => {
+    renderPanel(<ChartGisMapProjectPanel />);
 
     await waitFor(() => {
       expect(screen.getByTestId("chart-gis-map-project-panel")).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: "GIS 底图" }));
-    await user.click(screen.getByRole("combobox", { name: "大气预设" }));
-    await user.click(screen.getByRole("option", { name: "白昼" }));
-
-    await waitFor(() => {
-      expect(onChange).toHaveBeenCalledWith(
-        expect.objectContaining({
-          nativeBody: expect.objectContaining({
-            gisProject: expect.objectContaining({
-              atmospherePreset: "day",
-            }),
-          }),
-        }),
-      );
-    });
+    expect(screen.queryByRole("combobox", { name: "大气预设" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: "白昼" })).not.toBeInTheDocument();
   });
 });
 

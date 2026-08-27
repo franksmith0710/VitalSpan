@@ -384,7 +384,7 @@ export const GIS_ATMOSPHERE_PRESETS: Record<GisAtmospherePreset, GisProjectFog> 
   night: DEFAULT_GLOBE_FOG,
 };
 
-export const GIS_ATMOSPHERE_PRESET_ORDER: GisAtmospherePreset[] = ["day", "night"];
+export const GIS_ATMOSPHERE_PRESET_ORDER: GisAtmospherePreset[] = ["night"];
 
 /** 球面地球默认远视图（亚洲—印度洋半球，接近 GeoLibre 初始观感）。 */
 export const DEFAULT_GIS_GLOBE_VIEW: GisProjectView = {
@@ -590,10 +590,8 @@ function normalizeBasemapLayerVisibility(input: unknown): GisBasemapLayerVisibil
   return Object.keys(next).length > 0 ? next : undefined;
 }
 
-function normalizeAtmospherePreset(input: unknown): GisAtmospherePreset {
-  if (input === "day" || input === "night") return input;
-  if (input === "dusk" || input === "deep-space") return "night";
-  return DEFAULT_GIS_PROJECT.atmospherePreset ?? "night";
+function normalizeAtmospherePreset(_input: unknown): GisAtmospherePreset {
+  return "night";
 }
 
 function normalizeGisView(input: unknown): GisProjectView | undefined {

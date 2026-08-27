@@ -37,7 +37,7 @@ describe("gisProject", () => {
     ).toBe("pmtiles");
   });
 
-  it("resolves globe fog from atmosphere preset", () => {
+  it("migrates day atmosphere preset to night", () => {
     const project = readGisProject({
       chartType: "gis-map",
       nativeBody: {
@@ -47,7 +47,8 @@ describe("gisProject", () => {
         },
       },
     });
-    expect(project.fog).toEqual(GIS_ATMOSPHERE_PRESETS.day);
+    expect(project.atmospherePreset).toBe("night");
+    expect(project.fog).toEqual(GIS_ATMOSPHERE_PRESETS.night);
   });
 
   it("derives fog from atmosphere preset only", () => {
