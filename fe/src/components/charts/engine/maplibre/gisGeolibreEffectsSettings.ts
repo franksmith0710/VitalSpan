@@ -26,6 +26,11 @@ export const GIS_HALO_EXTENT_MAX = 4;
 export const GIS_HALO_OPACITY_MIN = 0;
 export const GIS_HALO_OPACITY_MAX = 1;
 export const GIS_SPACE_EDGE_DARKEN = 0.33;
+export const GIS_EFFECTS_FRAME_MS = 1000 / 60;
+
+export function nextGisEffectsFrameTime(timestamp: number, lastFrameTime: number): number | null {
+  return timestamp - lastFrameTime + 0.1 < GIS_EFFECTS_FRAME_MS ? null : timestamp;
+}
 
 /** GeoLibre HALO_STOP_SHAPE — [offset, alpha, shade] */
 export const GIS_HALO_STOP_SHAPE: Array<[number, number, number]> = [

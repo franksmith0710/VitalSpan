@@ -29,7 +29,7 @@ import { applyGisMapSun, getGisMapSunSettings } from "@/components/charts/engine
 import { cn } from "@/lib/utils";
 
 const SUN_HINT =
-  "对标 GeoLibre「太阳」：引擎内 play/tick、NOAA 位置与夜半球 canvas 遮罩。";
+  "对标 GeoLibre「太阳」：平面/球面均可用；canvas 夜半球遮罩 + map.setLight 驱动 3D 建筑光照。";
 const MINUTES_PER_DAY = 1440;
 
 function clampMinutes(minutes: number): number {
@@ -74,7 +74,7 @@ export function ChartGisMapSunPanel() {
   );
 
   useEffect(() => {
-    if (!resolved.playing || project.projection !== "globe" || !resolved.enabled) return;
+    if (!resolved.playing || !resolved.enabled) return;
     let frameId = 0;
     const poll = () => {
       const live = getGisMapSunSettings(widget.id);
@@ -88,15 +88,7 @@ export function ChartGisMapSunPanel() {
     };
     frameId = requestAnimationFrame(poll);
     return () => cancelAnimationFrame(frameId);
-  }, [patchSun, project.projection, resolved.enabled, resolved.playing, widget.id]);
-
-  if (project.projection !== "globe") {
-    return (
-      <ChartInspectorSection title="太阳" hint={SUN_HINT} data-testid="chart-gis-map-sun-panel">
-        <p className="text-theme-xs text-gray-500">请先将投影设为「球面地球」。</p>
-      </ChartInspectorSection>
-    );
-  }
+  }, [patchSun, resolved.enabled, resolved.playing, widget.id]);
 
   const date = formatGisSunLocalDate(resolved.dateMs);
   const time = formatGisSunLocalTime(resolved.dateMs);

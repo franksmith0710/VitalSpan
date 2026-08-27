@@ -22,7 +22,7 @@ import {
 import { applyGisMapViewAtmosphere } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 
 const ATMOSPHERE_HINT =
-  "对标 GeoLibre「大气效果」：光晕颜色/范围/强度与深空色；仅球面地球生效。";
+  "对标 GeoLibre「大气效果」：深空、星场、流星与 screen 混合光晕四层叠加；仅球面地球生效。";
 
 export function ChartGisMapAtmospherePanel() {
   const { cfg, widget, mutateChartConfig } = useChartInspector();

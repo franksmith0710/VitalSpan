@@ -149,6 +149,17 @@ export class GisSunEngine {
         "raster-resampling": "linear",
       },
     });
+    this.raiseNightLayer();
+  }
+
+  /** 昼夜遮罩须在业务散点层之上，与 GeoLibre maplibre-sun 一致。 */
+  private raiseNightLayer(): void {
+    if (!this.map.getLayer(NIGHT_LAYER_ID)) return;
+    try {
+      this.map.moveLayer(NIGHT_LAYER_ID);
+    } catch {
+      /* layer mid-move during style swap */
+    }
   }
 
   private removeLayers(): void {
@@ -170,6 +181,7 @@ export class GisSunEngine {
     if (!source) return;
     this.drawNightMask();
     this.applyLight();
+    this.raiseNightLayer();
   }
 
   play(): void {

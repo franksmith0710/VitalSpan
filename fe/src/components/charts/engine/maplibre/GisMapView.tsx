@@ -22,8 +22,12 @@ import {
 import { buildGeoJsonBoundsKey, fitGisOverlayBounds } from "@/components/charts/engine/maplibre/gisMapOverlayFit";
 import { mountGisOverlayInteraction } from "@/components/charts/engine/maplibre/gisMapOverlayInteraction";
 import { applyGisGlobeToStyle } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
-import { spaceBackdropCss } from "@/components/charts/engine/maplibre/gisGeolibreEffectsSettings";
 import { resolveGisEffectsSettings } from "@/components/charts/engine/maplibre/gisProjectEffects";
+import {
+  applyGisGeolibreEffectsSettings,
+  createGisGeolibreEffectsEngine,
+} from "@/components/charts/engine/maplibre/gisGeolibreEffectsRuntime";
+import type { GisGeolibreEffectsEngine } from "@/components/charts/engine/maplibre/gisGeolibreEffectsEngine";
 import {
   applyGlobeAtmosphere,
   applyGisMapStylePreservingCamera,
@@ -40,8 +44,6 @@ import {
 import { resolveGisProjectSun } from "@/components/charts/engine/maplibre/gisProjectSun";
 import { createGisSunEngine, applyGisSunLive } from "@/components/charts/engine/maplibre/gisSunRuntime";
 import type { GisSunEngine } from "@/components/charts/engine/maplibre/gisSunEngine";
-import { mountGisGlobeHaloOverlay } from "@/components/charts/engine/maplibre/gisGlobeHalo";
-import { mountGisStarfieldOverlay } from "@/components/charts/engine/maplibre/gisStarfield";
 import { registerGisMapViewLiveControl } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
 import {
@@ -87,6 +89,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const liveCameraRef = useRef<GisMapCamera | null>(null);
   const overlayFitKeyRef = useRef<string | null>(null);
   const sunEngineRef = useRef<GisSunEngine | null>(null);
+  const effectsEngineRef = useRef<GisGeolibreEffectsEngine | null>(null);
   const project = useMemo(() => readGisProject(chartConfig), [chartConfig]);
   const projectRef = useRef(project);
   projectRef.current = project;
@@ -261,6 +264,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     } else if (!layerEntriesRef.current.some((entry) => entry.geoJson)) {
       overlayFitKeyRef.current = null;
     }
+    sunEngineRef.current?.render();
   }, []);
 
   const mapStyleKey = useMemo(
@@ -309,9 +313,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   );
   const earthOpacity = project.earthOpacity ?? 1;
   const projection = project.projection ?? "globe";
-  const effectsSettings = useMemo(() => resolveGisEffectsSettings(project), [project.effects, project.fog, project.halo]);
-  const hostBackground =
-    project.projection === "globe" ? spaceBackdropCss(effectsSettings.spaceColor) : undefined;
+  const effectsSettings = useMemo(
+    () => resolveGisEffectsSettings(project),
+    [project.effects, project.fog, project.halo],
+  );
 
   const applyConfiguredView = useCallback((map: MapLibreMap) => {
     const currentView = projectRef.current.view ?? DEFAULT_GIS_GLOBE_VIEW;
@@ -561,7 +566,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || project.projection !== "globe" || !sunEnabled) {
+    if (!map || !sunEnabled) {
       sunEngineRef.current?.destroy();
       sunEngineRef.current = null;
       return;
@@ -576,7 +581,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       sunEngineRef.current?.destroy();
       sunEngineRef.current = null;
     };
-  }, [project.projection, styleKey, sunEnabled]);
+  }, [styleKey, sunEnabled]);
 
   useEffect(() => {
     if (!sunEngineRef.current) return;
@@ -598,27 +603,30 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   }, [applyConfiguredView, configuredViewKey]);
 
   useEffect(() => {
-    const shell = shellRef.current;
-    if (!shell) return;
-    return mountGisGlobeHaloOverlay(shell, () => mapRef.current, () => ({
-      preset: projectRef.current.atmospherePreset,
-      projection: projectRef.current.projection,
-      effects: projectRef.current.effects,
-      halo: projectRef.current.halo,
-      fog: projectRef.current.fog,
-    }));
-  }, [atmosphereKey, project.atmospherePreset, project.effects, project.fog, project.halo, project.projection]);
+    const map = mapRef.current;
+    if (!map || project.projection !== "globe") {
+      effectsEngineRef.current?.destroy();
+      effectsEngineRef.current = null;
+      return;
+    }
+    const mount = () => {
+      effectsEngineRef.current?.destroy();
+      effectsEngineRef.current = createGisGeolibreEffectsEngine(
+        map,
+        resolveGisEffectsSettings(projectRef.current),
+      );
+    };
+    if (map.isStyleLoaded()) mount();
+    else map.once("load", mount);
+    return () => {
+      effectsEngineRef.current?.destroy();
+      effectsEngineRef.current = null;
+    };
+  }, [project.projection, styleKey]);
 
   useEffect(() => {
-    const shell = shellRef.current;
-    if (!shell) return;
-    return mountGisStarfieldOverlay(
-      shell,
-      () => mapRef.current,
-      project.atmospherePreset,
-      project.projection,
-    );
-  }, [atmosphereKey, project.atmospherePreset, project.projection]);
+    applyGisGeolibreEffectsSettings(effectsEngineRef.current, effectsSettings);
+  }, [effectsSettings]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -746,11 +754,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         if (ctx.fog) {
           projectRef.current = { ...projectRef.current, fog: ctx.fog };
         }
-        const shell = shellRef.current;
-        if (shell && projectRef.current.projection === "globe") {
-          const spaceColor = resolveGisEffectsSettings(projectRef.current).spaceColor;
-          shell.style.background = spaceBackdropCss(spaceColor);
-        }
+        applyGisGeolibreEffectsSettings(
+          effectsEngineRef.current,
+          resolveGisEffectsSettings(projectRef.current),
+        );
         applyGlobeAtmosphere(
           map,
           {
@@ -820,7 +827,6 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       <div
         ref={shellRef}
         className="relative h-full w-full"
-        style={hostBackground ? { background: hostBackground } : undefined}
         {...(fill ? { [VIZ_WHEEL_ZOOM_SURFACE_ATTR]: "true" } : {})}
       >
         <div
