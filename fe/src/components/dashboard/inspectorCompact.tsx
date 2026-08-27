@@ -95,6 +95,30 @@ export function useInspectorSectionOpen(defaultOpen: boolean) {
   return [open, setOpen] as const;
 }
 
+/**
+ * 嵌套 Collapsible 须用命名 group：匿名 `group` 会让内层箭头跟随外层 `data-state=open` 误旋转。
+ * 挂在 CollapsibleTrigger 上，箭头用 InspectorCollapseChevron。
+ */
+export const INSPECTOR_COLLAPSE_TRIGGER = "group/collapse-trigger";
+
+export const INSPECTOR_COLLAPSE_CHEVRON =
+  "shrink-0 text-gray-400 transition-transform group-data-[state=open]/collapse-trigger:rotate-90";
+
+export function InspectorCollapseChevron({
+  className,
+  size = "sm",
+}: {
+  className?: string;
+  size?: "sm" | "md";
+}) {
+  return (
+    <ChevronRight
+      className={cn(INSPECTOR_COLLAPSE_CHEVRON, size === "md" ? "size-3.5" : "size-3", className)}
+      aria-hidden
+    />
+  );
+}
+
 export function InspectorSubtleEmpty({
   message,
   className,
@@ -207,21 +231,19 @@ export function ChartInspectorSection({
       open={open}
       onOpenChange={setOpen}
       data-testid={testId}
-      className={cn("group border-b border-gray-100 dark:border-white/[0.06]", className)}
+      className={cn("border-b border-gray-100 dark:border-white/[0.06]", className)}
     >
       <div className="flex items-center gap-0.5 py-0.5">
         <CollapsibleTrigger
           className={cn(
+            INSPECTOR_COLLAPSE_TRIGGER,
             "flex min-w-0 flex-1 items-center gap-0.5 rounded-md py-1 pl-0 pr-1 text-left",
             "text-[11px] font-semibold text-gray-800 dark:text-white/90",
             "transition-colors hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
             "dark:hover:bg-white/[0.04]",
           )}
         >
-          <ChevronRight
-            className="size-3 shrink-0 text-gray-400 transition-transform group-data-[state=open]:rotate-90"
-            aria-hidden
-          />
+          <InspectorCollapseChevron />
           <span className="min-w-0 truncate">{title}</span>
         </CollapsibleTrigger>
         {hint ? (

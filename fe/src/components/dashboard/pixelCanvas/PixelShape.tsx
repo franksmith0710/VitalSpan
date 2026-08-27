@@ -28,10 +28,6 @@ import { shapeTitlePresentationStyle } from "../dashboardWidgetTypography";
 import { mergeWidgetOverrideStyle } from "../widgetRailStyleSections";
 import { resolveDashboardAlignmentSnap, resolveDashboardChrome } from "../dashboardChromeConfig";
 import {
-  shouldApplyAuxiliaryGridSnap,
-  snapRectToAuxiliaryGrid,
-} from "./auxiliaryGridSnap";
-import {
   applyPixelInteraction,
   RESIZE_CURSORS,
   RESIZE_DIRECTIONS,
@@ -532,26 +528,25 @@ export function PixelShape({
     event: PointerEvent,
     active: ActiveInteraction,
   ): { rect: PixelRect; guides: MarkLineGuide[] } => {
-    if (!onMarkGuidesChange || !markLinesEnabled) {
-      return { rect: raw, guides: [] };
+    let rect = raw;
+    let guides: MarkLineGuide[] = [];
+    if (onMarkGuidesChange && markLinesEnabled) {
+      const markTargets = snapTargets ?? otherWidgets ?? [];
+      const snapped = computeMarkLineSnap(raw, markTargets, {
+        threshold: markLineThreshold(scale),
+        dragDir: {
+          isRightward: event.clientX >= active.startClient.x,
+          isDownward: event.clientY >= active.startClient.y,
+        },
+        interactionKind: active.kind,
+        anchorRect: active.startRect,
+        snapEdges: alignmentSnap.snapEdges,
+        snapCenters: alignmentSnap.snapCenters,
+      });
+      rect = snapped.rect;
+      guides = snapped.guides;
     }
-    const markTargets = snapTargets ?? otherWidgets ?? [];
-    const snapped = computeMarkLineSnap(raw, markTargets, {
-      threshold: markLineThreshold(scale, alignmentSnap.markLineThresholdPx),
-      dragDir: {
-        isRightward: event.clientX >= active.startClient.x,
-        isDownward: event.clientY >= active.startClient.y,
-      },
-      interactionKind: active.kind,
-      anchorRect: active.startRect,
-      snapEdges: alignmentSnap.snapEdges,
-      snapCenters: alignmentSnap.snapCenters,
-    });
-    let rect = snapped.rect;
-    if (shouldApplyAuxiliaryGridSnap(alignmentSnap, chrome.showAuxiliaryGrid)) {
-      rect = snapRectToAuxiliaryGrid(rect, active.kind, alignmentSnap.gridCellPx);
-    }
-    return { rect, guides: snapped.guides };
+    return { rect, guides };
   };
 
   const rectForPointer = (

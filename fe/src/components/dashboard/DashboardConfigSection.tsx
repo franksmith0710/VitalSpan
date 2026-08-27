@@ -1,11 +1,14 @@
 import type { ReactNode } from "react";
-import { ChevronRight } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
+import {
+  INSPECTOR_COLLAPSE_TRIGGER,
+  InspectorCollapseChevron,
+} from "@/components/dashboard/inspectorCompact";
 
 type DashboardConfigSectionProps = {
   title: string;
@@ -38,12 +41,13 @@ export function DashboardConfigSection({
     <Collapsible
       defaultOpen={defaultOpen}
       disabled={disabled}
-      className="group border-b border-gray-100 dark:border-white/[0.06]"
+      className="border-b border-gray-100 dark:border-white/[0.06]"
       data-testid={testId}
     >
       <div className={cn("flex w-full items-stretch", headerBarClass)}>
         <CollapsibleTrigger
           className={cn(
+            INSPECTOR_COLLAPSE_TRIGGER,
             "flex min-w-0 flex-1 items-center gap-1.5 text-left font-medium text-gray-700 transition-colors",
             compact ? "px-2.5 py-1.5 text-[11px]" : "gap-2 px-3 py-2.5 text-theme-xs",
             "hover:bg-gray-100 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500/30",
@@ -51,13 +55,9 @@ export function DashboardConfigSection({
             disabled && "cursor-default hover:bg-transparent dark:hover:bg-transparent",
           )}
         >
-          <ChevronRight
-            className={cn(
-              "shrink-0 text-gray-400 transition-transform",
-              compact ? "size-3" : "size-3.5",
-              !disabled && "group-data-[state=open]:rotate-90",
-            )}
-            aria-hidden
+          <InspectorCollapseChevron
+            size={compact ? "sm" : "md"}
+            className={disabled ? "rotate-0" : undefined}
           />
           <span className="min-w-0 flex-1 truncate">{title}</span>
         </CollapsibleTrigger>

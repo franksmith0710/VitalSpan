@@ -4,6 +4,7 @@ import type {
   DashboardChromeConfig,
   DashboardStyleConfig,
 } from "./dashboardStyleConfig";
+import { PIXEL_COLLISION_OVERLAP_BUFFER_PX } from "./pixelCanvas/collisionLayout";
 
 export const DEFAULT_DASHBOARD_CHROME: Required<
   Pick<
@@ -27,15 +28,16 @@ export const DEFAULT_DRILL_LEVEL_COLORS = ["#465fff", "#0ba5ec", "#12b76a"] as c
 export const AUXILIARY_GRID_CELL_PX = 20;
 
 export const DEFAULT_MARK_LINE_THRESHOLD_PX = 10;
-export const MIN_MARK_LINE_THRESHOLD_PX = 4;
-export const MAX_MARK_LINE_THRESHOLD_PX = 24;
+
+export const DEFAULT_COLLISION_OVERLAP_BUFFER_PX = PIXEL_COLLISION_OVERLAP_BUFFER_PX;
+export const MIN_COLLISION_OVERLAP_BUFFER_PX = 0;
+export const MAX_COLLISION_OVERLAP_BUFFER_PX = 80;
 export const MIN_GRID_CELL_PX = 8;
 export const MAX_GRID_CELL_PX = 48;
 
 export type ResolvedDashboardAlignmentSnap = {
   enableMarkLineSnap: boolean;
-  markLineThresholdPx: number;
-  enableGridSnap: boolean;
+  collisionOverlapBufferPx: number;
   gridCellPx: number;
   snapEdges: boolean;
   snapCenters: boolean;
@@ -64,12 +66,11 @@ export function resolveDashboardAlignmentSnap(
   const snap: DashboardAlignmentSnapConfig = config?.chrome?.alignmentSnap ?? {};
   return {
     enableMarkLineSnap: snap.enableMarkLineSnap ?? chrome.showAuxiliaryGrid,
-    markLineThresholdPx: clampInt(
-      snap.markLineThresholdPx ?? DEFAULT_MARK_LINE_THRESHOLD_PX,
-      MIN_MARK_LINE_THRESHOLD_PX,
-      MAX_MARK_LINE_THRESHOLD_PX,
+    collisionOverlapBufferPx: clampInt(
+      snap.collisionOverlapBufferPx ?? DEFAULT_COLLISION_OVERLAP_BUFFER_PX,
+      MIN_COLLISION_OVERLAP_BUFFER_PX,
+      MAX_COLLISION_OVERLAP_BUFFER_PX,
     ),
-    enableGridSnap: snap.enableGridSnap === true,
     gridCellPx: clampInt(snap.gridCellPx ?? AUXILIARY_GRID_CELL_PX, MIN_GRID_CELL_PX, MAX_GRID_CELL_PX),
     snapEdges: snap.snapEdges !== false,
     snapCenters: snap.snapCenters !== false,

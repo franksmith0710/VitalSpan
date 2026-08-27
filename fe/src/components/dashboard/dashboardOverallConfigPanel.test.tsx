@@ -41,14 +41,13 @@ describe("DashboardOverallConfigPanel", () => {
     );
 
     await user.click(screen.getByRole("button", { name: "展开对齐吸附设置" }));
-    expect(screen.getByTestId("alignment-snap-controls")).toBeVisible();
 
-    await user.click(screen.getByRole("switch", { name: "网格步长吸附" }));
+    await user.click(screen.getByRole("switch", { name: "组件对齐吸附" }));
 
     expect(patchStyle).toHaveBeenCalledWith({
       chrome: {
         alignmentSnap: {
-          enableGridSnap: true,
+          enableMarkLineSnap: false,
         },
       },
     });

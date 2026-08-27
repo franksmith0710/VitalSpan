@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { ChevronRight } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -9,16 +8,32 @@ import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import type { DashboardAlignmentSnapConfig, DashboardChromeConfig } from "./dashboardStyleConfig";
 import {
+  MAX_COLLISION_OVERLAP_BUFFER_PX,
   MAX_GRID_CELL_PX,
-  MAX_MARK_LINE_THRESHOLD_PX,
+  MIN_COLLISION_OVERLAP_BUFFER_PX,
   MIN_GRID_CELL_PX,
-  MIN_MARK_LINE_THRESHOLD_PX,
   resolveDashboardAlignmentSnap,
   resolveDashboardChrome,
 } from "./dashboardChromeConfig";
 import { DeAttrSubField, DeAttrToggleRow } from "./dashboardInspectorUi";
 import { DeAttrSubSliderRow } from "./deAttrSlider";
-import { INSPECTOR_SWITCH_SIZE } from "./inspectorCompact";
+import {
+  INSPECTOR_COLLAPSE_TRIGGER,
+  INSPECTOR_SWITCH_SIZE,
+  InspectorCollapseChevron,
+  InspectorHintTip,
+} from "./inspectorCompact";
+
+const HINT_AUXILIARY_GRID =
+  "编辑态在画布上显示点阵参考线；下方细项可配置碰撞与组件对齐（仅像素/大屏）。";
+const HINT_COLLISION_OVERLAP =
+  "两组件在宽、高方向重叠均超过该像素时，才触发碰撞推挤与落点回弹。";
+const HINT_MARK_LINE_SNAP =
+  "拖拽时显示参考线，并与其他组件的边或中心对齐；与「重合阈值」控制的碰撞推挤无关。";
+const HINT_SNAP_TARGETS = "选择要对齐到边线还是中心线。";
+const HINT_SNAP_EDGES = "与其他组件的外边框贴齐、对齐。";
+const HINT_SNAP_CENTERS = "与其他组件的水平/垂直中心线对齐。";
+const HINT_GRID_CELL = "辅助点阵的间距，仅影响显示密度，不改变组件落点。";
 
 type AlignmentSnapControlsProps = {
   chrome: ReturnType<typeof resolveDashboardChrome>;
@@ -27,6 +42,18 @@ type AlignmentSnapControlsProps = {
   isPixelLayout: boolean;
   patchChrome: (patch: Partial<DashboardChromeConfig>) => void;
 };
+
+function AuxiliaryGridLabel() {
+  return (
+    <span className="min-w-0 truncate text-theme-xs text-gray-600 dark:text-gray-300">
+      辅助对齐网格
+    </span>
+  );
+}
+
+function AuxiliaryGridHint({ text = HINT_AUXILIARY_GRID }: { text?: string }) {
+  return <InspectorHintTip text={text} aria-label="辅助对齐网格说明" className="shrink-0" />;
+}
 
 function AlignmentSnapDetails({
   alignment,
@@ -47,39 +74,37 @@ function AlignmentSnapDetails({
 
   return (
     <div className="space-y-0 border-t border-gray-100 pt-1 dark:border-white/[0.06]">
-      <DeAttrToggleRow
-        label="组件对齐吸附"
-        checked={alignment.enableMarkLineSnap}
-        onCheckedChange={(checked) => snapConfig({ enableMarkLineSnap: checked })}
-      />
       <DeAttrSubSliderRow
         label="重合阈值"
-        value={alignment.markLineThresholdPx}
-        min={MIN_MARK_LINE_THRESHOLD_PX}
-        max={MAX_MARK_LINE_THRESHOLD_PX}
+        value={alignment.collisionOverlapBufferPx}
+        min={MIN_COLLISION_OVERLAP_BUFFER_PX}
+        max={MAX_COLLISION_OVERLAP_BUFFER_PX}
         step={1}
         unit="px"
         ariaLabel="重合阈值"
-        description="靠近其他组件边/中心多少屏幕像素内触发吸附"
-        onChange={(markLineThresholdPx) => snapConfig({ markLineThresholdPx })}
+        hint={HINT_COLLISION_OVERLAP}
+        onChange={(collisionOverlapBufferPx) => snapConfig({ collisionOverlapBufferPx })}
       />
-      <DeAttrSubField label="吸附目标">
+      <DeAttrToggleRow
+        label="组件对齐吸附"
+        checked={alignment.enableMarkLineSnap}
+        hint={HINT_MARK_LINE_SNAP}
+        onCheckedChange={(checked) => snapConfig({ enableMarkLineSnap: checked })}
+      />
+      <DeAttrSubField label="吸附目标" hint={HINT_SNAP_TARGETS}>
         <DeAttrToggleRow
           label="边线（贴边/对齐边）"
           checked={alignment.snapEdges}
+          hint={HINT_SNAP_EDGES}
           onCheckedChange={(checked) => snapConfig({ snapEdges: checked })}
         />
         <DeAttrToggleRow
           label="中心线"
           checked={alignment.snapCenters}
+          hint={HINT_SNAP_CENTERS}
           onCheckedChange={(checked) => snapConfig({ snapCenters: checked })}
         />
       </DeAttrSubField>
-      <DeAttrToggleRow
-        label="网格步长吸附"
-        checked={alignment.enableGridSnap}
-        onCheckedChange={(checked) => snapConfig({ enableGridSnap: checked })}
-      />
       <DeAttrSubSliderRow
         label="网格步长"
         value={alignment.gridCellPx}
@@ -88,11 +113,7 @@ function AlignmentSnapDetails({
         step={1}
         unit="px"
         ariaLabel="网格步长"
-        description={
-          alignment.enableGridSnap
-            ? "与辅助网格点阵一致；开启步长吸附后落点按此间距取整"
-            : "仅影响点阵显示密度"
-        }
+        hint={HINT_GRID_CELL}
         onChange={(gridCellPx) => snapConfig({ gridCellPx })}
       />
     </div>
@@ -113,9 +134,10 @@ export function AlignmentSnapControls({
     return (
       <div className="border-b border-gray-100 py-2.5 last:border-b-0 dark:border-white/[0.06]">
         <div className="flex items-center justify-between gap-3">
-          <span className="min-w-0 flex-1 text-theme-xs text-gray-600 dark:text-gray-300">
-            辅助对齐网格
-          </span>
+          <div className="flex min-w-0 flex-1 items-center gap-1">
+            <AuxiliaryGridLabel />
+            <AuxiliaryGridHint text="编辑态在画布上显示点阵参考线。" />
+          </div>
           <Switch
             checked={chrome.showAuxiliaryGrid}
             onCheckedChange={(checked) => patchChrome({ showAuxiliaryGrid: checked })}
@@ -131,25 +153,25 @@ export function AlignmentSnapControls({
     <Collapsible
       open={open}
       onOpenChange={setOpen}
-      className="group border-b border-gray-100 last:border-b-0 dark:border-white/[0.06]"
+      className="border-b border-gray-100 last:border-b-0 dark:border-white/[0.06]"
       data-testid="alignment-snap-section"
     >
       <div className="flex items-center gap-1 py-2.5">
-        <CollapsibleTrigger
-          className={cn(
-            "flex min-w-0 flex-1 items-center gap-1 rounded-md py-0.5 pr-1 text-left",
-            "text-theme-xs text-gray-600 dark:text-gray-300",
-            "transition-colors hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
-            "dark:hover:bg-white/[0.04]",
-          )}
-          aria-label={open ? "收起对齐吸附设置" : "展开对齐吸附设置"}
-        >
-          <ChevronRight
-            className="size-3.5 shrink-0 text-gray-400 transition-transform group-data-[state=open]:rotate-90"
-            aria-hidden
-          />
-          <span className="min-w-0 truncate">辅助对齐网格</span>
-        </CollapsibleTrigger>
+        <div className="flex min-w-0 flex-1 items-center gap-1">
+          <CollapsibleTrigger
+            className={cn(
+              INSPECTOR_COLLAPSE_TRIGGER,
+              "flex min-w-0 flex-1 items-center gap-1 rounded-md py-0.5 pr-1 text-left",
+              "transition-colors hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
+              "dark:hover:bg-white/[0.04]",
+            )}
+            aria-label={open ? "收起对齐吸附设置" : "展开对齐吸附设置"}
+          >
+            <InspectorCollapseChevron size="md" />
+            <AuxiliaryGridLabel />
+          </CollapsibleTrigger>
+          <AuxiliaryGridHint />
+        </div>
         <div
           className="shrink-0 pl-1"
           onClick={(event) => event.stopPropagation()}

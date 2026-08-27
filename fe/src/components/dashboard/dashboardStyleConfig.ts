@@ -116,11 +116,9 @@ export type DashboardChromeConfig = {
 export type DashboardAlignmentSnapConfig = {
   /** 组件边/中心对齐吸附；未设时随 showAuxiliaryGrid */
   enableMarkLineSnap?: boolean;
-  /** 吸附重合阈值（屏幕 px）；默认 10 */
-  markLineThresholdPx?: number;
-  /** 是否吸附到网格步长；默认 false */
-  enableGridSnap?: boolean;
-  /** 网格步长（px）；默认 20 */
+  /** 碰撞重合阈值（画布 px）：双向重叠超过该值才触发推挤；默认 40 */
+  collisionOverlapBufferPx?: number;
+  /** 网格步长（px）；默认 20，仅影响点阵显示密度 */
   gridCellPx?: number;
   /** 吸附边线（贴边/对齐边）；默认 true */
   snapEdges?: boolean;

@@ -1,12 +1,15 @@
 import type { ReactNode } from "react";
-import { ChevronRight } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-import { InspectorHintTip } from "@/components/dashboard/inspectorCompact";
+import {
+  INSPECTOR_COLLAPSE_TRIGGER,
+  InspectorCollapseChevron,
+  InspectorHintTip,
+} from "@/components/dashboard/inspectorCompact";
 
 export type WidgetAdvancedSection = {
   id: string;
@@ -34,12 +37,13 @@ export function WidgetAdvancedAccordion({ sections, className }: WidgetAdvancedA
           key={section.id}
           defaultOpen={section.defaultOpen ?? false}
           disabled={section.disabled}
-          className="group border-b border-gray-100 last:border-b-0 dark:border-white/[0.06]"
+          className="border-b border-gray-100 last:border-b-0 dark:border-white/[0.06]"
         >
           <div className="flex w-full items-center gap-1 px-1 py-2">
             <CollapsibleTrigger
               disabled={section.disabled}
               className={cn(
+                INSPECTOR_COLLAPSE_TRIGGER,
                 "flex min-w-0 flex-1 items-center gap-1 rounded-md text-left transition-colors",
                 "text-[11px] font-semibold text-gray-800 dark:text-white/90",
                 "hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
@@ -47,10 +51,7 @@ export function WidgetAdvancedAccordion({ sections, className }: WidgetAdvancedA
                 section.disabled && "cursor-not-allowed opacity-50",
               )}
             >
-              <ChevronRight
-                className="size-3 shrink-0 text-gray-400 transition-transform group-data-[state=open]:rotate-90"
-                aria-hidden
-              />
+              <InspectorCollapseChevron />
               <span className="min-w-0 flex-1 truncate">{section.title}</span>
             </CollapsibleTrigger>
             {section.hint ? (

@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactNode } from "react";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { INSPECTOR_SWITCH_SIZE } from "./inspectorCompact";
+import { INSPECTOR_SWITCH_SIZE, InspectorHintTip } from "./inspectorCompact";
 
 export type DeSegmentOption = {
   value: string | boolean;
@@ -60,10 +60,12 @@ export function DeAttrSubField({
   label,
   children,
   className,
+  hint,
 }: {
   label: string;
   children: ReactNode;
   className?: string;
+  hint?: string;
 }) {
   return (
     <div
@@ -72,7 +74,10 @@ export function DeAttrSubField({
         className,
       )}
     >
-      <p className="mb-1.5 text-[11px] font-medium text-gray-500 dark:text-gray-400">{label}</p>
+      <div className="mb-1.5 flex min-w-0 items-center gap-1">
+        <p className="text-[11px] font-medium text-gray-500 dark:text-gray-400">{label}</p>
+        {hint ? <InspectorHintTip text={hint} aria-label={`${label}说明`} /> : null}
+      </div>
       {children}
     </div>
   );
@@ -157,12 +162,14 @@ export function DeSegmentGroup({
 export function DeAttrToggleRow({
   label,
   description,
+  hint,
   checked,
   disabled = false,
   onCheckedChange,
 }: {
   label: string;
   description?: string;
+  hint?: string;
   checked: boolean;
   disabled?: boolean;
   onCheckedChange: (checked: boolean) => void;
@@ -175,7 +182,10 @@ export function DeAttrToggleRow({
       )}
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="min-w-0 flex-1 text-theme-xs text-gray-600 dark:text-gray-300">{label}</span>
+        <div className="flex min-w-0 flex-1 items-center gap-1">
+          <span className="min-w-0 text-theme-xs text-gray-600 dark:text-gray-300">{label}</span>
+          {hint ? <InspectorHintTip text={hint} aria-label={`${label}说明`} /> : null}
+        </div>
         <Switch
           checked={checked}
           disabled={disabled}

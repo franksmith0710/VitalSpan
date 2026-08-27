@@ -24,7 +24,13 @@ import { CHART_FONT_SIZE_OPTIONS, resolveChartFontSizeOptions } from "@/lib/char
 import { HintTooltip, TruncateHint } from "@/components/ui/hint-tooltip";
 import { cn } from "@/lib/utils";
 import { DE_SELECT } from "./dashboardInspectorUi";
-import { INSPECTOR_LABEL, INSPECTOR_SELECT, useInspectorSectionOpen } from "./inspectorCompact";
+import {
+  INSPECTOR_COLLAPSE_TRIGGER,
+  INSPECTOR_LABEL,
+  INSPECTOR_SELECT,
+  InspectorCollapseChevron,
+  useInspectorSectionOpen,
+} from "./inspectorCompact";
 
 export const PALETTE_STRIP_SWATCH_COUNT = 8;
 /** 下拉项 / 触发器色带统一宽度，避免首项「跟随看板」与预设行错位 */
@@ -223,11 +229,12 @@ export function ChartPaletteNestedSection({
     <Collapsible
       open={open}
       onOpenChange={setOpen}
-      className="group border-b border-gray-100 dark:border-white/[0.06]"
+      className="border-b border-gray-100 dark:border-white/[0.06]"
     >
       <div className="flex items-center gap-1 py-1.5">
         <CollapsibleTrigger
           className={cn(
+            INSPECTOR_COLLAPSE_TRIGGER,
             "flex min-w-0 flex-1 items-center gap-0.5 rounded-md text-left",
             compact
               ? "py-1 pl-0 pr-0.5 text-[11px] font-medium text-gray-700 dark:text-gray-300"
@@ -235,10 +242,7 @@ export function ChartPaletteNestedSection({
             "hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:hover:bg-white/[0.04]",
           )}
         >
-          <ChevronRight
-            className="size-3 shrink-0 text-gray-400 transition-transform group-data-[state=open]:rotate-90"
-            aria-hidden
-          />
+          <InspectorCollapseChevron />
           <span className="min-w-0 truncate">{title}</span>
         </CollapsibleTrigger>
         {action ? (

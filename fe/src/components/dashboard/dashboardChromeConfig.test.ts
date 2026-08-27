@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   AUXILIARY_GRID_CELL_PX,
+  DEFAULT_COLLISION_OVERLAP_BUFFER_PX,
   DEFAULT_DASHBOARD_CHROME,
-  DEFAULT_MARK_LINE_THRESHOLD_PX,
   mergeAuxiliaryGridIntoSurface,
   resolveDashboardAlignmentSnap,
   resolveDashboardChrome,
@@ -58,8 +58,7 @@ describe("dashboardChromeConfig", () => {
   it("resolves alignment snap defaults from chrome", () => {
     expect(resolveDashboardAlignmentSnap({})).toEqual({
       enableMarkLineSnap: true,
-      markLineThresholdPx: DEFAULT_MARK_LINE_THRESHOLD_PX,
-      enableGridSnap: false,
+      collisionOverlapBufferPx: DEFAULT_COLLISION_OVERLAP_BUFFER_PX,
       gridCellPx: AUXILIARY_GRID_CELL_PX,
       snapEdges: true,
       snapCenters: true,
@@ -72,17 +71,15 @@ describe("dashboardChromeConfig", () => {
         chrome: {
           showAuxiliaryGrid: false,
           alignmentSnap: {
-            markLineThresholdPx: 2,
+            collisionOverlapBufferPx: 200,
             gridCellPx: 100,
-            enableGridSnap: true,
             snapEdges: false,
           },
         },
       }),
     ).toEqual({
       enableMarkLineSnap: false,
-      markLineThresholdPx: 4,
-      enableGridSnap: true,
+      collisionOverlapBufferPx: 80,
       gridCellPx: 48,
       snapEdges: false,
       snapCenters: true,

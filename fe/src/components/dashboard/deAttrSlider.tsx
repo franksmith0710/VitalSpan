@@ -717,6 +717,7 @@ export function DeAttrSubSliderRow({
   unit = "",
   ariaLabel,
   description,
+  hint,
   onChange,
   onPreview,
 }: {
@@ -728,6 +729,7 @@ export function DeAttrSubSliderRow({
   unit?: string;
   ariaLabel: string;
   description?: string;
+  hint?: string;
   onChange: (value: number) => void;
   onPreview?: (value: number | null) => void;
 }) {
@@ -744,7 +746,11 @@ export function DeAttrSubSliderRow({
   return (
     <div className="space-y-1.5">
       <div className="grid min-w-0 grid-cols-[7rem_minmax(0,10.5rem)_2.5rem] items-center gap-x-2.5">
-        <span className="shrink-0 whitespace-nowrap text-[11px] text-gray-500 dark:text-gray-400">{label}</span>
+        <InspectorFieldLabel
+          label={label}
+          hint={hint ?? description}
+          labelClassName="text-[11px] font-normal text-gray-500 dark:text-gray-400"
+        />
         <DeProgressSlider
           className={cn(DE_SLIDER_WIDTH_WIDE, "min-w-0 max-w-full justify-self-start")}
           value={clamped}
@@ -760,9 +766,6 @@ export function DeAttrSubSliderRow({
           {display}
         </span>
       </div>
-      {description ? (
-        <p className="text-[10px] leading-snug text-gray-400 dark:text-gray-500">{description}</p>
-      ) : null}
     </div>
   );
 }

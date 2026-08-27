@@ -197,11 +197,23 @@ export function PixelCanvas({
     [widgetDashboardStyleFingerprint(styleConfig)],
   );
   const chrome = resolveDashboardChrome(styleConfig);
+  const alignmentSnap = resolveDashboardAlignmentSnap(styleConfig);
+  const collisionOverlapBufferPx = alignmentSnap.collisionOverlapBufferPx;
+  const scheme = styleConfig.colorScheme ?? "light";
+  const auxGridStyle = useMemo(
+    () => auxiliaryGridPatternStyle(scheme, alignmentSnap.gridCellPx),
+    [alignmentSnap.gridCellPx, scheme],
+  );
   const gapRuntime = useMemo(
     () => resolveComponentGapRuntime(styleConfig, "pixel"),
     [styleConfig],
   );
   const activeLayout = layout;
+  const showAuxGrid = mode === "edit" && chrome.showAuxiliaryGrid;
+  const showMarkLines = mode === "edit";
+  const allowWidgetOverlap = allowsPixelWidgetOverlap(activeLayout);
+  const markLinesEnabled =
+    mode === "edit" && (alignmentSnap.enableMarkLineSnap || allowWidgetOverlap);
   const topLevelWidgets = useMemo(
     () => getTopLevelPixelWidgets(activeLayout.widgets),
     [activeLayout.widgets],
@@ -281,21 +293,9 @@ export function PixelCanvas({
     [onTabInsertIntentChange, tabHosts],
   );
 
-  const chrome = resolveDashboardChrome(styleConfig);
-  const alignmentSnap = resolveDashboardAlignmentSnap(styleConfig);
-  const showAuxGrid = mode === "edit" && chrome.showAuxiliaryGrid;
-  const showMarkLines = mode === "edit";
-  const allowWidgetOverlap = allowsPixelWidgetOverlap(activeLayout);
-  const markLinesEnabled =
-    mode === "edit" && (alignmentSnap.enableMarkLineSnap || allowWidgetOverlap);
-  const scheme = styleConfig.colorScheme ?? "light";
   const artboardStyle = useMemo(
     () => resolveArtboardStyle(styleConfig),
     [canvasArtboardStyleFingerprint(styleConfig)],
-  );
-  const auxGridStyle = useMemo(
-    () => auxiliaryGridPatternStyle(scheme, alignmentSnap.gridCellPx),
-    [alignmentSnap.gridCellPx, scheme],
   );
   /** 编辑态固定按画布宽度贴满；大屏编辑改为整画布 fit 宿主 */
   const effectiveScaleMode =
@@ -543,10 +543,10 @@ export function PixelCanvas({
         },
         {
           gap: gapRuntime.collisionGapPx,
-          minOverlap: gapRuntime.collisionOverlapBufferPx,
+          minOverlap: collisionOverlapBufferPx,
         },
       ),
-    [activeLayout, gapRuntime.collisionGapPx, gapRuntime.collisionOverlapBufferPx],
+    [activeLayout, gapRuntime.collisionGapPx, collisionOverlapBufferPx],
   );
 
   const flushPreview = useCallback(
@@ -598,7 +598,7 @@ export function PixelCanvas({
         payload,
         {
           gap: gapRuntime.collisionGapPx,
-          minOverlap: gapRuntime.collisionOverlapBufferPx,
+          minOverlap: collisionOverlapBufferPx,
         },
         TAB_PALETTE_DROP_BUFFER_PX,
       );
@@ -618,7 +618,7 @@ export function PixelCanvas({
       allowWidgetOverlap,
       clearPreviewChrome,
       gapRuntime.collisionGapPx,
-      gapRuntime.collisionOverlapBufferPx,
+      collisionOverlapBufferPx,
       syncPreviewStageMetrics,
     ],
   );
@@ -713,7 +713,7 @@ export function PixelCanvas({
         activeLayout.widgets
           .filter((item) => item.id !== widgetId)
           .map((item) => widgetRect(item)),
-        gapRuntime.collisionOverlapBufferPx,
+        collisionOverlapBufferPx,
         gapRuntime.collisionGapPx,
       );
     },
@@ -721,7 +721,7 @@ export function PixelCanvas({
       activeLayout,
       allowWidgetOverlap,
       gapRuntime.collisionGapPx,
-      gapRuntime.collisionOverlapBufferPx,
+      collisionOverlapBufferPx,
       tabInsertIntent,
     ],
   );

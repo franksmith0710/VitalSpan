@@ -204,13 +204,12 @@ class DashboardAlignmentSnapConfig(BaseModel):
 
     model_config = ConfigDict(populate_by_name=True)
     enable_mark_line_snap: bool | None = Field(default=None, alias="enableMarkLineSnap")
-    mark_line_threshold_px: int | None = Field(
+    collision_overlap_buffer_px: int | None = Field(
         default=None,
-        alias="markLineThresholdPx",
-        ge=4,
-        le=24,
+        alias="collisionOverlapBufferPx",
+        ge=0,
+        le=80,
     )
-    enable_grid_snap: bool | None = Field(default=None, alias="enableGridSnap")
     grid_cell_px: int | None = Field(default=None, alias="gridCellPx", ge=8, le=48)
     snap_edges: bool | None = Field(default=None, alias="snapEdges")
     snap_centers: bool | None = Field(default=None, alias="snapCenters")
