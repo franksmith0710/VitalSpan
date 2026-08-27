@@ -772,6 +772,7 @@ export function DeAttrSubSliderRow({
   ariaLabel,
   description,
   hint,
+  disabled = false,
   onChange,
   onPreview,
 }: {
@@ -784,6 +785,7 @@ export function DeAttrSubSliderRow({
   ariaLabel: string;
   description?: string;
   hint?: string;
+  disabled?: boolean;
   onChange: (value: number) => void;
   onPreview?: (value: number | null) => void;
 }) {
@@ -812,6 +814,7 @@ export function DeAttrSubSliderRow({
           max={max}
           step={step}
           liveUpdate
+          disabled={disabled}
           ariaLabel={ariaLabel}
           ariaValuetext={display}
           onPreview={handlePreview}

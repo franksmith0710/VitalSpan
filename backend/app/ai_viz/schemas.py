@@ -75,3 +75,18 @@ class AiVizArtifactReferencesOut(BaseModel):
 
     artifact_id: uuid.UUID = Field(alias="artifactId")
     references: list[AiVizArtifactReferenceOut] = Field(default_factory=list)
+
+
+class AiVizArtifactUnlinkDashboardOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    dashboard_id: uuid.UUID = Field(alias="dashboardId")
+    dashboard_name: str = Field(alias="dashboardName")
+    removed_widget_ids: list[str] = Field(alias="removedWidgetIds")
+
+
+class AiVizArtifactDeleteOut(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    artifact_id: uuid.UUID = Field(alias="artifactId")
+    unlinked: list[AiVizArtifactUnlinkDashboardOut] = Field(default_factory=list)

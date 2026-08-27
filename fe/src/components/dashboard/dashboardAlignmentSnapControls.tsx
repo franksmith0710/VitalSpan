@@ -9,9 +9,9 @@ import { cn } from "@/lib/utils";
 import type { DashboardAlignmentSnapConfig, DashboardChromeConfig } from "./dashboardStyleConfig";
 import {
   MAX_COLLISION_OVERLAP_BUFFER_PX,
-  MAX_GRID_CELL_PX,
+  MAX_MARK_LINE_THRESHOLD_PX,
   MIN_COLLISION_OVERLAP_BUFFER_PX,
-  MIN_GRID_CELL_PX,
+  MIN_MARK_LINE_THRESHOLD_PX,
   resolveDashboardAlignmentSnap,
   resolveDashboardChrome,
 } from "./dashboardChromeConfig";
@@ -33,7 +33,8 @@ const HINT_MARK_LINE_SNAP =
 const HINT_SNAP_TARGETS = "选择要对齐到边线还是中心线。";
 const HINT_SNAP_EDGES = "与其他组件的外边框贴齐、对齐。";
 const HINT_SNAP_CENTERS = "与其他组件的水平/垂直中心线对齐。";
-const HINT_GRID_CELL = "辅助点阵的间距，仅影响显示密度，不改变组件落点。";
+const HINT_MARK_LINE_THRESHOLD =
+  "拖动时组件边/中心与参考线相差在该屏幕像素内即吸附；与「重合阈值」控制的碰撞推挤无关。";
 
 type AlignmentSnapControlsProps = {
   chrome: ReturnType<typeof resolveDashboardChrome>;
@@ -91,6 +92,18 @@ function AlignmentSnapDetails({
         hint={HINT_MARK_LINE_SNAP}
         onCheckedChange={(checked) => snapConfig({ enableMarkLineSnap: checked })}
       />
+      <DeAttrSubSliderRow
+        label="吸附灵敏度"
+        value={alignment.markLineThresholdPx}
+        min={MIN_MARK_LINE_THRESHOLD_PX}
+        max={MAX_MARK_LINE_THRESHOLD_PX}
+        step={1}
+        unit="px"
+        ariaLabel="吸附灵敏度"
+        hint={HINT_MARK_LINE_THRESHOLD}
+        disabled={!alignment.enableMarkLineSnap}
+        onChange={(markLineThresholdPx) => snapConfig({ markLineThresholdPx })}
+      />
       <DeAttrSubField label="吸附目标" hint={HINT_SNAP_TARGETS}>
         <DeAttrToggleRow
           label="边线（贴边/对齐边）"
@@ -105,17 +118,6 @@ function AlignmentSnapDetails({
           onCheckedChange={(checked) => snapConfig({ snapCenters: checked })}
         />
       </DeAttrSubField>
-      <DeAttrSubSliderRow
-        label="网格步长"
-        value={alignment.gridCellPx}
-        min={MIN_GRID_CELL_PX}
-        max={MAX_GRID_CELL_PX}
-        step={1}
-        unit="px"
-        ariaLabel="网格步长"
-        hint={HINT_GRID_CELL}
-        onChange={(gridCellPx) => snapConfig({ gridCellPx })}
-      />
     </div>
   );
 }

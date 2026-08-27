@@ -108,7 +108,7 @@ export type DashboardChromeConfig = {
   showChartActionButtons?: boolean;
   /** 编辑态画布辅助对齐网格 */
   showAuxiliaryGrid?: boolean;
-  /** 像素画布：对齐吸附细项（阈值、边/中心、网格步长等） */
+  /** 像素画布：对齐吸附细项（阈值、边/中心等） */
   alignmentSnap?: DashboardAlignmentSnapConfig;
 };
 
@@ -118,7 +118,9 @@ export type DashboardAlignmentSnapConfig = {
   enableMarkLineSnap?: boolean;
   /** 碰撞重合阈值（画布 px）：双向重叠超过该值才触发推挤；默认 40 */
   collisionOverlapBufferPx?: number;
-  /** 网格步长（px）；默认 20，仅影响点阵显示密度 */
+  /** 组件对齐吸附灵敏度（屏幕 px）：参考线触发距离；默认 10 */
+  markLineThresholdPx?: number;
+  /** @deprecated 仅内部固定 20px 点阵，不再暴露配置 UI */
   gridCellPx?: number;
   /** 吸附边线（贴边/对齐边）；默认 true */
   snapEdges?: boolean;

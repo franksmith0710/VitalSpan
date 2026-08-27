@@ -28,6 +28,8 @@ export const DEFAULT_DRILL_LEVEL_COLORS = ["#465fff", "#0ba5ec", "#12b76a"] as c
 export const AUXILIARY_GRID_CELL_PX = 20;
 
 export const DEFAULT_MARK_LINE_THRESHOLD_PX = 10;
+export const MIN_MARK_LINE_THRESHOLD_PX = 2;
+export const MAX_MARK_LINE_THRESHOLD_PX = 24;
 
 export const DEFAULT_COLLISION_OVERLAP_BUFFER_PX = PIXEL_COLLISION_OVERLAP_BUFFER_PX;
 export const MIN_COLLISION_OVERLAP_BUFFER_PX = 0;
@@ -38,6 +40,7 @@ export const MAX_GRID_CELL_PX = 48;
 export type ResolvedDashboardAlignmentSnap = {
   enableMarkLineSnap: boolean;
   collisionOverlapBufferPx: number;
+  markLineThresholdPx: number;
   gridCellPx: number;
   snapEdges: boolean;
   snapCenters: boolean;
@@ -71,6 +74,11 @@ export function resolveDashboardAlignmentSnap(
       MIN_COLLISION_OVERLAP_BUFFER_PX,
       MAX_COLLISION_OVERLAP_BUFFER_PX,
     ),
+    markLineThresholdPx: clampInt(
+      snap.markLineThresholdPx ?? DEFAULT_MARK_LINE_THRESHOLD_PX,
+      MIN_MARK_LINE_THRESHOLD_PX,
+      MAX_MARK_LINE_THRESHOLD_PX,
+    ),
     gridCellPx: clampInt(snap.gridCellPx ?? AUXILIARY_GRID_CELL_PX, MIN_GRID_CELL_PX, MAX_GRID_CELL_PX),
     snapEdges: snap.snapEdges !== false,
     snapCenters: snap.snapCenters !== false,
@@ -100,7 +108,7 @@ export function resolveDialogScopeStyle(
   return style;
 }
 
-/** 编辑态辅助网格（步长可配置，与网格吸附共用 gridCellPx） */
+/** 编辑态辅助网格（固定步长 AUXILIARY_GRID_CELL_PX） */
 export function auxiliaryGridPatternStyle(
   scheme: "light" | "dark" = "light",
   cellPx = AUXILIARY_GRID_CELL_PX,

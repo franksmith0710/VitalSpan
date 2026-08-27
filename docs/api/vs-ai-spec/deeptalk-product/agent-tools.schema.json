@@ -88,12 +88,17 @@
     {
       "name": "vitalspan_delete_artifact",
       "runtime": "plugin|cli",
-      "description": "DELETE artifact by id (owner only); returns 409 if still referenced by dashboards",
-      "cli": "python executor/cli.py vitalspan_delete_artifact --artifact-id {artifact_id}",
+      "description": "DELETE artifact by id (owner only); default 409 if referenced; pass unlink=true to remove widgets from dashboards first",
+      "cli": "python executor/cli.py vitalspan_delete_artifact --artifact-id {artifact_id} [--unlink]",
       "parameters": {
         "type": "object",
         "properties": {
-          "artifact_id": { "type": "string" }
+          "artifact_id": { "type": "string" },
+          "unlink": {
+            "type": "boolean",
+            "default": true,
+            "description": "When true, DELETE ?unlink=true removes referencing widgets then deletes artifact"
+          }
         },
         "required": ["artifact_id"]
       }

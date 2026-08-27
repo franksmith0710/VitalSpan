@@ -1,3 +1,4 @@
+import type { SkySpecification } from "maplibre-gl";
 import type { ResolvedGisEffectsSettings } from "@/components/charts/engine/maplibre/gisGeolibreEffectsSettings";
 import {
   GIS_SPACE_EDGE_DARKEN,
@@ -14,9 +15,8 @@ import {
   buildGeolibreStarfieldTile,
   drawGeolibreStarfieldParallax,
 } from "@/components/charts/engine/maplibre/gisGeolibreEffectsStarfield";
+import { resolveGlobeLimbBoundsFromProject } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 import { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
-import { resolveGlobeLimbBoundsForOverlay } from "@/components/charts/engine/maplibre/gisGlobeLayout";
-import { readOverlayLayoutSize } from "@/components/charts/engine/maplibre/gisOverlayCanvas";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
@@ -43,7 +43,10 @@ function createLayerCanvas(zIndex: number): HTMLCanvasElement {
         : zIndex === 2
           ? "gis-effects-comets"
           : "gis-effects-halo";
-  canvas.className = "pointer-events-none absolute left-0 top-0";
+  canvas.style.position = "absolute";
+  canvas.style.top = "0";
+  canvas.style.left = "0";
+  canvas.style.pointerEvents = "none";
   canvas.style.zIndex = String(zIndex);
   return canvas;
 }
@@ -56,6 +59,7 @@ export class GisGeolibreEffectsEngine {
   private readonly controlContainer: HTMLElement | null;
   private readonly previousMapZ: string;
   private readonly previousControlZ: string;
+  private readonly previousSky: SkySpecification | undefined;
   private readonly overlayStyle: HTMLStyleElement;
   private readonly spaceCtx: CanvasRenderingContext2D;
   private readonly starsCtx: CanvasRenderingContext2D;
@@ -83,6 +87,8 @@ export class GisGeolibreEffectsEngine {
       this.mapRoot?.querySelector<HTMLElement>(".maplibregl-control-container") ?? null;
     this.previousMapZ = this.mapCanvas.style.zIndex;
     this.previousControlZ = this.controlContainer?.style.zIndex ?? "";
+    this.previousSky = this.readSky();
+    this.suppressMapLibreAtmosphere();
     this.overlayStyle = this.ensureOverlayStyle();
 
     const space = createLayerCanvas(0);
@@ -105,9 +111,12 @@ export class GisGeolibreEffectsEngine {
     this.handleResize = this.handleResize.bind(this);
     this.handleMapChange = this.handleMapChange.bind(this);
     this.handleVisibility = this.handleVisibility.bind(this);
+    this.handleStyleData = this.handleStyleData.bind(this);
     this.tick = this.tick.bind(this);
     map.on("resize", this.handleResize);
     map.on("move", this.handleMapChange);
+    map.on("styledata", this.handleStyleData);
+    map.once("load", this.handleResize);
     document.addEventListener("visibilitychange", this.handleVisibility);
     this.handleResize();
     this.start();
@@ -124,9 +133,15 @@ export class GisGeolibreEffectsEngine {
     this.stop();
     this.map.off("resize", this.handleResize);
     this.map.off("move", this.handleMapChange);
+    this.map.off("styledata", this.handleStyleData);
     document.removeEventListener("visibilitychange", this.handleVisibility);
     this.mapCanvas.style.zIndex = this.previousMapZ;
     if (this.controlContainer) this.controlContainer.style.zIndex = this.previousControlZ;
+    try {
+      if (this.previousSky) this.map.setSky(this.previousSky);
+    } catch {
+      /* style tearing down */
+    }
     this.mapRoot?.classList.remove(EFFECTS_MAP_CLASS);
     this.overlayStyle.remove();
     for (const ctx of [this.spaceCtx, this.starsCtx, this.cometCtx, this.haloCtx]) {
@@ -147,6 +162,25 @@ export class GisGeolibreEffectsEngine {
     return style;
   }
 
+  private readSky(): SkySpecification | undefined {
+    try {
+      return this.map.getSky();
+    } catch {
+      return undefined;
+    }
+  }
+
+  private suppressMapLibreAtmosphere(): void {
+    try {
+      const sky = this.map.getSky();
+      if (sky && sky["atmosphere-blend"] !== 0) {
+        this.map.setSky({ ...sky, "atmosphere-blend": 0 });
+      }
+    } catch {
+      /* style without sky */
+    }
+  }
+
   private handleVisibility(): void {
     if (document.hidden) this.stop();
     else this.start();
@@ -155,6 +189,11 @@ export class GisGeolibreEffectsEngine {
   private handleMapChange(): void {
     this.starsDirty = true;
     if (!document.hidden) this.start();
+  }
+
+  private handleStyleData(): void {
+    if (this.destroyed) return;
+    this.suppressMapLibreAtmosphere();
   }
 
   private handleResize(): void {
@@ -230,10 +269,8 @@ export class GisGeolibreEffectsEngine {
   }
 
   private drawHaloLayer(): void {
-    const overlay = this.map.getContainer();
-    const { width, height } = readOverlayLayoutSize(overlay);
-    if (width <= 0 || height <= 0) return;
-    const limb = resolveGlobeLimbBoundsForOverlay(this.map, overlay, width, height);
+    if (this.width <= 0 || this.height <= 0) return;
+    const limb = resolveGlobeLimbBoundsFromProject(this.map);
     if (!limb) {
       this.haloCtx.clearRect(0, 0, this.width, this.height);
       return;

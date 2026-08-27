@@ -11,12 +11,12 @@ from app.ai_viz.models import AiVizArtifact, validate_bundle_files, validate_man
 from app.ai_viz.schemas import (
     AiVizArtifactBundleOut,
     AiVizArtifactCreateIn,
+    AiVizArtifactDeleteOut,
     AiVizArtifactOut,
-    AiVizArtifactReferenceOut,
     AiVizArtifactReferencesOut,
     AiVizComplianceWarningOut,
 )
-from app.dashboard.models import Dashboard
+from app.ai_viz.layout_refs import find_artifact_references, scan_artifact_in_layouts
 from app.ai_viz.style_compliance import (
     collect_bundle_style_compliance_warnings,
     resolve_style_compliance_tier,
@@ -122,43 +122,6 @@ def get_entry_html(db: Session, artifact_id: uuid.UUID, actor: UserContext) -> s
     return html
 
 
-def _artifact_id_in_widget(widget: dict, artifact_id: uuid.UUID) -> str | None:
-    cv = widget.get("customVizConfig") or widget.get("custom_viz_config")
-    if not isinstance(cv, dict):
-        return None
-    ref = cv.get("artifactId") or cv.get("artifact_id")
-    if ref is None:
-        return None
-    if str(ref) != str(artifact_id):
-        return None
-    wid = widget.get("id")
-    return str(wid) if wid is not None else ""
-
-
-def find_artifact_references(db: Session, artifact_id: uuid.UUID) -> list[AiVizArtifactReferenceOut]:
-    refs: list[AiVizArtifactReferenceOut] = []
-    rows = db.scalars(select(Dashboard)).all()
-    for row in rows:
-        layout = row.layout_json if isinstance(row.layout_json, dict) else {}
-        widgets = layout.get("widgets") or []
-        if not isinstance(widgets, list):
-            continue
-        for widget in widgets:
-            if not isinstance(widget, dict):
-                continue
-            widget_id = _artifact_id_in_widget(widget, artifact_id)
-            if widget_id is None:
-                continue
-            refs.append(
-                AiVizArtifactReferenceOut(
-                    dashboardId=row.id,
-                    dashboardName=row.name,
-                    widgetId=widget_id,
-                )
-            )
-    return refs
-
-
 def get_artifact_references(
     db: Session,
     artifact_id: uuid.UUID,
@@ -204,10 +167,16 @@ def list_artifacts(
     return [_to_out(row) for row in rows]
 
 
-def delete_artifact(db: Session, artifact_id: uuid.UUID, actor: UserContext) -> None:
+def delete_artifact(
+    db: Session,
+    artifact_id: uuid.UUID,
+    actor: UserContext,
+    *,
+    unlink: bool = False,
+) -> AiVizArtifactDeleteOut | None:
     row = get_artifact(db, artifact_id, actor, write=True)
-    refs = find_artifact_references(db, artifact_id)
-    if refs:
+    refs, unlinked = scan_artifact_in_layouts(db, artifact_id, remove=unlink)
+    if refs and not unlink:
         detail = [
             {
                 "dashboardId": str(item.dashboard_id),
@@ -224,3 +193,6 @@ def delete_artifact(db: Session, artifact_id: uuid.UUID, actor: UserContext) -> 
         )
     db.delete(row)
     db.commit()
+    if unlink and unlinked:
+        return AiVizArtifactDeleteOut(artifactId=artifact_id, unlinked=unlinked)
+    return None

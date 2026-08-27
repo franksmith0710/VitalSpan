@@ -604,7 +604,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || project.projection !== "globe") {
+    if (
+      !map ||
+      renderBasemap !== "pmtiles" ||
+      project.projection !== "globe" ||
+      gisPaintState !== "ready"
+    ) {
       effectsEngineRef.current?.destroy();
       effectsEngineRef.current = null;
       return;
@@ -622,7 +627,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       effectsEngineRef.current?.destroy();
       effectsEngineRef.current = null;
     };
-  }, [project.projection, styleKey]);
+  }, [gisPaintState, mapRuntimeEpoch, project.projection, renderBasemap, styleKey]);
 
   useEffect(() => {
     applyGisGeolibreEffectsSettings(effectsEngineRef.current, effectsSettings);

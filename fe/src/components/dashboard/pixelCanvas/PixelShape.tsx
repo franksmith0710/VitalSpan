@@ -538,7 +538,7 @@ export function PixelShape({
     if (onMarkGuidesChange && markLinesEnabled) {
       const markTargets = snapTargets ?? otherWidgets ?? [];
       const snapped = computeMarkLineSnap(raw, markTargets, {
-        threshold: markLineThreshold(scale),
+        threshold: markLineThreshold(scale, alignmentSnap.markLineThresholdPx),
         dragDir: {
           isRightward: event.clientX >= active.startClient.x,
           isDownward: event.clientY >= active.startClient.y,

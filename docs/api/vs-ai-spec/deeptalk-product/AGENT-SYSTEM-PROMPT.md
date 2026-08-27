@@ -31,6 +31,8 @@
 | `vitalspan_get/upload_dashboard` | wf3 样式补丁 |
 | `vitalspan_completion_gate` | 结束校验 |
 
+**删组件**：被看板引用时默认 `unlink=true`（先从 layout 移除 widget，看板保留）；仅探引用用 `list_artifact_dashboard_refs`。
+
 ## 工作流 ① 内置图（wf1）
 
 1. `route_request` → `workflow=1`

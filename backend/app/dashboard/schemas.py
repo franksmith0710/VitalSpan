@@ -210,6 +210,12 @@ class DashboardAlignmentSnapConfig(BaseModel):
         ge=0,
         le=80,
     )
+    mark_line_threshold_px: int | None = Field(
+        default=None,
+        alias="markLineThresholdPx",
+        ge=2,
+        le=24,
+    )
     grid_cell_px: int | None = Field(default=None, alias="gridCellPx", ge=8, le=48)
     snap_edges: bool | None = Field(default=None, alias="snapEdges")
     snap_centers: bool | None = Field(default=None, alias="snapCenters")

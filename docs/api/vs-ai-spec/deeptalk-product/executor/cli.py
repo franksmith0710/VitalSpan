@@ -67,6 +67,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--q", default="", help="filter for list_artifacts")
     parser.add_argument("--validate-only", action="store_true")
     parser.add_argument("--health-first", action="store_true")
+    parser.add_argument(
+        "--unlink",
+        action="store_true",
+        help="for delete_artifact: remove widgets from dashboards before delete",
+    )
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
 
@@ -108,7 +113,7 @@ def main(argv: list[str] | None = None) -> int:
     if name == "vitalspan_delete_artifact":
         if not args.artifact_id:
             raise SystemExit("--artifact-id required")
-        return _emit(vitalspan_delete_artifact(args.artifact_id), args.json)
+        return _emit(vitalspan_delete_artifact(args.artifact_id, unlink=args.unlink), args.json)
     if name == "vitalspan_list_artifact_dashboard_refs":
         if not args.artifact_id:
             raise SystemExit("--artifact-id required")

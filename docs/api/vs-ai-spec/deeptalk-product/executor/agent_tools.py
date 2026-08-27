@@ -134,8 +134,11 @@ def vitalspan_get_artifact(artifact_id: str, file: str | None = None) -> AgentTo
     return AgentToolResult("vitalspan_get_artifact", result.ok, result.stdout, result.stderr)
 
 
-def vitalspan_delete_artifact(artifact_id: str) -> AgentToolResult:
-    result = run_tool("delete-ai-viz-artifact.py", artifact_id)
+def vitalspan_delete_artifact(artifact_id: str, *, unlink: bool = False) -> AgentToolResult:
+    args = [artifact_id]
+    if unlink:
+        args.append("--unlink")
+    result = run_tool("delete-ai-viz-artifact.py", *args)
     return AgentToolResult("vitalspan_delete_artifact", result.ok, result.stdout, result.stderr)
 
 

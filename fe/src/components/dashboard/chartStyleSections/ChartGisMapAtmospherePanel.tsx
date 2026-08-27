@@ -22,7 +22,7 @@ import {
 import { applyGisMapViewAtmosphere } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 
 const ATMOSPHERE_HINT =
-  "对标 GeoLibre「大气效果」：深空、星场、流星与 screen 混合光晕四层叠加；仅球面地球生效。";
+  "对标 GeoLibre「大气效果」：球缘光晕（颜色/范围/强度）与深空背景色；仅球面地球生效。";
 
 export function ChartGisMapAtmospherePanel() {
   const { cfg, widget, mutateChartConfig } = useChartInspector();
@@ -110,7 +110,7 @@ export function ChartGisMapAtmospherePanel() {
             aria-label="太空颜色"
             onChange={(spaceColor) => patchEffects({ spaceColor })}
           />
-          <InspectorFieldLabel label="太空颜色" hint="深空 radial backdrop 中心色" />
+          <InspectorFieldLabel label="太空颜色" hint="大气效果插件内的深空 radial 中心色（与光晕同一套设置）" />
         </div>
         <button
           type="button"

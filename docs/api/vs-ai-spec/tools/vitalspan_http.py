@@ -113,8 +113,20 @@ def update_artifact(api: str, token: str, artifact_id: str, bundle: dict[str, An
     return request_json("PUT", f"{api.rstrip('/')}/ai-viz/artifacts/{artifact_id}", bundle, token)
 
 
-def delete_artifact(api: str, token: str, artifact_id: str) -> None:
-    request_json("DELETE", f"{api.rstrip('/')}/ai-viz/artifacts/{artifact_id}", None, token)
+def delete_artifact(
+    api: str,
+    token: str,
+    artifact_id: str,
+    *,
+    unlink: bool = False,
+) -> dict[str, Any]:
+    query = "?unlink=true" if unlink else ""
+    return request_json(
+        "DELETE",
+        f"{api.rstrip('/')}/ai-viz/artifacts/{artifact_id}{query}",
+        None,
+        token,
+    )
 
 
 def get_artifact_bundle(api: str, token: str, artifact_id: str) -> dict[str, Any]:

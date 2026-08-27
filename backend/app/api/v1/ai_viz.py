@@ -12,6 +12,7 @@ from app.ai_viz.errors import AiVizError
 from app.ai_viz.schemas import (
     AiVizArtifactBundleOut,
     AiVizArtifactCreateIn,
+    AiVizArtifactDeleteOut,
     AiVizArtifactListOut,
     AiVizArtifactOut,
     AiVizArtifactReferencesOut,
@@ -80,14 +81,20 @@ def list_artifacts(
         return _error_response(exc)
 
 
-@router.delete("/artifacts/{artifact_id}", status_code=status.HTTP_204_NO_CONTENT, response_model=None)
+@router.delete("/artifacts/{artifact_id}", response_model=None)
 def delete_artifact(
     artifact_id: uuid.UUID,
     user: Annotated[UserContext, Depends(require_permission(PERM_EDIT))],
     db: Annotated[Session, Depends(_db)],
-) -> Response | JSONResponse:
+    unlink: Annotated[
+        bool,
+        Query(description="为 true 时先从引用看板/大屏 layout 移除 widget，再删组件库记录"),
+    ] = False,
+) -> AiVizArtifactDeleteOut | Response | JSONResponse:
     try:
-        ai_viz_service.delete_artifact(db, artifact_id, user)
+        result = ai_viz_service.delete_artifact(db, artifact_id, user, unlink=unlink)
+        if result is not None:
+            return result
         return Response(status_code=status.HTTP_204_NO_CONTENT)
     except AiVizError as exc:
         return _error_response(exc)

@@ -21,7 +21,7 @@ redoc: /redoc
 | 查询类 | 只读；禁止经 API 写入外部数据源 |
 | 分页 | `?page=&page_size=`（三期起统一；前期可省略） |
 | 错误体 | `{ "code": "...", "message": "...", "detail": ... }` |
-| 成功体例外 | `POST/PUT/GET /ai-viz/artifacts` 成功为裸 `AiVizArtifactOut`（含 `warnings[]` · `styleComplianceTier`；不含 `{code,message}`）；`DELETE .../artifacts/{id}` 为 **204**；`GET .../entry` 为 HTML |
+| 成功体例外 | `POST/PUT/GET /ai-viz/artifacts` 成功为裸 `AiVizArtifactOut`（含 `warnings[]` · `styleComplianceTier`；不含 `{code,message}`）；`DELETE .../artifacts/{id}` 默认 **204**；`DELETE .../artifacts/{id}?unlink=true` 返回 `AiVizArtifactDeleteOut`（含从 layout 移除的看板摘要）；`GET .../entry` 为 HTML |
 
 **运行时 OpenAPI**：`http://localhost:8000/docs` · `http://localhost:8000/redoc`
 
@@ -283,7 +283,7 @@ redoc: /redoc
 | GET | `/api/v1/ai-viz/artifacts/{id}/bundle` | 完整 bundle（manifest+files）；属主 + `dashboard:edit`；Agent 拉取编辑 | 内部 | 试点 | AIVIZ-019 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 | GET | `/api/v1/ai-viz/artifacts/{id}/refs` | 引用该 artifact 的看板/大屏列表 | 内部 | 试点 | AIVIZ-019 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 | GET | `/api/v1/ai-viz/artifacts/{id}/entry` | 组件 HTML；`dashboard:read` 即可（不限属主） | 内部 | 试点 | AIVIZ-002 | 已实现 | `backend/app/api/v1/ai_viz.py` |
-| DELETE | `/api/v1/ai-viz/artifacts/{id}` | 属主从组件库删除 artifact | 内部 | 试点 | AIVIZ-018 | 已实现 | `backend/app/api/v1/ai_viz.py` |
+| DELETE | `/api/v1/ai-viz/artifacts/{id}` | 属主从组件库删除 artifact；`?unlink=true` 时先从引用 layout 移除 widget | 内部 | 试点 | AIVIZ-018 | 已实现 | `backend/app/api/v1/ai_viz.py` |
 
 **CustomViz Payload v1（AIVIZ-010）**：Base 挂载 entry 后向宿主注入 `.vs-cv-payload`，结构 `{ protocolVersion, bindingStatus, columns, rows, style, error? }`；`bindingStatus` 为 `unbound | bound | empty | error`。bundle 须监听 `vs-cv-payload-update`，详见 [`docs/api/vs-ai-spec/PROTOCOL.md`](vs-ai-spec/PROTOCOL.md) §Payload v1。
 

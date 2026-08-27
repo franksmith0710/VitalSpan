@@ -24,7 +24,7 @@
 | list | `vitalspan_list_artifacts` | 列表含该组件 |
 | get | `vitalspan_get_artifact` | `ok get artifactId=... file=examples/...` |
 | refs | `vitalspan_list_artifact_dashboard_refs` | 被引用时列出 dashboardId |
-| delete | `vitalspan_delete_artifact` | `ok deleted`；仍被引用时 **409** |
+| delete | `vitalspan_delete_artifact` | 默认 `unlink=true`：`ok deleted` + 有引用时 `ok unlinked dashboard=...`；`unlink=false` 且仍被引用 → **409** |
 | delete dash | `vitalspan_delete_dashboard` | `ok deleted dashboardId=...` |
 | route | `vitalspan_route_request` | JSON `workflow` 1/2/3；wf2 含 `paradigm`/`runtime`，**无** wf2 `template` |
 | compose | `vitalspan_compose_dashboard` | `ok dashboardId=` + `slots: chart X/X customViz Y/Y` + `layout widgets: N` |

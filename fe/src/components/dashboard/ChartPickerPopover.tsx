@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { chartTypeIcon } from "@/lib/chartTypeIcons";
 import type { CustomVizInsertPayload } from "@/components/dashboard/createLayoutWidget";
 import { setCustomVizDragData, type CustomVizDragPayload } from "@/lib/dashboardDnd";
-import { fetchAiVizArtifacts, deleteAiVizArtifact, formatAiVizArtifactDeleteError, AI_VIZ_STYLE_COMPLIANCE_LABELS, type AiVizArtifactMeta } from "@/lib/aiVizArtifacts";
+import { fetchAiVizArtifacts, deleteAiVizArtifact, fetchAiVizArtifactReferences, buildAiVizArtifactDeleteConfirmMessage, formatAiVizArtifactDeleteError, formatAiVizArtifactDeleteSuccess, AI_VIZ_STYLE_COMPLIANCE_LABELS, type AiVizArtifactMeta } from "@/lib/aiVizArtifacts";
 import { queryKeys } from "@/lib/queryKeys";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Sparkles, Trash2, TriangleAlert } from "lucide-react";
@@ -313,12 +313,19 @@ export function ChartPickerPopover({
       const label =
         customArtifacts.find((item) => item.artifactId === artifactId)?.manifest.displayName ??
         "该组件";
-      if (!window.confirm(`确定从组件库移除「${label}」？\n若仍被看板/大屏引用，需先在布局中删除对应组件。`)) {
-        return;
-      }
-      void deleteAiVizArtifact(artifactId)
-        .then(() => {
-          toast.success(`已从组件库移除「${label}」`);
+      void fetchAiVizArtifactReferences(artifactId)
+        .then((refsPayload) => {
+          const references = refsPayload.references ?? [];
+          if (!window.confirm(buildAiVizArtifactDeleteConfirmMessage(label, references))) {
+            return undefined;
+          }
+          return deleteAiVizArtifact(artifactId, { unlink: references.length > 0 });
+        })
+        .then((result) => {
+          if (result === undefined) {
+            return;
+          }
+          toast.success(formatAiVizArtifactDeleteSuccess(label, result));
           void queryClient.invalidateQueries({ queryKey: queryKeys.aiViz.all });
         })
         .catch((err: unknown) => {

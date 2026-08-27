@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { DashboardOverallConfigPanel } from "./dashboardOverallConfigPanel";
@@ -48,6 +48,31 @@ describe("DashboardOverallConfigPanel", () => {
       chrome: {
         alignmentSnap: {
           enableMarkLineSnap: false,
+        },
+      },
+    });
+  });
+
+  it("patches mark line threshold from 吸附灵敏度 slider", async () => {
+    const user = userEvent.setup();
+    const patchStyle = vi.fn();
+
+    render(
+      <DashboardOverallConfigPanel
+        styleConfig={{}}
+        patchStyle={patchStyle}
+        isPixelLayout
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "展开对齐吸附设置" }));
+    const slider = screen.getByRole("slider", { name: "吸附灵敏度" });
+    fireEvent.change(slider, { target: { value: "16" } });
+
+    expect(patchStyle).toHaveBeenCalledWith({
+      chrome: {
+        alignmentSnap: {
+          markLineThresholdPx: 16,
         },
       },
     });

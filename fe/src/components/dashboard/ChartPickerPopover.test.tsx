@@ -37,6 +37,10 @@ vi.mock("@/lib/aiVizArtifacts", async (importOriginal) => {
         },
       ],
     })),
+    fetchAiVizArtifactReferences: vi.fn(async () => ({
+      artifactId: "art-custom-1",
+      references: [],
+    })),
     deleteAiVizArtifact: vi.fn(async () => undefined),
   };
 });
@@ -233,17 +237,29 @@ describe("ChartPickerPopover custom viz", () => {
     expect(tile.getAttribute("title")).toContain("样式面板与看板配色可能不会生效");
   });
 
-  it("shows toast when artifact delete is blocked by dashboard references", async () => {
-    const { deleteAiVizArtifact } = await import("@/lib/aiVizArtifacts");
+  it("deletes artifact with unlink when dashboard references exist", async () => {
+    const { deleteAiVizArtifact, fetchAiVizArtifactReferences } = await import("@/lib/aiVizArtifacts");
     const { toast } = await import("sonner");
-    const { ApiRequestError } = await import("@/lib/api");
-    vi.mocked(deleteAiVizArtifact).mockRejectedValueOnce(
-      new ApiRequestError(
-        "组件仍被看板/大屏引用，请先移除 widget 或更换 artifactId",
-        "AIVIZ_IN_USE",
-        [{ field: "0", message: "" }] as never,
-      ),
-    );
+    vi.mocked(fetchAiVizArtifactReferences).mockResolvedValueOnce({
+      artifactId: "art-custom-1",
+      references: [
+        {
+          dashboardId: "dash-1",
+          dashboardName: "运营看板",
+          widgetId: "w1",
+        },
+      ],
+    });
+    vi.mocked(deleteAiVizArtifact).mockResolvedValueOnce({
+      artifactId: "art-custom-1",
+      unlinked: [
+        {
+          dashboardId: "dash-1",
+          dashboardName: "运营看板",
+          removedWidgetIds: ["w1"],
+        },
+      ],
+    });
     vi.spyOn(window, "confirm").mockReturnValue(true);
 
     renderPicker({ onInsertCustomViz: vi.fn() });
@@ -252,7 +268,24 @@ describe("ChartPickerPopover custom viz", () => {
       within(popover).getByRole("button", { name: /从组件库移除 演示排名条/ }),
     );
 
-    expect(deleteAiVizArtifact).toHaveBeenCalledWith("art-custom-1");
+    expect(fetchAiVizArtifactReferences).toHaveBeenCalledWith("art-custom-1");
+    expect(deleteAiVizArtifact).toHaveBeenCalledWith("art-custom-1", { unlink: true });
+    expect(toast.success).toHaveBeenCalled();
+  });
+
+  it("shows toast when artifact delete fails after confirm", async () => {
+    const { deleteAiVizArtifact } = await import("@/lib/aiVizArtifacts");
+    const { toast } = await import("sonner");
+    vi.mocked(deleteAiVizArtifact).mockRejectedValueOnce(new Error("network"));
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    renderPicker({ onInsertCustomViz: vi.fn() });
+    const popover = await screen.findByTestId("chart-picker-popover");
+    await userEvent.click(
+      within(popover).getByRole("button", { name: /从组件库移除 演示排名条/ }),
+    );
+
+    expect(deleteAiVizArtifact).toHaveBeenCalledWith("art-custom-1", { unlink: false });
     expect(toast.error).toHaveBeenCalled();
   });
 });

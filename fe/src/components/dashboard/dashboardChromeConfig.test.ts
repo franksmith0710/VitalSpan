@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   AUXILIARY_GRID_CELL_PX,
   DEFAULT_COLLISION_OVERLAP_BUFFER_PX,
+  DEFAULT_MARK_LINE_THRESHOLD_PX,
   DEFAULT_DASHBOARD_CHROME,
+  MAX_MARK_LINE_THRESHOLD_PX,
   mergeAuxiliaryGridIntoSurface,
+  MIN_MARK_LINE_THRESHOLD_PX,
   resolveDashboardAlignmentSnap,
   resolveDashboardChrome,
   resolveDrillLevelColors,
@@ -59,6 +62,7 @@ describe("dashboardChromeConfig", () => {
     expect(resolveDashboardAlignmentSnap({})).toEqual({
       enableMarkLineSnap: true,
       collisionOverlapBufferPx: DEFAULT_COLLISION_OVERLAP_BUFFER_PX,
+      markLineThresholdPx: DEFAULT_MARK_LINE_THRESHOLD_PX,
       gridCellPx: AUXILIARY_GRID_CELL_PX,
       snapEdges: true,
       snapCenters: true,
@@ -72,6 +76,7 @@ describe("dashboardChromeConfig", () => {
           showAuxiliaryGrid: false,
           alignmentSnap: {
             collisionOverlapBufferPx: 200,
+            markLineThresholdPx: 99,
             gridCellPx: 100,
             snapEdges: false,
           },
@@ -80,10 +85,19 @@ describe("dashboardChromeConfig", () => {
     ).toEqual({
       enableMarkLineSnap: false,
       collisionOverlapBufferPx: 80,
+      markLineThresholdPx: MAX_MARK_LINE_THRESHOLD_PX,
       gridCellPx: 48,
       snapEdges: false,
       snapCenters: true,
     });
+  });
+
+  it("clamps mark line threshold minimum", () => {
+    expect(
+      resolveDashboardAlignmentSnap({
+        chrome: { alignmentSnap: { markLineThresholdPx: 0 } },
+      }).markLineThresholdPx,
+    ).toBe(MIN_MARK_LINE_THRESHOLD_PX);
   });
 });
 
