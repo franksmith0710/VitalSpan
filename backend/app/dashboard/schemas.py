@@ -199,12 +199,30 @@ class DialogStyleConfig(BaseModel):
     font_color: str | None = Field(default=None, alias="fontColor", max_length=64)
 
 
+class DashboardAlignmentSnapConfig(BaseModel):
+    """像素画布编辑态对齐吸附细项（存于 styleConfig.chrome.alignmentSnap）。"""
+
+    model_config = ConfigDict(populate_by_name=True)
+    enable_mark_line_snap: bool | None = Field(default=None, alias="enableMarkLineSnap")
+    mark_line_threshold_px: int | None = Field(
+        default=None,
+        alias="markLineThresholdPx",
+        ge=4,
+        le=24,
+    )
+    enable_grid_snap: bool | None = Field(default=None, alias="enableGridSnap")
+    grid_cell_px: int | None = Field(default=None, alias="gridCellPx", ge=8, le=48)
+    snap_edges: bool | None = Field(default=None, alias="snapEdges")
+    snap_centers: bool | None = Field(default=None, alias="snapCenters")
+
+
 class DashboardChromeConfig(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     show_chart_loading_hint: bool | None = Field(default=None, alias="showChartLoadingHint")
     show_floating_actions: bool | None = Field(default=None, alias="showFloatingActions")
     show_chart_action_buttons: bool | None = Field(default=None, alias="showChartActionButtons")
     show_auxiliary_grid: bool | None = Field(default=None, alias="showAuxiliaryGrid")
+    alignment_snap: DashboardAlignmentSnapConfig | None = Field(default=None, alias="alignmentSnap")
 
 
 class ChartLabelStyleConfig(BaseModel):

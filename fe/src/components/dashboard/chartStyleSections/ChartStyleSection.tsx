@@ -8,6 +8,8 @@ import { readChartDeStyle } from "@/lib/chartDeStyle";
 import { ChartGisMapProjectPanel } from "./ChartGisMapProjectPanel";
 import { ChartGisMapOverlayPanel } from "./ChartGisMapOverlayPanel";
 import { ChartGisMapLayersPanel } from "./ChartGisMapLayersPanel";
+import { ChartGisMapAtmospherePanel } from "./ChartGisMapAtmospherePanel";
+import { ChartGisMapSunPanel } from "./ChartGisMapSunPanel";
 import {
   ChartBackgroundStyleSection,
   ChartLabelStyleSection,
@@ -62,6 +64,10 @@ export function ChartStyleSection({ sectionId }: ChartStyleSectionProps) {
       return isGisMapChartType(cfg.chartType) ? <ChartGisMapLayersPanel /> : null;
     case "gisOverlay":
       return isGisMapChartType(cfg.chartType) ? <ChartGisMapOverlayPanel /> : null;
+    case "gisAtmosphere":
+      return isGisMapChartType(cfg.chartType) ? <ChartGisMapAtmospherePanel /> : null;
+    case "gisSun":
+      return isGisMapChartType(cfg.chartType) ? <ChartGisMapSunPanel /> : null;
     case "variantBasic":
       return <ChartVariantBasicSection />;
     case "axis":

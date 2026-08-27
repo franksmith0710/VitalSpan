@@ -22,9 +22,22 @@ export const MARK_LINE_CANVAS_THRESHOLD_PX = 3;
 const MIN_WIDTH = 120;
 const MIN_HEIGHT = 80;
 
-export function markLineThreshold(scale: number): number {
+export function markLineThreshold(scale: number, screenThresholdPx = MARK_LINE_SCREEN_THRESHOLD_PX): number {
   const safeScale = scale > 0 ? scale : 1;
-  return MARK_LINE_SCREEN_THRESHOLD_PX / safeScale;
+  const safeThreshold = screenThresholdPx > 0 ? screenThresholdPx : MARK_LINE_SCREEN_THRESHOLD_PX;
+  return safeThreshold / safeScale;
+}
+
+function isCenterEdge(edge: ActiveEdge): boolean {
+  return edge === "centerX" || edge === "centerY";
+}
+
+function snapCandidateAllowed(
+  candidate: SnapCandidate,
+  options: Pick<MarkLineSnapOptions, "snapEdges" | "snapCenters">,
+): boolean {
+  if (isCenterEdge(candidate.activeEdge)) return options.snapCenters !== false;
+  return options.snapEdges !== false;
 }
 
 export type MarkLineSnapOptions = {
@@ -37,6 +50,8 @@ export type MarkLineSnapOptions = {
   chromeInset?: { top: number; right: number; bottom: number; left: number };
   interactionKind?: PixelInteractionKind;
   anchorRect?: PixelRect;
+  snapEdges?: boolean;
+  snapCenters?: boolean;
 };
 
 type RectBounds = {
@@ -231,12 +246,14 @@ function pickBestSnapCandidate(
   threshold: number,
   dragDir: DragDirection,
   kind: PixelInteractionKind,
+  options: Pick<MarkLineSnapOptions, "snapEdges" | "snapCenters">,
 ): SnapCandidate | null {
   const axisCandidates = candidates.filter(
     (item) =>
       item.axis === axis &&
       item.distance <= threshold &&
-      snapCandidateApplies(item, kind),
+      snapCandidateApplies(item, kind) &&
+      snapCandidateAllowed(item, options),
   );
   if (axisCandidates.length === 0) return null;
 
@@ -373,6 +390,7 @@ export function computeMarkLineSnap(
     options.threshold,
     options.dragDir,
     kind,
+    options,
   );
   const xSnap = pickBestSnapCandidate(
     candidates,
@@ -380,6 +398,7 @@ export function computeMarkLineSnap(
     options.threshold,
     options.dragDir,
     kind,
+    options,
   );
 
   let snapped: PixelRect = { ...active };

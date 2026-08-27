@@ -1,7 +1,19 @@
 import type { CSSProperties } from "react";
-import type { DashboardChromeConfig, DashboardStyleConfig, DialogStyleConfig } from "./dashboardStyleConfig";
+import type {
+  DashboardAlignmentSnapConfig,
+  DashboardChromeConfig,
+  DashboardStyleConfig,
+} from "./dashboardStyleConfig";
 
-export const DEFAULT_DASHBOARD_CHROME: Required<DashboardChromeConfig> = {
+export const DEFAULT_DASHBOARD_CHROME: Required<
+  Pick<
+    DashboardChromeConfig,
+    | "showChartLoadingHint"
+    | "showFloatingActions"
+    | "showChartActionButtons"
+    | "showAuxiliaryGrid"
+  >
+> = {
   showChartLoadingHint: true,
   /** 编辑态组件右键菜单（style JSON 历史字段名 showFloatingActions） */
   showFloatingActions: true,
@@ -11,18 +23,56 @@ export const DEFAULT_DASHBOARD_CHROME: Required<DashboardChromeConfig> = {
 
 export const DEFAULT_DRILL_LEVEL_COLORS = ["#465fff", "#0ba5ec", "#12b76a"] as const;
 
-/** 辅助对齐网格步长（像素画布 overlay，仅视觉） */
+/** 辅助对齐网格默认步长（像素画布 overlay） */
 export const AUXILIARY_GRID_CELL_PX = 20;
+
+export const DEFAULT_MARK_LINE_THRESHOLD_PX = 10;
+export const MIN_MARK_LINE_THRESHOLD_PX = 4;
+export const MAX_MARK_LINE_THRESHOLD_PX = 24;
+export const MIN_GRID_CELL_PX = 8;
+export const MAX_GRID_CELL_PX = 48;
+
+export type ResolvedDashboardAlignmentSnap = {
+  enableMarkLineSnap: boolean;
+  markLineThresholdPx: number;
+  enableGridSnap: boolean;
+  gridCellPx: number;
+  snapEdges: boolean;
+  snapCenters: boolean;
+};
+
+function clampInt(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
 
 export function resolveDashboardChrome(
   config: DashboardStyleConfig | undefined,
-): Required<DashboardChromeConfig> {
+): typeof DEFAULT_DASHBOARD_CHROME {
   const chrome = config?.chrome ?? {};
   return {
     showChartLoadingHint: chrome.showChartLoadingHint !== false,
     showFloatingActions: chrome.showFloatingActions !== false,
     showChartActionButtons: chrome.showChartActionButtons !== false,
     showAuxiliaryGrid: chrome.showAuxiliaryGrid !== false,
+  };
+}
+
+export function resolveDashboardAlignmentSnap(
+  config: DashboardStyleConfig | undefined,
+): ResolvedDashboardAlignmentSnap {
+  const chrome = resolveDashboardChrome(config);
+  const snap: DashboardAlignmentSnapConfig = config?.chrome?.alignmentSnap ?? {};
+  return {
+    enableMarkLineSnap: snap.enableMarkLineSnap ?? chrome.showAuxiliaryGrid,
+    markLineThresholdPx: clampInt(
+      snap.markLineThresholdPx ?? DEFAULT_MARK_LINE_THRESHOLD_PX,
+      MIN_MARK_LINE_THRESHOLD_PX,
+      MAX_MARK_LINE_THRESHOLD_PX,
+    ),
+    enableGridSnap: snap.enableGridSnap === true,
+    gridCellPx: clampInt(snap.gridCellPx ?? AUXILIARY_GRID_CELL_PX, MIN_GRID_CELL_PX, MAX_GRID_CELL_PX),
+    snapEdges: snap.snapEdges !== false,
+    snapCenters: snap.snapCenters !== false,
   };
 }
 
@@ -49,15 +99,19 @@ export function resolveDialogScopeStyle(
   return style;
 }
 
-/** 编辑态辅助网格（步长与像素画布吸附一致） */
-export function auxiliaryGridPatternStyle(scheme: "light" | "dark" = "light"): CSSProperties {
+/** 编辑态辅助网格（步长可配置，与网格吸附共用 gridCellPx） */
+export function auxiliaryGridPatternStyle(
+  scheme: "light" | "dark" = "light",
+  cellPx = AUXILIARY_GRID_CELL_PX,
+): CSSProperties {
+  const cell = clampInt(cellPx, MIN_GRID_CELL_PX, MAX_GRID_CELL_PX);
   const stroke = scheme === "dark" ? "%23cbd5e1" : "%23475569";
   const svg = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${AUXILIARY_GRID_CELL_PX}" height="${AUXILIARY_GRID_CELL_PX}"><path fill="none" stroke="${stroke}" stroke-width="1.5" d="M${AUXILIARY_GRID_CELL_PX} 0H0v${AUXILIARY_GRID_CELL_PX}"/></svg>`,
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${cell}" height="${cell}"><path fill="none" stroke="${stroke}" stroke-width="1.5" d="M${cell} 0H0v${cell}"/></svg>`,
   );
   return {
     backgroundImage: `url("data:image/svg+xml,${svg}")`,
-    backgroundSize: `${AUXILIARY_GRID_CELL_PX}px ${AUXILIARY_GRID_CELL_PX}px`,
+    backgroundSize: `${cell}px ${cell}px`,
     backgroundRepeat: "repeat",
   };
 }
@@ -72,9 +126,10 @@ export function mergeAuxiliaryGridIntoSurface(
   base: CSSProperties,
   scheme: "light" | "dark",
   enabled: boolean,
+  cellPx = AUXILIARY_GRID_CELL_PX,
 ): CSSProperties {
   if (!enabled) return base;
-  const pattern = auxiliaryGridPatternStyle(scheme);
+  const pattern = auxiliaryGridPatternStyle(scheme, cellPx);
   const layers = [pattern.backgroundImage, base.backgroundImage].filter(Boolean);
   const sizes = [pattern.backgroundSize, base.backgroundSize].filter(Boolean);
   if (layers.length === 0) return base;

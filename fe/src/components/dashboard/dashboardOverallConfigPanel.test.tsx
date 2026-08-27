@@ -19,13 +19,65 @@ describe("DashboardOverallConfigPanel", () => {
     );
 
     expect(screen.getByText("辅助对齐网格")).toBeInTheDocument();
-    expect(screen.queryByText(/20px 参考网格/)).not.toBeInTheDocument();
+    expect(screen.queryByTestId("alignment-snap-controls")).not.toBeVisible();
 
     await user.click(screen.getByRole("switch", { name: "辅助对齐网格" }));
 
     expect(patchStyle).toHaveBeenCalledWith({
       chrome: { showAuxiliaryGrid: false },
     });
+  });
+
+  it("patches alignment snap toggles for pixel layout", async () => {
+    const user = userEvent.setup();
+    const patchStyle = vi.fn();
+
+    render(
+      <DashboardOverallConfigPanel
+        styleConfig={{}}
+        patchStyle={patchStyle}
+        isPixelLayout
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "展开对齐吸附设置" }));
+    expect(screen.getByTestId("alignment-snap-controls")).toBeVisible();
+
+    await user.click(screen.getByRole("switch", { name: "网格步长吸附" }));
+
+    expect(patchStyle).toHaveBeenCalledWith({
+      chrome: {
+        alignmentSnap: {
+          enableGridSnap: true,
+        },
+      },
+    });
+  });
+
+  it("collapses alignment snap details by default on pixel layout", () => {
+    render(
+      <DashboardOverallConfigPanel
+        styleConfig={{}}
+        patchStyle={vi.fn()}
+        isPixelLayout
+      />,
+    );
+
+    expect(screen.getByTestId("alignment-snap-section")).toBeInTheDocument();
+    expect(screen.queryByTestId("alignment-snap-controls")).not.toBeVisible();
+  });
+
+  it("hides alignment snap details on grid layout", () => {
+    render(
+      <DashboardOverallConfigPanel
+        styleConfig={{}}
+        patchStyle={vi.fn()}
+        isPixelLayout={false}
+      />,
+    );
+
+    expect(screen.getByText("辅助对齐网格")).toBeInTheDocument();
+    expect(screen.queryByTestId("alignment-snap-controls")).not.toBeInTheDocument();
   });
 
   it("patches widgetStyle border from 组件线框 controls", async () => {

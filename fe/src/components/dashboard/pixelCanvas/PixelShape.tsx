@@ -26,7 +26,11 @@ import { shapeInnerShellChromeStyle, shapeTitleStackStyle } from "../dashboardWi
 import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
 import { shapeTitlePresentationStyle } from "../dashboardWidgetTypography";
 import { mergeWidgetOverrideStyle } from "../widgetRailStyleSections";
-import { resolveDashboardChrome } from "../dashboardChromeConfig";
+import { resolveDashboardAlignmentSnap, resolveDashboardChrome } from "../dashboardChromeConfig";
+import {
+  shouldApplyAuxiliaryGridSnap,
+  snapRectToAuxiliaryGrid,
+} from "./auxiliaryGridSnap";
 import {
   applyPixelInteraction,
   RESIZE_CURSORS,
@@ -390,6 +394,7 @@ export function PixelShape({
   const { showTitle, titleStyle, remark } = resolveShapeTitleState(widget, styleConfig, mode);
   const onTitleChange = widgetActions?.onTitleChange;
   const chrome = resolveDashboardChrome(styleConfig);
+  const alignmentSnap = resolveDashboardAlignmentSnap(styleConfig);
   const effectiveScheme = resolveWidgetEffectiveScheme(styleConfig);
   const chromeInset = resolveWidgetChromeInset(styleConfig?.widgetStyle);
   const shellWidgetStyle = mergeWidgetOverrideStyle(styleConfig?.widgetStyle, widget);
@@ -532,15 +537,21 @@ export function PixelShape({
     }
     const markTargets = snapTargets ?? otherWidgets ?? [];
     const snapped = computeMarkLineSnap(raw, markTargets, {
-      threshold: markLineThreshold(scale),
+      threshold: markLineThreshold(scale, alignmentSnap.markLineThresholdPx),
       dragDir: {
         isRightward: event.clientX >= active.startClient.x,
         isDownward: event.clientY >= active.startClient.y,
       },
       interactionKind: active.kind,
       anchorRect: active.startRect,
+      snapEdges: alignmentSnap.snapEdges,
+      snapCenters: alignmentSnap.snapCenters,
     });
-    return { rect: snapped.rect, guides: snapped.guides };
+    let rect = snapped.rect;
+    if (shouldApplyAuxiliaryGridSnap(alignmentSnap, chrome.showAuxiliaryGrid)) {
+      rect = snapRectToAuxiliaryGrid(rect, active.kind, alignmentSnap.gridCellPx);
+    }
+    return { rect, guides: snapped.guides };
   };
 
   const rectForPointer = (

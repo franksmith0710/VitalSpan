@@ -2,31 +2,42 @@ import type { GisAtmospherePreset } from "@/components/charts/engine/maplibre/gi
 import {
   GEOLIBRE_HALO_OUTER_SCALE,
   GEOLIBRE_HALO_PUNCH_INSET,
+  DEFAULT_GIS_HALO_COLOR,
 } from "@/components/charts/engine/maplibre/gisGlobeHaloStops";
 
 export type GisProjectHalo = {
-  /** 光晕外缘相对球缘半径倍数；GeoLibre 默认 2.8 */
+  /** 光晕主色（GeoLibre「光晕颜色」） */
+  color?: string;
+  /** 光晕外缘相对球缘半径倍数；GeoLibre「光晕范围」默认 2.75–2.8 */
   outerScale?: number;
   /** 内缘相对球缘 inset；GeoLibre 默认 0.965 */
   punchInset?: number;
-  /** Canvas screen 混合不透明度 0–1 */
+  /** 光晕强度 0–1（GeoLibre「光晕强度」） */
   opacity?: number;
 };
 
 export type ResolvedGisProjectHalo = {
+  color: string;
   outerScale: number;
   punchInset: number;
   opacity: number;
 };
 
+const HEX_COLOR = /^#[0-9a-fA-F]{6}$/;
+
 export function resolveGisProjectHalo(
   halo: GisProjectHalo | undefined,
   _preset: GisAtmospherePreset | undefined,
 ): ResolvedGisProjectHalo {
+  const color =
+    typeof halo?.color === "string" && HEX_COLOR.test(halo.color.trim())
+      ? halo.color.trim()
+      : DEFAULT_GIS_HALO_COLOR;
   const outerRaw = Number(halo?.outerScale);
   const punchRaw = Number(halo?.punchInset);
   const opacityRaw = Number(halo?.opacity);
   return {
+    color,
     outerScale:
       Number.isFinite(outerRaw) && outerRaw >= 1 && outerRaw <= 6
         ? outerRaw
@@ -44,6 +55,9 @@ export function normalizeGisProjectHalo(input: unknown): GisProjectHalo | undefi
   if (!input || typeof input !== "object") return undefined;
   const raw = input as GisProjectHalo;
   const next: GisProjectHalo = {};
+  if (typeof raw.color === "string" && HEX_COLOR.test(raw.color.trim())) {
+    next.color = raw.color.trim();
+  }
   const outerScale = Number(raw.outerScale);
   if (Number.isFinite(outerScale) && outerScale >= 1 && outerScale <= 6) {
     next.outerScale = outerScale;

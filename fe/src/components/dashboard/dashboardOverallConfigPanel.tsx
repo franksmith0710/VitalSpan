@@ -18,9 +18,14 @@ import {
   resolveDashboardRefreshPreset,
   type DashboardStyleConfig,
   type GapPreset,
+  type DashboardChromeConfig,
   DEFAULT_QUERY_LIMIT,
 } from "./dashboardStyleConfig";
-import { resolveDashboardChrome, type DashboardChromeConfig } from "./dashboardChromeConfig";
+import {
+  resolveDashboardAlignmentSnap,
+  resolveDashboardChrome,
+} from "./dashboardChromeConfig";
+import { AlignmentSnapControls } from "./dashboardAlignmentSnapControls";
 import {
   DE_SELECT,
   DeAttrField,
@@ -228,6 +233,7 @@ export function DashboardOverallConfigPanel({
   const scaleMode = styleConfig.scaleMode ?? "canvas";
   const ws = styleConfig.widgetStyle ?? {};
   const chrome = resolveDashboardChrome(styleConfig);
+  const alignmentSnap = resolveDashboardAlignmentSnap(styleConfig);
   const patchChrome = (patch: Partial<DashboardChromeConfig>) =>
     patchStyle({ chrome: { ...styleConfig.chrome, ...patch } });
 
@@ -326,10 +332,12 @@ export function DashboardOverallConfigPanel({
           checked={chrome.showChartActionButtons}
           onCheckedChange={(checked) => patchChrome({ showChartActionButtons: checked })}
         />
-        <DeAttrToggleRow
-          label="辅助对齐网格"
-          checked={chrome.showAuxiliaryGrid}
-          onCheckedChange={(checked) => patchChrome({ showAuxiliaryGrid: checked })}
+        <AlignmentSnapControls
+          chrome={chrome}
+          alignment={alignmentSnap}
+          alignmentSnapRaw={styleConfig.chrome?.alignmentSnap}
+          isPixelLayout={isPixelLayout}
+          patchChrome={patchChrome}
         />
       </DeAttrToggleSection>
     </DeAttrForm>

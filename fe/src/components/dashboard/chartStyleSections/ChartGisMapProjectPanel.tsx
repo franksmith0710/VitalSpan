@@ -1,12 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -45,7 +39,6 @@ import {
   type GisBasemapFlavor,
   type GisLabelLang,
   type GisMapControls,
-  type GisProjectFog,
   type GisViewDraftFields,
 } from "@/components/charts/engine/maplibre/gisProject";
 import { captureGisMapViewCamera, applyGisMapViewCamera, applyGisMapViewAtmosphere, applyGisMapBasemapPatch } from "@/components/charts/engine/maplibre/gisMapViewBridge";
@@ -53,12 +46,6 @@ import {
   buildGisConfiguredViewKey,
   GLOBE_IDLE_ROTATION_DEG_PER_SEC,
 } from "@/components/charts/engine/maplibre/gisMapRuntime";
-import {
-  GEOLIBRE_HALO_OUTER_SCALE,
-  GEOLIBRE_HALO_PUNCH_INSET,
-} from "@/components/charts/engine/maplibre/gisGlobeHaloStops";
-import type { GisProjectHalo } from "@/components/charts/engine/maplibre/gisProjectHalo";
-import { resolveGisProjectHalo } from "@/components/charts/engine/maplibre/gisProjectHalo";
 import { listTileServices } from "@/lib/tileServices";
 
 const GIS_VIEW_STEP = 10 ** -GIS_VIEW_DECIMALS;
@@ -237,18 +224,6 @@ export function ChartGisMapProjectPanel() {
     });
   };
 
-  const patchFog = (patch: Partial<GisProjectFog>) => {
-    const preset = project.atmospherePreset ?? "night";
-    const base = project.fog ?? GIS_ATMOSPHERE_PRESETS[preset];
-    const nextFog = { ...base, ...patch };
-    applyGisMapViewAtmosphere(widget.id, {
-      fog: nextFog,
-      atmospherePreset: preset,
-      projection: project.projection,
-    });
-    patchProject({ fog: nextFog });
-  };
-
   const patchBasemapRuntime = (patch: Parameters<typeof applyGisMapBasemapPatch>[1]) => {
     applyGisMapBasemapPatch(widget.id, patch);
     patchProject(patch);
@@ -260,10 +235,6 @@ export function ChartGisMapProjectPanel() {
     patchProject({ earthOpacity });
   };
 
-  const patchHalo = (patch: Partial<GisProjectHalo>) => {
-    patchProject({ halo: { ...project.halo, ...patch } });
-  };
-
   const patchBasemapLayers = (key: keyof NonNullable<typeof project.basemapLayers>, checked: boolean) => {
     const next = { ...project.basemapLayers };
     if (checked) delete next[key];
@@ -273,10 +244,6 @@ export function ChartGisMapProjectPanel() {
     patchProject({ basemapLayers });
   };
 
-  const resolvedHalo = useMemo(
-    () => resolveGisProjectHalo(project.halo, project.atmospherePreset),
-    [project.atmospherePreset, project.halo],
-  );
   const mapControls = useMemo(() => resolveGisMapControls(project), [project]);
 
   const patchMapControl = useCallback(
@@ -297,8 +264,6 @@ export function ChartGisMapProjectPanel() {
     },
     [patchProject, project.mapControls],
   );
-
-  const [advancedAtmosphereOpen, setAdvancedAtmosphereOpen] = useState(false);
 
   return (
     <ChartInspectorSection
@@ -480,95 +445,6 @@ export function ChartGisMapProjectPanel() {
                 </SelectContent>
               </Select>
             </div>
-          ) : null}
-
-          {project.projection === "globe" ? (
-            <Collapsible open={advancedAtmosphereOpen} onOpenChange={setAdvancedAtmosphereOpen}>
-              <CollapsibleTrigger className="flex w-full items-center gap-1 text-theme-xs text-gray-600 hover:text-brand-500 dark:text-gray-300">
-                {advancedAtmosphereOpen ? (
-                  <ChevronDown className="size-3.5 shrink-0" />
-                ) : (
-                  <ChevronRight className="size-3.5 shrink-0" />
-                )}
-                高级大气与光晕
-              </CollapsibleTrigger>
-              <CollapsibleContent className="mt-2 grid gap-2">
-                <InspectorSliderField
-                  label="地平线混合"
-                  hint="MapLibre fog horizon-blend；越大大气带越宽"
-                  value={Math.round((project.fog?.["horizon-blend"] ?? 0.02) * 1000) / 10}
-                  min={0}
-                  max={10}
-                  step={0.5}
-                  unit="%"
-                  onChange={(next) => patchFog({ "horizon-blend": next / 100 })}
-                />
-                <InspectorSliderField
-                  label="星点强度"
-                  hint="黑夜 preset 下 MapLibre 星场；白昼通常为 0"
-                  value={Math.round((project.fog?.["star-intensity"] ?? 0) * 100)}
-                  min={0}
-                  max={100}
-                  step={5}
-                  unit="%"
-                  onChange={(next) => patchFog({ "star-intensity": next / 100 })}
-                />
-                <div className="flex min-w-0 items-center gap-2">
-                  <ChartPaletteColorSwatch
-                    value={project.fog?.color ?? GIS_ATMOSPHERE_PRESETS[project.atmospherePreset ?? "night"].color}
-                    aria-label="大气颜色"
-                    onChange={(color) => patchFog({ color })}
-                  />
-                  <InspectorFieldLabel label="大气颜色" hint="MapLibre fog color" />
-                </div>
-                <div className="flex min-w-0 items-center gap-2">
-                  <ChartPaletteColorSwatch
-                    value={
-                      project.fog?.["high-color"] ??
-                      GIS_ATMOSPHERE_PRESETS[project.atmospherePreset ?? "night"]["high-color"]
-                    }
-                    aria-label="高空颜色"
-                    onChange={(highColor) => patchFog({ "high-color": highColor })}
-                  />
-                  <InspectorFieldLabel label="高空颜色" hint="MapLibre fog high-color" />
-                </div>
-                <div className="flex min-w-0 items-center gap-2">
-                  <ChartPaletteColorSwatch
-                    value={project.fog?.["space-color"] ?? "#0b0b19"}
-                    aria-label="深空底色"
-                    onChange={(spaceColor) => patchFog({ "space-color": spaceColor })}
-                  />
-                  <InspectorFieldLabel label="深空底色" hint="MapLibre fog space-color" />
-                </div>
-                <InspectorSliderField
-                  label="光晕外缘倍数"
-                  hint={`GeoLibre 默认 ${GEOLIBRE_HALO_OUTER_SCALE}`}
-                  value={Math.round(resolvedHalo.outerScale * 100) / 100}
-                  min={1}
-                  max={6}
-                  step={0.1}
-                  onChange={(outerScale) => patchHalo({ outerScale })}
-                />
-                <InspectorSliderField
-                  label="光晕内缘 inset"
-                  hint={`GeoLibre 默认 ${GEOLIBRE_HALO_PUNCH_INSET}`}
-                  value={Math.round(resolvedHalo.punchInset * 1000) / 1000}
-                  min={0.5}
-                  max={1}
-                  step={0.005}
-                  onChange={(punchInset) => patchHalo({ punchInset })}
-                />
-                <InspectorSliderField
-                  label="光晕不透明度"
-                  value={Math.round(resolvedHalo.opacity * 100)}
-                  min={0}
-                  max={100}
-                  step={1}
-                  unit="%"
-                  onChange={(next) => patchHalo({ opacity: next / 100 })}
-                />
-              </CollapsibleContent>
-            </Collapsible>
           ) : null}
 
           {project.projection === "globe" ? (

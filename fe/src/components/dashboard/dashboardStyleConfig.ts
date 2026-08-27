@@ -108,6 +108,24 @@ export type DashboardChromeConfig = {
   showChartActionButtons?: boolean;
   /** 编辑态画布辅助对齐网格 */
   showAuxiliaryGrid?: boolean;
+  /** 像素画布：对齐吸附细项（阈值、边/中心、网格步长等） */
+  alignmentSnap?: DashboardAlignmentSnapConfig;
+};
+
+/** 编辑态对齐吸附（存于 styleConfig.chrome.alignmentSnap） */
+export type DashboardAlignmentSnapConfig = {
+  /** 组件边/中心对齐吸附；未设时随 showAuxiliaryGrid */
+  enableMarkLineSnap?: boolean;
+  /** 吸附重合阈值（屏幕 px）；默认 10 */
+  markLineThresholdPx?: number;
+  /** 是否吸附到网格步长；默认 false */
+  enableGridSnap?: boolean;
+  /** 网格步长（px）；默认 20 */
+  gridCellPx?: number;
+  /** 吸附边线（贴边/对齐边）；默认 true */
+  snapEdges?: boolean;
+  /** 吸附中心线；默认 true */
+  snapCenters?: boolean;
 };
 
 export type TitleStyleConfig = {

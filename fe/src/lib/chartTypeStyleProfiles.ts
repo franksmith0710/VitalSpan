@@ -56,6 +56,8 @@ const MAP_3D_STYLE: ChartStyleSectionId[] = ["background", "title", "geo", "rema
 
 const GIS_MAP_STYLE: ChartStyleSectionId[] = [
   "gisProject",
+  "gisAtmosphere",
+  "gisSun",
   "gisOverlay",
   "gisLayers",
   "background",

@@ -25,12 +25,14 @@ import { applyGisGlobeToStyle, spaceBackdropForPreset } from "@/components/chart
 import {
   applyGlobeAtmosphere,
   applyGisMapStylePreservingCamera,
+  applyGisSunLight,
   buildGisConfiguredViewKey,
   mountGisMapControls,
   GLOBE_IDLE_ROTATION_DEG_PER_SEC,
   startGisGlobeAutoRotate,
   syncGisMapView,
 } from "@/components/charts/engine/maplibre/gisMapRuntime";
+import { resolveGisProjectSun } from "@/components/charts/engine/maplibre/gisProjectSun";
 import { mountGisGlobeHaloOverlay } from "@/components/charts/engine/maplibre/gisGlobeHalo";
 import { mountGisStarfieldOverlay } from "@/components/charts/engine/maplibre/gisStarfield";
 import { registerGisMapViewLiveControl } from "@/components/charts/engine/maplibre/gisMapViewBridge";
@@ -84,6 +86,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     [project.mapControls, project.showControls],
   );
   const mapControlsKey = useMemo(() => JSON.stringify(mapControls), [mapControls]);
+  const sunKey = useMemo(
+    () => JSON.stringify(resolveGisProjectSun(project.sun)),
+    [project.sun],
+  );
   const [pmtilesStyle, setPmtilesStyle] = useState<StyleSpecification | null>(null);
   const [pmtilesLoading, setPmtilesLoading] = useState(false);
   const [pmtilesErrorHint, setPmtilesErrorHint] = useState<string | null>(null);
@@ -520,6 +526,19 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
   useEffect(() => {
     const map = mapRef.current;
+    if (!map || project.projection !== "globe") return;
+    const apply = () =>
+      applyGisSunLight(map, project.sun, resolveGisProjectSun(project.sun).timeMinutes);
+    if (map.isStyleLoaded()) apply();
+    else map.once("load", apply);
+    map.on("style.load", apply);
+    return () => {
+      map.off("style.load", apply);
+    };
+  }, [project.projection, project.sun, sunKey, styleKey]);
+
+  useEffect(() => {
+    const map = mapRef.current;
     if (!map) return;
     if (syncedViewKeyRef.current === configuredViewKey) return;
 
@@ -663,6 +682,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         const map = mapRef.current;
         if (!map) return false;
         const current = projectRef.current;
+        if (ctx.halo) {
+          projectRef.current = { ...current, halo: ctx.halo };
+        }
+        if (ctx.fog) {
+          projectRef.current = { ...projectRef.current, fog: ctx.fog };
+        }
         applyGlobeAtmosphere(
           map,
           {
@@ -689,6 +714,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         const map = mapRef.current;
         if (!map) return false;
         syncLayersRuntime(map);
+        return true;
+      },
+      applySun: (sun, timeMinutes) => {
+        const map = mapRef.current;
+        if (!map) return false;
+        applyGisSunLight(map, sun, timeMinutes);
         return true;
       },
     });

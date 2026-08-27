@@ -46,7 +46,7 @@ import {
   widgetDashboardStyleFingerprint,
 } from "../dashboardStyleConfig";
 import { resolveComponentGapRuntime } from "../componentGapRuntime";
-import { auxiliaryGridPatternStyle, resolveDashboardChrome } from "../dashboardChromeConfig";
+import { auxiliaryGridPatternStyle, resolveDashboardAlignmentSnap, resolveDashboardChrome } from "../dashboardChromeConfig";
 import {
   allowsPixelWidgetOverlap,
   resolvePixelLayoutWithActiveRect,
@@ -281,18 +281,21 @@ export function PixelCanvas({
     [onTabInsertIntentChange, tabHosts],
   );
 
+  const chrome = resolveDashboardChrome(styleConfig);
+  const alignmentSnap = resolveDashboardAlignmentSnap(styleConfig);
   const showAuxGrid = mode === "edit" && chrome.showAuxiliaryGrid;
   const showMarkLines = mode === "edit";
   const allowWidgetOverlap = allowsPixelWidgetOverlap(activeLayout);
-  const markLinesEnabled = showAuxGrid || allowWidgetOverlap;
+  const markLinesEnabled =
+    mode === "edit" && (alignmentSnap.enableMarkLineSnap || allowWidgetOverlap);
   const scheme = styleConfig.colorScheme ?? "light";
   const artboardStyle = useMemo(
     () => resolveArtboardStyle(styleConfig),
     [canvasArtboardStyleFingerprint(styleConfig)],
   );
   const auxGridStyle = useMemo(
-    () => auxiliaryGridPatternStyle(scheme),
-    [scheme],
+    () => auxiliaryGridPatternStyle(scheme, alignmentSnap.gridCellPx),
+    [alignmentSnap.gridCellPx, scheme],
   );
   /** 编辑态固定按画布宽度贴满；大屏编辑改为整画布 fit 宿主 */
   const effectiveScaleMode =

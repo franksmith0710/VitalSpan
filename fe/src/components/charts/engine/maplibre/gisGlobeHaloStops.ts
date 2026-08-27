@@ -1,6 +1,10 @@
 /** GeoLibre / Leonel Dias 大气光晕参数 — https://leoneljdias.github.io/posts/globe-atmosphere-halo-comets/ */
 
 export const GEOLIBRE_HALO_OUTER_SCALE = 2.8;
+/** GeoLibre 面板默认光晕范围约 2.75x。 */
+export const GEOLIBRE_HALO_RANGE_DEFAULT = 2.75;
+/** GeoLibre 默认光晕主色。 */
+export const DEFAULT_GIS_HALO_COLOR = "#c8ebff";
 /** 内缘略小于球缘，让亮边与地球 rim 重叠消 seam（GeoLibre #230）。 */
 export const GEOLIBRE_HALO_PUNCH_INSET = 0.965;
 

@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import {
   AUXILIARY_GRID_CELL_PX,
   DEFAULT_DASHBOARD_CHROME,
+  DEFAULT_MARK_LINE_THRESHOLD_PX,
   mergeAuxiliaryGridIntoSurface,
+  resolveDashboardAlignmentSnap,
   resolveDashboardChrome,
   resolveDrillLevelColors,
 } from "./dashboardChromeConfig";
@@ -51,6 +53,40 @@ describe("dashboardChromeConfig", () => {
   it("falls back drill level colors", () => {
     expect(resolveDrillLevelColors({})).toHaveLength(3);
     expect(resolveDrillLevelColors({ drillLevelColors: ["#111111"] })[0]).toBe("#111111");
+  });
+
+  it("resolves alignment snap defaults from chrome", () => {
+    expect(resolveDashboardAlignmentSnap({})).toEqual({
+      enableMarkLineSnap: true,
+      markLineThresholdPx: DEFAULT_MARK_LINE_THRESHOLD_PX,
+      enableGridSnap: false,
+      gridCellPx: AUXILIARY_GRID_CELL_PX,
+      snapEdges: true,
+      snapCenters: true,
+    });
+  });
+
+  it("clamps alignment snap overrides", () => {
+    expect(
+      resolveDashboardAlignmentSnap({
+        chrome: {
+          showAuxiliaryGrid: false,
+          alignmentSnap: {
+            markLineThresholdPx: 2,
+            gridCellPx: 100,
+            enableGridSnap: true,
+            snapEdges: false,
+          },
+        },
+      }),
+    ).toEqual({
+      enableMarkLineSnap: false,
+      markLineThresholdPx: 4,
+      enableGridSnap: true,
+      gridCellPx: 48,
+      snapEdges: false,
+      snapCenters: true,
+    });
   });
 });
 

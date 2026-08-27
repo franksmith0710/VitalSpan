@@ -1,10 +1,13 @@
 import type { GisProjectFog, GisProjectView, GisProjection, GisAtmospherePreset } from "@/components/charts/engine/maplibre/gisProject";
 import type { GisBasemapLayerVisibility } from "@/components/charts/engine/maplibre/gisProject";
+import type { GisProjectHalo } from "@/components/charts/engine/maplibre/gisProjectHalo";
+import type { GisProjectSun } from "@/components/charts/engine/maplibre/gisProjectSun";
 
 export type GisMapAtmosphereContext = {
   projection?: GisProjection;
   atmospherePreset?: GisAtmospherePreset;
   fog?: GisProjectFog;
+  halo?: GisProjectHalo;
 };
 
 export type GisMapBasemapPatch = {
@@ -19,6 +22,7 @@ export type GisMapViewLiveControl = {
   applyAtmosphere?: (ctx: GisMapAtmosphereContext) => boolean;
   applyBasemapPatch?: (patch: GisMapBasemapPatch) => boolean;
   syncLayers?: () => boolean;
+  applySun?: (sun: GisProjectSun | undefined, timeMinutes: number) => boolean;
 };
 
 const liveControlByWidgetId = new Map<string, GisMapViewLiveControl>();
@@ -58,4 +62,8 @@ export function applyGisMapBasemapPatch(widgetId: string, patch: GisMapBasemapPa
 
 export function syncGisMapViewLayers(widgetId: string): boolean {
   return liveControlByWidgetId.get(widgetId)?.syncLayers?.() ?? false;
+}
+
+export function applyGisMapSun(widgetId: string, sun: GisProjectSun | undefined, timeMinutes: number): boolean {
+  return liveControlByWidgetId.get(widgetId)?.applySun?.(sun, timeMinutes) ?? false;
 }

@@ -85,8 +85,8 @@ python executor/cli.py vitalspan_completion_gate --workflow 2 --agent-summary ".
 - [x] `examples/hex-kpi-grid.json`（验收金样 · 已 publish 可复测）
 - [x] validate → publish → `completion_gate wf2` 绿（CLI）
 - [x] `AGENT-SYSTEM-PROMPT.md` ≤80 行 · `DEEPTALK-AGENT-PROMPT.md` 已对齐
-- [x] 插件 **v0.3.4** sync + `release/vitalspan-v0.3.4.zip`（resize 生命周期 lint · mount 全 runtime 422 · 20 工具）
-- [ ] DeepTalk 安装 zip 并重启 · 5173 走查 hex-kpi-grid 样式 Tab
+- [x] 插件 **v0.3.5** sync + `release/vitalspan-v0.3.5.zip`（内置图误路由 lint · route treemap → wf1 · 20 工具）
+- [ ] DeepTalk 安装 zip 并重启 · 新任务「商务矩形树图」→ `route` 返回 wf1 treemap，禁止 wf2 文本列表
 
 ## VitalSpan CI 参考
 

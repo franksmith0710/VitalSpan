@@ -34,7 +34,9 @@ export type ChartStyleSectionId =
   | "background"
   | "gisProject"
   | "gisLayers"
-  | "gisOverlay";
+  | "gisOverlay"
+  | "gisAtmosphere"
+  | "gisSun";
 
 export const STYLE_VARIANT_LABELS: Record<string, string> = {
   default: "默认",

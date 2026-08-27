@@ -1,23 +1,27 @@
 import { describe, expect, it } from "vitest";
 import {
-  AUXILIARY_GRID_CELL_PX,
   shouldApplyAuxiliaryGridSnap,
   snapRectToAuxiliaryGrid,
 } from "./auxiliaryGridSnap";
 
+const gridSnapOn = { enableGridSnap: true } as const;
+const gridSnapOff = { enableGridSnap: false } as const;
+
 describe("shouldApplyAuxiliaryGridSnap", () => {
-  it("always returns false — DE grid is visual-only", () => {
-    expect(shouldApplyAuxiliaryGridSnap(true, 0)).toBe(false);
-    expect(shouldApplyAuxiliaryGridSnap(false, 0)).toBe(false);
-    expect(shouldApplyAuxiliaryGridSnap(true, 5)).toBe(false);
-    expect(shouldApplyAuxiliaryGridSnap(false, 5)).toBe(false);
+  it("requires auxiliary grid and enableGridSnap", () => {
+    expect(shouldApplyAuxiliaryGridSnap(gridSnapOn, true)).toBe(true);
+    expect(shouldApplyAuxiliaryGridSnap(gridSnapOn, false)).toBe(false);
+    expect(shouldApplyAuxiliaryGridSnap(gridSnapOff, true)).toBe(false);
+    expect(shouldApplyAuxiliaryGridSnap(gridSnapOff, false)).toBe(false);
   });
 });
 
 describe("snapRectToAuxiliaryGrid", () => {
+  const cell = 20;
+
   it("snaps move position to grid cells", () => {
     const rect = { x: 13, y: 27, width: 200, height: 160 };
-    expect(snapRectToAuxiliaryGrid(rect, "move")).toEqual({
+    expect(snapRectToAuxiliaryGrid(rect, "move", cell)).toEqual({
       x: 20,
       y: 20,
       width: 200,
@@ -27,10 +31,10 @@ describe("snapRectToAuxiliaryGrid", () => {
 
   it("snaps resize edges to grid cells", () => {
     const rect = { x: 13, y: 27, width: 203, height: 157 };
-    const snapped = snapRectToAuxiliaryGrid(rect, "se");
-    expect(snapped.x % AUXILIARY_GRID_CELL_PX).toBe(0);
-    expect(snapped.y % AUXILIARY_GRID_CELL_PX).toBe(0);
-    expect((snapped.x + snapped.width) % AUXILIARY_GRID_CELL_PX).toBe(0);
-    expect((snapped.y + snapped.height) % AUXILIARY_GRID_CELL_PX).toBe(0);
+    const snapped = snapRectToAuxiliaryGrid(rect, "se", cell);
+    expect(snapped.x % cell).toBe(0);
+    expect(snapped.y % cell).toBe(0);
+    expect((snapped.x + snapped.width) % cell).toBe(0);
+    expect((snapped.y + snapped.height) % cell).toBe(0);
   });
 });
