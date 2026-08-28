@@ -5,7 +5,7 @@ export const PIXEL_SHAPE_LIVE_RESIZE = "pixel-shape-live-resize";
 export const PIXEL_LAYOUT_GEOMETRY_COMMITTED = "pixel-layout-geometry-committed";
 
 export type PixelLayoutGeometryCommittedDetail = {
-  /** 几何真正变化（宽/高）的组件；省略 = 全画布广播；空数组不派发 */
+  /** 宽/高变化的组件 id；必须非空才派发（禁止全画布广播） */
   widgetIds?: string[];
 };
 
@@ -13,14 +13,15 @@ export function dispatchPixelShapeLiveResize() {
   document.dispatchEvent(new CustomEvent(PIXEL_SHAPE_LIVE_RESIZE));
 }
 
-/** 像素布局几何已提交；嵌入图表按 widgetIds 局部补测，避免未动组件全量重绘 */
+/**
+ * 像素布局几何已提交；仅对列出的组件补测。
+ * 省略 / 空数组均不派发，避免「未碰也刷新」。
+ */
 export function dispatchPixelLayoutGeometryCommitted(widgetIds?: readonly string[]) {
-  // 显式空数组 = 无人需要补测（勿当成「全画布广播」）
-  if (widgetIds && widgetIds.length === 0) return;
-  const detail: PixelLayoutGeometryCommittedDetail = {};
-  if (widgetIds && widgetIds.length > 0) {
-    detail.widgetIds = [...widgetIds];
-  }
+  if (!widgetIds || widgetIds.length === 0) return;
+  const detail: PixelLayoutGeometryCommittedDetail = {
+    widgetIds: [...widgetIds],
+  };
   document.dispatchEvent(
     new CustomEvent<PixelLayoutGeometryCommittedDetail>(PIXEL_LAYOUT_GEOMETRY_COMMITTED, {
       detail,
@@ -34,18 +35,15 @@ export function resolvePixelWidgetIdFromElement(el: Element | null | undefined):
   return host?.getAttribute("data-component-id") ?? null;
 }
 
-/** 事件是否应触发该组件的 commit resize */
+/** 事件是否应触发该组件的 commit resize（fail-closed） */
 export function geometryCommitAffectsWidget(
   event: Event,
   widgetId: string | null | undefined,
 ): boolean {
   const detail = (event as CustomEvent<PixelLayoutGeometryCommittedDetail>).detail;
   const ids = detail?.widgetIds;
-  // 显式空列表：无人补测
-  if (Array.isArray(ids) && ids.length === 0) return false;
-  // 省略 widgetIds：兼容全画布广播
-  if (!ids) return true;
-  if (!widgetId) return true;
+  if (!ids?.length) return false;
+  if (!widgetId) return false;
   return ids.includes(widgetId);
 }
 

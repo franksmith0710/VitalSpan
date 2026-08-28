@@ -369,17 +369,14 @@ export const ChartRenderer = memo(function ChartRenderer({
     gridSpan?.h,
   ]);
 
+  // 仅 footprint 宽高变化时补测；勿因 playing 结束无条件 remeasure（纯拖移会闪）
+  const suspendLiveResizeRef = useRef(suspendLiveResize);
+  suspendLiveResizeRef.current = suspendLiveResize;
   useEffect(() => {
-    if (!embedded || suspendLiveResize) return;
+    if (!embedded || suspendLiveResizeRef.current) return;
     if (!pixelSize || pixelSize.width <= 0 || pixelSize.height <= 0) return;
     remeasureBody();
-  }, [
-    embedded,
-    suspendLiveResize,
-    pixelSize?.width,
-    pixelSize?.height,
-    remeasureBody,
-  ]);
+  }, [embedded, pixelSize?.width, pixelSize?.height, remeasureBody]);
   const chartSize = useMemo(() => {
     if (embedded) {
       return { width: undefined as number | undefined, height: undefined as number | undefined };

@@ -29,13 +29,10 @@ describe("pixelShapeLiveResize", () => {
     expect(handler).toHaveBeenCalledTimes(1);
   });
 
-  it("broadcasts to all widgets when widgetIds omitted", () => {
-    const event = new CustomEvent(PIXEL_LAYOUT_GEOMETRY_COMMITTED, { detail: {} });
-    expect(geometryCommitAffectsWidget(event, "w1")).toBe(true);
-    expect(geometryCommitAffectsWidget(event, "w9")).toBe(true);
-  });
+  it("omitted or empty widgetIds do not dispatch and affect nobody", () => {
+    const omitEvent = new CustomEvent(PIXEL_LAYOUT_GEOMETRY_COMMITTED, { detail: {} });
+    expect(geometryCommitAffectsWidget(omitEvent, "w1")).toBe(false);
 
-  it("empty widgetIds affects nobody and skips dispatch", () => {
     const emptyEvent = new CustomEvent(PIXEL_LAYOUT_GEOMETRY_COMMITTED, {
       detail: { widgetIds: [] },
     });
@@ -43,9 +40,18 @@ describe("pixelShapeLiveResize", () => {
 
     const handler = vi.fn();
     document.addEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, handler);
+    dispatchPixelLayoutGeometryCommitted();
     dispatchPixelLayoutGeometryCommitted([]);
     document.removeEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, handler);
     expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("fail-closed when listener cannot resolve widgetId", () => {
+    const event = new CustomEvent(PIXEL_LAYOUT_GEOMETRY_COMMITTED, {
+      detail: { widgetIds: ["w1"] },
+    });
+    expect(geometryCommitAffectsWidget(event, null)).toBe(false);
+    expect(geometryCommitAffectsWidget(event, undefined)).toBe(false);
   });
 
   it("collectGeometryChangedWidgetIds only tracks size, not position", () => {

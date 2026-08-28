@@ -192,8 +192,8 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
       clearTimeout(liveTimerRef.current);
       liveTimerRef.current = null;
     }
-    setChartAnimationSuppressed(false);
-    measureAndRender("commit", true);
+    // 无尺寸差则跳过（live 已画过则不闪）；commit 内仍压制入场动画
+    measureAndRender("commit", false);
   }, [measureAndRender]);
 
   const onCommitResizeRef = useRef(onCommitResize);

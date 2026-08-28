@@ -320,7 +320,7 @@ describe("EmbeddedChartTable", () => {
   it("responds to pixel layout geometry committed after resize", async () => {
     const rects: DOMRect[] = [];
     const { container } = render(
-      <div className="pixel-shape-outer" style={{ width: 400, height: 240 }}>
+      <div data-component-id="table-w1" className="pixel-shape-outer" style={{ width: 400, height: 240 }}>
         <div className="pixel-shape-inner">
           <EmbeddedChartTable
             embedded
@@ -344,7 +344,7 @@ describe("EmbeddedChartTable", () => {
       return rect;
     };
     await act(() => {
-      dispatchPixelLayoutGeometryCommitted();
+      dispatchPixelLayoutGeometryCommitted(["table-w1"]);
     });
     expect(rects.length).toBeGreaterThan(0);
   });

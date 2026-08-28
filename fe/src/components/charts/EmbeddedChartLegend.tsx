@@ -247,13 +247,18 @@ export function EmbeddedChartLegendShell({
   useEffect(() => {
     const node = chartAreaRef.current;
     if (!node || typeof ResizeObserver === "undefined") return;
+    // 仅 chartArea 宽高变化且能解析 widgetId 时 scoped 补测；禁止全画布广播
+    let last = { width: node.clientWidth, height: node.clientHeight };
     const notify = () => {
       const widgetId = resolvePixelWidgetIdFromElement(node);
-      dispatchPixelLayoutGeometryCommitted(widgetId ? [widgetId] : undefined);
+      if (!widgetId) return;
+      const next = { width: node.clientWidth, height: node.clientHeight };
+      if (next.width === last.width && next.height === last.height) return;
+      last = next;
+      dispatchPixelLayoutGeometryCommitted([widgetId]);
     };
     const observer = new ResizeObserver(notify);
     observer.observe(node);
-    notify();
     return () => observer.disconnect();
   }, [itemsKey, position, orient]);
 
