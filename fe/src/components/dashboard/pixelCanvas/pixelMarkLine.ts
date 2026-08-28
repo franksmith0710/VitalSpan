@@ -14,6 +14,33 @@ export type DragDirection = {
   isDownward: boolean;
 };
 
+/** resize 用外框相对锚点的推进方向，避免指针越过起点时 dragDir 翻转导致参考线丢失 */
+export function resolveMarkLineDragDir(
+  kind: PixelInteractionKind,
+  rect: PixelRect,
+  anchor: PixelRect,
+  pointerDir: DragDirection,
+): DragDirection {
+  if (kind === "move") return pointerDir;
+
+  let isRightward = pointerDir.isRightward;
+  let isDownward = pointerDir.isDownward;
+
+  if (kind.includes("e")) {
+    isRightward = rect.x + rect.width >= anchor.x + anchor.width;
+  } else if (kind.includes("w")) {
+    isRightward = rect.x >= anchor.x;
+  }
+
+  if (kind.includes("s")) {
+    isDownward = rect.y + rect.height >= anchor.y + anchor.height;
+  } else if (kind.includes("n")) {
+    isDownward = rect.y >= anchor.y;
+  }
+
+  return { isRightward, isDownward };
+}
+
 /** 对齐吸附：屏幕像素阈值（换算为画布坐标后随 scale 放大，缩放手感一致） */
 export const MARK_LINE_SCREEN_THRESHOLD_PX = DEFAULT_MARK_LINE_THRESHOLD_PX;
 
@@ -248,6 +275,7 @@ function pickBestSnapCandidate(
   dragDir: DragDirection,
   kind: PixelInteractionKind,
   options: Pick<MarkLineSnapOptions, "snapEdges" | "snapCenters" | "anchorRect">,
+  mode: "snap" | "guide" = "snap",
 ): SnapCandidate | null {
   const anchor = options.anchorRect;
   const axisCandidates = candidates.filter(
@@ -256,7 +284,8 @@ function pickBestSnapCandidate(
       item.distance <= threshold &&
       snapCandidateApplies(item, kind) &&
       snapCandidateAllowed(item, options) &&
-      (kind === "move" ||
+      (mode === "guide" ||
+        kind === "move" ||
         !anchor ||
         resizeSnapAdvancesDrag(item, kind, anchor, dragDir)),
   );
@@ -421,25 +450,55 @@ export function computeMarkLineSnap(
 ): { rect: PixelRect; guides: MarkLineGuide[] } {
   const kind = options.interactionKind ?? "move";
   const anchor = options.anchorRect ?? active;
+  const dragDir = resolveMarkLineDragDir(kind, active, anchor, options.dragDir);
   const candidates = others.flatMap((other) =>
     collectCandidates(active, other, options.threshold),
   );
+  const pickOptions = {
+    snapEdges: options.snapEdges,
+    snapCenters: options.snapCenters,
+    anchorRect: anchor,
+  };
   const ySnap = pickBestSnapCandidate(
     candidates,
     "y",
     options.threshold,
-    options.dragDir,
+    dragDir,
     kind,
-    options,
+    pickOptions,
+    "snap",
   );
   const xSnap = pickBestSnapCandidate(
     candidates,
     "x",
     options.threshold,
-    options.dragDir,
+    dragDir,
     kind,
-    options,
+    pickOptions,
+    "snap",
   );
+  const yGuide =
+    ySnap ??
+    pickBestSnapCandidate(
+      candidates,
+      "y",
+      options.threshold,
+      dragDir,
+      kind,
+      pickOptions,
+      "guide",
+    );
+  const xGuide =
+    xSnap ??
+    pickBestSnapCandidate(
+      candidates,
+      "x",
+      options.threshold,
+      dragDir,
+      kind,
+      pickOptions,
+      "guide",
+    );
 
   let snapped: PixelRect = { ...active };
   if (ySnap) snapped = applyMarkLineSnapCandidate(snapped, ySnap, kind, anchor);
@@ -453,11 +512,11 @@ export function computeMarkLineSnap(
   };
 
   const rawGuides: MarkLineGuide[] = [];
-  if (ySnap) rawGuides.push({ id: ySnap.line, position: ySnap.guidePosition });
-  if (xSnap) rawGuides.push({ id: xSnap.line, position: xSnap.guidePosition });
+  if (yGuide) rawGuides.push({ id: yGuide.line, position: yGuide.guidePosition });
+  if (xGuide) rawGuides.push({ id: xGuide.line, position: xGuide.guidePosition });
 
   return {
     rect: snapped,
-    guides: chooseVisibleMarkLines(rawGuides, options.dragDir),
+    guides: chooseVisibleMarkLines(rawGuides, dragDir),
   };
 }

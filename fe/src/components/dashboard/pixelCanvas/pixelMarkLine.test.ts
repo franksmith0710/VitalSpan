@@ -3,6 +3,7 @@ import {
   chooseVisibleMarkLines,
   computeMarkLineSnap,
   markLineThreshold,
+  resolveMarkLineDragDir,
   type DragDirection,
 } from "./pixelMarkLine";
 import type { PixelRect } from "./geometry";
@@ -204,7 +205,7 @@ describe("pixelMarkLine", () => {
     expect(result.guides).toEqual([]);
   });
 
-  it("does not snap resize edge back to anchor position", () => {
+  it("does not snap resize edge back to anchor position but still shows guide", () => {
     const anchor = { x: 100, y: 100, width: 300, height: 200 };
     const active: PixelRect = { x: 100, y: 100, width: 300, height: 218 };
     const neighborBelow: PixelRect = { x: 100, y: 300, width: 300, height: 200 };
@@ -217,6 +218,36 @@ describe("pixelMarkLine", () => {
     });
 
     expect(result.rect.height).toBe(218);
-    expect(result.guides).toEqual([]);
+    expect(result.guides).toEqual([{ id: "xt", position: 300 }]);
+  });
+
+  it("keeps stable drag direction for southwest resize when pointer crosses start", () => {
+    const anchor: PixelRect = { x: 200, y: 120, width: 320, height: 200 };
+    const shrunk: PixelRect = { x: 240, y: 120, width: 280, height: 160 };
+    const pointerCrossed: DragDirection = { isRightward: true, isDownward: false };
+
+    expect(resolveMarkLineDragDir("sw", shrunk, anchor, pointerCrossed)).toEqual({
+      isRightward: true,
+      isDownward: false,
+    });
+  });
+
+  it("shows horizontal and vertical guides while resizing southwest near neighbors", () => {
+    const anchor: PixelRect = { x: 80, y: 60, width: 360, height: 240 };
+    const active: PixelRect = { x: 82, y: 62, width: 358, height: 238 };
+    const leftNeighbor: PixelRect = { x: 20, y: 80, width: 60, height: 200 };
+    const bottomNeighbor: PixelRect = { x: 100, y: 302, width: 300, height: 120 };
+
+    const result = computeMarkLineSnap(active, [leftNeighbor, bottomNeighbor], {
+      threshold: 12,
+      dragDir: { isRightward: true, isDownward: false },
+      interactionKind: "sw",
+      anchorRect: anchor,
+    });
+
+    expect(result.guides).toHaveLength(2);
+    const horizontalIds = new Set(["xt", "xc", "xb"]);
+    expect(result.guides.some((guide) => horizontalIds.has(guide.id))).toBe(true);
+    expect(result.guides.some((guide) => !horizontalIds.has(guide.id))).toBe(true);
   });
 });

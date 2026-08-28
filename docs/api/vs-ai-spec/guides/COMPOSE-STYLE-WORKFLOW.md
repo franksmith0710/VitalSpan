@@ -1,33 +1,50 @@
-# Compose + 样式补丁工作流（工作流 ③ 扩展）
+# Compose + 样式补丁工作流（工作流 ③）
 
 > **铁律** → [IRON-RULES.md](../IRON-RULES.md) · **编排基础** → [DASHBOARD-LAYOUT.md](./DASHBOARD-LAYOUT.md)  
-> **插件工具**：`vitalspan_compose_dashboard` → `vitalspan_get_dashboard_layout` → 改 JSON → `vitalspan_upload_dashboard`
+> **插件工具**：`vitalspan_compose_dashboard` ·（按需）`vitalspan_get_dashboard_layout` → 改 JSON → `vitalspan_upload_dashboard`
+
+## 两条路径
+
+| 路径 | 何时 | 步骤 |
+|------|------|------|
+| **快路径（默认）** | 用户只要拼大屏/看板，**未**要求改视觉 | `compose` → `completion_gate` |
+| **慢路径（按需）** | 用户要改风格/配色/边框/标题/品牌 | `compose` → `get` → patch → `upload` → gate |
+
+**禁止**穷举行业 template；Agent 根据用户话自选 template 与色值，只改通用 JSON 字段。
 
 ## 原则
 
 | 阶段 | 谁做 | 改什么 |
 |------|------|--------|
-| **① compose** | 插件 | 模板槽位、坐标、`chart_types`、演示 Dataset 绑定 |
-| **② get** | 插件 | 拉回当前 `layoutJson` 到工作区 |
-| **③ patch** | Agent | **只改样式**：`styleConfig`、`deStyle`、`customVizConfig.style` |
+| **① compose** | 插件 | 模板槽位、坐标、`chart_types`、绑数（manual/demo） |
+| **② get** | 插件 | 拉回 `layoutJson`（**仅慢路径**） |
+| **③ patch** | Agent | **只改样式**（整文件 write，勿碎片 edit_file） |
 | **④ upload** | 插件 | `editor-save` 写回同一 `dashboardId` |
 
-**禁止**在 patch 阶段重算 `x/y/width/height`（除非用户明确要求改布局）。
+**禁止** patch 阶段改 `x/y/width/height`（除非用户明确要求改布局）。
 
-## 步骤
+## 绑数
 
-### 1. 搭骨架
+| 用户意思 | compose 参数 |
+|----------|----------------|
+| 演示 / 预览 / 能看 | `data_binding=demo` |
+| 正式 / 未提 | `manual`（默认） |
+
+## 快路径示例
 
 ```
 vitalspan_compose_dashboard
   surface_kind=data-screen
   template=de-classic-cockpit
-  chart_types=kpi,kpi,kpi,kpi,line,pie-donut,bar,map
-  artifact_ids=<uuid>
   name=数据分析驾驶舱
+  data_binding=demo
 ```
 
-记下输出的 `dashboardId=...`。
+记下 `dashboardId=` → `completion_gate workflow=3`（tool_stdout = compose 输出）。
+
+## 慢路径步骤
+
+### 1. compose（同上）
 
 ### 2. 导出 layout
 
@@ -37,25 +54,17 @@ vitalspan_get_dashboard_layout
   file=examples/my-screen.json
 ```
 
-默认写入 `examples/dashboard-<id8>.json`（editor-save 可消费格式）。
+**get 的 stdout 不是 wf3 完成证据** — 不能传给 completion_gate。
 
 ### 3. 只改样式层
 
-| 层级 | JSON 路径 | 示例 |
-|------|-----------|------|
-| 整屏 | `layoutJson.styleConfig` | `widgetStyle.borderRadius`、`titleStyle.color`、`canvasBackground` |
-| 内置图 | `widgets[].chartConfig.nativeBody.deStyle` | `paletteColors`、`cartesian.barRadius`、`title.fontSize` |
-| customViz | `widgets[].customVizConfig` | `style`（schema 键）、`displayStyle`、`widgetStyle` |
+| 层级 | JSON 路径 |
+|------|-----------|
+| 整屏 | `layoutJson.styleConfig` |
+| 内置图 | `widgets[].chartConfig.nativeBody.deStyle` |
+| customViz | `widgets[].customVizConfig.style` / `displayStyle` / `widgetStyle` |
 
-金样：[dashboard-style-patch.example.json](../examples/dashboard-style-patch.example.json)（纯 JSON，无 `_comment` 字段）
-
-内置图若大改 `chartConfig`，建议先：
-
-```bat
-python tools\validate-chart-config.py --file examples\my-screen.json
-```
-
-（仅当文件内嵌了完整 `chartConfig` 对象时；整份 editor-save 需抽出单 widget 校验。）
+金样：[dashboard-style-patch.example.json](../examples/dashboard-style-patch.example.json)
 
 ### 4. 写回
 
@@ -65,33 +74,16 @@ vitalspan_upload_dashboard
   file=examples/my-screen.json
 ```
 
-成功标志：输出含 `ok dashboardId=`；5173 打开 edit 链接验收。
-
-## compose vs 写 JSON
-
-两者最终都是同一份 `layoutJson` + `editor-save`：
-
-- **compose**：自动生成坐标与演示绑定（快）
-- **写 JSON**：从零或金样手写（细）
-- **推荐**：compose → get → patch style → upload（兼顾速度与样式控制）
+`completion_gate` 须用 **upload** 的 stdout（用户声称改风格时）。
 
 ## compose 自动样式（v0.2.15+）
 
-`vitalspan_compose_dashboard` 按**槽位高度**自动写入 `chartConfig.nativeBody.deStyle`：
+按槽位高度写入 `deStyle`（隐藏重复标题、KPI 缩放、小槽隐藏图例等）。未提换肤时通常够用。
 
-| 场景 | 行为 |
-|------|------|
-| KPI / 仪表 槽高 ≤132px | **11px 紧凑标题** + 按高度缩放 KPI 字号（保留中文槽位名） |
-| KPI 槽高 133–156px | 缩小标题字号 + 缩放 KPI |
-| 图表槽高 &lt;200px | 缩小标题、隐藏图例 |
-| 图表槽高 &lt;240px | 隐藏图例 |
+## 数据说明
 
-已有大屏需 **重新 compose** 或 get 后手工 patch `deStyle` 再 upload。
-
-## 数据绑定说明
-
-- compose 内置图：官方演示 **Dataset**（`__demo:sample_db__` → 平台解析为 demo 数据源）
-- 生产数据：用户在 5173 编辑器绑 Dataset；Agent 也可在 JSON 里写 `datasetId` + 字段编码
-- customViz：layout 只引用 `artifactId`；实例样式走 `customVizConfig.style`
+- `demo`：内置图绑官方演示 Dataset（走查）；须 sample-mysql + seed
+- `manual`：5173 手绑 Dataset
+- customViz：layout 只引用 `artifactId`；实例样式走 `customVizConfig`
 
 返回：[START-HERE.md](../START-HERE.md)

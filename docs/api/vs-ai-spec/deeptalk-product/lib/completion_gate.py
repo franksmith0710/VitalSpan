@@ -22,6 +22,16 @@ DASHBOARD_OK_RE = re.compile(
     re.IGNORECASE,
 )
 LAYOUT_WIDGETS_RE = re.compile(r"layout widgets:\s*(\d+)", re.IGNORECASE)
+DEMO_SUMMARY_RE = re.compile(
+    r"演示|预览|能看|看到效果|完整效果|开箱即用|walkthrough|preview|有数据|打开就",
+    re.IGNORECASE,
+)
+DEMO_STDOUT_MARK = "data binding: demo"
+STYLE_SUMMARY_RE = re.compile(
+    r"改色|配色|风格|边框|暖色|冷色|品牌|换肤|视觉|标题色|背景色|圆角|区分|紫金|橙金|大促风|已改.*色|统一.*色",
+    re.IGNORECASE,
+)
+UPLOAD_DONE_MARK = "done: layout saved via upload"
 VALIDATE_OK_RE = re.compile(r"validate\s+ok|dry-run ok|preflight ok", re.IGNORECASE)
 TIER_FULL_RE = re.compile(r"styleComplianceTier=full", re.IGNORECASE)
 TIER_BAD_RE = re.compile(r"styleComplianceTier=(partial|visual-only)", re.IGNORECASE)
@@ -90,6 +100,22 @@ def validate_workflow3_stdout(tool_stdout: str) -> list[str]:
     return reasons
 
 
+def validate_workflow3_summary_semantics(agent_summary: str, tool_stdout: str) -> list[str]:
+    reasons: list[str] = []
+    summary = agent_summary.strip()
+    if not summary:
+        return reasons
+    if DEMO_SUMMARY_RE.search(summary) and DEMO_STDOUT_MARK not in tool_stdout:
+        reasons.append(
+            "summary claims demo/preview but tool_stdout missing data binding: demo — compose with data_binding=demo",
+        )
+    if STYLE_SUMMARY_RE.search(summary) and UPLOAD_DONE_MARK not in tool_stdout:
+        reasons.append(
+            "summary claims style/visual changes but tool_stdout missing upload delivery — pass upload_dashboard stdout after patch",
+        )
+    return reasons
+
+
 def check_completion(workflow: str, agent_summary: str, tool_stdout: str = "") -> GateResult:
     text = f"{agent_summary}\n{tool_stdout}"
     reasons: list[str] = []
@@ -136,6 +162,7 @@ def check_completion(workflow: str, agent_summary: str, tool_stdout: str = "") -
                     )
     elif wf == "3":
         reasons.extend(validate_workflow3_stdout(tool_stdout))
+        reasons.extend(validate_workflow3_summary_semantics(agent_summary, tool_stdout))
         if not dashboard_id:
             reasons.append("workflow 3 requires dashboardId=<uuid> in summary or tool output")
         stdout_match = DASHBOARD_OK_RE.search(tool_stdout)

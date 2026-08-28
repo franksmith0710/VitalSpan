@@ -100,6 +100,7 @@ python deeptalk-product/lib/completion_gate.py --workflow 2 --agent-summary "...
 - [x] validate → publish → `completion_gate wf2` 绿（CLI）
 - [x] `AGENT-SYSTEM-PROMPT.md` ≤300 行 · `DEEPTALK-AGENT-PROMPT.md` 已对齐
 - [x] 插件 **v0.4.0** sync + `release/vitalspan-v0.4.0.zip`（wf3 模板填槽 · manual compose · HTTP validate）
+- [x] 插件 **v0.4.1** sync + `release/vitalspan-v0.4.1.zip`（wf3 快路径默认 · 按需 patch · gate demo/style 语义）
 - [ ] DeepTalk 安装 zip 并重启 · 新 wf2 折线须 validate 0 warnings（含 DATA_ENCODING/SORT）
 
 ## VitalSpan CI 参考

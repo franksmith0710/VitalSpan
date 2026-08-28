@@ -60,6 +60,44 @@ def test_completion_gate_blocks_output_delivery() -> None:
     assert any("forbidden" in r.lower() or "output" in r.lower() for r in result.reasons)
 
 
+def test_completion_gate_wf3_blocks_demo_claim_without_demo_stdout() -> None:
+    _with_lib()
+    from completion_gate import check_completion
+
+    dash_id = "550e8400-e29b-41d4-a716-446655440000"
+    stdout = (
+        f"ok dashboardId={dash_id}\nlayout widgets: 3\n"
+        "data binding: manual — bind Dataset in 5173 editor\n"
+        "done: compose complete"
+    )
+    result = check_completion(
+        "3",
+        f"完成 dashboardId={dash_id} 打开就能看演示",
+        stdout,
+    )
+    assert result.ok is False
+    assert any("demo" in r.lower() for r in result.reasons)
+
+
+def test_completion_gate_wf3_blocks_style_claim_without_upload_stdout() -> None:
+    _with_lib()
+    from completion_gate import check_completion
+
+    dash_id = "550e8400-e29b-41d4-a716-446655440000"
+    stdout = (
+        f"ok dashboardId={dash_id}\nlayout widgets: 3\n"
+        "data binding: manual\n"
+        "done: compose complete"
+    )
+    result = check_completion(
+        "3",
+        f"电商风格配色已改完 dashboardId={dash_id}",
+        stdout,
+    )
+    assert result.ok is False
+    assert any("upload" in r.lower() for r in result.reasons)
+
+
 def test_publish_validate_only_via_tools() -> None:
     assert TREND_SAMPLE.is_file()
     proc = _run_tool(
