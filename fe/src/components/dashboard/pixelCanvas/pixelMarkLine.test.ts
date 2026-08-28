@@ -250,4 +250,20 @@ describe("pixelMarkLine", () => {
     expect(result.guides.some((guide) => horizontalIds.has(guide.id))).toBe(true);
     expect(result.guides.some((guide) => !horizontalIds.has(guide.id))).toBe(true);
   });
+
+  it("snaps southwest resize to neighbor edges within threshold", () => {
+    const anchor: PixelRect = { x: 100, y: 80, width: 300, height: 200 };
+    const active: PixelRect = { x: 112, y: 80, width: 288, height: 188 };
+    const leftNeighbor: PixelRect = { x: 20, y: 80, width: 80, height: 200 };
+    const bottomNeighbor: PixelRect = { x: 100, y: 284, width: 300, height: 120 };
+
+    const result = computeMarkLineSnap(active, [leftNeighbor, bottomNeighbor], {
+      threshold: 16,
+      dragDir: { isRightward: true, isDownward: false },
+      interactionKind: "sw",
+      anchorRect: anchor,
+    });
+
+    expect(result.rect).toMatchObject({ x: 100, y: 80, width: 300, height: 204 });
+  });
 });

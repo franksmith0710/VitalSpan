@@ -1204,7 +1204,7 @@ describe("PixelCanvas", () => {
       title: "下",
       order: 3,
       x: 100,
-      y: 288,
+      y: 284,
       width: 300,
       height: 120,
     };
@@ -1222,13 +1222,14 @@ describe("PixelCanvas", () => {
       },
       widgets: [widget, leftNeighbor, bottomNeighbor],
     };
+    const onChange = vi.fn();
     renderPixelCanvas(
       <PixelCanvas
         mode="edit"
         layout={snapLayout}
         styleConfig={snapLayout.styleConfig}
         selectedIds={new Set(["w1"])}
-        onLayoutChange={vi.fn()}
+        onLayoutChange={onChange}
         renderWidget={(item) => <span>{item.title}</span>}
       />,
     );
@@ -1252,6 +1253,13 @@ describe("PixelCanvas", () => {
 
     fireEvent.pointerUp(document, { pointerId: 72, clientX: 112, clientY: 268 });
     await flushPixelPointerFrames();
+
+    expect(onChange).toHaveBeenCalledTimes(1);
+    const resized = onChange.mock.calls[0][0].widgets.find(
+      (item: PixelLayoutWidget) => item.id === "w1",
+    );
+    expect(resized).toMatchObject({ x: 100, y: 80, width: 300, height: 204 });
+
     expect(horizontalIds.every((id) => screen.queryByTestId(id) == null)).toBe(true);
     expect(verticalIds.every((id) => screen.queryByTestId(id) == null)).toBe(true);
   });

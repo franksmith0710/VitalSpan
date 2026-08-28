@@ -536,7 +536,7 @@ export function PixelShape({
   ): { rect: PixelRect; guides: MarkLineGuide[] } => {
     let rect = raw;
     let guides: MarkLineGuide[] = [];
-    if (onMarkGuidesChange && markLinesEnabled) {
+    if (markLinesEnabled) {
       const markTargets = snapTargets ?? otherWidgets ?? [];
       const snapped = computeMarkLineSnap(raw, markTargets, {
         threshold: markLineThreshold(scale, alignmentSnap.markLineThresholdPx),
@@ -552,6 +552,7 @@ export function PixelShape({
       rect = snapped.rect;
       guides = snapped.guides;
     }
+    onMarkGuidesChange?.(guides.length > 0 ? guides : null);
     return { rect, guides };
   };
 

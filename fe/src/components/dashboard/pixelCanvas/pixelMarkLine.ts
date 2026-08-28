@@ -275,6 +275,7 @@ function pickBestSnapCandidate(
   dragDir: DragDirection,
   kind: PixelInteractionKind,
   options: Pick<MarkLineSnapOptions, "snapEdges" | "snapCenters" | "anchorRect">,
+  current: PixelRect,
   mode: "snap" | "guide" = "snap",
 ): SnapCandidate | null {
   const anchor = options.anchorRect;
@@ -287,11 +288,17 @@ function pickBestSnapCandidate(
       (mode === "guide" ||
         kind === "move" ||
         !anchor ||
-        resizeSnapAdvancesDrag(item, kind, anchor, dragDir)),
+        resizeSnapAdvancesDrag(item, kind, anchor, current, dragDir)),
   );
   if (axisCandidates.length === 0) return null;
 
   axisCandidates.sort((a, b) => {
+    const anchor = options.anchorRect;
+    const anchorPenalty = (item: SnapCandidate) =>
+      anchor && snapRestoresAnchorEdge(item, kind, anchor, current) ? 10_000 : 0;
+    const aScore = a.distance + anchorPenalty(a);
+    const bScore = b.distance + anchorPenalty(b);
+    if (aScore !== bScore) return aScore - bScore;
     if (a.distance !== b.distance) return a.distance - b.distance;
     return priorityIndex(a.line, axis, dragDir) - priorityIndex(b.line, axis, dragDir);
   });
@@ -314,15 +321,64 @@ function movesSouth(kind: PixelInteractionKind): boolean {
   return kind === "move" || kind.includes("s");
 }
 
+function isCornerResize(kind: PixelInteractionKind): boolean {
+  if (kind === "move") return false;
+  const vertical = kind.includes("n") || kind.includes("s");
+  const horizontal = kind.includes("e") || kind.includes("w");
+  return vertical && horizontal;
+}
+
+function movingEdgeCoordinate(rect: PixelRect, edge: ActiveEdge): number {
+  switch (edge) {
+    case "left":
+      return rect.x;
+    case "right":
+      return rect.x + rect.width;
+    case "top":
+      return rect.y;
+    case "bottom":
+      return rect.y + rect.height;
+    case "centerX":
+      return rect.x + rect.width / 2;
+    case "centerY":
+      return rect.y + rect.height / 2;
+    default:
+      return 0;
+  }
+}
+
+/** 缩放时勿优先吸附回锚点边（侧邻组件底/顶线常与原尺寸重合，会假吸附） */
+function snapRestoresAnchorEdge(
+  snap: SnapCandidate,
+  kind: PixelInteractionKind,
+  anchor: PixelRect,
+  current: PixelRect,
+): boolean {
+  if (kind === "move") return false;
+  const anchorEdge = movingEdgeCoordinate(anchor, snap.activeEdge);
+  const currentEdge = movingEdgeCoordinate(current, snap.activeEdge);
+  return (
+    Math.abs(snap.position - anchorEdge) < 0.5 && Math.abs(currentEdge - anchorEdge) > 0.5
+  );
+}
+
 /** resize 吸附不得把活动边拉回起点（否则松手像整段回弹） */
 export function resizeSnapAdvancesDrag(
   snap: SnapCandidate,
   kind: PixelInteractionKind,
   anchor: PixelRect,
+  current: PixelRect,
   dragDir: DragDirection,
 ): boolean {
   if (kind === "move") return true;
+
   const position = snap.position;
+  const currentEdge = movingEdgeCoordinate(current, snap.activeEdge);
+  if (Math.abs(position - currentEdge) < 0.5) return false;
+
+  // 角点缩放：允许在阈值内对齐邻边（与 guide 一致），仅拒绝无位移吸附
+  if (isCornerResize(kind)) return true;
+
   switch (snap.activeEdge) {
     case "right": {
       if (!movesEast(kind)) return false;
@@ -466,6 +522,7 @@ export function computeMarkLineSnap(
     dragDir,
     kind,
     pickOptions,
+    active,
     "snap",
   );
   const xSnap = pickBestSnapCandidate(
@@ -475,6 +532,7 @@ export function computeMarkLineSnap(
     dragDir,
     kind,
     pickOptions,
+    active,
     "snap",
   );
   const yGuide =
@@ -486,6 +544,7 @@ export function computeMarkLineSnap(
       dragDir,
       kind,
       pickOptions,
+      active,
       "guide",
     );
   const xGuide =
@@ -497,6 +556,7 @@ export function computeMarkLineSnap(
       dragDir,
       kind,
       pickOptions,
+      active,
       "guide",
     );
 
