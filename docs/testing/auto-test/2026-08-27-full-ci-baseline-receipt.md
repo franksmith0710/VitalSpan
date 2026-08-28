@@ -1,5 +1,7 @@
 # 自动化测试收据 — 全仓 CI 基线扫描
 
+> **已迁移**：本文件为旧格式。新格式见 [`docs/testing/bug-scan/2026-08-27-full-ci-baseline-report.md`](../bug-scan/2026-08-27-full-ci-baseline-report.md)（`vitalspan-auto-test` = bug 扫描，非写测试）。
+
 | 字段 | 值 |
 |------|-----|
 | 日期 | 2026-08-27 |

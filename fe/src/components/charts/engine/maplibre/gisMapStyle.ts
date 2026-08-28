@@ -23,6 +23,7 @@ export const GIS_OVERLAY_GLOW_LAYER_ID = "vs-gis-overlay-glow";
 export const GIS_OVERLAY_CIRCLE_LAYER_ID = "vs-gis-overlay-circles";
 export const GIS_OVERLAY_LABEL_LAYER_ID = "vs-gis-overlay-labels";
 export const GIS_OVERLAY_CLUSTER_LAYER_ID = "vs-gis-overlay-clusters";
+export const GIS_OVERLAY_CLUSTER_GLOW_LAYER_ID = "vs-gis-overlay-cluster-glow";
 export const GIS_OVERLAY_CLUSTER_COUNT_LAYER_ID = "vs-gis-overlay-cluster-count";
 export const GIS_OVERLAY_UNCLUSTERED_FILTER = ["!", ["has", "point_count"]] as const;
 export const GIS_OVERLAY_CLUSTER_FILTER = ["has", "point_count"] as const;

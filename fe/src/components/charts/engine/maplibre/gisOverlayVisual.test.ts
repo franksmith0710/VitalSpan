@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { resolveGisOverlayStyle } from "@/components/charts/engine/maplibre/gisProject";
 import {
+  buildClusterCirclePaint,
+  buildClusterCountPaint,
   buildHeatmapColorExpression,
   buildHeatmapPaint,
   buildMetricColorExpression,
@@ -36,11 +38,13 @@ describe("gisOverlayVisual", () => {
     expect(color[2]).toEqual(["coalesce", ["get", "sizeNorm"], 0.45]);
   });
 
-  it("builds scatter glow with zoom-linked opacity", () => {
+  it("builds scatter glow radius with top-level zoom interpolate", () => {
     const resolved = resolveGisOverlayStyle({ glowStrength: 0.5, opacity: 0.8 });
     const paint = buildScatterGlowPaint(resolved, 1, ["#3366cc"]);
-    expect(paint["circle-blur"]).toBe(0.68);
-    expect(paint["circle-opacity"]?.[0]).toBe("interpolate");
+    const radius = paint["circle-radius"] as unknown[];
+    expect(radius[0]).toBe("interpolate");
+    expect(radius[2]).toEqual(["zoom"]);
+    expect(radius).not.toContain("*");
   });
 
   it("builds heatmap paint with zoom intensity and radius", () => {
@@ -50,5 +54,18 @@ describe("gisOverlayVisual", () => {
     expect(paint["heatmap-intensity"]?.[0]).toBe("interpolate");
     expect(paint["heatmap-radius"]?.[0]).toBe("interpolate");
     expect(paint["heatmap-color"]?.[0]).toBe("interpolate");
+  });
+
+  it("builds cluster count with light halo and white text", () => {
+    const paint = buildClusterCountPaint();
+    expect(paint["text-color"]).toBe("#ffffff");
+    expect(paint["text-halo-width"]).toBeLessThan(1.2);
+  });
+
+  it("builds saturated cluster circles from chart accent", () => {
+    const resolved = resolveGisOverlayStyle({ opacity: 0.9 });
+    const paint = buildClusterCirclePaint(resolved, ["#3b82f6", "#22d3ee", "#f59e0b", "#e11d48"]);
+    expect(paint["circle-color"]?.[0]).toBe("interpolate");
+    expect(paint["circle-blur"]).toBeLessThan(0.2);
   });
 });

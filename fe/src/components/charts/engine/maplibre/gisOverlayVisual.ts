@@ -1,5 +1,5 @@
 import type { ExpressionSpecification } from "maplibre-gl";
-import type { ResolvedGisOverlayStyle } from "@/components/charts/engine/maplibre/gisProject";
+import type { GisBasemapFlavor, ResolvedGisOverlayStyle } from "@/components/charts/engine/maplibre/gisProject";
 
 export type GisHeatmapPreset = "ember" | "night" | "scientific";
 
@@ -78,19 +78,22 @@ function metricSizeInput(resolved: ResolvedGisOverlayStyle): ExpressionSpecifica
   return ["sqrt", metric];
 }
 
-export function buildScatterRadiusExpression(resolved: ResolvedGisOverlayStyle): ExpressionSpecification {
+export function buildScatterRadiusExpression(
+  resolved: ResolvedGisOverlayStyle,
+  scale = 1,
+): ExpressionSpecification {
   const metricRadius = [
     "interpolate",
     ["linear"],
     metricSizeInput(resolved),
     0,
-    resolved.radiusMin,
+    resolved.radiusMin * scale,
     1,
-    resolved.radiusMax,
+    resolved.radiusMax * scale,
   ] as ExpressionSpecification;
 
   if (!resolved.scaleByMetric) {
-    const fixed = (resolved.radiusMin + resolved.radiusMax) / 2;
+    const fixed = ((resolved.radiusMin + resolved.radiusMax) / 2) * scale;
     return ["interpolate", ["linear"], ["zoom"], 2, fixed * 0.65, 8, fixed, 14, fixed * 1.15];
   }
 
@@ -99,7 +102,15 @@ export function buildScatterRadiusExpression(resolved: ResolvedGisOverlayStyle):
     ["linear"],
     ["zoom"],
     2,
-    ["interpolate", ["linear"], metricSizeInput(resolved), 0, resolved.radiusMin * 0.55, 1, resolved.radiusMax * 0.55],
+    [
+      "interpolate",
+      ["linear"],
+      metricSizeInput(resolved),
+      0,
+      resolved.radiusMin * 0.55 * scale,
+      1,
+      resolved.radiusMax * 0.55 * scale,
+    ],
     7,
     metricRadius,
     14,
@@ -108,9 +119,9 @@ export function buildScatterRadiusExpression(resolved: ResolvedGisOverlayStyle):
       ["linear"],
       metricSizeInput(resolved),
       0,
-      resolved.radiusMin * 1.1,
+      resolved.radiusMin * 1.1 * scale,
       1,
-      resolved.radiusMax * 1.35,
+      resolved.radiusMax * 1.35 * scale,
     ],
   ];
 }
@@ -277,9 +288,8 @@ export function buildScatterGlowPaint(
 ): Record<string, unknown> {
   const glow = resolved.glowStrength;
   const base = resolved.opacity * layerOpacity;
-  const radiusExpr = buildScatterRadiusExpression(resolved);
   return {
-    "circle-radius": ["*", radiusExpr, 2.15] as ExpressionSpecification,
+    "circle-radius": buildScatterRadiusExpression(resolved, 2.15),
     "circle-color": buildMetricColorExpression(resolved, chartColors),
     "circle-opacity": [
       "interpolate",
@@ -301,54 +311,99 @@ export function buildScatterCorePaint(
   resolved: ResolvedGisOverlayStyle,
   layerOpacity = 1,
   chartColors?: string[],
+  flavor?: GisBasemapFlavor,
 ): Record<string, unknown> {
+  const lightBasemap = !flavor || flavor === "light" || flavor === "white" || flavor === "grayscale";
+  const strokeColor = lightBasemap ? "rgba(255, 255, 255, 0.95)" : resolved.strokeColor;
+  const strokeWidth = lightBasemap ? Math.min(resolved.strokeWidth, 0.65) : resolved.strokeWidth;
   return {
     "circle-radius": buildScatterRadiusExpression(resolved),
     "circle-color": buildMetricColorExpression(resolved, chartColors),
     "circle-opacity": buildScatterOpacityExpression(resolved, layerOpacity),
-    "circle-stroke-color": resolved.strokeColor,
-    "circle-stroke-width": resolved.strokeWidth,
-    "circle-blur": resolved.circleBlur * 0.45,
+    "circle-stroke-color": strokeColor,
+    "circle-stroke-width": strokeWidth,
+    "circle-stroke-opacity": 0.88,
+    "circle-blur": resolved.circleBlur * 0.2,
   };
 }
 
-export function buildClusterCirclePaint(resolved: ResolvedGisOverlayStyle): Record<string, unknown> {
+export function buildClusterGlowPaint(
+  resolved: ResolvedGisOverlayStyle,
+  chartColors?: string[],
+): Record<string, unknown> {
+  const accent = chartColors?.[0] ?? resolved.color;
+  return {
+    "circle-color": accent,
+    "circle-radius": [
+      "step",
+      ["get", "point_count"],
+      18,
+      10,
+      22,
+      50,
+      28,
+      200,
+      34,
+    ],
+    "circle-opacity": resolved.opacity * 0.22,
+    "circle-blur": 0.72,
+    "circle-stroke-width": 0,
+  };
+}
+
+export function buildClusterCirclePaint(
+  resolved: ResolvedGisOverlayStyle,
+  chartColors?: string[],
+): Record<string, unknown> {
+  const accent = chartColors?.[0] ?? resolved.color;
+  const warm = chartColors?.[2] ?? "#f59e0b";
+  const hot = chartColors?.[3] ?? "#e11d48";
   return {
     "circle-color": [
       "interpolate",
       ["linear"],
       ["get", "point_count"],
       2,
-      resolved.color,
-      50,
-      "rgba(251, 191, 36, 0.88)",
-      200,
-      "rgba(244, 63, 94, 0.92)",
+      accent,
+      24,
+      warm,
+      100,
+      hot,
     ],
-    "circle-opacity": [
-      "step",
-      ["get", "point_count"],
-      resolved.opacity * 0.82,
-      10,
-      resolved.opacity * 0.88,
-      50,
-      resolved.opacity * 0.94,
-    ],
-    "circle-stroke-color": resolved.strokeColor,
-    "circle-stroke-width": Math.max(1, resolved.strokeWidth + 0.35),
-    "circle-stroke-opacity": 0.92,
-    "circle-blur": resolved.circleBlur * 0.3,
+    "circle-opacity": resolved.opacity * 0.94,
+    "circle-stroke-color": "rgba(255, 255, 255, 0.92)",
+    "circle-stroke-width": 1.5,
+    "circle-stroke-opacity": 0.96,
+    "circle-blur": 0.08,
     "circle-radius": [
       "step",
       ["get", "point_count"],
-      resolved.radiusMin + 2,
+      14,
       10,
-      (resolved.radiusMin + resolved.radiusMax) / 2 + 2,
+      18,
       50,
-      resolved.radiusMax + 2,
+      24,
       200,
-      resolved.radiusMax + 6,
+      30,
     ],
+  };
+}
+
+export function buildClusterCountLayout(): Record<string, unknown> {
+  return {
+    "text-field": ["get", "point_count_abbreviated"],
+    "text-size": ["step", ["get", "point_count"], 12, 20, 13, 100, 14],
+    "text-allow-overlap": true,
+    "text-font": ["Noto Sans Bold"],
+  };
+}
+
+export function buildClusterCountPaint(): Record<string, unknown> {
+  return {
+    "text-color": "#ffffff",
+    "text-halo-color": "rgba(0, 0, 0, 0.28)",
+    "text-halo-width": 0.85,
+    "text-opacity": 1,
   };
 }
 
@@ -362,4 +417,8 @@ export function gisLayerHeatmapGlowId(layerId: string): string {
 
 export function gisLayerScatterGlowId(layerId: string): string {
   return `vs-gis-layer-${layerId}-glow`;
+}
+
+export function gisLayerClusterGlowId(layerId: string): string {
+  return `vs-gis-layer-${layerId}-cluster-glow`;
 }

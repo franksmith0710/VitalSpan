@@ -1,10 +1,14 @@
 import {
   buildClusterCirclePaint,
+  buildClusterCountLayout,
+  buildClusterCountPaint,
+  buildClusterGlowPaint,
   buildHeatmapDetailCirclePaint,
   buildHeatmapGlowPaint,
   buildHeatmapPaint,
   buildScatterCorePaint,
   buildScatterGlowPaint,
+  gisLayerClusterGlowId,
   gisLayerHeatmapDetailId,
   gisLayerHeatmapGlowId,
   gisLayerScatterGlowId,
@@ -33,6 +37,7 @@ export function gisLayerHeatmapId(layerId: string): string {
 }
 
 export {
+  gisLayerClusterGlowId,
   gisLayerHeatmapDetailId,
   gisLayerHeatmapGlowId,
   gisLayerScatterGlowId,
@@ -92,6 +97,7 @@ function buildHeatmapLayers(
 function remapOverlayLayerId(spec: LayerSpecification, entry: GisLayerRuntimeEntry): LayerSpecification {
   const layerId = entry.layer.id;
   const id = spec.id
+    .replace("vs-gis-overlay-cluster-glow", gisLayerClusterGlowId(layerId))
     .replace("vs-gis-overlay-glow", gisLayerScatterGlowId(layerId))
     .replace("vs-gis-overlay", `vs-gis-layer-${layerId}`);
   const layerOpacity = entry.layer.opacity ?? 1;
@@ -99,12 +105,15 @@ function remapOverlayLayerId(spec: LayerSpecification, entry: GisLayerRuntimeEnt
   const resolved = resolveGisOverlayStyle(entry.layer.style, entry.options.chartColors);
   let paint = spec.paint ?? {};
   if (spec.type === "circle") {
-    if (id.endsWith("-glow")) {
+    if (id.endsWith("-cluster-glow")) {
+      paint = buildClusterGlowPaint(resolved, entry.options.chartColors);
+      paint = scaleCircleOpacity(paint, layerOpacity);
+    } else if (id.endsWith("-glow")) {
       paint = buildScatterGlowPaint(resolved, layerOpacity, entry.options.chartColors);
     } else if (id.endsWith("-circles")) {
-      paint = buildScatterCorePaint(resolved, layerOpacity, entry.options.chartColors);
+      paint = buildScatterCorePaint(resolved, layerOpacity, entry.options.chartColors, entry.options.flavor);
     } else if (id.endsWith("-clusters")) {
-      paint = buildClusterCirclePaint(resolved);
+      paint = buildClusterCirclePaint(resolved, entry.options.chartColors);
       paint = scaleCircleOpacity(paint, layerOpacity);
     }
   }
@@ -219,22 +228,42 @@ export function syncGisProjectLayerStyle(
       return;
     }
 
+    const clusterGlowId = gisLayerClusterGlowId(entry.layer.id);
     const glowId = gisLayerScatterGlowId(entry.layer.id);
     const circleId = `vs-gis-layer-${entry.layer.id}-circles`;
     const clusterId = `vs-gis-layer-${entry.layer.id}-clusters`;
     const clusterCountId = `vs-gis-layer-${entry.layer.id}-cluster-count`;
     const labelId = `vs-gis-layer-${entry.layer.id}-labels`;
-    for (const id of [glowId, circleId, clusterId, clusterCountId, labelId]) {
+    for (const id of [clusterGlowId, glowId, circleId, clusterId, clusterCountId, labelId]) {
       if (!map.getLayer(id)) continue;
       map.setLayoutProperty(id, "visibility", visible);
     }
+    applyCirclePaint(
+      map,
+      clusterGlowId,
+      scaleCircleOpacity(buildClusterGlowPaint(resolved, chartColors), layerOpacity),
+    );
     applyCirclePaint(map, glowId, buildScatterGlowPaint(resolved, layerOpacity, chartColors));
-    applyCirclePaint(map, circleId, buildScatterCorePaint(resolved, layerOpacity, chartColors));
+    applyCirclePaint(
+      map,
+      circleId,
+      buildScatterCorePaint(resolved, layerOpacity, chartColors, entry.options.flavor),
+    );
     applyCirclePaint(
       map,
       clusterId,
-      scaleCircleOpacity(buildClusterCirclePaint(resolved), layerOpacity),
+      scaleCircleOpacity(buildClusterCirclePaint(resolved, chartColors), layerOpacity),
     );
+    if (map.getLayer(clusterCountId)) {
+      const countLayout = buildClusterCountLayout();
+      for (const [key, value] of Object.entries(countLayout)) {
+        map.setLayoutProperty(clusterCountId, key, value);
+      }
+      const countPaint = buildClusterCountPaint();
+      for (const [key, value] of Object.entries(countPaint)) {
+        map.setPaintProperty(clusterCountId, key, value);
+      }
+    }
     if (map.getLayer(labelId)) {
       const labelLayout = buildGisOverlayLabelLayout(resolved);
       for (const [key, value] of Object.entries(labelLayout)) {

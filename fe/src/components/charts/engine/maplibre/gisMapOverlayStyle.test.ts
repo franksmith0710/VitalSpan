@@ -14,6 +14,7 @@ import { GIS_OVERLAY_SOURCE_ID } from "@/components/charts/engine/maplibre/gisMa
 import { appendGisOverlayLayers, buildPmtilesStyle } from "@/components/charts/engine/maplibre/gisMapStyle";
 import {
   GIS_OVERLAY_CIRCLE_LAYER_ID,
+  GIS_OVERLAY_CLUSTER_GLOW_LAYER_ID,
   GIS_OVERLAY_CLUSTER_LAYER_ID,
   GIS_OVERLAY_GLOW_LAYER_ID,
   GIS_OVERLAY_LABEL_LAYER_ID,
@@ -137,7 +138,11 @@ describe("readGisProject overlay", () => {
 
 describe("buildGisOverlayCirclePaint", () => {
   it("includes stroke properties", () => {
-    const paint = buildGisOverlayCirclePaint(resolveGisOverlayStyle({ strokeColor: "#000000", strokeWidth: 2 }));
+    const paint = buildGisOverlayCirclePaint(
+      resolveGisOverlayStyle({ strokeColor: "#000000", strokeWidth: 2 }),
+      undefined,
+      "dark",
+    );
     expect(paint["circle-stroke-color"]).toBe("#000000");
     expect(paint["circle-stroke-width"]).toBe(2);
   });
@@ -151,6 +156,7 @@ describe("syncGisOverlayStyle", () => {
     const map = {
       isStyleLoaded: () => true,
       getLayer: (id: string) =>
+        id === GIS_OVERLAY_CLUSTER_GLOW_LAYER_ID ||
         id === GIS_OVERLAY_GLOW_LAYER_ID ||
         id === GIS_OVERLAY_CIRCLE_LAYER_ID ||
         id === GIS_OVERLAY_CLUSTER_LAYER_ID ||

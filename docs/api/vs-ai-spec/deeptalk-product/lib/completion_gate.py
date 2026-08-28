@@ -31,6 +31,10 @@ STYLE_SUMMARY_RE = re.compile(
     r"改色|配色|风格|边框|暖色|冷色|品牌|换肤|视觉|标题色|背景色|圆角|区分|紫金|橙金|大促风|已改.*色|统一.*色",
     re.IGNORECASE,
 )
+LAYOUT_SUMMARY_RE = re.compile(
+    r"调整布局|优化摆放|布局已|摆放已|删.*widget|删除.*组件|改.*位置|挪.*位置|重新排",
+    re.IGNORECASE,
+)
 UPLOAD_DONE_MARK = "done: layout saved via upload"
 VALIDATE_OK_RE = re.compile(r"validate\s+ok|dry-run ok|preflight ok", re.IGNORECASE)
 TIER_FULL_RE = re.compile(r"styleComplianceTier=full", re.IGNORECASE)
@@ -112,6 +116,10 @@ def validate_workflow3_summary_semantics(agent_summary: str, tool_stdout: str) -
     if STYLE_SUMMARY_RE.search(summary) and UPLOAD_DONE_MARK not in tool_stdout:
         reasons.append(
             "summary claims style/visual changes but tool_stdout missing upload delivery — pass upload_dashboard stdout after patch",
+        )
+    if LAYOUT_SUMMARY_RE.search(summary) and UPLOAD_DONE_MARK not in tool_stdout:
+        reasons.append(
+            "summary claims layout/narrative changes but tool_stdout missing upload delivery — get → patch → upload_dashboard",
         )
     return reasons
 

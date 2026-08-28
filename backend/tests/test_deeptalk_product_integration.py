@@ -98,6 +98,25 @@ def test_completion_gate_wf3_blocks_style_claim_without_upload_stdout() -> None:
     assert any("upload" in r.lower() for r in result.reasons)
 
 
+def test_completion_gate_wf3_blocks_layout_claim_without_upload_stdout() -> None:
+    _with_lib()
+    from completion_gate import check_completion
+
+    dash_id = "550e8400-e29b-41d4-a716-446655440000"
+    stdout = (
+        f"ok dashboardId={dash_id}\nlayout widgets: 3\n"
+        "data binding: manual\n"
+        "done: compose complete"
+    )
+    result = check_completion(
+        "3",
+        f"已优化摆放布局 dashboardId={dash_id}",
+        stdout,
+    )
+    assert result.ok is False
+    assert any("layout" in r.lower() or "upload" in r.lower() for r in result.reasons)
+
+
 def test_publish_validate_only_via_tools() -> None:
     assert TREND_SAMPLE.is_file()
     proc = _run_tool(
