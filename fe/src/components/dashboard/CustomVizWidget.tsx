@@ -306,8 +306,7 @@ export function CustomVizWidget({
     return (
       <div
         className={cn(
-          "relative flex size-full min-h-0 flex-col",
-          mode === "edit" ? "overflow-visible" : "overflow-hidden",
+          "relative flex size-full min-h-0 flex-col overflow-hidden",
         )}
         onClick={onSelect}
       >

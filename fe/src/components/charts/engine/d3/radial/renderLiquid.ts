@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import { depthPieExtrudeOffset, resolveEffectiveDepth, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
+import { applyScalableChartSvgDisplay } from "@/components/charts/engine/d3/core/sceneGraph";
 import { radialMargin } from "@/components/charts/engine/d3/core/margin";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
@@ -142,9 +143,11 @@ export function renderD3LiquidChart(container: HTMLElement, config: D3RenderConf
   const root = d3
     .select(container)
     .append("svg")
-    .attr("width", width)
-    .attr("height", height)
+    .attr("class", "vs-chart-svg")
+    .attr("data-vs-embedded-fit", "viewport")
     .attr("role", "img");
+  applyScalableChartSvgDisplay(root, width, height);
+  root.style("overflow", "hidden");
 
   const defs = root.append("defs");
   defs

@@ -1,4 +1,4 @@
-import { normalizeEmbeddedChartSvgs } from "@/components/charts/engine/d3/core/sceneGraph";
+import { finalizeEmbeddedChartSvgs } from "@/components/charts/engine/d3/core/sceneGraph";
 
 /** 管理单容器 D3 渲染 teardown（力导向 simulation、transition 等） */
 const cleanupMap = new WeakMap<HTMLElement, () => void>();
@@ -9,7 +9,7 @@ export function runD3Renderer(
 ): void {
   cleanupMap.get(container)?.();
   const cleanup = render();
-  normalizeEmbeddedChartSvgs(container);
+  finalizeEmbeddedChartSvgs(container);
   cleanupMap.set(container, cleanup ?? (() => undefined));
 }
 

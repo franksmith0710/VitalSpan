@@ -106,6 +106,7 @@ export function renderD3FunnelChart(container: HTMLElement, config: D3RenderConf
     .select(container)
     .append("svg")
     .attr("class", "vs-chart-svg")
+    .attr("data-vs-embedded-fit", "content")
     .attr("width", width)
     .attr("height", height)
     .attr("role", "img")

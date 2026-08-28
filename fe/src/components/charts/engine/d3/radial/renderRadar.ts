@@ -9,6 +9,7 @@ import {
   RADAR_RADIUS_PERCENT_MAX,
   RADAR_RADIUS_PERCENT_MIN,
 } from "@/lib/chartDeStyleBlocks";
+import { applyScalableChartSvgDisplay } from "@/components/charts/engine/d3/core/sceneGraph";
 import { computeRadarLayout } from "./radarLayout";
 import {
   buildRadarPointLabelText,
@@ -67,9 +68,11 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
   const root = d3
     .select(container)
     .append("svg")
-    .attr("width", width)
-    .attr("height", height)
+    .attr("class", "vs-chart-svg")
+    .attr("data-vs-embedded-fit", "viewport")
     .attr("role", "img");
+  applyScalableChartSvgDisplay(root, width, height);
+  root.style("overflow", "hidden");
 
   const g = root.append("g").attr("transform", `translate(${cx},${cy})`);
   const angleStep = (Math.PI * 2) / data.length;

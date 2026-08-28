@@ -117,7 +117,7 @@ export function VizComponentLivePreview({
             if (effectivePreviewProfile === "card") return chartNode;
             return (
               <WidgetShellLegendProvider>
-                <WidgetChartLegendShell clipChart={!isEditPreview}>
+                <WidgetChartLegendShell clipChart>
                   {chartNode}
                 </WidgetChartLegendShell>
               </WidgetShellLegendProvider>

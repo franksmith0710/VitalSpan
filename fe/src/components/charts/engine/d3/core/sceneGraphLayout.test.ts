@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   appendChartSvg,
+  finalizeEmbeddedChartSvgs,
   normalizeEmbeddedChartSvgs,
   resolveCategoryCartesianLayout,
   resolveHorizontalCategoryCartesianLayout,
@@ -57,5 +58,56 @@ describe("sceneGraph layout helpers", () => {
     expect(legacy.getAttribute("viewBox")).toBe("0 0 640 360");
     expect(legacy.getAttribute("width")).toBe("100%");
     expect(legacy.getAttribute("height")).toBe("100%");
+  });
+
+  it("finalizeEmbeddedChartSvgs fits svg content bbox with meet scaling", () => {
+    SVGElement.prototype.getBBox = () =>
+      ({
+        x: -40,
+        y: 8,
+        width: 520,
+        height: 360,
+      }) as DOMRect;
+
+    const container = document.createElement("div");
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("data-vs-embedded-fit", "content");
+    svg.setAttribute("width", "320");
+    svg.setAttribute("height", "200");
+    const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+    g.appendChild(document.createElementNS("http://www.w3.org/2000/svg", "rect"));
+    svg.appendChild(g);
+    container.appendChild(svg);
+
+    finalizeEmbeddedChartSvgs(container);
+
+    expect(svg.getAttribute("width")).toBe("100%");
+    expect(svg.getAttribute("height")).toBe("100%");
+    expect(svg.getAttribute("preserveAspectRatio")).toBe("xMidYMid meet");
+    expect(svg.getAttribute("viewBox")).toBe("-46 2 532 372");
+  });
+
+  it("finalizeEmbeddedChartSvgs keeps viewport viewBox for pie-like svg", () => {
+    SVGElement.prototype.getBBox = () =>
+      ({
+        x: -180,
+        y: -60,
+        width: 880,
+        height: 420,
+      }) as DOMRect;
+
+    const container = document.createElement("div");
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("class", "vs-chart-svg");
+    svg.setAttribute("data-vs-embedded-fit", "viewport");
+    svg.setAttribute("width", "320");
+    svg.setAttribute("height", "200");
+    svg.setAttribute("viewBox", "0 0 320 200");
+    container.appendChild(svg);
+
+    finalizeEmbeddedChartSvgs(container);
+
+    expect(svg.getAttribute("viewBox")).toBe("0 0 320 200");
+    expect(svg.getAttribute("width")).toBe("100%");
   });
 });

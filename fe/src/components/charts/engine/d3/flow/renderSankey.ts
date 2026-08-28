@@ -50,15 +50,28 @@ function layoutSankeyNodes(
   for (const [depth, ids] of byDepth.entries()) {
     const sorted = [...ids].sort((a, b) => (totals.get(b) ?? 0) - (totals.get(a) ?? 0));
     const sum = d3.sum(sorted, (id) => totals.get(id) ?? 0) || 1;
-    let y = nodePadding;
-    for (const id of sorted) {
+    const stackBudget = Math.max(0, innerH - nodePadding * (sorted.length + 1));
+    const rawHeights = sorted.map((id) => {
       const value = totals.get(id) ?? 0;
-      const height = Math.max(8, (value / sum) * (innerH - nodePadding * 2));
-      nodes.push({ id, depth, value, y, height, x: depth * colW, });
+      return Math.max(8, (value / sum) * Math.max(0, innerH - nodePadding * 2));
+    });
+    const rawStack = d3.sum(rawHeights) + nodePadding * Math.max(0, sorted.length - 1);
+    const scale = rawStack > stackBudget && rawStack > 0 ? stackBudget / rawStack : 1;
+    let y = nodePadding;
+    sorted.forEach((id, index) => {
+      const value = totals.get(id) ?? 0;
+      const height = Math.max(4, rawHeights[index]! * scale);
+      nodes.push({ id, depth, value, y, height, x: depth * colW });
       y += height + nodePadding;
-    }
+    });
   }
   return nodes;
+}
+
+function formatSankeyNodeLabel(id: string, maxLen = 12): string {
+  const trimmed = id.trim();
+  if (trimmed.length <= maxLen) return trimmed;
+  return `${trimmed.slice(0, Math.max(1, maxLen - 1))}…`;
 }
 
 function linkPath(
@@ -107,6 +120,8 @@ export function renderD3SankeyChart(container: HTMLElement, config: D3RenderConf
   const root = d3
     .select(container)
     .append("svg")
+    .attr("class", "vs-chart-svg")
+    .attr("data-vs-embedded-fit", "content")
     .attr("width", width)
     .attr("height", height)
     .attr("role", "img");
@@ -173,7 +188,7 @@ export function renderD3SankeyChart(container: HTMLElement, config: D3RenderConf
     .attr("dy", "0.35em")
     .attr("fill", theme.axisLabel)
     .style("font-size", `${labelFontSize}px`)
-    .text((d) => d.id);
+    .text((d) => formatSankeyNodeLabel(d.id));
 
   return () => container.replaceChildren();
 }

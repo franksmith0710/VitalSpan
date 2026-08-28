@@ -271,7 +271,7 @@ function PixelShapeInnerChrome({
   const legendItems =
     legend?.visible && legend.items.length > 0 ? legend.items : [];
 
-  const clipChart = mode !== "edit";
+  const clipChart = true;
   const chartBody = screenVisualAsset ? (
     <div
       className={cn(
@@ -736,8 +736,7 @@ export function PixelShape({
         <PixelShapePlayerProvider playing={isPlayer}>
           <div
             className={cn(
-              "pixel-shape-inner dashboard-widget-surface relative z-[1] flex min-h-0 flex-1 flex-col",
-              mode === "edit" ? "overflow-visible" : "overflow-hidden",
+              "pixel-shape-inner dashboard-widget-surface relative z-[1] flex min-h-0 flex-1 flex-col overflow-hidden",
               selectedInEdit && "pixel-shape-selected",
             )}
             style={{
@@ -853,7 +852,7 @@ export function PixelShape({
       ) : null}
       <div
         data-testid={`pixel-shape-body-${widget.id}`}
-        className="pixel-shape-body relative flex min-h-0 min-w-0 flex-1 flex-col overflow-visible"
+        className="pixel-shape-body relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
       >
         {shapeBody}
       </div>

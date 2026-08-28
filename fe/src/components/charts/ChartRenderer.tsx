@@ -810,7 +810,7 @@ export const ChartRenderer = memo(function ChartRenderer({
     }
 
     const wrapEmbedded = (node: ReactNode) =>
-      embedded ? embeddedChartSurface(node, { clip: !dashboardEditMode }) : node;
+      embedded ? embeddedChartSurface(node) : node;
 
     if (isCanvasChartType(localConfig.chartType)) {
       const chartType = localConfig.chartType;
@@ -884,7 +884,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       : <p className="text-theme-sm text-gray-500">暂不支持的图表类型</p>;
   };
 
-  const embeddedClip = embedded && !dashboardEditMode;
+  const embeddedClip = embedded;
   const embeddedRootClass = cn(
     "relative flex h-full min-h-0 w-full min-w-0 flex-1 flex-col",
     embeddedClip ? "overflow-hidden" : "overflow-visible",

@@ -145,6 +145,61 @@ export function applyScalableChartSvgDisplay(
     .style("overflow", "visible");
 }
 
+/** 按 SVG 实际绘制 bbox（含轴外标签、图例）等比缩小，嵌入 widget 内完整显示 */
+export function fitSvgContentToScalableDisplay(
+  root: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+  pad = 6,
+): void {
+  const node = root.node();
+  if (!node) return;
+  let bbox: DOMRect;
+  try {
+    bbox = node.getBBox();
+  } catch {
+    return;
+  }
+  if (bbox.width <= 0 || bbox.height <= 0) return;
+  const x = bbox.x - pad;
+  const y = bbox.y - pad;
+  const w = bbox.width + pad * 2;
+  const h = bbox.height + pad * 2;
+  root
+    .attr("viewBox", `${x} ${y} ${w} ${h}`)
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .style("display", "block")
+    .style("overflow", "visible");
+}
+
+/** @deprecated 使用 fitSvgContentToScalableDisplay（svg 根节点 bbox 含图例） */
+export function fitPlotGroupToScalableSvg(
+  root: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+  plot: d3.Selection<SVGGElement, unknown, null, undefined>,
+  pad = 6,
+): void {
+  const plotNode = plot.node();
+  if (!plotNode) return;
+  let bbox: DOMRect;
+  try {
+    bbox = plotNode.getBBox();
+  } catch {
+    return;
+  }
+  if (bbox.width <= 0 || bbox.height <= 0) return;
+  const x = bbox.x - pad;
+  const y = bbox.y - pad;
+  const w = bbox.width + pad * 2;
+  const h = bbox.height + pad * 2;
+  root
+    .attr("viewBox", `${x} ${y} ${w} ${h}`)
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .style("display", "block")
+    .style("overflow", "visible");
+}
+
 /** 补齐未走 appendChartSvg 的渲染器（饼图/漏斗等） */
 export function normalizeEmbeddedChartSvgs(container: HTMLElement): void {
   container.querySelectorAll<SVGSVGElement>("svg").forEach((svg) => {
@@ -156,6 +211,27 @@ export function normalizeEmbeddedChartSvgs(container: HTMLElement): void {
     const coordHeight = Number.parseFloat(rawHeight);
     if (!(coordWidth > 0 && coordHeight > 0)) return;
     applyScalableChartSvgDisplay(d3.select(svg), coordWidth, coordHeight);
+  });
+}
+
+/** 嵌入看板 SVG 缩放策略：viewport=固定画布等比 contain；content=按绘制 bbox 收缩（桑基/漏斗等） */
+export type EmbeddedChartSvgFitMode = "viewport" | "content";
+
+export function resolveEmbeddedChartSvgFitMode(svg: SVGSVGElement): EmbeddedChartSvgFitMode {
+  const explicit = svg.dataset.vsEmbeddedFit;
+  if (explicit === "viewport" || explicit === "content") return explicit;
+  return svg.classList.contains("vs-chart-svg") ? "viewport" : "content";
+}
+
+/** 嵌入看板：先升级 legacy SVG，再按策略等比 contain（非拉伸填满） */
+export function finalizeEmbeddedChartSvgs(container: HTMLElement): void {
+  normalizeEmbeddedChartSvgs(container);
+  container.querySelectorAll<SVGSVGElement>("svg").forEach((svgEl) => {
+    if (svgEl.dataset.vsChartScalable === "false") return;
+    const mode = resolveEmbeddedChartSvgFitMode(svgEl);
+    if (mode === "content") {
+      fitSvgContentToScalableDisplay(d3.select(svgEl));
+    }
   });
 }
 

@@ -1,6 +1,7 @@
 import * as d3 from "d3";
 import { prefersReducedMotion } from "@/components/charts/engine/d3/core/animate";
 import { resolveEffectiveDepth, depthExtrudePx, shadeColor } from "@/components/charts/engine/d3/core/depthEngine";
+import { applyScalableChartSvgDisplay } from "@/components/charts/engine/d3/core/sceneGraph";
 import { radialMargin } from "@/components/charts/engine/d3/core/margin";
 import { resolveLabelFill } from "@/components/charts/engine/d3/core/presentation";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
@@ -99,10 +100,12 @@ export function renderD3GaugeChart(container: HTMLElement, config: D3RenderConfi
   const root = d3
     .select(container)
     .append("svg")
-    .attr("width", width)
-    .attr("height", height)
+    .attr("class", "vs-chart-svg")
+    .attr("data-vs-embedded-fit", "viewport")
     .attr("role", "img")
     .attr("data-testid", "d3-gauge-chart");
+  applyScalableChartSvgDisplay(root, width, height);
+  root.style("overflow", "hidden");
 
   const defs = root.append("defs");
   const grad = defs

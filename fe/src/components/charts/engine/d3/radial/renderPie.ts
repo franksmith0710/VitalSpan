@@ -8,7 +8,7 @@ import { createTooltip, tooltipHtml } from "@/components/charts/engine/d3/core/t
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { DEFAULT_PIE_OUTER_RADIUS_PERCENT } from "@/lib/chartDeStyleBlocks";
 import { renderConfiguredInlineLegend, type D3LegendItem } from "@/components/charts/engine/d3/core/d3Legend";
-import { computePieLayout } from "./pieLayout";
+import { applyScalableChartSvgDisplay } from "@/components/charts/engine/d3/core/sceneGraph";
 import {
   estimatePieOutsideLabelWidth,
   formatPieSliceLabel,
@@ -298,10 +298,11 @@ export function renderD3PieChart(container: HTMLElement, config: D3RenderConfig)
   const root = d3
     .select(container)
     .append("svg")
-    .attr("width", width)
-    .attr("height", height)
-    .attr("role", "img")
-    .style("overflow", "visible");
+    .attr("class", "vs-chart-svg")
+    .attr("data-vs-embedded-fit", "viewport")
+    .attr("role", "img");
+  applyScalableChartSvgDisplay(root, width, height);
+  root.style("overflow", "hidden");
 
   const g = root.append("g").attr("transform", `translate(${layout.cx},${layout.cy})`);
 
