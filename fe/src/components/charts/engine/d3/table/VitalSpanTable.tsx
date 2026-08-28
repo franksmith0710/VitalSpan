@@ -206,9 +206,11 @@ export function VitalSpanTable({
 
   const handleLayoutCommit = useCallback(
     (patch: Parameters<typeof onTableStylePatch>[0]) => {
+      const hasColumnPx =
+        patch.columnWidthsPx != null && Object.keys(patch.columnWidthsPx).length > 0;
       onTableStylePatch?.({
         ...patch,
-        columnWidthMode: "custom",
+        ...(hasColumnPx ? { columnWidthMode: "custom" as const } : {}),
       });
     },
     [onTableStylePatch],
@@ -269,7 +271,7 @@ export function VitalSpanTable({
   const resolvedRowHeightPx =
     guide?.orientation === "row"
       ? pixelLayout.rowHeightPx
-      : tableStyle.rowHeightPx ?? pixelLayout.rowHeightPx;
+      : tableStyle.rowHeightPx ?? (layoutInteractive ? pixelLayout.rowHeightPx : undefined);
   const applyRowHeight = resolvedRowHeightPx != null && resolvedRowHeightPx > 0;
 
   const { scrollTop, viewportHeight } = useScrollTop(scrollRef);

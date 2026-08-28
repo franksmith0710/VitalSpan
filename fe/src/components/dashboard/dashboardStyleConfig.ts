@@ -678,6 +678,18 @@ function decorTileImageForScheme(presetId: string, scheme: ColorScheme): string 
   return decorTileDataUrl(presetId, scheme, "canvas");
 }
 
+/** 选中展示向背景（纹理/自定义图）时关闭辅助对齐网格，避免与底纹叠层混淆 */
+export function patchChromeHideAuxiliaryGrid(
+  config: DashboardStyleConfig,
+): Pick<DashboardStyleConfig, "chrome"> {
+  return {
+    chrome: {
+      ...config.chrome,
+      showAuxiliaryGrid: false,
+    },
+  };
+}
+
 /** 面板 / 画布统一：装饰预设 → styleConfig 补丁（仅平铺纹理，不覆盖用户底色） */
 export function patchDecorPresetStyle(
   presetId: string,
@@ -700,6 +712,7 @@ export function patchDecorPresetStyle(
   const patch: Partial<DashboardStyleConfig> = {
     canvasBackgroundImage: decorTileImageForScheme(presetId, scheme) ?? preset.image,
     canvasDecorPresetId: presetId,
+    ...patchChromeHideAuxiliaryGrid(config),
   };
   if (keepSolid && config.canvasBackgroundCustom) {
     patch.canvasBackground = cleared;
@@ -973,6 +986,32 @@ export function resolveArtboardStyle(config: DashboardStyleConfig): CSSPropertie
   return {
     backgroundColor:
       effectiveCanvasBackground(config) ?? getDashboardThemeTokens(scheme).canvas,
+  };
+}
+
+/**
+ * 滚动宿主 letterbox：只铺纯色/渐变底，不带平铺纹理或背景图。
+ * 纹理必须画在带 scale 的 artboard 上，否则 host（未缩放）与 artboard（缩放）双层点阵会分段，
+ * 且拖拽引起 scale 微调时屏幕疏密会跳变。
+ */
+export function resolveHostLetterboxStyle(config: DashboardStyleConfig): CSSProperties {
+  const scheme = config.colorScheme ?? "light";
+  const coerced = effectiveCanvasBackground(config)?.trim();
+  if (coerced && isCssGradient(coerced)) {
+    return { background: coerced };
+  }
+  if (coerced) {
+    return { backgroundColor: coerced };
+  }
+  const artboard = resolveArtboardStyle(config);
+  if (typeof artboard.background === "string" && isCssGradient(artboard.background)) {
+    return { background: artboard.background };
+  }
+  if (typeof artboard.backgroundColor === "string" && artboard.backgroundColor.trim()) {
+    return { backgroundColor: artboard.backgroundColor };
+  }
+  return {
+    backgroundColor: defaultSolidArtboardColor(scheme),
   };
 }
 

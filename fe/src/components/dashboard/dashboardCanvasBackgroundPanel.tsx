@@ -11,6 +11,7 @@ import {
   TEXT_COLOR_RECOMMENDED,
   CANVAS_TILE_DECOR_PRESETS,
   decorPresetThumbStyle,
+  patchChromeHideAuxiliaryGrid,
   patchDecorPresetStyle,
   resolveCanvasDecorPresetId,
   resolveCanvasDecorPresetIdForPanel,
@@ -51,7 +52,7 @@ export function DashboardCanvasBackgroundPanel({
       canvasBackgroundCustom: Boolean(trimmed),
       canvasDecorPresetId: trimmed ? "custom" : undefined,
       ...(trimmed
-        ? {}
+        ? patchChromeHideAuxiliaryGrid(styleConfig)
         : {
             canvasBackgroundImageFit: undefined,
             canvasBackgroundImagePosition: undefined,
@@ -88,7 +89,10 @@ export function DashboardCanvasBackgroundPanel({
         />
       </DeAttrField>
 
-      <DeAttrField label="背景装饰" hint="仅叠加纹理，不改底色">
+      <DeAttrField
+        label="背景装饰"
+        hint="叠在底色之上，仅展示；不参与对齐/吸附。选纹理时会关闭辅助对齐网格"
+      >
         <div className="flex flex-wrap gap-1.5" role="group" aria-label="背景装饰">
           {CANVAS_TILE_DECOR_PRESETS.map((preset) => {
             const selected = decorId === preset.id;

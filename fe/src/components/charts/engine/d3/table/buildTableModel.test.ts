@@ -35,6 +35,8 @@ describe("buildTableModel", () => {
       } as never,
     });
     expect(model.columns).toEqual(["amount", "region", "sale_date"]);
+    expect(model.columnMeta[0]?.label).toBe("金额");
+    expect(model.columnMeta[1]?.label).toBe("区域");
   });
 
   it("aggregates pivot cells by row and column keys", () => {

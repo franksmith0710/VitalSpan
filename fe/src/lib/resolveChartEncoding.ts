@@ -1,4 +1,5 @@
 import { remapLegacySqlFieldsInChartConfig } from "@/lib/legacySqlFieldAliases";
+import { humanizeChartFieldName, resolveChartFieldRefLabel } from "@/lib/chartFieldLabels";
 import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import { classifyDatasetField } from "@/components/dashboard/datasetFieldClassification";
 import {
@@ -55,7 +56,8 @@ function axisFieldRef(axes: ChartAxesConfig, axisId: DeAxisId, index: number): C
   const ref = axes[axisId]?.[index];
   const field = ref?.field?.trim();
   if (!field) return null;
-  return ref?.label?.trim() ? { field, label: ref.label.trim() } : { field };
+  const label = ref?.label?.trim();
+  return label ? { field, label } : { field, label: humanizeChartFieldName(field) };
 }
 
 function axisFieldRefs(axes: ChartAxesConfig, axisId: DeAxisId): ChartFieldRef[] {
@@ -63,7 +65,8 @@ function axisFieldRefs(axes: ChartAxesConfig, axisId: DeAxisId): ChartFieldRef[]
     .map((ref) => {
       const field = ref.field?.trim();
       if (!field) return null;
-      return ref.label?.trim() ? { field, label: ref.label.trim() } : { field };
+      const label = ref.label?.trim();
+      return label ? { field, label } : { field, label: humanizeChartFieldName(field) };
     })
     .filter((ref): ref is ChartFieldRef => ref !== null);
 }
@@ -73,11 +76,15 @@ function setAxisField(
   axisId: DeAxisId,
   index: number,
   field: string,
+  label?: string,
 ): ChartAxesConfig {
   const next = { ...axes };
   const list = [...(next[axisId] ?? [])];
   while (list.length <= index) list.push({ field: "" });
-  list[index] = { field };
+  const trimmed = field.trim();
+  list[index] = trimmed
+    ? { field: trimmed, label: label?.trim() || humanizeChartFieldName(trimmed) }
+    : { field: "" };
   next[axisId] = list;
   return next;
 }
@@ -136,18 +143,16 @@ export function migrateChartConfigToDeAxes(config: ChartViewConfig): ChartViewCo
 function syncTableBothAxesToLegacy(
   axes: ChartAxesConfig,
 ): { dimensions: ChartFieldRef[]; metrics: ChartFieldRef[] } {
-  const xFields = (axes.xAxis ?? [])
-    .map((ref) => ref.field?.trim())
-    .filter((field): field is string => Boolean(field));
-  // 明细表列顺序与 xAxis 槽位一致；维/指标分类供 backend field_rule 计数
+  const xRefs = (axes.xAxis ?? []).filter((ref) => ref.field?.trim());
   const dimensions: ChartFieldRef[] = [];
   const metrics: ChartFieldRef[] = [];
-  for (const field of xFields) {
-    const kind = classifyDatasetField(field);
+  for (const ref of xRefs) {
+    const labeled = resolveChartFieldRefLabel(ref);
+    const kind = classifyDatasetField(ref.field);
     if (kind === "metric") {
-      metrics.push({ field });
+      metrics.push(labeled);
     } else {
-      dimensions.push({ field });
+      dimensions.push(labeled);
     }
   }
   return { dimensions, metrics };
@@ -217,22 +222,22 @@ export function syncLegacyFieldsFromAxes(config: ChartViewConfig): ChartViewConf
     const drillField = axisField(axes, "drill", 0);
     const nextDimensions = [...dimensions];
     if (drillField) {
-      nextDimensions.push({ field: drillField });
+      nextDimensions.push({ field: drillField, label: humanizeChartFieldName(drillField) });
     }
     return { ...config, axes, dimensions: nextDimensions, metrics };
   }
 
   if (chartType === "table-normal") {
     const dimensions = (axes.xAxis ?? [])
-      .map((ref) => ref.field?.trim())
-      .filter((field): field is string => Boolean(field))
-      .map((field) => ({ field }));
+      .filter((ref) => ref.field?.trim())
+      .map((ref) => resolveChartFieldRefLabel(ref));
     const drillField = axisField(axes, "drill", 0);
-    if (drillField) dimensions.push({ field: drillField });
+    if (drillField) {
+      dimensions.push({ field: drillField, label: humanizeChartFieldName(drillField) });
+    }
     const metrics = (axes.yAxis ?? [])
-      .map((ref) => ref.field?.trim())
-      .filter((field): field is string => Boolean(field))
-      .map((field) => ({ field }));
+      .filter((ref) => ref.field?.trim())
+      .map((ref) => resolveChartFieldRefLabel(ref));
     return { ...config, axes, dimensions, metrics };
   }
 
@@ -279,7 +284,8 @@ export function appendAxisField(
 ): ChartViewConfig {
   const axes = { ...(config.axes ?? {}) };
   const list = [...(axes[axisId] ?? [])];
-  list.push({ field });
+  const trimmed = field.trim();
+  list.push({ field: trimmed, label: humanizeChartFieldName(trimmed) });
   axes[axisId] = list;
   return syncLegacyFieldsFromAxes({ ...config, axes });
 }

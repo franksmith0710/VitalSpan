@@ -52,7 +52,25 @@ describe("resolveChartFieldLabel", () => {
     };
     expect(resolveChartFieldLabel(withLabels, "grid_name")).toBe("网格名称");
     expect(resolveChartFieldLabel(withLabels, "event_count")).toBe("事件数");
-    expect(resolveChartFieldLabel(withLabels, "unknown")).toBe("unknown");
+  });
+
+  it("humanizes table-info xAxis-only fields without explicit labels", () => {
+    const cfg: ChartViewConfig = {
+      ...baseCfg,
+      axes: { xAxis: [{ field: "grid_name" }, { field: "event_count" }] },
+    };
+    expect(resolveChartFieldLabel(cfg, "grid_name")).toBe("网格名称");
+    expect(resolveChartFieldLabel(cfg, "event_count")).toBe("事件数");
+  });
+});
+
+describe("readChartDeTableStyle", () => {
+  it("rounds fractional rowHeightPx on read", () => {
+    const cfg: ChartViewConfig = {
+      ...baseCfg,
+      nativeBody: { deTableStyle: { rowHeightPx: 21.212383270263672 } },
+    };
+    expect(readChartDeTableStyle(cfg).rowHeightPx).toBe(21);
   });
 });
 

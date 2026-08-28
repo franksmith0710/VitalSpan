@@ -75,9 +75,7 @@ export function useTableLayoutResize({
   onCommit,
 }: UseTableLayoutResizeOptions) {
   const savedInitially = hasSavedColumnWidths(initial);
-  const [pixelActive, setPixelActive] = useState(
-    savedInitially || initial.rowHeightPx != null,
-  );
+  const [pixelActive, setPixelActive] = useState(savedInitially);
   const [layout, setLayout] = useState<TableLayoutResizeState>(() =>
     buildInitialState(columns, showSeriesNumber, initial),
   );
@@ -108,17 +106,17 @@ export function useTableLayoutResize({
   useEffect(() => {
     const nextSaved = hasSavedColumnWidths(initial);
     setLayout(buildInitialState(columns, showSeriesNumber, initial));
-    setPixelActive(nextSaved || initial.rowHeightPx != null);
+    setPixelActive(nextSaved);
   }, [initialKey]);
 
-  const hydrateFromDom = useCallback(() => {
+  const hydrateColumnWidthsFromDom = useCallback(() => {
     const table = tableRef.current;
     if (!table) return false;
     const measured = measureTableLayoutFromDom({ table, columns, showSeriesNumber });
     const next = {
+      ...layoutRef.current,
       columnWidthsPx: { ...layoutRef.current.columnWidthsPx, ...measured.columnWidthsPx },
       seriesColumnWidthPx: measured.seriesColumnWidthPx,
-      rowHeightPx: measured.rowHeightPx,
     };
     layoutRef.current = next;
     setLayout(next);
@@ -128,18 +126,24 @@ export function useTableLayoutResize({
 
   const ensurePixelReady = useCallback(() => {
     if (pixelActive) return true;
-    return hydrateFromDom();
-  }, [hydrateFromDom, pixelActive]);
+    return hydrateColumnWidthsFromDom();
+  }, [hydrateColumnWidthsFromDom, pixelActive]);
 
-  const commit = useCallback(() => {
-    if (!onCommit) return;
-    const current = layoutRef.current;
-    onCommit({
-      columnWidthsPx: current.columnWidthsPx,
-      seriesColumnWidthPx: showSeriesNumber ? current.seriesColumnWidthPx : undefined,
-      rowHeightPx: Math.round(current.rowHeightPx),
-    });
-  }, [onCommit, showSeriesNumber]);
+  const commitDrag = useCallback(
+    (drag: DragTarget) => {
+      if (!onCommit) return;
+      const current = layoutRef.current;
+      if (drag.kind === "row") {
+        onCommit({ rowHeightPx: Math.round(current.rowHeightPx) });
+        return;
+      }
+      onCommit({
+        columnWidthsPx: current.columnWidthsPx,
+        seriesColumnWidthPx: showSeriesNumber ? current.seriesColumnWidthPx : undefined,
+      });
+    },
+    [onCommit, showSeriesNumber],
+  );
 
   useEffect(() => {
     if (!enabled) return;
@@ -169,13 +173,14 @@ export function useTableLayoutResize({
     };
 
     const onUp = () => {
-      if (!dragRef.current) return;
+      const drag = dragRef.current;
+      if (!drag) return;
       dragRef.current = null;
       setGuide(null);
       document.body.style.cursor = "";
       document.body.style.userSelect = "";
       document.body.removeAttribute("data-vs-table-resizing");
-      commit();
+      commitDrag(drag);
     };
 
     window.addEventListener("pointermove", onMove);
@@ -186,7 +191,7 @@ export function useTableLayoutResize({
       window.removeEventListener("pointerup", onUp);
       window.removeEventListener("pointercancel", onUp);
     };
-  }, [commit, enabled]);
+  }, [commitDrag, enabled]);
 
   const beginDrag = useCallback(
     (target: DragTarget, cursor: string, guideState: TableResizeGuideState) => {
@@ -240,14 +245,13 @@ export function useTableLayoutResize({
       if (!enabled) return;
       event.preventDefault();
       event.stopPropagation();
-      if (!pixelActive) {
-        hydrateFromDom();
-        setPixelActive(true);
-      }
       const table = tableRef.current;
       const bodyRow = table?.querySelector("tbody tr");
-      const startHeight =
-        bodyRow?.getBoundingClientRect().height ?? layoutRef.current.rowHeightPx;
+      const startHeight = Math.round(
+        layoutRef.current.rowHeightPx ||
+          bodyRow?.getBoundingClientRect().height ||
+          TABLE_DEFAULT_ROW_PX,
+      );
       beginDrag(
         { kind: "row", startY: event.clientY, startHeight },
         "row-resize",
@@ -255,7 +259,7 @@ export function useTableLayoutResize({
       );
       event.currentTarget.setPointerCapture(event.pointerId);
     },
-    [beginDrag, enabled, hydrateFromDom, pixelActive, tableRef],
+    [beginDrag, enabled, tableRef],
   );
 
   const setAutoFitContext = useCallback((ctx: AutoFitContext | null) => {
@@ -290,7 +294,6 @@ export function useTableLayoutResize({
         onCommit({
           columnWidthsPx: current.columnWidthsPx,
           seriesColumnWidthPx: showSeriesNumber ? current.seriesColumnWidthPx : undefined,
-          rowHeightPx: current.rowHeightPx,
         });
       }
     },

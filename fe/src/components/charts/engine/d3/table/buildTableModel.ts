@@ -1,4 +1,5 @@
 import type { BuildTableModelInput, PivotTableModel, TableColumnMeta, TableDetailModel, TableModel } from "@/components/charts/engine/d3/table/types";
+import { resolveEncodingFieldLabel } from "@/lib/chartFieldLabels";
 
 function resolveFields(spec: BuildTableModelInput["spec"], columns: string[]) {
   const axisColumnFields = (spec.encoding.axes?.xAxis ?? [])
@@ -20,14 +21,10 @@ function resolveFields(spec: BuildTableModelInput["spec"], columns: string[]) {
 }
 
 function columnMeta(spec: BuildTableModelInput["spec"], fields: string[]): TableColumnMeta[] {
-  return fields.map((field) => {
-    const dim = spec.encoding.dimensions.find((d) => d.field === field);
-    const metric = spec.encoding.metrics.find((m) => m.field === field);
-    return {
-      field,
-      label: dim?.label?.trim() || metric?.label?.trim() || field,
-    };
-  });
+  return fields.map((field) => ({
+    field,
+    label: resolveEncodingFieldLabel(spec.encoding, field),
+  }));
 }
 
 function toNumber(raw: unknown): number {
@@ -55,7 +52,10 @@ export function buildPivotTableModel(
   const colField = dimFields[1] ?? "";
   const metrics = (metricFields.length ? metricFields : fallbackFields.slice(-1)).map((field) => {
     const metric = input.spec.encoding.metrics.find((m) => m.field === field);
-    return { field, label: metric?.label?.trim() || field };
+    return {
+      field,
+      label: metric?.label?.trim() || resolveEncodingFieldLabel(input.spec.encoding, field),
+    };
   });
 
   const rowIdx = input.columns.indexOf(rowField);
@@ -101,9 +101,9 @@ export function buildPivotTableModel(
   return {
     kind: "pivot",
     rowField,
-    rowLabel: rowDim?.label?.trim() || rowField,
+    rowLabel: rowDim?.label?.trim() || resolveEncodingFieldLabel(input.spec.encoding, rowField),
     colField,
-    colLabel: colDim?.label?.trim() || colField,
+    colLabel: colDim?.label?.trim() || resolveEncodingFieldLabel(input.spec.encoding, colField),
     metrics,
     rowKeys,
     colKeys,

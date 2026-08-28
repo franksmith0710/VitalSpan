@@ -117,6 +117,7 @@ describe("patchDecorPresetStyle", () => {
     expect(patchDecorPresetStyle("dots", { colorScheme: "dark" })).toEqual({
       canvasBackgroundImage: expect.stringContaining("data:image/svg+xml"),
       canvasDecorPresetId: "dots",
+      chrome: { showAuxiliaryGrid: false },
     });
   });
 
@@ -126,12 +127,26 @@ describe("patchDecorPresetStyle", () => {
         colorScheme: "dark",
         canvasBackground: "#7556b8",
         canvasBackgroundCustom: true,
+        chrome: { showAuxiliaryGrid: true, showChartActionButtons: true },
       }),
     ).toEqual({
       canvasBackgroundImage: expect.stringContaining("data:image/svg+xml"),
       canvasBackground: "#7556b8",
       canvasBackgroundCustom: true,
       canvasDecorPresetId: "grid",
+      chrome: { showAuxiliaryGrid: false, showChartActionButtons: true },
+    });
+  });
+
+  it("does not toggle auxiliary grid when clearing to none", () => {
+    expect(
+      patchDecorPresetStyle("none", {
+        canvasDecorPresetId: "dots",
+        chrome: { showAuxiliaryGrid: true },
+      }),
+    ).toEqual({
+      canvasBackgroundImage: undefined,
+      canvasDecorPresetId: undefined,
     });
   });
 

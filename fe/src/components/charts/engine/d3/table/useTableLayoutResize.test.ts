@@ -92,5 +92,45 @@ describe("useTableLayoutResize", () => {
         columnWidthsPx: expect.objectContaining({ name: 150 }),
       }),
     );
+    expect(onCommit.mock.calls[0]?.[0]).not.toHaveProperty("rowHeightPx");
+  });
+
+  it("row drag commits only rowHeightPx without columnWidthsPx", () => {
+    const onCommit = vi.fn();
+    const tableRef = { current: createTableFixture() };
+    const { result } = renderHook(() =>
+      useTableLayoutResize({
+        columns: ["name"],
+        showSeriesNumber: false,
+        initial: { rowHeightPx: 32 },
+        enabled: true,
+        tableRef,
+        onCommit,
+      }),
+    );
+
+    const handle = document.createElement("div");
+
+    act(() => {
+      result.current.startRowResize({
+        preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
+        clientY: 100,
+        currentTarget: handle,
+        pointerId: 2,
+      } as unknown as React.PointerEvent<HTMLDivElement>);
+    });
+
+    act(() => {
+      window.dispatchEvent(new PointerEvent("pointermove", { clientY: 120 }));
+    });
+
+    act(() => {
+      window.dispatchEvent(new PointerEvent("pointerup"));
+    });
+
+    expect(onCommit).toHaveBeenCalledTimes(1);
+    expect(onCommit).toHaveBeenCalledWith({ rowHeightPx: expect.any(Number) });
+    expect(onCommit.mock.calls[0]?.[0]).not.toHaveProperty("columnWidthsPx");
   });
 });

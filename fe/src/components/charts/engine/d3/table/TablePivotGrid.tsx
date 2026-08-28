@@ -120,7 +120,9 @@ export function TablePivotGrid({
     onCommit: (patch) =>
       onTableStylePatch?.({
         ...patch,
-        columnWidthMode: "custom",
+        ...(patch.columnWidthsPx && Object.keys(patch.columnWidthsPx).length > 0
+          ? { columnWidthMode: "custom" as const }
+          : {}),
       }),
   });
 

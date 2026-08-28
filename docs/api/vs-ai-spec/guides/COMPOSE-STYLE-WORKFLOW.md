@@ -1,35 +1,35 @@
 # Compose + 样式补丁工作流（工作流 ③）
 
-> **铁律** → [IRON-RULES.md](../IRON-RULES.md) · **编排基础** → [DASHBOARD-LAYOUT.md](./DASHBOARD-LAYOUT.md)  
-> **插件工具**：`vitalspan_compose_dashboard` ·（按需）`vitalspan_get_dashboard_layout` → 改 JSON → `vitalspan_upload_dashboard`
+> **铁律** → [IRON-RULES.md](../IRON-RULES.md) · **LRC 默认** → [LAYOUT-RHYTHM-CONTRACT.md](./LAYOUT-RHYTHM-CONTRACT.md)  
+> **legacy 成品模板** → [COMPOSE-TEMPLATES-DE.md](./COMPOSE-TEMPLATES-DE.md)（参考金样，非 wf3 默认）  
+> **插件工具**：`vitalspan_list_layout_rhythms` · `vitalspan_compose_dashboard` ·（按需）`get` → patch → `upload`
 
-## 品大屏（compose 前）
+## wf3 默认：rhythm + blocks（LRC）
 
-模板 **借鉴** DataEase 式布局语法（顶栏 · KPI 带 · 主辅图区），**不是**抄 DE 成品。
+模板 **不是**抄 DataEase 成品；**节律契约**定义分区语法，**blocks** 定义本屏放什么。
 
 | 步骤 | Agent 须想清 |
 |------|----------------|
 | 故事线 | 看谁 · 一屏答哪 3～5 问 · 上→下节奏 |
-| 选 template | `chart`/`customViz` 槽数与高宽；矮槽禁折线/竞赛 |
-| chart_types | 按槽位语义覆盖默认，禁止机械粘贴模板默认序列 |
-| artifact_ids | 只填 cv 槽；`artifact` 数 > cv 槽须先向用户说明 |
-| 槽位匹配 | 环图/竞赛不进 112px 底条；KPI 槽不进 customViz |
+| blocks | 每个块：`band` + `kind`（chart/customViz）+ `artifactId`/`chartType` |
+| rhythm | `list_layout_rhythms` → 2 个 cv → `rhythm-cv-stage`（**0 KPI**） |
+| 绑数 | 默认 `manual`；演示/预览才 `demo` |
 
-**禁止**穷举行业 template；Agent 根据用户话自选 template 与色值，只改通用 JSON 字段。
+**禁止** wf3 默认 `template=de-*`（会复制 KPI×4 等 preset 槽）。legacy 仍可用但 gate 会拦。
 
 ## 三条路径
 
 | 路径 | 何时 | 步骤 |
 |------|------|------|
-| **快路径（默认）** | 故事线与 compose 一致；**未**要求改视觉/布局 | `compose` → `completion_gate` |
-| **慢路径 A（样式）** | 用户要改风格/配色/边框/标题/品牌 | `compose` → `get` → patch 样式 → `upload` → gate |
-| **慢路径 B（叙事/布局）** | 须删 widget / 改业务标题 / 挪位置才合逻辑 | `compose` → `get` → patch 标题·删 widget·x/y → `upload` → gate |
+| **快路径（默认）** | blocks 与故事一致；**未**要求改视觉/布局 | `list_layout_rhythms` → `compose(rhythm,blocks)` → `completion_gate` |
+| **慢路径 A（样式）** | 用户要改风格/配色/边框/标题/品牌 | compose → `get` → patch 样式 → `upload` → gate |
+| **慢路径 B（叙事/布局）** | 须删 widget / 改业务标题 / 挪位置才合逻辑 | compose → `get` → patch 标题·删 widget·x/y → `upload` → gate |
 
 ## 原则
 
 | 阶段 | 谁做 | 改什么 |
 |------|------|--------|
-| **① compose** | 插件 | 模板槽位、坐标、语义化 `chart_types`、绑数（manual/demo） |
+| **① compose** | 插件 | `rhythm` + `blocks` → 生成坐标与 widget 拓扑 |
 | **② get** | 插件 | 拉回 `layoutJson`（**慢路径**） |
 | **③ patch** | Agent | **A** 只改样式 · **B** 改标题/删 widget/坐标（整文件 write） |
 | **④ upload** | 插件 | `editor-save` 写回同一 `dashboardId` |
@@ -43,24 +43,34 @@
 | 演示 / 预览 / 能看 | `data_binding=demo` |
 | 正式 / 未提 | `manual`（默认） |
 
-## 快路径示例
+## 快路径示例（2 个已有 customViz）
+
+```
+vitalspan_list_layout_rhythms
+vitalspan_compose_dashboard
+  surface_kind=data-screen
+  rhythm=rhythm-cv-stage
+  blocks=[{"band":"primary","kind":"customViz","artifactId":"<uuid1>","title":"趋势"},{"band":"secondary","kind":"customViz","artifactId":"<uuid2>","title":"排名"}]
+  name=综合运营驾驶舱
+  data_binding=manual
+```
+
+stdout 须含 `rhythm=rhythm-cv-stage` · `kpi=0` · `ok dashboardId=` → `completion_gate workflow=3`。
+
+## legacy template=（兼容 · 非默认）
 
 ```
 vitalspan_compose_dashboard
   surface_kind=data-screen
   template=de-classic-cockpit
-  chart_types=kpi,kpi,kpi,kpi,line,bar,bar,map
-  name=数据分析驾驶舱
-  data_binding=demo
+  ...
 ```
 
-`chart_types` 须与故事线一致，不是无脑用模板默认 `line,pie-donut,bar,map`。
-
-记下 `dashboardId=` → `completion_gate workflow=3`（tool_stdout = compose 输出）。
+stdout 含 `[warn] LEGACY_TEMPLATE` — **completion_gate 会拒绝**，仅旧脚本兼容。
 
 ## 慢路径 A — 样式
 
-### 1. compose（同上）
+### 1. compose（rhythm+blocks 同上）
 
 ### 2. 导出 layout
 
@@ -88,11 +98,11 @@ vitalspan_upload_dashboard
   file=examples/my-screen.json
 ```
 
-`completion_gate` 须用 **upload** 的 stdout（用户声称改风格时）。
+`completion_gate` 须用 **upload** 的 stdout（用户声称改风格时）。upload 路径不要求 stdout 含 `rhythm=`。
 
 ## 慢路径 B — 叙事/布局
 
-当 compose 填满所有 chart 槽但故事线只需要部分图，或占位标题须改成业务名、customViz 须更高槽位时：
+当 compose 块数与故事线不一致，或占位标题须改成业务名时：
 
 1. `get_dashboard_layout` 同上
 2. **整文件 write**：改 `widgets[].title` · 从 `layoutJson.widgets` **删除**多余项 · 按需改 `x/y/width/height`
@@ -100,7 +110,7 @@ vitalspan_upload_dashboard
 
 ## compose 自动样式（v0.2.15+）
 
-按槽位高度写入 `deStyle`（隐藏重复标题、KPI 缩放、小槽隐藏图例等）。未提换肤时通常够用。
+按槽位高度写入 `deStyle`（隐藏重复标题、KPI 缩放、小槽隐藏图例等）。rhythm 路径下 KPI 数量由 **blocks** 决定，非模板默认。
 
 ## 数据说明
 
@@ -108,4 +118,4 @@ vitalspan_upload_dashboard
 - `manual`：5173 手绑 Dataset
 - customViz：layout 只引用 `artifactId`；实例样式走 `customVizConfig`
 
-返回：[START-HERE.md](../START-HERE.md)
+返回：[LAYOUT-RHYTHM-CONTRACT.md](./LAYOUT-RHYTHM-CONTRACT.md) · [START-HERE.md](../START-HERE.md)

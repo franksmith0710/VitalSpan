@@ -36,6 +36,18 @@ LAYOUT_SUMMARY_RE = re.compile(
     re.IGNORECASE,
 )
 UPLOAD_DONE_MARK = "done: layout saved via upload"
+COMPOSE_DONE_MARK = "done: compose complete"
+RHYTHM_STDOUT_RE = re.compile(r"rhythm=rhythm-[\w-]+", re.IGNORECASE)
+LEGACY_TEMPLATE_MARK = "[warn] LEGACY_TEMPLATE"
+NO_RHYTHM_MARK = "[warn] NO_RHYTHM_OR_TEMPLATE"
+TEMPLATE_DE_RE = re.compile(r"template=de-", re.IGNORECASE)
+KPI_COUNT_RE = re.compile(r"kpi=(\d+)", re.IGNORECASE)
+RHYTHM_ID_RE = re.compile(r"rhythm=(rhythm-[\w-]+)", re.IGNORECASE)
+SUMMARY_LEGACY_TEMPLATE_RE = re.compile(
+    r"de-classic-cockpit|de-sales-command|de-balanced-four|de-map-command|de-kpi-flow-wall|"
+    r"选了.*模板|销售指挥|驾驶舱模板",
+    re.IGNORECASE,
+)
 VALIDATE_OK_RE = re.compile(r"validate\s+ok|dry-run ok|preflight ok", re.IGNORECASE)
 TIER_FULL_RE = re.compile(r"styleComplianceTier=full", re.IGNORECASE)
 TIER_BAD_RE = re.compile(r"styleComplianceTier=(partial|visual-only)", re.IGNORECASE)
@@ -77,6 +89,56 @@ class GateResult:
         }
 
 
+def validate_workflow3_lrc_stdout(tool_stdout: str) -> list[str]:
+    reasons: list[str] = []
+    if UPLOAD_DONE_MARK in tool_stdout:
+        return reasons
+    if LEGACY_TEMPLATE_MARK in tool_stdout:
+        reasons.append(
+            "tool_stdout uses LEGACY_TEMPLATE — wf3 default requires rhythm= + blocks= (not template=de-*)",
+        )
+    if NO_RHYTHM_MARK in tool_stdout:
+        reasons.append(
+            "tool_stdout missing rhythm — run vitalspan_list_layout_rhythms + compose with rhythm= and blocks JSON",
+        )
+    if not RHYTHM_STDOUT_RE.search(tool_stdout):
+        reasons.append(
+            "tool_stdout must include rhythm=<id> from list_layout_rhythms (wf3 default LRC path)",
+        )
+    kpi_match = KPI_COUNT_RE.search(tool_stdout)
+    rhythm_match = RHYTHM_ID_RE.search(tool_stdout)
+    if (
+        rhythm_match
+        and rhythm_match.group(1).lower() == "rhythm-cv-stage"
+        and kpi_match
+        and int(kpi_match.group(1)) > 0
+    ):
+        reasons.append("rhythm-cv-stage must have kpi=0 — blocks should not fill metrics band")
+    if (
+        kpi_match
+        and int(kpi_match.group(1)) >= 4
+        and (not rhythm_match or rhythm_match.group(1).lower() != "rhythm-hero-stack")
+    ):
+        reasons.append(
+            "kpi>=4 without rhythm-hero-stack metrics intent — likely legacy template homogeneity",
+        )
+    return reasons
+
+
+def validate_workflow3_summary_lrc(agent_summary: str, tool_stdout: str) -> list[str]:
+    reasons: list[str] = []
+    summary = agent_summary.strip()
+    if not summary or UPLOAD_DONE_MARK in tool_stdout:
+        return reasons
+    if SUMMARY_LEGACY_TEMPLATE_RE.search(summary) and not RHYTHM_STDOUT_RE.search(tool_stdout):
+        reasons.append(
+            "summary references legacy de-* template but tool_stdout missing rhythm= — use LRC blocks compose",
+        )
+    if TEMPLATE_DE_RE.search(tool_stdout) and not RHYTHM_STDOUT_RE.search(tool_stdout):
+        reasons.append("tool_stdout uses template=de-* without rhythm= — wf3 default is rhythm + blocks")
+    return reasons
+
+
 def validate_workflow3_stdout(tool_stdout: str) -> list[str]:
     reasons: list[str] = []
     if not tool_stdout.strip():
@@ -101,6 +163,7 @@ def validate_workflow3_stdout(tool_stdout: str) -> list[str]:
     widget_match = LAYOUT_WIDGETS_RE.search(tool_stdout)
     if not widget_match or int(widget_match.group(1)) < 1:
         reasons.append("tool_stdout must include layout widgets: N with N>=1 from compose or upload")
+    reasons.extend(validate_workflow3_lrc_stdout(tool_stdout))
     return reasons
 
 
@@ -121,6 +184,7 @@ def validate_workflow3_summary_semantics(agent_summary: str, tool_stdout: str) -
         reasons.append(
             "summary claims layout/narrative changes but tool_stdout missing upload delivery — get → patch → upload_dashboard",
         )
+    reasons.extend(validate_workflow3_summary_lrc(summary, tool_stdout))
     return reasons
 
 

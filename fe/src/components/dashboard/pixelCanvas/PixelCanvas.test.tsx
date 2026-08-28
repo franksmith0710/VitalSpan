@@ -909,6 +909,31 @@ describe("PixelCanvas", () => {
     expect(screen.getByTestId("canvas-mark-line")).toBeInTheDocument();
   });
 
+  it("keeps tile decor only on artboard so host letterbox does not double-scale dots", () => {
+    renderPixelCanvas(
+      <PixelCanvas
+        mode="edit"
+        layout={layout}
+        styleConfig={{
+          colorScheme: "light",
+          canvasBackgroundCustom: true,
+          canvasBackground: "#eff6ff",
+          canvasDecorPresetId: "dots",
+          canvasBackgroundImage:
+            'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="16" height="16"%3E%3Ccircle cx="1" cy="1" r="1" fill="%2394a3b8"/%3E%3C/svg%3E',
+          chrome: { showAuxiliaryGrid: false },
+        }}
+        selectedIds={new Set(["w1"])}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    const host = screen.getByTestId("pixel-canvas-host");
+    const artboard = screen.getByTestId("pixel-canvas-artboard");
+    expect(host.style.backgroundImage).toBe("");
+    expect(host.style.backgroundColor).toBe("rgb(239, 246, 255)");
+    expect(artboard.style.backgroundImage).toContain("url(");
+  });
+
   it("does not compact intentional outer gaps on commit", async () => {
     const spacedLayout: DashboardLayoutV2 = {
       ...layout,

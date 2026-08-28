@@ -7,7 +7,7 @@
 | 锚点 | `deeptalk-plugins/plugins/vitalspan/src/layoutRhythm.ts` · `composeDashboard.ts` · `docs/api/vs-ai-spec/assets/layout-rhythms/` |
 | 总体判定 | **PARTIAL** |
 | **总分 / 档位** | **6.5/10 · C+**（引擎 CHAIN 达标；产品闭环与 Agent 行为未验） |
-| 状态 | draft |
+| 状态 | superseded → see `2026-08-28-wf3-lrc-v044-truth-audit-recheck.md` |
 | **sampling** | `full`（Phase 1 交付项 + 5 rhythm 全枚举） |
 
 ## 1. 核验标准与预期

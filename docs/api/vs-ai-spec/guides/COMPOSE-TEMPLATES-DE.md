@@ -1,8 +1,11 @@
-# Compose 大屏模板 · DataEase 工整参考
+# Compose 大屏模板 · DataEase 工整参考（legacy）
 
-> **铁律** → [IRON-RULES.md](../IRON-RULES.md) · **工作流** → [COMPOSE-STYLE-WORKFLOW.md](./COMPOSE-STYLE-WORKFLOW.md)
+> **wf3 默认已改为 LRC** → [LAYOUT-RHYTHM-CONTRACT.md](./LAYOUT-RHYTHM-CONTRACT.md) · **工作流** → [COMPOSE-STYLE-WORKFLOW.md](./COMPOSE-STYLE-WORKFLOW.md)  
+> **铁律** → [IRON-RULES.md](../IRON-RULES.md)
 
-DeepTalk **workflow ③** 拼大屏时，优先用带 **`de-recommended`** 标签的模板；compose 会自动：
+> ⚠️ **legacy 参考金样**：下列 `de-*` / `gov-*` preset 仍可通过 `template=` compose，但 stdout 含 `[warn] LEGACY_TEMPLATE`，**completion_gate 会拒绝**。新任务须 `rhythm` + `blocks`。
+
+DeepTalk **workflow ③** 拼大屏时，**不再**默认选用带 **`de-recommended`** 的成品模板；仅当兼容旧脚本或对照金样时使用本页 preset。
 
 1. 插入 **顶栏标题 + 时钟**（对标 DataEase 大屏壳）
 2. 按槽位 **`defaultChartType`** 填内置图（不必手传完整 `chart_types`）
@@ -12,7 +15,7 @@ DeepTalk **workflow ③** 拼大屏时，优先用带 **`de-recommended`** 标�
 
 | template id | 场景 | 结构 |
 |-------------|------|------|
-| **`de-classic-cockpit`** | **默认首选** | 四 KPI + 线/饼/柱/地图 + AI 洞察带 |
+| **`de-classic-cockpit`** | legacy 金样 | 四 KPI + 线/饼/柱/地图 + AI 洞察带 |
 | `de-sales-command` | 销售指挥 | 四 KPI + 宽趋势 + 饼/地图 + 明细表 |
 | `de-balanced-four` | 最工整四象限 | 2×2 柱/线/饼/雷达 |
 | `de-map-command` | 地理分析 | 居中大地图 + 侧栏 KPI/排名/占比 |

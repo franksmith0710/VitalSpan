@@ -6,10 +6,12 @@ import {
   canvasChromeUsesDotGrid,
   formatMetricValue,
   hasUserCanvasBackground,
+  patchDecorPresetStyle,
   pickWidgetDashboardStyle,
   pickChartPaletteDefaults,
   resolveArtboardStyle,
   resolveDashboardFontOptionValue,
+  resolveHostLetterboxStyle,
   widgetDashboardStyleFingerprint,
 } from "./dashboardStyleConfig";
 
@@ -109,6 +111,32 @@ describe("dashboardStyleConfig theme vs background", () => {
     });
     expect(resolveArtboardStyle({ colorScheme: "light" })).toEqual({
       backgroundColor: CANVAS_BG_LIGHT_DEFAULT,
+    });
+  });
+
+  it("resolveHostLetterboxStyle keeps solid fill but strips tile decor", () => {
+    const patched = patchDecorPresetStyle("dots", {
+      colorScheme: "light",
+      canvasBackground: "#eff6ff",
+      canvasBackgroundCustom: true,
+    });
+    const host = resolveHostLetterboxStyle({
+      colorScheme: "light",
+      ...patched,
+    });
+    const artboard = resolveArtboardStyle({
+      colorScheme: "light",
+      ...patched,
+    });
+    expect(host).toEqual({ backgroundColor: "#eff6ff" });
+    expect(host.backgroundImage).toBeUndefined();
+    expect(artboard.backgroundImage).toContain("url(");
+  });
+
+  it("resolveHostLetterboxStyle uses default solid when decor has no custom underlay", () => {
+    const patched = patchDecorPresetStyle("grid", { colorScheme: "light" });
+    expect(resolveHostLetterboxStyle({ colorScheme: "light", ...patched })).toEqual({
+      backgroundColor: "#f8fafc",
     });
   });
 

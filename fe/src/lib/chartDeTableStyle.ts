@@ -111,10 +111,18 @@ export function readDashboardTableColorDefaults(
   return styleConfig?.tableColorStyle ?? {};
 }
 
+function normalizeChartDeTableStyle(raw: ChartDeTableStyle): ChartDeTableStyle {
+  const next: ChartDeTableStyle = { ...raw };
+  if (next.rowHeightPx != null && Number.isFinite(next.rowHeightPx)) {
+    next.rowHeightPx = Math.round(next.rowHeightPx);
+  }
+  return next;
+}
+
 export function readChartDeTableStyle(cfg: ChartViewConfig): ChartDeTableStyle {
   const raw = cfg.nativeBody?.deTableStyle;
   if (!raw || typeof raw !== "object") return {};
-  return raw as ChartDeTableStyle;
+  return normalizeChartDeTableStyle(raw as ChartDeTableStyle);
 }
 
 const TABLE_COLOR_FIELD_KEYS = [
@@ -232,18 +240,7 @@ export function resolveTablePageSize(cfg: ChartViewConfig): number {
   return readChartDeTableStyle(cfg).pageSize ?? DEFAULT_TABLE_PAGE_SIZE;
 }
 
-/** 样式面板/表头：优先 dimensions/metrics/axes 上的中文别名 */
-export function resolveChartFieldLabel(cfg: ChartViewConfig, field: string): string {
-  const dim = cfg.dimensions?.find((d) => d.field === field);
-  if (dim?.label?.trim()) return dim.label.trim();
-  const metric = cfg.metrics?.find((m) => m.field === field);
-  if (metric?.label?.trim()) return metric.label.trim();
-  for (const refs of Object.values(cfg.axes ?? {})) {
-    const ref = refs?.find((r) => r.field === field);
-    if (ref?.label?.trim()) return ref.label.trim();
-  }
-  return field;
-}
+export { resolveChartFieldLabel } from "@/lib/chartFieldLabels";
 
 /** 表格样式面板列顺序：与明细表 xAxis 槽位一致 */
 export function resolveTableStyleDisplayColumns(

@@ -43,6 +43,7 @@ import {
   canvasArtboardStyleFingerprint,
   pickWidgetDashboardStyle,
   resolveArtboardStyle,
+  resolveHostLetterboxStyle,
   widgetDashboardStyleFingerprint,
 } from "../dashboardStyleConfig";
 import { resolveComponentGapRuntime } from "../componentGapRuntime";
@@ -295,6 +296,10 @@ export function PixelCanvas({
 
   const artboardStyle = useMemo(
     () => resolveArtboardStyle(styleConfig),
+    [canvasArtboardStyleFingerprint(styleConfig)],
+  );
+  const hostLetterboxStyle = useMemo(
+    () => resolveHostLetterboxStyle(styleConfig),
     [canvasArtboardStyleFingerprint(styleConfig)],
   );
   /** 编辑态固定按画布宽度贴满；大屏编辑改为整画布 fit 宿主 */
@@ -950,7 +955,7 @@ export function PixelCanvas({
       data-pixel-canvas-scroll-x={scrollX ? "true" : undefined}
       data-pixel-canvas-playing={playingWidgetId ?? undefined}
       style={{
-        ...artboardStyle,
+        ...hostLetterboxStyle,
         "--pixel-canvas-scale": scale,
       } as CSSProperties}
       onScroll={(event) => {

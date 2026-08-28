@@ -17,6 +17,7 @@ class RouteResult:
     reason: str
     chart_type: str | None = None
     template: str | None = None
+    rhythm: str | None = None
     runtime: str | None = None
     paradigm: str | None = None
     redirect: str | None = None
@@ -34,6 +35,8 @@ class RouteResult:
             out["paradigm"] = self.paradigm
         if self.template:
             out["template"] = self.template
+        if self.rhythm:
+            out["rhythm"] = self.rhythm
         return out
 
 
@@ -65,13 +68,19 @@ def route_request(text: str) -> RouteResult:
             str(rule.get("reason") or ""),
             chart_type=rule.get("chartType"),
             template=rule.get("template"),
+            rhythm=rule.get("rhythm"),
             runtime=rule.get("runtime"),
             paradigm=rule.get("paradigm"),
             redirect=rule.get("redirect"),
         )
 
-    if re.search(r"(大屏|看板|dashboard|data-screen|编排)", normalized):
-        return RouteResult(True, "3", "surface compose keywords", template="de-classic-cockpit")
+    if re.search(r"(大屏|看板|dashboard|data-screen|编排|拼屏)", normalized):
+        return RouteResult(
+            True,
+            "3",
+            "surface compose — wf3 default rhythm + blocks (LRC)",
+            rhythm="rhythm-cv-stage",
+        )
     if re.search(r"(组件|custom|customviz|artifact|入库|脚手架|scaffold)", normalized):
         return RouteResult(True, "2", "customViz keywords", runtime="html")
     if re.search(r"(柱|线|饼|表|地图|sankey|graph|内置)", normalized):
