@@ -135,4 +135,85 @@ describe("ChartTableStylePanel", () => {
       }),
     );
   });
+
+  it("shows localized field labels for custom column width sliders", async () => {
+    const user = userEvent.setup();
+    const widget: LayoutWidget = {
+      ...tableWidget,
+      chartConfig: patchChartDeTableStyle(
+        {
+          ...tableWidget.chartConfig!,
+          chartType: "table-info",
+          dimensions: [{ field: "grid_name", label: "网格名称" }],
+          metrics: [
+            { field: "event_count", label: "事件数" },
+            { field: "resolved_count", label: "已解决数" },
+          ],
+          axes: {
+            xAxis: [
+              { field: "grid_name", label: "网格名称" },
+              { field: "event_count", label: "事件数" },
+              { field: "resolved_count", label: "已解决数" },
+            ],
+          },
+        },
+        { columnWidthMode: "custom" },
+      ),
+    };
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <ChartInspectorProvider widget={widget} onChange={vi.fn()}>
+          <ChartTableStylePanel />
+        </ChartInspectorProvider>
+      </QueryClientProvider>,
+    );
+    await user.click(screen.getByRole("button", { name: /明细表 · 基础样式/ }));
+    expect(screen.getByText("网格名称")).toBeInTheDocument();
+    expect(screen.getByText("事件数")).toBeInTheDocument();
+    expect(screen.queryByText("grid_name")).not.toBeInTheDocument();
+  });
+
+  it("custom column width patch clears drag pixel widths", async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+    const widget = {
+      ...tableWidget,
+      chartConfig: patchChartDeTableStyle(
+        {
+          ...tableWidget.chartConfig!,
+          chartType: "table-info",
+          dimensions: [{ field: "region", label: "区域" }],
+          axes: { xAxis: [{ field: "region", label: "区域" }] },
+        },
+        {
+          columnWidthMode: "custom",
+          columnWidthsPx: { region: 200 },
+          columnWidths: { region: 40 },
+        },
+      ),
+    };
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <ChartInspectorProvider widget={widget} onChange={onChange}>
+          <ChartTableStylePanel />
+        </ChartInspectorProvider>
+      </QueryClientProvider>,
+    );
+    await user.click(screen.getByRole("button", { name: /明细表 · 基础样式/ }));
+    const slider = screen.getByRole("slider", { name: "区域 列宽" });
+    fireEvent.change(slider, { target: { value: "55" } });
+    fireEvent.pointerUp(slider);
+    expect(onChange).toHaveBeenCalledWith(
+      expect.objectContaining({
+        nativeBody: expect.objectContaining({
+          deTableStyle: expect.objectContaining({
+            columnWidths: expect.objectContaining({ region: 55 }),
+            columnWidthsPx: undefined,
+          }),
+        }),
+      }),
+    );
+  });
 });

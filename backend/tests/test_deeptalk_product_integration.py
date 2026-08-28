@@ -130,7 +130,7 @@ def test_publish_validate_only_via_tools() -> None:
     assert "styleComplianceTier=full" in proc.stdout
 
 
-def test_agent_tools_schema_lists_twenty_tools() -> None:
+def test_agent_tools_schema_lists_twenty_one_tools() -> None:
     schema_path = SPEC_ROOT / "deeptalk-product" / "agent-tools.schema.json"
     data = json.loads(schema_path.read_text(encoding="utf-8"))
     names = {t["name"] for t in data["tools"]}
@@ -148,6 +148,7 @@ def test_agent_tools_schema_lists_twenty_tools() -> None:
         "vitalspan_validate_chart_config",
         "vitalspan_route_request",
         "vitalspan_list_layout_templates",
+        "vitalspan_list_layout_rhythms",
         "vitalspan_list_chart_types",
         "vitalspan_compose_dashboard",
         "vitalspan_get_dashboard_layout",

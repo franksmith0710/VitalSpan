@@ -260,19 +260,22 @@ export function VitalSpanTable({
     valueFormat,
   ]);
 
-  const usePixelLayout =
-    (columnWidthMode === "custom" && pixelActive) || guide != null;
+  const hasSavedPxWidths = Boolean(
+    tableStyle.columnWidthsPx && Object.keys(tableStyle.columnWidthsPx).length > 0,
+  );
+  const usePixelColumnLayout = columnWidthMode === "custom" && hasSavedPxWidths;
+  const usePixelLayout = usePixelColumnLayout || guide != null;
   const freezeLead = columnWidthPlan.contentScroll && layoutColumnCount > 1;
   const resolvedRowHeightPx =
-    usePixelLayout && pixelLayout.rowHeightPx
+    guide?.orientation === "row"
       ? pixelLayout.rowHeightPx
-      : tableStyle.rowHeightPx;
+      : tableStyle.rowHeightPx ?? pixelLayout.rowHeightPx;
   const applyRowHeight = resolvedRowHeightPx != null && resolvedRowHeightPx > 0;
 
   const { scrollTop, viewportHeight } = useScrollTop(scrollRef);
   const virtual = useTableVirtualRows({
     rowCount: pageRows.length,
-    rowHeightPx: pixelLayout.rowHeightPx,
+    rowHeightPx: resolvedRowHeightPx ?? pixelLayout.rowHeightPx,
     scrollTop,
     viewportHeight,
     enabled: scrollMode,

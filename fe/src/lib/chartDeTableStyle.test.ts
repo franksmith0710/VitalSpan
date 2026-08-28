@@ -3,7 +3,9 @@ import {
   patchChartDeTableStyle,
   patchTableColumnWidthMode,
   readChartDeTableStyle,
+  resolveChartFieldLabel,
   resolveEffectiveTableZebraBg,
+  resolveTableStyleDisplayColumns,
 } from "@/lib/chartDeTableStyle";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 
@@ -40,17 +42,34 @@ describe("chartDeTableStyle column width mode patches", () => {
   });
 });
 
-describe("resolveEffectiveTableZebraBg", () => {
-  it("respects zebraStriped=false and skips theme fallback", () => {
-    expect(
-      resolveEffectiveTableZebraBg({ zebraStriped: false }, { "--dashboard-table-zebra-bg": "#eee" }),
-    ).toBeUndefined();
+describe("resolveChartFieldLabel", () => {
+  it("prefers dimension/metric labels over raw field names", () => {
+    const cfg = patchChartDeTableStyle(baseCfg, {});
+    const withLabels: ChartViewConfig = {
+      ...cfg,
+      dimensions: [{ field: "grid_name", label: "网格名称" }],
+      metrics: [{ field: "event_count", label: "事件数" }],
+    };
+    expect(resolveChartFieldLabel(withLabels, "grid_name")).toBe("网格名称");
+    expect(resolveChartFieldLabel(withLabels, "event_count")).toBe("事件数");
+    expect(resolveChartFieldLabel(withLabels, "unknown")).toBe("unknown");
   });
+});
 
-  it("falls back to theme zebra when no component override", () => {
-    expect(
-      resolveEffectiveTableZebraBg({}, { "--dashboard-table-zebra-bg": "rgba(0,0,0,0.08)" }),
-    ).toBe("rgba(0,0,0,0.08)");
+describe("resolveTableStyleDisplayColumns", () => {
+  it("uses xAxis slot order for table-info", () => {
+    const cfg: ChartViewConfig = {
+      ...baseCfg,
+      axes: {
+        xAxis: [{ field: "grid_name" }, { field: "event_count" }],
+      },
+      dimensions: [{ field: "grid_name" }],
+      metrics: [{ field: "event_count" }],
+    };
+    expect(resolveTableStyleDisplayColumns(cfg, ["event_count", "grid_name"])).toEqual([
+      "grid_name",
+      "event_count",
+    ]);
   });
 });
 

@@ -138,4 +138,14 @@ describe("D3TableView table color wiring", () => {
     expect(th.style.fontSize).toContain("9px");
     expect(td.style.fontSize).toContain("7px");
   });
+
+  it("enables layout resize only when onTableStylePatch is provided (edit)", () => {
+    const { container: view } = renderTable(tableProps());
+    expect(view.querySelector("table[data-layout-interactive]")).toBeNull();
+
+    const { container: edit } = renderTable(
+      tableProps({ onTableStylePatch: () => {} }),
+    );
+    expect(edit.querySelector("table[data-layout-interactive]")).not.toBeNull();
+  });
 });

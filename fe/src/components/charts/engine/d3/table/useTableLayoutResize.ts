@@ -137,7 +137,7 @@ export function useTableLayoutResize({
     onCommit({
       columnWidthsPx: current.columnWidthsPx,
       seriesColumnWidthPx: showSeriesNumber ? current.seriesColumnWidthPx : undefined,
-      rowHeightPx: current.rowHeightPx,
+      rowHeightPx: Math.round(current.rowHeightPx),
     });
   }, [onCommit, showSeriesNumber]);
 
@@ -148,7 +148,9 @@ export function useTableLayoutResize({
       const drag = dragRef.current;
       if (!drag) return;
       if (drag.kind === "row") {
-        const next = Math.max(TABLE_MIN_ROW_PX, drag.startHeight + (event.clientY - drag.startY));
+        const next = Math.round(
+          Math.max(TABLE_MIN_ROW_PX, drag.startHeight + (event.clientY - drag.startY)),
+        );
         setLayout((prev) => ({ ...prev, rowHeightPx: next }));
         setGuide({ orientation: "row", position: event.clientY });
         return;

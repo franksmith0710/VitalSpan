@@ -475,8 +475,9 @@ html.dark {
 }
 
 .pixel-canvas-host .dashboard-widget-surface .dashboard-chart-table :where(th, td) {
-  font-size: calc(var(--dw-screen-table) / var(--pixel-canvas-chrome-scale));
-  line-height: calc(1.375rem / var(--pixel-canvas-chrome-scale));
+  /* 表格属内容区：随画布 transform 等比缩放，不参与 chrome-scale 反比补偿（与预览 WYSIWYG 一致） */
+  font-size: var(--dw-screen-table);
+  line-height: 1.375rem;
 }
 
 .pixel-canvas-host .dashboard-widget-surface :where(.dw-hint) {

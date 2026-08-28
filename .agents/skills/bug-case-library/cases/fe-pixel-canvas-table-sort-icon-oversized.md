@@ -30,6 +30,13 @@
 - `fe/src/components/charts/engine/d3/table/SortableHeaderCell.tsx`
 - `fe/src/components/charts/ChartRenderer.tsx` — `wrapEmbedded(EmbeddedChartTable)`
 
+## 编辑 vs 预览列宽/字号不一致（同源）
+
+| 原因 | 修复 |
+|------|------|
+| 表格 th/td 参与 `--pixel-canvas-chrome-scale` 反比补偿 | `index.css` 表格字号改为 `var(--dw-screen-table)`，仅随画布 transform 缩放 |
+| `D3TableView` 始终 `layoutInteractive` | `layoutInteractive={Boolean(onTableStylePatch)}`，预览只读已保存列宽 |
+
 ## 预防
 
 - 像素画布「图表 SVG 填满」规则不得覆盖 UI chrome（lucide、分页、resize handle）

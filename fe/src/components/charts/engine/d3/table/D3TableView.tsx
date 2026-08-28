@@ -128,7 +128,7 @@ function D3TableViewInner(props: ChartEngineViewProps) {
           themeVars={themeVars}
           valueFormat={style.valueFormat}
           embedded={fill}
-          layoutInteractive
+          layoutInteractive={Boolean(onTableStylePatch)}
           page={page}
           onPageChange={setPage}
           drillField={drillClickField}
@@ -165,7 +165,7 @@ function D3TableViewInner(props: ChartEngineViewProps) {
         showSeriesNumber={
           profile?.showSeriesNumber ? (tableStyle.showSeriesNumber ?? true) : false
         }
-        layoutInteractive
+        layoutInteractive={Boolean(onTableStylePatch)}
         onTableStylePatch={onTableStylePatch}
         depthVisual={style.depthVisual}
       />

@@ -220,7 +220,7 @@
     {
       "name": "vitalspan_list_layout_templates",
       "runtime": "plugin",
-      "description": "Workflow 3: list 21 layout templates (5 de-* + 6 gov-* data-screen + 10 dash-*)",
+      "description": "Workflow 3 legacy: list preset layout templates (prefer list_layout_rhythms)",
       "parameters": {
         "type": "object",
         "properties": {
@@ -236,6 +236,15 @@
       }
     },
     {
+      "name": "vitalspan_list_layout_rhythms",
+      "runtime": "plugin",
+      "description": "Workflow 3 default: list Layout Rhythm Contracts (LRC) — generic layout grammar",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
       "name": "vitalspan_list_chart_types",
       "runtime": "plugin",
       "description": "Workflow 1/3: list built-in chartType ids",
@@ -247,7 +256,7 @@
     {
       "name": "vitalspan_compose_dashboard",
       "runtime": "plugin",
-      "description": "Workflow 3: create surface + save layout from template/chart_types/artifact_ids. Stdout must include ok dashboardId=.",
+      "description": "Workflow 3: create surface + save layout. Preferred: rhythm + blocks JSON (LRC). Legacy: template=.",
       "parameters": {
         "type": "object",
         "properties": {
@@ -266,17 +275,32 @@
           "name": {
             "type": "string"
           },
+          "rhythm": {
+            "type": "string",
+            "description": "Layout rhythm id from list_layout_rhythms (wf3 default)"
+          },
+          "blocks": {
+            "type": "string",
+            "description": "JSON array of {band, kind, chartType?, artifactId?, title?}"
+          },
           "template": {
             "type": "string",
-            "description": "Layout template id from list_layout_templates"
+            "description": "Legacy preset layout id from list_layout_templates"
           },
           "chart_types": {
             "type": "string",
-            "description": "Comma-separated built-in types"
+            "description": "Comma-separated built-in types (legacy template path)"
           },
           "artifact_ids": {
             "type": "string",
-            "description": "Comma-separated customViz uuids"
+            "description": "Comma-separated customViz uuids (legacy template path)"
+          },
+          "data_binding": {
+            "type": "string",
+            "enum": [
+              "manual",
+              "demo"
+            ]
           }
         }
       }

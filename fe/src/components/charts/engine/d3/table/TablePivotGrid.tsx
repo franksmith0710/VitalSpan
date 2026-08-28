@@ -143,13 +143,14 @@ export function TablePivotGrid({
   const colSpanUnit = metricCount;
   const usePixelLayout =
     columnWidthMode === "custom" &&
-    layoutInteractive &&
-    Object.keys(layout.columnWidthsPx).length > 0;
+    Boolean(tableStyle.columnWidthsPx && Object.keys(tableStyle.columnWidthsPx).length > 0);
+  const resolvedRowHeight =
+    guide?.orientation === "row"
+      ? layout.rowHeightPx
+      : tableStyle.rowHeightPx ?? (layoutInteractive ? layout.rowHeightPx : undefined);
   const rowStyle =
-    tableStyle.rowHeightPx || (layoutInteractive && layout.rowHeightPx)
-      ? ({
-          height: `${layout.rowHeightPx ?? tableStyle.rowHeightPx}px`,
-        } as CSSProperties)
+    resolvedRowHeight != null
+      ? ({ height: `${resolvedRowHeight}px` } as CSSProperties)
       : undefined;
 
   const colWidth = (field: string) =>

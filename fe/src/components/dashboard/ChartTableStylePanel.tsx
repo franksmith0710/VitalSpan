@@ -15,6 +15,8 @@ import {
   patchChartDeTableStyle,
   patchTableColumnWidthMode,
   readChartDeTableStyle,
+  resolveChartFieldLabel,
+  resolveTableStyleDisplayColumns,
   DEFAULT_TABLE_PAGE_SIZE,
   DEFAULT_TABLE_COLUMN_WIDTH_MODE,
 } from "@/lib/chartDeTableStyle";
@@ -41,14 +43,16 @@ export function ChartTableStylePanel() {
   const patch = (next: Parameters<typeof patchChartDeTableStyle>[1]) =>
     onChange(patchChartDeTableStyle(cfg, next));
 
-  const displayCols =
-    columns.length > 0
-      ? columns
-      : (cfg.dimensions ?? []).map((d) => d.field).filter(Boolean);
+  const displayCols = resolveTableStyleDisplayColumns(cfg, columns);
 
   const patchColumnWidth = (col: string, pct: number) => {
     const prev = tableStyle.columnWidths ?? {};
-    patch({ columnWidths: { ...prev, [col]: Math.min(100, Math.max(1, pct)) } });
+    patch({
+      columnWidthMode: "custom",
+      columnWidths: { ...prev, [col]: Math.min(100, Math.max(1, pct)) },
+      columnWidthsPx: undefined,
+      seriesColumnWidthPx: undefined,
+    });
   };
 
   return (
@@ -150,7 +154,7 @@ export function ChartTableStylePanel() {
               step={1}
               unit="px"
               ariaLabel="表格行高"
-              onChange={(rowHeightPx) => patch({ rowHeightPx })}
+              onChange={(rowHeightPx) => patch({ rowHeightPx: Math.round(rowHeightPx) })}
             />
             <ChartDeSegmentField
               label="列宽调整"
@@ -173,14 +177,14 @@ export function ChartTableStylePanel() {
                     <ChartDeSliderField
                       key={col}
                       className="border-b-0 py-0 last:border-b-0"
-                      label={col}
+                      label={resolveChartFieldLabel(cfg, col)}
                       value={tableStyle.columnWidths?.[col]}
                       fallback={Math.floor(100 / displayCols.length)}
                       min={1}
                       max={100}
                       step={1}
                       unit="%"
-                      ariaLabel={`${col} 列宽`}
+                      ariaLabel={`${resolveChartFieldLabel(cfg, col)} 列宽`}
                       onChange={(pct) => patchColumnWidth(col, pct)}
                     />
                   ))}
