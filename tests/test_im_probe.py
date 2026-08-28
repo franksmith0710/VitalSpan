@@ -29,7 +29,7 @@ def test_probe_im_apps_marks_configured_when_sdk_probe_ok(monkeypatch):
     monkeypatch.setattr(settings, "wecom_secret", None)
     monkeypatch.setattr(settings, "wecom_agent_id", None)
     probe.reset_im_probe_cache_for_tests()
-    with patch("app.reports.scheduler.channels.im_sdk.probe.probe_feishu_token"):
+    with patch("app.reports.scheduler.channels.im_sdk.probe.probe_im_credentials_bundle", return_value={"ok": True}):
         result = probe_im_apps(settings, force_refresh=True)
     assert result["feishu"]["configured"] is True
     assert result["feishu"]["error"] is None
@@ -40,10 +40,26 @@ def test_probe_im_apps_surfaces_sdk_error(monkeypatch):
     monkeypatch.setattr(settings, "wecom_corp_id", "corp")
     monkeypatch.setattr(settings, "wecom_secret", "sec")
     monkeypatch.setattr(settings, "wecom_agent_id", "100")
+    monkeypatch.setattr(settings, "dingtalk_app_key", None)
+    monkeypatch.setattr(settings, "dingtalk_app_secret", None)
+    monkeypatch.setattr(settings, "dingtalk_agent_id", None)
+    monkeypatch.setattr(settings, "feishu_app_id", None)
+    monkeypatch.setattr(settings, "feishu_app_secret", None)
     probe.reset_im_probe_cache_for_tests()
     with patch(
-        "app.reports.scheduler.channels.im_sdk.probe.probe_wecom_token",
-        side_effect=RuntimeError("invalid corpsecret"),
+        "app.core.platform_config.im_resolve.resolve_im_credentials",
+        return_value=__import__(
+            "app.core.platform_config.im_credentials", fromlist=["ImCredentials"]
+        ).ImCredentials(
+            channel="wecom",
+            source="env",
+            corp_id="corp",
+            secret="sec",
+            agent_id="100",
+        ),
+    ), patch(
+        "app.reports.scheduler.channels.im_sdk.probe.probe_im_credentials_bundle",
+        return_value={"ok": False, "error": "invalid corpsecret"},
     ):
         result = probe_im_apps(settings, force_refresh=True)
     assert result["wecom"]["configured"] is False
@@ -61,8 +77,8 @@ def test_probe_im_apps_uses_cache(monkeypatch):
     monkeypatch.setattr(settings, "wecom_secret", None)
     monkeypatch.setattr(settings, "wecom_agent_id", None)
     probe.reset_im_probe_cache_for_tests()
-    mock_probe = MagicMock(return_value={"channel": "feishu", "skipped": False, "ok": True, "error": None})
-    with patch("app.reports.scheduler.channels.im_sdk.probe.probe_channel_credentials", mock_probe):
+    mock_probe = MagicMock(return_value={"ok": True})
+    with patch("app.reports.scheduler.channels.im_sdk.probe.probe_im_credentials_bundle", mock_probe):
         probe_im_apps(settings, force_refresh=True)
         probe_im_apps(settings, force_refresh=False)
     assert mock_probe.call_count == 1

@@ -11,7 +11,7 @@
 | smoke fixture 数 | **44** |
 | 采样 | full |
 | 三柱 | 能不能用 · 全不全 · 对不对 |
-| **报告状态** | **已落盘** |
+| **报告状态** | **已落盘**（**旧格式**：无 §3b 控件矩阵、无 fix-report；金样见 [`2026-08-28-bar-explicit-component-audit.md`](2026-08-28-bar-explicit-component-audit.md) + [`2026-08-28-bar-explicit-fix-report.md`](2026-08-28-bar-explicit-fix-report.md)） |
 
 ---
 

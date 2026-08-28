@@ -35,7 +35,8 @@
 - 仓内实现（2026-08-28）：`backend/app/reports/scheduler/channels/im_sdk/` — 飞书 **`lark-oapi`**、钉钉 **`dingtalk-sdk`**（oapi `asyncsend_v2`）、企微 **`wechatpy`**（官方 REST 封装；腾讯无统一 PyPI 官方包）。按人发信：`work_notice.py` → `im_sdk/*`；群 webhook 仍为 httpx POST（厂商固定 URL，无 SDK）。
 - 探测：`probe_im_apps` / `im_sdk/probe.py` 与发信同栈调 gettoken（`tenant_access_token`），成功才 `configured: true`；失败带 `error`；60s 内存缓存。
 - smoke：`contracts/im-platform-connect.smoke.py` 复用 `probe_channel_credentials`（SDK 路径，非裸 httpx）。
-- 仍未闭合：浏览器授权绑定（管理员手填账号）；管理面 IM 凭证入库 SM4（蓝图 S1）。
+- 仍未闭合：无凭据时 smoke 真打；authorize+callback 须在真实应用与回调域名下验收。
+- 已闭合（2026-08-28）：管理面 IM 凭证 DB SoR（`platform_im_connect_configs`）；三通道 OAuth 绑定 API + 个人中心/平台对接 UI。
 - 环境：env 名见 `backend/.env.example`；真打 smoke 需应用 Secret（§9）。
 
 ## 3. 可行性结论

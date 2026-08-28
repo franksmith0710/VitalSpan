@@ -33,3 +33,37 @@ class EmailDeliveryConfigPut(BaseModel):
     password: str | None = Field(default=None, max_length=256)
 
     model_config = {"populate_by_name": True}
+
+
+class ImDeliveryConfigOut(BaseModel):
+    channel: str
+    label: str
+    configured: bool
+    source: str = Field(description="db | env | none")
+    callback_domain: str | None = Field(default=None, alias="callbackDomain")
+    corp_id: str | None = Field(default=None, alias="corpId")
+    agent_id: str | None = Field(default=None, alias="agentId")
+    app_key: str | None = Field(default=None, alias="appKey")
+    app_id: str | None = Field(default=None, alias="appId")
+    has_secret: bool = Field(alias="hasSecret")
+    probe_error: str | None = Field(default=None, alias="probeError")
+
+    model_config = {"populate_by_name": True}
+
+
+class ImDeliverySlotsOut(BaseModel):
+    items: list[ImDeliveryConfigOut]
+
+    model_config = {"populate_by_name": True}
+
+
+class ImDeliveryConfigPut(BaseModel):
+    callback_domain: str = Field(min_length=1, max_length=255, alias="callbackDomain")
+    corp_id: str | None = Field(default=None, max_length=128, alias="corpId")
+    secret: str | None = Field(default=None, max_length=256)
+    agent_id: str | None = Field(default=None, max_length=64, alias="agentId")
+    app_key: str | None = Field(default=None, max_length=128, alias="appKey")
+    app_secret: str | None = Field(default=None, max_length=256, alias="appSecret")
+    app_id: str | None = Field(default=None, max_length=128, alias="appId")
+
+    model_config = {"populate_by_name": True}

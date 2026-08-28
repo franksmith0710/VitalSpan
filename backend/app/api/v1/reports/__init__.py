@@ -293,15 +293,20 @@ def schedule_delivery_health(
     _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     email_smtp_slot: str | None = Query(default=None, alias="emailSmtpSlot"),
 ):
-    from app.core.config import get_settings
+    from app.auth.models import get_meta_session
     from app.reports.scheduler.channels.work_notice import probe_im_apps
     from app.reports.scheduler.delivery_adapter import probe_all_smtp_health, probe_smtp_health
 
-    if email_smtp_slot:
-        smtp = probe_smtp_health(slot=email_smtp_slot)
-        return {**smtp, "smtp": smtp, "im": probe_im_apps(get_settings())}
-    combined = probe_all_smtp_health()
-    return {**combined, "smtp": combined, "im": probe_im_apps(get_settings())}
+    session = get_meta_session()
+    try:
+        settings = get_settings()
+        if email_smtp_slot:
+            smtp = probe_smtp_health(session=session, slot=email_smtp_slot)
+            return {**smtp, "smtp": smtp, "im": probe_im_apps(settings, session=session)}
+        combined = probe_all_smtp_health(session=session)
+        return {**combined, "smtp": combined, "im": probe_im_apps(settings, session=session)}
+    finally:
+        session.close()
 
 
 @router.get("/schedules/export-health", response_model=None)

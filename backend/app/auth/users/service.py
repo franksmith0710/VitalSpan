@@ -221,7 +221,10 @@ def update_user(
             _guard_root_admin(session)
         changes["roleIds"] = [str(r.id) for r in roles]
     if payload.im_accounts is not None:
-        saved = im_bindings.upsert_accounts(session, user_id, payload.im_accounts)
+        try:
+            saved = im_bindings.upsert_accounts(session, user_id, payload.im_accounts, source="admin")
+        except im_bindings.ImBindingConflictError as exc:
+            raise UserError("IM_BINDING_CONFLICT", exc.message, 409) from exc
         changes["imAccounts"] = saved
 
     if not changes:

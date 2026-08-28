@@ -15,7 +15,9 @@ from app.api.v1.nfr import router as nfr_router
 from app.api.v1.query import router as query_router
 from app.api.v1.query_configs import router as query_configs_router
 from app.api.v1.ingestion import router as ingestion_router
+from app.api.v1.im_auth import router as im_auth_router
 from app.api.v1.me import router as me_router
+from app.api.v1.me_im_bindings import router as me_im_bindings_router
 from app.api.v1.metadata import router as metadata_router
 from app.api.v1.orgs import router as orgs_router
 from app.api.v1.permissions import router as permissions_router
@@ -39,6 +41,8 @@ from app.api.v1.tile_services import router as tile_services_router
 
 api_v1_router = APIRouter()
 api_v1_router.include_router(me_router)
+api_v1_router.include_router(me_im_bindings_router)
+api_v1_router.include_router(im_auth_router)
 api_v1_router.include_router(auth_router)
 api_v1_router.include_router(auth_integration_router)
 api_v1_router.include_router(column_masks_router)

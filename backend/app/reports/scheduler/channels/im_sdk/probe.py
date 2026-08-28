@@ -9,9 +9,11 @@ from typing import Any
 import lark_oapi as lark
 from dingtalk.client import AppKeyClient
 from lark_oapi.api.auth.v3 import InternalTenantAccessTokenRequest, InternalTenantAccessTokenRequestBody
+from sqlalchemy.orm import Session
 from wechatpy.enterprise import WeChatClient
 
-from app.core.config import Settings
+from app.core.config import Settings, get_settings
+from app.core.platform_config.im_credentials import ImCredentials
 
 logger = logging.getLogger(__name__)
 
@@ -93,22 +95,17 @@ def probe_feishu_token(*, app_id: str, app_secret: str) -> None:
         raise RuntimeError("飞书 tenant_access_token 为空")
 
 
-def probe_channel_credentials(settings: Settings, channel: str) -> dict[str, Any]:
-    if not has_im_credentials(settings, channel):
+def probe_im_credentials_bundle(creds: ImCredentials) -> dict[str, Any]:
+    channel = creds.channel
+    if not creds.is_configured:
         return {"channel": channel, "skipped": True, "ok": False, "error": None}
     try:
         if channel == "wecom":
-            probe_wecom_token(corp_id=settings.wecom_corp_id or "", secret=settings.wecom_secret or "")
+            probe_wecom_token(corp_id=creds.corp_id or "", secret=creds.secret or "")
         elif channel == "dingtalk":
-            probe_dingtalk_token(
-                app_key=settings.dingtalk_app_key or "",
-                app_secret=settings.dingtalk_app_secret or "",
-            )
+            probe_dingtalk_token(app_key=creds.app_key or "", app_secret=creds.app_secret or "")
         elif channel == "feishu":
-            probe_feishu_token(
-                app_id=settings.feishu_app_id or "",
-                app_secret=settings.feishu_app_secret or "",
-            )
+            probe_feishu_token(app_id=creds.app_id or "", app_secret=creds.app_secret or "")
         else:
             return {"channel": channel, "skipped": True, "ok": False, "error": "未知通道"}
     except Exception as exc:
@@ -117,7 +114,20 @@ def probe_channel_credentials(settings: Settings, channel: str) -> dict[str, Any
     return {"channel": channel, "skipped": False, "ok": True, "error": None}
 
 
-def probe_im_channels(settings: Settings, *, force_refresh: bool = False) -> dict[str, dict[str, Any]]:
+def probe_channel_credentials(settings: Settings, channel: str) -> dict[str, Any]:
+    """Backward-compatible env probe for smoke contracts."""
+    from app.core.platform_config.im_resolve import resolve_im_credentials
+
+    creds = resolve_im_credentials(settings=settings, channel=channel)
+    return probe_im_credentials_bundle(creds)
+
+
+def probe_im_channels(
+    settings: Settings | None = None,
+    *,
+    session: Session | None = None,
+    force_refresh: bool = False,
+) -> dict[str, dict[str, Any]]:
     global _probe_cache, _probe_cache_at
     now = time.monotonic()
     if (
@@ -127,15 +137,20 @@ def probe_im_channels(settings: Settings, *, force_refresh: bool = False) -> dic
     ):
         return _probe_cache
 
+    cfg = settings or get_settings()
+    from app.core.platform_config.im_resolve import resolve_all_im_credentials
+
+    creds_map = resolve_all_im_credentials(session, cfg)
     out: dict[str, dict[str, Any]] = {}
     for channel in _CHANNELS:
-        if not has_im_credentials(settings, channel):
-            out[channel] = {"configured": False, "groupWebhook": _group_webhook(settings, channel), "error": None}
+        creds = creds_map[channel]
+        if not creds.is_configured:
+            out[channel] = {"configured": False, "groupWebhook": _group_webhook(cfg, channel), "error": None}
             continue
-        result = probe_channel_credentials(settings, channel)
+        result = probe_im_credentials_bundle(creds)
         out[channel] = {
             "configured": bool(result.get("ok")),
-            "groupWebhook": _group_webhook(settings, channel),
+            "groupWebhook": _group_webhook(cfg, channel),
             "error": result.get("error"),
         }
     _probe_cache = out

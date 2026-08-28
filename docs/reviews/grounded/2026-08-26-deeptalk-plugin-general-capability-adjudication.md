@@ -4,12 +4,34 @@
 |------|-----|
 | 日期 | 2026-08-26 |
 | Skill | `~/.cursor/skills/project-grounded-review/` |
+| 模式 | adjudicate |
 | 问题 | 如何补全 DeepTalk VitalSpan 插件通用能力，应对多变客户需求 |
 | 选项 | A 扩 wf2/customViz · B 仅改提示词 · C Cursor 全栈计划 · S0 维持现状 |
 | 裁决 | **RECOMMEND_SYNTHESIZED**（吸收 C，纠正优先级与停止项） |
 | 方向纠正强度 | **改道** |
 | 置信度 | **MEDIUM**（插件仓跨目录 T3；宿主 E2E 仍 UNVERIFIED） |
-| **交付** | 判 + 纠 + 给（§6–§9 完整） |
+| **交付** | 读(§0) + 判(§1–6) + 纠(§7) + 给(§8–§9) |
+
+---
+
+## 0. 对话上下文与第三方读法
+
+> **2026-08-28 补录**：按 skill 新格式回填 §0（原文档在 crystallize 规范之前落盘）。
+
+**已共识**（对话/评审上下文）：
+
+- DeepTalk × VitalSpan 是**一体产品**；② 完成 = `artifactId`，③ = `dashboardId`。
+- 标准柱/线/表/地图应走 **wf1 L1/L2**，非 customViz。
+- 插件 `components.tools` 与 executor 已交付 v0.3.x 基线。
+
+**仍摇摆**（评审时）：
+
+- 通用能力补全应先扩 wf2 模板库，还是先补宿主 5173 编辑链？
+- 多变客户需求是否意味着要内置 OD 飞线等未登记 chartType？
+
+**第三方读法**：
+
+> 作为外部顾问：当前问题不是「插件还能加多少工具」，而是 **工作流边界与验收证据是否钉死**——Agent 仍易把 examples 当交付、把 wf1 图表写进 customViz。方向应 **合成 C 的平台优先序**：先 artifact 入库链与 wf1 能力清单，再薄插件 UX；**停止** 无 `artifactId` 宣称完成。
 
 ---
 

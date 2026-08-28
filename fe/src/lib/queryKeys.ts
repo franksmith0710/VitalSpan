@@ -1,5 +1,6 @@
 export const queryKeys = {
   me: ["me"] as const,
+  meImBindings: ["me", "im-bindings"] as const,
   demoPackage: {
     status: ["demoPackage", "status"] as const,
   },
@@ -148,6 +149,8 @@ export const queryKeys = {
     email: ["platform-connect", "email"] as const,
     emailSlots: ["platform-connect", "email-slots"] as const,
     emailSlot: (slot: string) => ["platform-connect", "email-slot", slot] as const,
+    imSlots: ["platform-connect", "im-slots"] as const,
+    imChannel: (channel: string) => ["platform-connect", "im-channel", channel] as const,
   },
   gov: {
     categories: ["gov", "categories"] as const,

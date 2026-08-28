@@ -43,6 +43,7 @@ def dispatch_artifact(
             im_missing=im_missing,
             notify_group=notify_group,
             email_smtp_slot=email_smtp_slot,
+            session=session,
         )
     else:
         result = _legacy_deliver(

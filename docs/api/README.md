@@ -97,6 +97,14 @@ redoc: /redoc
 | PUT | `/api/v1/platform/delivery/email/{slot}` | 保存指定槽位 SMTP 并探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
 | DELETE | `/api/v1/platform/delivery/email` | 清空 QQ 槽位 SMTP | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
 | DELETE | `/api/v1/platform/delivery/email/{slot}` | 清空指定槽位 SMTP（清空后忽略 env 回落） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
+| GET | `/api/v1/platform/delivery/im/slots` | 企微/钉钉/飞书 IM 应用摘要 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
+| GET | `/api/v1/platform/delivery/im/{channel}` | 单通道 IM 应用摘要 + 探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
+| PUT | `/api/v1/platform/delivery/im/{channel}` | 保存 IM 应用凭证并探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
+| DELETE | `/api/v1/platform/delivery/im/{channel}` | 清空 IM 通道（清空后忽略 env） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
+| GET | `/api/v1/me/im-bindings` | 当前用户三通道绑定状态 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
+| GET | `/api/v1/me/im-bindings/{channel}/authorize` | 发起 OAuth 授权跳转 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
+| DELETE | `/api/v1/me/im-bindings/{channel}` | 解绑指定 IM 通道 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
+| GET | `/api/v1/auth/im/{channel}/callback` | IM OAuth 回调（公开路径，state 校验） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/im_auth.py` |
 | GET/POST | `/api/v1/resource-grants` | AUTH-004 资源授权列表/创建 | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
 | DELETE | `/api/v1/resource-grants/{grant_id}` | 删除单条资源授权（204） | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
 | GET/POST | `/api/v1/rls/dimensions` | 权限维度类型（写操作 admin 守卫 → 403 `DIMENSION_FORBIDDEN`） | 内部 | 一期 | AUTH-005 | 已实现 | `backend/app/api/v1/rls.py` |

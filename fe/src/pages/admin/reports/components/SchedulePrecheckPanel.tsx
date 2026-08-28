@@ -4,6 +4,7 @@ import { CheckCircle2, CircleAlert, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { emailSmtpSlotLabel } from "@/lib/emailSmtpSlots";
+import { IM_CHANNEL_LABELS } from "@/lib/imChannels";
 import { cn } from "@/lib/utils";
 import {
   SCHEDULE_DELIVERY_HEALTH_KEY,
@@ -14,6 +15,7 @@ import {
 type DeliveryHealth = {
   status: "reachable" | "unreachable" | "unconfigured";
   error?: string | null;
+  im?: Record<string, { configured?: boolean; error?: string | null }>;
 };
 
 type PrecheckItem = {
@@ -146,6 +148,24 @@ export function useSchedulePrecheckItems(input: {
         : `${emailSmtpSlotLabel(input.emailSmtpSlot ?? "qq")} 发信通道未配置或不可达；激活后执行可能投递失败，请联系管理员。`),
     blocking: false,
   });
+
+  const imHealth = delivery?.im;
+  if (imHealth) {
+    for (const channel of ["wecom", "dingtalk", "feishu"] as const) {
+      const row = imHealth[channel];
+      const ok = Boolean(row?.configured);
+      items.push({
+        id: `im-${channel}`,
+        label: `${IM_CHANNEL_LABELS[channel]}工作通知`,
+        ok,
+        detail: ok
+          ? "应用已配置且探测通过；收件人须在个人中心绑定自己的账号。"
+          : row?.error || "应用未配置或探测未通过，请联系管理员在平台对接中配置。",
+        blocking: false,
+        fixHint: ok ? undefined : "系统管理 → 平台对接 → 工作通知",
+      });
+    }
+  }
 
   if (input.requireVisualExport !== false) {
     const exportHealth = exportQuery.data;

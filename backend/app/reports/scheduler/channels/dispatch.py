@@ -68,6 +68,7 @@ def _person_step(
     summary: str,
     artifact_ref: str,
     settings: Settings,
+    session=None,
 ) -> dict[str, Any]:
     label = _IM_LABELS.get(channel, channel)
     if not targets:
@@ -85,6 +86,7 @@ def _person_step(
         summary=summary,
         artifact_ref=artifact_ref,
         settings=settings,
+        session=session,
     )
     if missing:
         step = {
@@ -113,6 +115,7 @@ def deliver_to_channels(
     im_missing: dict[str, list[str]] | None = None,
     notify_group: bool = False,
     email_smtp_slot: str | None = EMAIL_SLOT_QQ,
+    session=None,
 ) -> dict[str, Any]:
     settings = settings or get_settings()
     if mock_mode is not None:
@@ -142,6 +145,7 @@ def deliver_to_channels(
                 summary=summary,
                 artifact_ref=artifact_ref,
                 settings=settings,
+                session=session,
             ))
             if notify_group:
                 steps.append(_send_group_webhook(

@@ -9,13 +9,21 @@ from sqlalchemy.orm import Session
 from app.auth.audit.write_hooks import audit_kwargs
 from app.auth.deps import UserContext, require_permission
 from app.auth.models import get_meta_session
-from app.core.platform_config import email_service
-from app.core.platform_config.schemas import EmailDeliveryConfigOut, EmailDeliveryConfigPut, EmailDeliverySlotsOut
+from app.core.platform_config import email_service, im_service
+from app.core.platform_config.schemas import (
+    EmailDeliveryConfigOut,
+    EmailDeliveryConfigPut,
+    EmailDeliverySlotsOut,
+    ImDeliveryConfigOut,
+    ImDeliveryConfigPut,
+    ImDeliverySlotsOut,
+)
 from app.core.platform_config.slots import EMAIL_SLOT_QQ, normalize_email_slot
 
 router = APIRouter(prefix="/platform/delivery", tags=["platform"])
 
 EmailSlotPath = Literal["qq", "163"]
+ImChannelPath = Literal["dingtalk", "wecom", "feishu"]
 
 
 def _db() -> Session:
@@ -31,6 +39,10 @@ def _error(exc: email_service.PlatformConfigError) -> JSONResponse:
         status_code=exc.status,
         content={"code": exc.code, "message": exc.message, "detail": None},
     )
+
+
+def _im_error(exc: email_service.PlatformConfigError) -> JSONResponse:
+    return _error(exc)
 
 
 @router.get("/email/slots", response_model=EmailDeliverySlotsOut)
@@ -114,5 +126,53 @@ def delete_email_delivery_config(
     return email_service.clear_email_config(
         db,
         EMAIL_SLOT_QQ,
+        **audit_kwargs(actor.id, actor.username),
+    )
+
+
+@router.get("/im/slots", response_model=ImDeliverySlotsOut)
+def list_im_delivery_slots(
+    _: Annotated[UserContext, Depends(require_permission("system:platform_connect.read"))],
+    db: Annotated[Session, Depends(_db)],
+) -> ImDeliverySlotsOut:
+    return im_service.list_im_configs(db)
+
+
+@router.get("/im/{channel}", response_model=ImDeliveryConfigOut)
+def get_im_delivery_config(
+    channel: ImChannelPath,
+    _: Annotated[UserContext, Depends(require_permission("system:platform_connect.read"))],
+    db: Annotated[Session, Depends(_db)],
+) -> ImDeliveryConfigOut:
+    return im_service.get_im_config(db, channel)
+
+
+@router.put("/im/{channel}", response_model=ImDeliveryConfigOut)
+def put_im_delivery_config(
+    channel: ImChannelPath,
+    payload: ImDeliveryConfigPut,
+    actor: Annotated[UserContext, Depends(require_permission("system:platform_connect.manage"))],
+    db: Annotated[Session, Depends(_db)],
+) -> ImDeliveryConfigOut | JSONResponse:
+    try:
+        return im_service.save_im_config(
+            db,
+            channel,
+            payload,
+            **audit_kwargs(actor.id, actor.username),
+        )
+    except email_service.PlatformConfigError as exc:
+        return _im_error(exc)
+
+
+@router.delete("/im/{channel}", response_model=ImDeliveryConfigOut)
+def delete_im_delivery_config(
+    channel: ImChannelPath,
+    actor: Annotated[UserContext, Depends(require_permission("system:platform_connect.manage"))],
+    db: Annotated[Session, Depends(_db)],
+) -> ImDeliveryConfigOut:
+    return im_service.clear_im_config(
+        db,
+        channel,
         **audit_kwargs(actor.id, actor.username),
     )

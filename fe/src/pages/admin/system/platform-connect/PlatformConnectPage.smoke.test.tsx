@@ -23,25 +23,44 @@ function renderPage() {
 }
 
 describe("PlatformConnectPage smoke", () => {
-  beforeEach(() => mockApiFetch.mockReset());
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+    mockApiFetch.mockImplementation((path: string) => {
+      if (path.includes("/im/slots")) {
+        return Promise.resolve({
+          items: [
+            { channel: "wecom", label: "企业微信", configured: false, source: "none", hasSecret: false },
+            { channel: "dingtalk", label: "钉钉", configured: false, source: "none", hasSecret: false },
+            { channel: "feishu", label: "飞书", configured: false, source: "none", hasSecret: false },
+          ],
+        });
+      }
+      return Promise.resolve({
+        items: [
+          {
+            slot: "qq",
+            label: "QQ 邮箱",
+            configured: false,
+            source: "none",
+            hasPassword: false,
+          },
+        ],
+      });
+    });
+  });
   afterEach(() => cleanup());
 
-  it("shows honest scope banner for email-only delivery", async () => {
-    mockApiFetch.mockResolvedValue({
-      items: [
-        {
-          slot: "qq",
-          label: "QQ 邮箱",
-          configured: false,
-          source: "none",
-          hasPassword: false,
-        },
-      ],
-    });
+  it("shows scope banner for email and IM work notice", async () => {
     renderPage();
-    expect(await screen.findByTestId("platform-connect-scope-hint")).toHaveTextContent(
-      "目前仅支持邮件 SMTP",
-    );
-    expect(screen.getByTestId("platform-connect-scope-hint")).toHaveTextContent("下一迭代");
+    const hint = await screen.findByTestId("platform-connect-scope-hint");
+    expect(hint).toHaveTextContent("邮件 SMTP");
+    expect(hint).toHaveTextContent("工作通知");
+    expect(hint).toHaveTextContent("个人中心");
+  });
+
+  it("renders work notice section", async () => {
+    renderPage();
+    expect(await screen.findByText("工作通知")).toBeInTheDocument();
+    expect(await screen.findByText("企业微信")).toBeInTheDocument();
   });
 });
