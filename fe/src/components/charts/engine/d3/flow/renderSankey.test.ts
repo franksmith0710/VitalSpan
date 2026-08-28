@@ -3,6 +3,9 @@ import { finalizeEmbeddedChartSvgs } from "@/components/charts/engine/d3/core/sc
 import { runD3Renderer } from "@/components/charts/engine/d3/core/d3RendererSession";
 import { renderD3SankeyChart } from "./renderSankey";
 import { getAntvThemeTokens } from "@/components/charts/engine/antv/theme";
+import {
+  assertVerticalLabelsNoOverlap,
+} from "@/components/charts/engine/d3/core/labelSpacingTestHelpers";
 
 const links = [
   { source: "A", target: "B", value: 10 },
@@ -115,5 +118,62 @@ describe("renderD3SankeyChart", () => {
 
     expect(narrowWidth).toBe(8);
     expect(wideWidth).toBe(24);
+  });
+
+  it("stacks dense sankey columns within plot height", () => {
+    const manyLinks = Array.from({ length: 18 }, (_, i) => ({
+      source: "企业直销",
+      target: `2024-${String(i + 1).padStart(2, "0")}-01`,
+      value: 12 + i,
+    }));
+    const container = document.createElement("div");
+    runD3Renderer(container, () =>
+      renderD3SankeyChart(container, {
+        width: 320,
+        height: 200,
+        colors: ["#465fff", "#12b76a", "#f79009"],
+        theme: getAntvThemeTokens("light"),
+        showLabel: true,
+        showTooltip: false,
+        showLegend: false,
+        labelFontSize: 10,
+        options: { data: manyLinks },
+      }),
+    );
+
+    const bottoms = [...container.querySelectorAll("rect.node")].map((node) => {
+      const y = Number(node.getAttribute("y") ?? 0);
+      const h = Number(node.getAttribute("height") ?? 0);
+      return y + h;
+    });
+    expect(bottoms.length).toBeGreaterThan(0);
+    expect(Math.max(...bottoms)).toBeLessThan(156);
+  });
+
+  it("thins dense sankey labels instead of rendering every node label", () => {
+    const manyLinks = Array.from({ length: 18 }, (_, i) => ({
+      source: "企业直销",
+      target: `2024-${String(i + 1).padStart(2, "0")}-01`,
+      value: 12 + i,
+    }));
+    const container = document.createElement("div");
+    runD3Renderer(container, () =>
+      renderD3SankeyChart(container, {
+        width: 320,
+        height: 200,
+        colors: ["#465fff", "#12b76a", "#f79009"],
+        theme: getAntvThemeTokens("light"),
+        showLabel: true,
+        showTooltip: false,
+        showLegend: false,
+        labelFontSize: 10,
+        options: { data: manyLinks },
+      }),
+    );
+
+    const labels = [...container.querySelectorAll("text.node-label")];
+    expect(labels.length).toBeGreaterThan(0);
+    expect(labels.length).toBeLessThan(18);
+    assertVerticalLabelsNoOverlap(container, "text.node-label", 10);
   });
 });

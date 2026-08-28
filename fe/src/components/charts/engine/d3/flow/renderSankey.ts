@@ -4,6 +4,7 @@ import { radialMargin } from "@/components/charts/engine/d3/core/margin";
 import { createTooltip } from "@/components/charts/engine/d3/core/tooltip";
 import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/types";
 import { formatChartValue } from "@/lib/chartValueFormat";
+import { pickSankeyVisibleLabelIds } from "@/components/charts/engine/d3/core/nodeLabelThinning";
 
 type SankeyLink = { source: string; target: string; value: number };
 type LayoutNode = { id: string; depth: number; value: number; y: number; height: number; x: number };
@@ -50,19 +51,24 @@ function layoutSankeyNodes(
   for (const [depth, ids] of byDepth.entries()) {
     const sorted = [...ids].sort((a, b) => (totals.get(b) ?? 0) - (totals.get(a) ?? 0));
     const sum = d3.sum(sorted, (id) => totals.get(id) ?? 0) || 1;
-    const stackBudget = Math.max(0, innerH - nodePadding * (sorted.length + 1));
+    const count = sorted.length;
+    const gap =
+      count > 1
+        ? Math.min(nodePadding, Math.max(1, (innerH - nodePadding * 2) / Math.max(1, count * 6)))
+        : 0;
+    const stackBudget = Math.max(0, innerH - nodePadding * 2 - gap * Math.max(0, count - 1));
     const rawHeights = sorted.map((id) => {
       const value = totals.get(id) ?? 0;
-      return Math.max(8, (value / sum) * Math.max(0, innerH - nodePadding * 2));
+      return Math.max(4, (value / sum) * Math.max(0, innerH - nodePadding * 2));
     });
-    const rawStack = d3.sum(rawHeights) + nodePadding * Math.max(0, sorted.length - 1);
+    const rawStack = d3.sum(rawHeights);
     const scale = rawStack > stackBudget && rawStack > 0 ? stackBudget / rawStack : 1;
     let y = nodePadding;
     sorted.forEach((id, index) => {
       const value = totals.get(id) ?? 0;
-      const height = Math.max(4, rawHeights[index]! * scale);
+      const height = Math.max(2, rawHeights[index]! * scale);
       nodes.push({ id, depth, value, y, height, x: depth * colW });
-      y += height + nodePadding;
+      y += height + gap;
     });
   }
   return nodes;
@@ -92,7 +98,7 @@ function linkPath(
 export function renderD3SankeyChart(container: HTMLElement, config: D3RenderConfig): () => void {
   container.replaceChildren();
 
-  const { width, height, colors, theme, showTooltip, valueFormat, options, depthVisual, labelFontSize } = config;
+  const { width, height, colors, theme, showLabel, showTooltip, valueFormat, options, depthVisual, labelFontSize } = config;
   const depthLevel = resolveEffectiveDepth(depthVisual);
   const defaultLinkOpacity = depthLevel === "enhanced" ? 0.38 : depthLevel === "standard" ? 0.32 : 0.28;
   const sourceField = String(options.sourceField ?? "source");
@@ -178,17 +184,22 @@ export function renderD3SankeyChart(container: HTMLElement, config: D3RenderConf
     .attr("fill", (d) => colorScale(d.id) ?? colors[0] ?? "#465fff")
     .attr("opacity", 0.92);
 
-  g.selectAll<SVGTextElement, LayoutNode>("text.node-label")
-    .data(nodes)
-    .join("text")
-    .attr("class", "node-label")
-    .attr("x", (d) => d.x + (d.depth === 0 ? -6 : nodeWidth + 6))
-    .attr("y", (d) => d.y + d.height / 2)
-    .attr("text-anchor", (d) => (d.depth === 0 ? "end" : "start"))
-    .attr("dy", "0.35em")
-    .attr("fill", theme.axisLabel)
-    .style("font-size", `${labelFontSize}px`)
-    .text((d) => formatSankeyNodeLabel(d.id));
+  if (showLabel) {
+    const visibleLabelIds = pickSankeyVisibleLabelIds(nodes, labelFontSize, (node) =>
+      formatSankeyNodeLabel(node.id),
+    );
+    g.selectAll<SVGTextElement, LayoutNode>("text.node-label")
+      .data(nodes.filter((node) => visibleLabelIds.has(node.id)))
+      .join("text")
+      .attr("class", "node-label")
+      .attr("x", (d) => d.x + (d.depth === 0 ? -6 : nodeWidth + 6))
+      .attr("y", (d) => d.y + d.height / 2)
+      .attr("text-anchor", (d) => (d.depth === 0 ? "end" : "start"))
+      .attr("dy", "0.35em")
+      .attr("fill", theme.axisLabel)
+      .style("font-size", `${labelFontSize}px`)
+      .text((d) => formatSankeyNodeLabel(d.id));
+  }
 
   return () => container.replaceChildren();
 }

@@ -358,6 +358,11 @@ export function readChartDeStyle(cfg: ChartViewConfig): ChartDeStyle {
   return raw as ChartDeStyle;
 }
 
+/** D3 画布 contentKey：deStyle 任一绘制字段变更须触发重绘 */
+export function chartDeStyleRenderFingerprint(deStyle: ChartDeStyle): string {
+  return JSON.stringify(deStyle);
+}
+
 /** 组件 override → 看板默认；均未配置时 undefined（由 resolveChartColors 回退 default） */
 export function resolveEffectivePaletteId(
   cfg: ChartViewConfig,

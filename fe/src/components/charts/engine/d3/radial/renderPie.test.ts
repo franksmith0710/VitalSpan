@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { runD3Renderer } from "@/components/charts/engine/d3/core/d3RendererSession";
 import { renderD3PieChart } from "./renderPie";
 import { getAntvThemeTokens } from "@/components/charts/engine/antv/theme";
 
@@ -191,5 +192,44 @@ describe("renderD3PieChart", () => {
     expect(container.textContent).toContain("华东");
     expect(container.textContent).toMatch(/60\.0%/);
     cleanup();
+  });
+
+  it("keeps viewport viewBox after finalize (outside labels do not shrink pie)", () => {
+    SVGElement.prototype.getBBox = () =>
+      ({
+        x: -160,
+        y: -40,
+        width: 720,
+        height: 360,
+      }) as DOMRect;
+
+    const container = document.createElement("div");
+    runD3Renderer(container, () =>
+      renderD3PieChart(container, {
+        width: 320,
+        height: 240,
+        colors: ["#465fff", "#12b76a"],
+        theme: getAntvThemeTokens("light"),
+        showLabel: true,
+        showTooltip: false,
+        showLegend: false,
+        labelFontSize: 11,
+        options: {
+          data: [
+            { type: "海南省", value: 48102 },
+            { type: "广东省", value: 277701 },
+          ],
+          angleField: "value",
+          colorField: "type",
+          __pieLabelPosition: "outside",
+          __pieShowPercent: true,
+        },
+      }),
+    );
+
+    const svg = container.querySelector("svg");
+    expect(svg?.getAttribute("data-vs-embedded-fit")).toBe("viewport");
+    expect(svg?.getAttribute("viewBox")).toBe("0 0 320 240");
+    expect(svg?.style.overflow).toBe("hidden");
   });
 });

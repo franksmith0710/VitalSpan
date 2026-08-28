@@ -28,6 +28,7 @@ import {
   buildGraphFitTransform,
   computeGraphContentBounds,
 } from "@/components/charts/engine/d3/graph/graphFitView";
+import { pickGraphVisibleLabelIds } from "@/components/charts/engine/d3/core/nodeLabelThinning";
 
 type GraphNodeInput = { id: string; data?: { label?: string } };
 type GraphEdgeInput = { source: string; target: string; weight?: number };
@@ -276,6 +277,20 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
       .text((d) => d.label);
   }
 
+  const syncLabelVisibility = () => {
+    if (!showLabel) return;
+    const visibleIds = pickGraphVisibleLabelIds({
+      nodes: simNodes,
+      fontSize: labelFontSize,
+      nodeRadius,
+      nodeDegree,
+      leftIds: bipartiteSides.leftIds,
+      rightIds: bipartiteSides.rightIds,
+      middleIds: bipartiteSides.middleIds,
+    });
+    node.select("text").style("display", (d) => (visibleIds.has(d.id) ? null : "none"));
+  };
+
   const zoomBehavior = d3
     .zoom<SVGSVGElement, unknown>()
     .scaleExtent([0.2, 4])
@@ -374,6 +389,7 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
   const finishLayout = () => {
     freezeLayout();
     syncPaint();
+    syncLabelVisibility();
     applyFitToView();
   };
 
@@ -442,6 +458,7 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
         d.fy = d.y;
       }
       freezeLayout();
+      syncLabelVisibility();
     });
   node.call(dragBehavior);
 

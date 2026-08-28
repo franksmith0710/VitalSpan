@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { renderD3TreemapChart } from "./renderTreemap";
 import { getAntvThemeTokens } from "@/components/charts/engine/antv/theme";
+import { assertTreemapVisibleLabelsNoOverlap } from "@/components/charts/engine/d3/core/labelSpacingTestHelpers";
 
 describe("renderD3TreemapChart", () => {
   it("applies treemap shape options and label font size", () => {
@@ -64,6 +65,44 @@ describe("renderD3TreemapChart", () => {
     expect(tspans[0]?.textContent).toBe("2025-01-20");
     expect(tspans[1]?.textContent).toContain("22,497");
     expect(tspans[2]?.textContent).toMatch(/%$/);
+    cleanup();
+  });
+
+  it("thins crowded treemap labels by cell area priority", () => {
+    const data = [
+      { name: "big", value: 120 },
+      ...Array.from({ length: 16 }, (_, index) => ({
+        name: `2025-06-${String(index + 1).padStart(2, "0")}`,
+        value: 5,
+      })),
+    ];
+    const container = document.createElement("div");
+    const cleanup = renderD3TreemapChart(container, {
+      width: 320,
+      height: 200,
+      colors: ["#465fff", "#12b76a", "#f79009", "#f04438"],
+      theme: getAntvThemeTokens("light"),
+      showLabel: true,
+      showTooltip: false,
+      showLegend: false,
+      labelFontSize: 12,
+      labelContent: {
+        showDimension: true,
+        showIndicator: true,
+        showPercent: true,
+      },
+      options: {
+        data,
+        __treemapPaddingInner: 0,
+        __treemapPaddingOuter: 4,
+        __treemapCellRadius: 0,
+      },
+    });
+
+    const labels = container.querySelectorAll("text");
+    expect(labels.length).toBeGreaterThan(0);
+    expect(labels.length).toBeLessThan(data.length);
+    assertTreemapVisibleLabelsNoOverlap(container, 12);
     cleanup();
   });
 

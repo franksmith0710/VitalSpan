@@ -9,6 +9,7 @@ import type { D3Datum, D3RenderConfig } from "@/components/charts/engine/d3/type
 import { DEFAULT_PIE_OUTER_RADIUS_PERCENT } from "@/lib/chartDeStyleBlocks";
 import { renderConfiguredInlineLegend, type D3LegendItem } from "@/components/charts/engine/d3/core/d3Legend";
 import { applyScalableChartSvgDisplay } from "@/components/charts/engine/d3/core/sceneGraph";
+import { computePieLayout } from "./pieLayout";
 import {
   estimatePieOutsideLabelWidth,
   formatPieSliceLabel,

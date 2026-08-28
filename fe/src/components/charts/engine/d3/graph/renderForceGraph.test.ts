@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { renderD3ForceGraph } from "@/components/charts/engine/d3/graph/renderForceGraph";
 import {
   buildGraphLayoutStateKey,
@@ -33,6 +33,28 @@ const baseConfig = {
 };
 
 describe("renderD3ForceGraph", () => {
+  beforeEach(() => {
+    SVGElement.prototype.getBBox = () =>
+      ({
+        x: 0,
+        y: 0,
+        width: 480,
+        height: 360,
+      }) as DOMRect;
+    Object.defineProperty(SVGSVGElement.prototype, "width", {
+      configurable: true,
+      get() {
+        return { baseVal: { value: 480 } };
+      },
+    });
+    Object.defineProperty(SVGSVGElement.prototype, "height", {
+      configurable: true,
+      get() {
+        return { baseVal: { value: 360 } };
+      },
+    });
+  });
+
   afterEach(() => {
     resetForceGraphLayoutStateForTests();
   });
@@ -77,6 +99,49 @@ describe("renderD3ForceGraph", () => {
       fy: expect.any(Number),
     });
 
+    document.body.removeChild(container);
+  });
+
+  it("thins dense bipartite column labels after layout settles", async () => {
+    const leftNodes = Array.from({ length: 18 }, (_, index) => ({
+      id: `2025-06-${String(index + 1).padStart(2, "0")}`,
+      data: { label: `2025-06-${String(index + 1).padStart(2, "0")}` },
+    }));
+    const rightNodes = [
+      { id: "电商平台", data: { label: "电商平台" } },
+      { id: "电话销售", data: { label: "电话销售" } },
+      { id: "企业直销", data: { label: "企业直销" } },
+      { id: "线下门店", data: { label: "线下门店" } },
+    ];
+    const edges = leftNodes.flatMap((node) =>
+      rightNodes.map((target) => ({ source: node.id, target: target.id, weight: 1 })),
+    );
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+
+    const dispose = renderD3ForceGraph(container, {
+      ...baseConfig,
+      instanceKey: "force-graph-dense-bipartite",
+      options: {
+        nodes: [...leftNodes, ...rightNodes],
+        edges,
+        layout: { type: "force" },
+      },
+    });
+
+    await new Promise<void>((resolve) => {
+      window.setTimeout(resolve, 220);
+    });
+
+    const texts = [...container.querySelectorAll("g.node text")];
+    const visible = texts.filter((node) => node.style.display !== "none");
+    const hidden = texts.filter((node) => node.style.display === "none");
+    expect(visible.length).toBeGreaterThan(0);
+    expect(hidden.length).toBeGreaterThan(0);
+    expect(visible.length).toBeLessThan(texts.length);
+
+    dispose();
     document.body.removeChild(container);
   });
 });

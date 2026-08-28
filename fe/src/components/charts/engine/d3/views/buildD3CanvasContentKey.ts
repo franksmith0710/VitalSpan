@@ -1,7 +1,7 @@
 import type { ChartRenderPlan } from "@/components/charts/engine/buildChartRenderPlan";
 import type { ChartStyleContext } from "@/components/charts/engine/types";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
-import { readChartDeStyle } from "@/lib/chartDeStyle";
+import { chartDeStyleRenderFingerprint } from "@/lib/chartDeStyle";
 
 type GraphNodeInput = { id: string; data?: { label?: string } };
 type GraphEdgeInput = { source: string; target: string };
@@ -38,7 +38,7 @@ export function buildD3CanvasContentKey(input: {
   chartConfig?: ChartViewConfig;
   chartDataRevision?: string;
 }): string {
-  const deStyle = input.chartConfig ? readChartDeStyle(input.chartConfig) : {};
+  const { style } = input;
   return [
     input.chartDataRevision ?? "",
     input.chartType,
@@ -47,13 +47,20 @@ export function buildD3CanvasContentKey(input: {
     input.plan.empty ? 1 : 0,
     input.rowCount,
     input.rowSample ?? "",
-    input.style.depthVisual ?? "off",
-    input.style.showLabel ? 1 : 0,
-    input.style.showTooltip ? 1 : 0,
-    input.style.scheme,
-    input.style.chartColors.join(","),
-    deStyle.paletteId ?? "",
-    deStyle.paletteOpacity ?? "",
+    style.depthVisual ?? "off",
+    style.showLabel ? 1 : 0,
+    style.showTooltip ? 1 : 0,
+    style.seriesGradient ? 1 : 0,
+    style.dataZoom ? 1 : 0,
+    style.scheme,
+    style.chartColors.join(","),
+    style.effectivePaletteId ?? "",
+    style.paletteOpacity ?? "",
+    chartDeStyleRenderFingerprint(style.deStyle),
+    style.labelPresentation.fontSize,
+    style.labelPresentation.color ?? "",
+    JSON.stringify(style.labelContent),
+    JSON.stringify(style.deFeatures ?? {}),
     graphPlanSignature(input.plan),
   ].join("|");
 }
