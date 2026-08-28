@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useRef, type RefObject } from "react";
 import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelShapePlayerContext";
-import { PIXEL_LAYOUT_GEOMETRY_COMMITTED } from "@/components/dashboard/pixelCanvas/pixelShapeLiveResize";
+import {
+  geometryCommitAffectsWidget,
+  PIXEL_LAYOUT_GEOMETRY_COMMITTED,
+  resolvePixelWidgetIdFromElement,
+} from "@/components/dashboard/pixelCanvas/pixelShapeLiveResize";
 import { usePixelShapeLiveResize } from "@/hooks/usePixelShapeLiveResize";
 
 /**
  * 看板内嵌图表尺寸同步（对标 DataEase isPlayer §4.2）：
  * - 交互期：live event → rAF 合帧 → 引擎 changeSize（真实比例，禁止 canvas CSS 拉伸）
- * - 松手：geometry committed 同步 remeasure，再清 isPlayer
+ * - 松手：geometry committed 同步 remeasure，再清 isPlayer（仅几何变化的组件）
  * - isPlayer 期间跳过 ResizeObserver（防双路）
  */
 export function useEmbeddedChartLiveResize(
@@ -67,16 +71,17 @@ export function useEmbeddedChartLiveResize(
 
   useEffect(() => {
     if (!enabled) return;
-    document.addEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, flushCommitResize);
-    return () => document.removeEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, flushCommitResize);
-  }, [enabled, flushCommitResize]);
-
-  useEffect(() => {
-    if (!enabled) return;
-    if (!playing) {
+    const onGeometryCommitted = (event: Event) => {
+      const widgetId = resolvePixelWidgetIdFromElement(containerRef.current);
+      if (!geometryCommitAffectsWidget(event, widgetId)) return;
       flushCommitResize();
-    }
-  }, [enabled, playing, flushCommitResize]);
+    };
+    document.addEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, onGeometryCommitted);
+    return () => document.removeEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, onGeometryCommitted);
+  }, [enabled, containerRef, flushCommitResize]);
+
+  // 松手补测仅由 geometry-committed（且仅宽高变化的组件）触发；
+  // 勿在 playing→false 时全量 flush，否则纯移动也会重绘。
 
   useEffect(() => {
     const el = containerRef.current;

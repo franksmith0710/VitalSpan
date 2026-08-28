@@ -118,12 +118,24 @@ function mergeThemeVariantIntoConfig(
   config: DashboardStyleConfig,
   variant: ThemeVariantFields,
 ): DashboardStyleConfig {
+  const nextImage = variant.canvasBackgroundImage;
+  const nextDecor = variant.canvasDecorPresetId;
+  // defaults / extract 常带显式 undefined；勿用它盖掉根上已选的平铺装饰
+  const keepRootTile =
+    Boolean(config.canvasDecorPresetId && config.canvasDecorPresetId !== "none") ||
+    Boolean(config.canvasBackgroundImage?.trim());
   return {
     ...config,
     canvasBackground: variant.canvasBackground,
-    canvasBackgroundImage: variant.canvasBackgroundImage,
+    canvasBackgroundImage:
+      nextImage?.trim() || (keepRootTile ? config.canvasBackgroundImage : nextImage),
     canvasBackgroundCustom: variant.canvasBackgroundCustom,
-    canvasDecorPresetId: variant.canvasDecorPresetId,
+    canvasDecorPresetId:
+      nextDecor && nextDecor !== "none"
+        ? nextDecor
+        : keepRootTile
+          ? config.canvasDecorPresetId
+          : nextDecor,
     themeAccent: variant.themeAccent,
     widgetStyle: {
       ...config.widgetStyle,
@@ -163,13 +175,22 @@ function sanitizeThemeVariant(
   scheme: ColorScheme,
 ): ThemeVariantFields {
   const defaults = defaultThemeVariant(scheme);
+  const keepTileDecor =
+    Boolean(variant.canvasBackgroundImage?.trim()) ||
+    Boolean(variant.canvasDecorPresetId && variant.canvasDecorPresetId !== "none");
   if (scheme === "dark") {
     if (variant.canvasBackgroundCustom) {
       return variant;
     }
     const bg = variant.canvasBackground?.trim();
     if (!bg || isLightCanvasColor(bg)) {
-      return { ...defaults, ...variant, ...defaults, canvasBackgroundImage: undefined };
+      return {
+        ...defaults,
+        ...variant,
+        ...defaults,
+        canvasBackgroundImage: keepTileDecor ? variant.canvasBackgroundImage : undefined,
+        canvasDecorPresetId: keepTileDecor ? variant.canvasDecorPresetId : undefined,
+      };
     }
     return variant;
   }
@@ -179,7 +200,8 @@ function sanitizeThemeVariant(
       ...defaults,
       ...variant,
       canvasBackground: defaults.canvasBackground,
-      canvasBackgroundImage: undefined,
+      canvasBackgroundImage: keepTileDecor ? variant.canvasBackgroundImage : undefined,
+      canvasDecorPresetId: keepTileDecor ? variant.canvasDecorPresetId : defaults.canvasDecorPresetId,
     };
   }
   return variant;

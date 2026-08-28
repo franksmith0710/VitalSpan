@@ -158,6 +158,8 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const showPlaceholderHint = capped.length === 0 && Boolean(mapPlaceholderHint);
 
   const playing = usePixelShapePlayer();
+  const playingRef = useRef(playing);
+  playingRef.current = playing;
   const visualScale = useChartVisualScale();
   const viewportTransforming = useDataScreenViewportTransforming();
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -648,19 +650,14 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   ]);
 
   useEffect(() => {
-    if (!fill || plan.empty) return;
-    if (!playing) onCommitResizeRef.current();
-  }, [fill, plan.empty, playing]);
+    if (!props.layoutFootprint || playingRef.current) return;
+    onCommitResizeRef.current();
+  }, [props.layoutFootprint?.width, props.layoutFootprint?.height]);
 
   useEffect(() => {
-    if (!props.layoutFootprint || playing) return;
+    if (!fill || plan.empty || playingRef.current || viewportTransforming) return;
     onCommitResizeRef.current();
-  }, [props.layoutFootprint?.width, props.layoutFootprint?.height, playing]);
-
-  useEffect(() => {
-    if (!fill || plan.empty || playing || viewportTransforming) return;
-    onCommitResizeRef.current();
-  }, [visualScale, fill, plan.empty, playing, viewportTransforming]);
+  }, [visualScale, fill, plan.empty, viewportTransforming]);
 
   useEffect(() => {
     renderGenRef.current += 1;

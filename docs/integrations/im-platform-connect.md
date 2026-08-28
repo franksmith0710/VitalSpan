@@ -9,7 +9,7 @@
 | 凭据 | **need**（仓库 `.dev` 与家目录均无 IM 应用 `credential_env`） |
 | smoke | `contracts/im-platform-connect.smoke.py` ｜ 最近成功工件：未跑（缺应用凭证） |
 | 状态 | draft（选型已八维推荐；待凭据真打后升 A） |
-| 日期 | 2026-08-13 |
+| 日期 | 2026-08-28（SDK 探测闭合；发信 2026-08-28） |
 
 ## 1. 目标与边界
 
@@ -32,23 +32,28 @@
 
 ## 2. Integration Card（摘要）
 
-- 仓内痕迹：`backend/app/reports/scheduler/channels/work_notice.py` 已用 **httpx** 调官方 HTTPS（gettoken + 发信）；`probe_im_apps` **只检查 env 是否非空**，未打厂商。依赖 `httpx>=0.28`。无官方 SDK。
-- 宣称 vs 代码：**矛盾（待实现闭合）** — PRD/arch 写按人投递已实现（发信路径真 HTTP）；「应用已配置」现为字段非空，不是探测；绑定仍为管理员手填，无授权跳转。
-- 环境：无沙箱账号；env 名已在 `backend/.env.example`。`.dev` `integrations[]` 未登记 IM。
+- 仓内实现（2026-08-28）：`backend/app/reports/scheduler/channels/im_sdk/` — 飞书 **`lark-oapi`**、钉钉 **`dingtalk-sdk`**（oapi `asyncsend_v2`）、企微 **`wechatpy`**（官方 REST 封装；腾讯无统一 PyPI 官方包）。按人发信：`work_notice.py` → `im_sdk/*`；群 webhook 仍为 httpx POST（厂商固定 URL，无 SDK）。
+- 探测：`probe_im_apps` / `im_sdk/probe.py` 与发信同栈调 gettoken（`tenant_access_token`），成功才 `configured: true`；失败带 `error`；60s 内存缓存。
+- smoke：`contracts/im-platform-connect.smoke.py` 复用 `probe_channel_credentials`（SDK 路径，非裸 httpx）。
+- 仍未闭合：浏览器授权绑定（管理员手填账号）；管理面 IM 凭证入库 SM4（蓝图 S1）。
+- 环境：env 名见 `backend/.env.example`；真打 smoke 需应用 Secret（§9）。
 
 ## 3. 可行性结论
 
-**B**：官方契约公开可接；本机/家目录无应用 Secret，不能真打 smoke。不得宣称已对接授权跳转。发信适配器已存在，但探测与绑定仍缺。
+**B→B+**：发信与探测已 SDK 化且契约一致；无凭据仍不能真打 smoke。不得宣称已对接授权跳转。
 
-## 4. 候选方案（2–3）
+## 4. 实现选型（2026-08-28 落地）
 
-| 方案 | 来源 | 契合本栈 | 风险 | 备注 |
-|------|------|----------|------|------|
-| A 自研 httpx 调官方 REST | 企微/钉钉/飞书开发者文档（下表链接） | 高：仓内已用于发信 | 须自维护 token 缓存与错误码 | **推荐** |
-| B 三家官方 Python SDK | 钉钉/飞书官方 SDK；企微无单一官方 PySDK | 中：三套依赖 | 体积、许可证、版本漂移 | 不选 |
-| C 社区聚合库 | 如 wechatpy 等 | 低 | 维护与国密边界 | 不选 |
+| 通道 | 探测 + 按人发信 | 说明 |
+|------|-----------------|------|
+| 飞书 | `lark-oapi` | 官方 OpenAPI SDK |
+| 钉钉 | `dingtalk-sdk` | 封装 oapi `gettoken` + `asyncsend_v2`；新版 `alibabacloud-dingtalk` 暂无 agent 工作通知等价 API |
+| 企微 | `wechatpy` | 封装官方 REST；示范库 `weworkapi_python` 未上 PyPI |
+| 群 webhook | `httpx` | 厂商 webhook URL，直 POST JSON |
 
-### 4.1 八维对照
+历史八维表（§4.1）为 2026-08-13 调研记录；**现行以本表为准**。
+
+## 4.1 历史候选方案（2026-08-13 调研归档）
 
 无成功 smoke → 「生产诚实」「交付可验证」各 ≤ 60。
 
@@ -64,8 +69,7 @@
 | 交付可验证 | 55 | 55 | 45 |
 | **总分** | **78** | **71** | **56** |
 
-**选定**：方案 A（总分 78）。tie-break：与现有 `work_notice.py` 同端口，厂商类型不进核心。  
-`auto_best`：否（attended 调研；用户已确认蓝图选型方向）。
+**选定（历史）**：方案 A（总分 78）。**现行**：混合 SDK（见 §4 实现选型）。
 
 ### 4.2 非显然否决
 
@@ -118,7 +122,7 @@
 | 场景 | 期望可见行为 | 对应测试 |
 |------|----------------|----------|
 | 依赖超时 | 8s 超时后该通道失败，不标已配置/已送达 | 未落（`failure_semantics_tested: false`） |
-| 鉴权失效 | gettoken 非 0 / 401 → 探测失败、发信失败人话 | 未落 |
+| 鉴权失效 | gettoken 非 0 / 401 → 探测失败、发信失败人话 | `tests/test_im_probe.py`（mock SDK） |
 | 限流 429 | 有限退避后仍失败则失败，不假成功 | 未落 |
 | 幂等 / 重试 | 授权 code 禁止重放；发信按执行记录不重复当成功 | 未落 |
 
@@ -128,10 +132,9 @@
 
 | 项 | 值 |
 |----|-----|
-| 脚本 | `contracts/im-platform-connect.smoke.py` |
-| 打向 | `qyapi.weixin.qq.com` / `oapi.dingtalk.com` / `open.feishu.cn`（非本地 mock） |
-| 凭据来源 | `WECOM_CORP_ID` `WECOM_SECRET`；`DINGTALK_APP_KEY` `DINGTALK_APP_SECRET`；`FEISHU_APP_ID` `FEISHU_APP_SECRET`（只记名） |
-| 断言 | HTTP 2xx + 厂商成功码 + 返回 token 字段 |
+| 脚本 | `contracts/im-platform-connect.smoke.py`（调用 `im_sdk.probe`） |
+| 打向 | `qyapi.weixin.qq.com` / `oapi.dingtalk.com` / `open.feishu.cn`（经 SDK，非本地 mock） |
+| 断言 | SDK gettoken 成功（与 `probe_im_apps` 同栈） |
 | 最近一次结果 | 未跑（缺凭据，见 §9） |
 
 授权跳转无法无浏览器/无用户完成，不进本 smoke；首版 smoke = 探测。

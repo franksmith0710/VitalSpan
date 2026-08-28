@@ -391,13 +391,21 @@ export function materializeDecorStyleConfig(
 ): DashboardStyleConfig {
   const scheme = config.colorScheme ?? "light";
   const hasImage = Boolean(config.canvasBackgroundImage?.trim());
+  const presetId = config.canvasDecorPresetId ?? resolveCanvasDecorPresetId(config);
+
+  // 平铺装饰：即使已有自定义底色，缺 image 时也必须补回（否则松手 hydrate 后点阵消失）
+  if (!hasImage && presetId && isDecorPresetId(presetId)) {
+    const patch = patchDecorPresetStyle(presetId, config);
+    if (Object.keys(patch).length === 0) return config;
+    return { ...config, ...patch };
+  }
+
   const hasCustomBg =
     Boolean(config.canvasBackgroundCustom) && Boolean(config.canvasBackground?.trim());
   if (hasImage || hasCustomBg) {
     return config;
   }
 
-  const presetId = config.canvasDecorPresetId ?? resolveCanvasDecorPresetId(config);
   if (!presetId || presetId === "none") {
     return config;
   }

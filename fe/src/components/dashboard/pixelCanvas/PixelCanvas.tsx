@@ -80,7 +80,10 @@ import { autoScrollPixelCanvasHost } from "./pixelCanvasAutoScroll";
 import { routePixelCanvasWheel } from "./pixelCanvasWheelScroll";
 import { pixelRectsNearlyEqual } from "./pixelRectEqual";
 import { PixelCanvasScaleProvider } from "./PixelCanvasScaleContext";
-import { dispatchPixelLayoutGeometryCommitted } from "./pixelShapeLiveResize";
+import {
+  collectGeometryChangedWidgetIds,
+  dispatchPixelLayoutGeometryCommitted,
+} from "./pixelShapeLiveResize";
 import { useDataScreenVisualScale } from "../screen/dataScreenVisualScaleContext";
 import {
   PIXEL_CANVAS_GUTTER,
@@ -224,10 +227,10 @@ export function PixelCanvas({
     [mode, topLevelWidgets],
   );
 
-  const notifyGeometryCommitted = useCallback(() => {
+  const notifyGeometryCommitted = useCallback((widgetIds?: readonly string[]) => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        dispatchPixelLayoutGeometryCommitted();
+        dispatchPixelLayoutGeometryCommitted(widgetIds);
       });
     });
   }, []);
@@ -724,13 +727,18 @@ export function PixelCanvas({
         dropBufferPx: TAB_PALETTE_DROP_BUFFER_PX,
       });
       if (absorbed) {
+        const changedIds = collectGeometryChangedWidgetIds(
+          activeLayout.widgets,
+          absorbed.widgets,
+          boundedWidget.id,
+        );
         onLayoutChange(absorbed);
         clearPreviewChrome(absorbed);
         syncShapeGeometryFromLayout(absorbed);
         endCollisionPreview();
         setPlayingWidgetId(null);
         refreshCanvasMetrics();
-        notifyGeometryCommitted();
+        notifyGeometryCommitted(changedIds);
         onSelect?.(absorbHost?.id ?? boundedWidget.id, false);
         return;
       }
@@ -743,13 +751,18 @@ export function PixelCanvas({
           item.id === boundedWidget.id ? { ...item, ...committedRect } : item,
         ),
       };
+      const changedIds = collectGeometryChangedWidgetIds(
+        activeLayout.widgets,
+        nextLayout.widgets,
+        boundedWidget.id,
+      );
       endCollisionPreview();
       onLayoutChange(nextLayout);
       clearPreviewChrome(nextLayout);
       syncShapeGeometryFromLayout(nextLayout);
       setPlayingWidgetId(null);
       refreshCanvasMetrics();
-      notifyGeometryCommitted();
+      notifyGeometryCommitted(changedIds);
     },
     [
       activeLayout,
@@ -777,12 +790,11 @@ export function PixelCanvas({
     syncShapeGeometryFromLayout(activeLayout);
     setPlayingWidgetId(null);
     refreshCanvasMetrics();
-    notifyGeometryCommitted();
+    // 取消路径未发生宽高变化，勿广播补测
   }, [
     activeLayout,
     clearPreviewChrome,
     endCollisionPreview,
-    notifyGeometryCommitted,
     refreshCanvasMetrics,
     syncShapeGeometryFromLayout,
   ]);

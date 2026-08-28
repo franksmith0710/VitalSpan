@@ -120,7 +120,9 @@ export function DashboardEditCanvas({
   const { componentMap, refetch: refetchComponents, isLoading: componentsLoading } = useVizComponentMap(widgets);
   const effectiveStyle = useMemo(
     () => resolveEffectiveDashboardStyle(layout, styleConfig),
-    [layout, styleConfig],
+    // 布局几何变更不应触发样式 bootstrap；依赖 styleConfig 内容
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- layout.styleConfig 仅作 liveStyle 缺省回退
+    [styleConfig, layout.styleConfig],
   );
   const widgetDashboardStyle = useMemo(
     () => pickWidgetDashboardStyle(effectiveStyle),

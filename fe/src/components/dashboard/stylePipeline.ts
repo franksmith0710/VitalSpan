@@ -43,6 +43,7 @@ export function resolveEffectiveDashboardStyle(
   layout: DashboardLayout,
   liveStyle?: DashboardStyleConfig,
 ): DashboardStyleConfig {
+  // 仅 layout 几何变更时不应反复 bootstrap；以 liveStyle 为准并幂等 hydrate
   return hydrateDashboardStyle(liveStyle ?? layout.styleConfig);
 }
 

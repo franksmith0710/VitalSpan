@@ -44,6 +44,7 @@ def _send_group_webhook(
         payload = {"msg_type": "text", "content": {"text": f"{summary}\n引用：{artifact_ref}"}}
     else:
         payload = {"msgtype": "text", "text": {"content": f"{summary}\n引用：{artifact_ref}"}}
+    # 群机器人 webhook 为厂商提供的固定 HTTPS URL，无官方 Python SDK，直 POST JSON。
     try:
         with httpx.Client(timeout=5.0) as client:
             resp = client.post(url, json=payload)

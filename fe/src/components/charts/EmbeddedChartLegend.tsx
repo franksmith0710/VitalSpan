@@ -15,7 +15,10 @@ import {
   type ChartLegendHAlign,
   type ChartLegendVAlign,
 } from "@/lib/chartLegendPresentation";
-import { PIXEL_LAYOUT_GEOMETRY_COMMITTED } from "@/components/dashboard/pixelCanvas/pixelShapeLiveResize";
+import {
+  dispatchPixelLayoutGeometryCommitted,
+  resolvePixelWidgetIdFromElement,
+} from "@/components/dashboard/pixelCanvas/pixelShapeLiveResize";
 import { cn } from "@/lib/utils";
 
 export type ChartLegendItem = { name: string; color: string };
@@ -245,7 +248,8 @@ export function EmbeddedChartLegendShell({
     const node = chartAreaRef.current;
     if (!node || typeof ResizeObserver === "undefined") return;
     const notify = () => {
-      document.dispatchEvent(new CustomEvent(PIXEL_LAYOUT_GEOMETRY_COMMITTED));
+      const widgetId = resolvePixelWidgetIdFromElement(node);
+      dispatchPixelLayoutGeometryCommitted(widgetId ? [widgetId] : undefined);
     };
     const observer = new ResizeObserver(notify);
     observer.observe(node);

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  geometryCommitAffectsWidget,
   PIXEL_LAYOUT_GEOMETRY_COMMITTED,
+  resolvePixelWidgetIdFromElement,
 } from "@/components/dashboard/pixelCanvas/pixelShapeLiveResize";
 
 type Size = { width: number; height: number };
@@ -45,7 +47,10 @@ export function useElementSize<T extends HTMLElement>(
     if (!enabled || !node) return;
 
     const apply = () => {
-      setSize(readLayoutSize(node));
+      const next = readLayoutSize(node);
+      setSize((prev) =>
+        prev.width === next.width && prev.height === next.height ? prev : next,
+      );
     };
 
     const update = () => {
@@ -72,17 +77,25 @@ export function useElementSize<T extends HTMLElement>(
 
   useEffect(() => {
     if (!enabled || !node || paused) return;
-    setSize(readLayoutSize(node));
+    const next = readLayoutSize(node);
+    setSize((prev) =>
+      prev.width === next.width && prev.height === next.height ? prev : next,
+    );
   }, [enabled, node, paused]);
 
   const remeasure = useCallback(() => {
     if (!node) return;
-    setSize(readLayoutSize(node));
+    const next = readLayoutSize(node);
+    setSize((prev) =>
+      prev.width === next.width && prev.height === next.height ? prev : next,
+    );
   }, [node]);
 
   useEffect(() => {
     if (!enabled || !node) return;
-    const remeasureOnCommit = () => {
+    const remeasureOnCommit = (event: Event) => {
+      const widgetId = resolvePixelWidgetIdFromElement(node);
+      if (!geometryCommitAffectsWidget(event, widgetId)) return;
       remeasure();
     };
     document.addEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, remeasureOnCommit);

@@ -108,4 +108,34 @@ describe("canvas background edit pipeline", () => {
     expect(hydrated.canvasBackgroundImage).toBe(dataUrl);
     expect(hydrated.canvasDecorPresetId).toBe("custom");
   });
+
+  it("keeps tile decor image after repeated hydrate (layout commit path)", () => {
+    const base = hydrateDashboardStyle({ colorScheme: "light" });
+    const { styleConfig: withSolid } = applyDashboardStylePatch(base, [], {
+      canvasBackground: "#eff6ff",
+      canvasBackgroundCustom: true,
+    });
+    const decorPatch = patchDecorPresetStyle("dots", withSolid);
+    const { styleConfig: withDecor } = applyDashboardStylePatch(withSolid, [], decorPatch);
+    const once = hydrateDashboardStyle(withDecor);
+    expect(once.canvasDecorPresetId).toBe("dots");
+    expect(once.canvasBackgroundImage).toContain("data:image/svg+xml");
+
+    // 松手改布局会再次 resolveEffective → hydrate；须幂等保留纹理
+    const twice = hydrateDashboardStyle(once);
+    expect(twice.canvasDecorPresetId).toBe("dots");
+    expect(twice.canvasBackgroundImage).toContain("data:image/svg+xml");
+    expect(resolveArtboardStyle(twice).backgroundImage).toContain("url(");
+  });
+
+  it("rematerializes missing tile image when custom solid + decor id remain", () => {
+    const restored = materializeDecorStyleConfig({
+      colorScheme: "light",
+      canvasBackground: "#eff6ff",
+      canvasBackgroundCustom: true,
+      canvasDecorPresetId: "grid",
+    });
+    expect(restored.canvasBackgroundImage).toContain("data:image/svg+xml");
+    expect(resolveArtboardStyle(restored).backgroundImage).toContain("url(");
+  });
 });

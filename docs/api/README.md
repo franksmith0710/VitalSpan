@@ -327,7 +327,7 @@ redoc: /redoc
 | POST/GET | `/api/v1/reports/schedules*` | 报表调度 FSM（draft→scheduled→paused/cancelled；`RPT_SCHEDULE_*`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | PATCH | `/api/v1/reports/schedules/{id}` | 草稿调度更新（cron/recipients/attachmentFormats/deliveryChannels/notifyGroup；仅 draft） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | DELETE | `/api/v1/reports/schedules/{id}` | 删除定时报告（停 job，并清理执行历史；`RPT_SCHEDULE_*`） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/reports/scheduler/service.py` |
-| GET | `/api/v1/reports/schedules/delivery-health` | SMTP + IM App 是否已配置（布尔，不泄密钥）；顶层仍保留 SMTP `status/host/port/error` | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
+| GET | `/api/v1/reports/schedules/delivery-health` | SMTP + IM App 探测（`im.{channel}.configured` 为 SDK gettoken 结果；失败含 `error`；不泄密钥） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` · `im_sdk/probe.py` |
 | GET | `/api/v1/reports/schedules/export-health` | Playwright PDF 导出服务可用性探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/dashboard/export_render.py` · `backend/app/api/v1/reports/__init__.py` |
 | GET | `/api/v1/reports/schedules/executions/recent-failures` | 近期失败/降级执行列表 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
 | POST | `/api/v1/reports/schedules/executions/{executionId}/dismiss` | 忽略单条失败提醒（不删执行历史） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/reports/__init__.py` |
