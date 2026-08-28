@@ -1,4 +1,5 @@
 import type { ExpressionSpecification, LayerSpecification } from "maplibre-gl";
+import { buildScatterRadiusExpression } from "@/components/charts/engine/maplibre/gisOverlayVisual";
 import {
   GIS_OVERLAY_CIRCLE_LAYER_ID,
   GIS_OVERLAY_CLUSTER_COUNT_LAYER_ID,
@@ -25,18 +26,7 @@ export type GisOverlayLayerOptions = {
 };
 
 export function buildGisOverlayCircleRadius(resolved: ResolvedGisOverlayStyle): number | ExpressionSpecification {
-  if (resolved.scaleByMetric) {
-    return [
-      "interpolate",
-      ["linear"],
-      ["coalesce", ["get", "sizeNorm"], 0.5],
-      0,
-      resolved.radiusMin,
-      1,
-      resolved.radiusMax,
-    ];
-  }
-  return (resolved.radiusMin + resolved.radiusMax) / 2;
+  return buildScatterRadiusExpression(resolved);
 }
 
 function buildCircleColor(resolved: ResolvedGisOverlayStyle): string | ExpressionSpecification {
@@ -55,23 +45,28 @@ export function buildGisOverlayCirclePaint(
     "circle-opacity": resolved.opacity,
     "circle-stroke-color": resolved.strokeColor,
     "circle-stroke-width": resolved.strokeWidth,
+    "circle-blur": resolved.circleBlur,
   };
 }
 
 function buildClusterCirclePaint(resolved: ResolvedGisOverlayStyle): Record<string, unknown> {
   return {
     "circle-color": resolved.color,
-    "circle-opacity": resolved.opacity,
+    "circle-opacity": ["step", ["get", "point_count"], resolved.opacity * 0.78, 10, resolved.opacity * 0.86, 50, resolved.opacity * 0.94],
     "circle-stroke-color": resolved.strokeColor,
-    "circle-stroke-width": resolved.strokeWidth,
+    "circle-stroke-width": Math.max(1, resolved.strokeWidth + 0.35),
+    "circle-stroke-opacity": 0.9,
+    "circle-blur": resolved.circleBlur * 0.35,
     "circle-radius": [
       "step",
       ["get", "point_count"],
-      resolved.radiusMin,
+      resolved.radiusMin + 2,
       10,
-      (resolved.radiusMin + resolved.radiusMax) / 2,
+      (resolved.radiusMin + resolved.radiusMax) / 2 + 2,
       50,
-      resolved.radiusMax,
+      resolved.radiusMax + 2,
+      200,
+      resolved.radiusMax + 6,
     ],
   };
 }
@@ -80,8 +75,8 @@ function overlayLabelPaint(flavor: GisBasemapFlavor) {
   const darkBasemap = flavor === "dark" || flavor === "black";
   return {
     "text-color": darkBasemap ? "#f8fafc" : "#0f172a",
-    "text-halo-color": darkBasemap ? "#0f172a" : "#ffffff",
-    "text-halo-width": 1,
+    "text-halo-color": darkBasemap ? "rgba(15, 23, 42, 0.88)" : "rgba(255, 255, 255, 0.92)",
+    "text-halo-width": 1.25,
   };
 }
 
@@ -91,12 +86,13 @@ export function buildGisOverlayLabelLayout(
   return {
     visibility: resolved.showLabels ? "visible" : "none",
     "text-field": ["coalesce", ["get", "label"], ["to-string", ["get", "value"]]],
-    "text-size": 11,
-    "text-offset": [0, 1.2],
+    "text-size": 12,
+    "text-offset": [0, 0.85],
     "text-anchor": "top",
     "text-allow-overlap": false,
     "text-ignore-placement": false,
     "text-optional": true,
+    "text-max-width": 8,
   };
 }
 
@@ -145,7 +141,7 @@ function buildClusterLayers(
       filter: GIS_OVERLAY_CLUSTER_FILTER,
       layout: {
         "text-field": ["get", "point_count_abbreviated"],
-        "text-size": 11,
+        "text-size": ["step", ["get", "point_count"], 11, 50, 12, 200, 13],
         "text-allow-overlap": true,
       },
       paint: buildGisOverlayLabelPaint(flavor),
@@ -180,7 +176,7 @@ export function buildGisOverlayLayerDefinitions(
         data: overlay,
         cluster: true,
         clusterMaxZoom: resolved.clusterMaxZoom,
-        clusterRadius: 50,
+        clusterRadius: resolved.clusterRadius,
       }
     : { type: "geojson" as const, data: overlay };
   const layers = resolved.cluster

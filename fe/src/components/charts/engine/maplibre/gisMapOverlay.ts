@@ -113,6 +113,7 @@ export function buildGisOverlayGeoJson(
         value: point.value,
         category: point.category,
         sizeNorm,
+        weightNorm: sizeNorm,
         color: categoryColor ?? fallbackColor,
       },
     };

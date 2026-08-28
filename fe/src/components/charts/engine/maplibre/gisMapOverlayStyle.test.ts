@@ -44,22 +44,26 @@ describe("resolveGisOverlayStyle", () => {
 });
 
 describe("buildGisOverlayCircleRadius", () => {
-  it("uses fixed radius when scaleByMetric is false", () => {
+  it("uses zoom-interpolated radius when scaleByMetric is false", () => {
     const resolved = resolveGisOverlayStyle({ scaleByMetric: false, radiusMin: 4, radiusMax: 12 });
-    expect(buildGisOverlayCircleRadius(resolved)).toBe(8);
-  });
-
-  it("interpolates sizeNorm when scaleByMetric is true", () => {
-    const resolved = resolveGisOverlayStyle({ scaleByMetric: true, radiusMin: 4, radiusMax: 14 });
     expect(buildGisOverlayCircleRadius(resolved)).toEqual([
       "interpolate",
       ["linear"],
-      ["coalesce", ["get", "sizeNorm"], 0.5],
-      0,
-      4,
-      1,
+      ["zoom"],
+      2,
+      5.2,
+      8,
+      8,
       14,
+      9.2,
     ]);
+  });
+
+  it("interpolates sizeNorm with zoom when scaleByMetric is true", () => {
+    const resolved = resolveGisOverlayStyle({ scaleByMetric: true, radiusMin: 4, radiusMax: 14 });
+    const radius = buildGisOverlayCircleRadius(resolved);
+    expect(radius[0]).toBe("interpolate");
+    expect(radius[2]).toEqual(["zoom"]);
   });
 });
 

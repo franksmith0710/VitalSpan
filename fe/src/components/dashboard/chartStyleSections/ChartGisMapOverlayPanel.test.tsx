@@ -58,7 +58,7 @@ describe("ChartGisMapOverlayPanel", () => {
     });
   });
 
-  it("writes showLabels false to active layer style", async () => {
+  it("writes showLabels true to active layer style", async () => {
     const onChange = vi.fn();
     renderPanel(<ChartGisMapOverlayPanel />, onChange);
     const user = userEvent.setup();
@@ -68,6 +68,7 @@ describe("ChartGisMapOverlayPanel", () => {
     });
 
     await user.click(screen.getByRole("button", { name: "散点叠加" }));
+    expect(screen.getByRole("switch", { name: "显示标签" })).not.toBeChecked();
     await user.click(screen.getByRole("switch", { name: "显示标签" }));
 
     await waitFor(() => {
@@ -77,7 +78,7 @@ describe("ChartGisMapOverlayPanel", () => {
             gisProject: expect.objectContaining({
               layers: expect.arrayContaining([
                 expect.objectContaining({
-                  style: expect.objectContaining({ showLabels: false }),
+                  style: expect.objectContaining({ showLabels: true }),
                 }),
               ]),
             }),
@@ -117,8 +118,31 @@ describe("ChartGisMapOverlayPanel", () => {
   });
 
   it("writes labelMinZoom to active layer style", async () => {
+    const widget = gisWidget();
+    widget.chartConfig.nativeBody = {
+      gisProject: {
+        projection: "globe",
+        tileServiceId: "planet-z15",
+        layers: [
+          {
+            id: "scatter-1",
+            name: "散点层",
+            kind: "scatter",
+            style: { showLabels: true },
+          },
+        ],
+        activeLayerId: "scatter-1",
+      },
+    };
     const onChange = vi.fn();
-    renderPanel(<ChartGisMapOverlayPanel />, onChange);
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={qc}>
+        <ChartInspectorProvider widget={widget} onChange={onChange}>
+          <ChartGisMapOverlayPanel />
+        </ChartInspectorProvider>
+      </QueryClientProvider>,
+    );
     const user = userEvent.setup();
 
     await waitFor(() => {

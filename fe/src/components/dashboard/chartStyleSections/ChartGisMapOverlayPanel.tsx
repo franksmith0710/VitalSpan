@@ -65,7 +65,7 @@ export function ChartGisMapOverlayPanel() {
 
   return (
     <ChartInspectorSection
-      title="散点叠加"
+      title={activeLayer.kind === "heatmap" ? "热力叠加" : "散点叠加"}
       hint={OVERLAY_HINT}
       data-testid="chart-gis-map-overlay-panel"
     >

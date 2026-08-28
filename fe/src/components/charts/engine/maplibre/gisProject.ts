@@ -210,6 +210,20 @@ export type GisProjectOverlay = {
   clusterMaxZoom?: number;
   /** 按标签/类别字段分色（palette） */
   colorByCategory?: boolean;
+  /** 热力色带预设 */
+  heatmapPreset?: "night" | "scientific";
+  /** 热力全局强度 0.4–2 */
+  heatmapIntensity?: number;
+  /** 热力模糊半径上限（px，随 zoom 插值） */
+  heatmapRadiusMax?: number;
+  /** 高于此 zoom 热力淡出并显示圆点 */
+  heatmapCrossfadeZoom?: number;
+  /** 聚合像素半径 */
+  clusterRadius?: number;
+  /** 散点大小编码曲线 */
+  sizeCurve?: "linear" | "perceptual";
+  /** 圆点柔边 0–1 */
+  circleBlur?: number;
 };
 
 export type GisProject = {
@@ -268,20 +282,34 @@ export const DEFAULT_GIS_OVERLAY: Required<
     | "cluster"
     | "clusterMaxZoom"
     | "colorByCategory"
+    | "heatmapPreset"
+    | "heatmapIntensity"
+    | "heatmapRadiusMax"
+    | "heatmapCrossfadeZoom"
+    | "clusterRadius"
+    | "sizeCurve"
+    | "circleBlur"
   >
 > = {
-  radiusMin: 4,
-  radiusMax: 14,
-  opacity: 0.75,
-  showLabels: true,
-  labelMinZoom: 4,
+  radiusMin: 5,
+  radiusMax: 18,
+  opacity: 0.88,
+  showLabels: false,
+  labelMinZoom: 10,
   scaleByMetric: true,
-  strokeColor: "#ffffff",
-  strokeWidth: 1,
+  strokeColor: "rgba(255,255,255,0.92)",
+  strokeWidth: 0.75,
   autoFit: true,
   cluster: true,
   clusterMaxZoom: 12,
   colorByCategory: true,
+  heatmapPreset: "night",
+  heatmapIntensity: 1,
+  heatmapRadiusMax: 22,
+  heatmapCrossfadeZoom: 9,
+  clusterRadius: 56,
+  sizeCurve: "perceptual",
+  circleBlur: 0.15,
 };
 
 const DEFAULT_GIS_OVERLAY_COLOR = "#2563eb";
@@ -300,6 +328,13 @@ export type ResolvedGisOverlayStyle = {
   cluster: boolean;
   clusterMaxZoom: number;
   colorByCategory: boolean;
+  heatmapPreset: "night" | "scientific";
+  heatmapIntensity: number;
+  heatmapRadiusMax: number;
+  heatmapCrossfadeZoom: number;
+  clusterRadius: number;
+  sizeCurve: "linear" | "perceptual";
+  circleBlur: number;
 };
 
 export function resolveGisOverlayStyle(
@@ -342,12 +377,42 @@ export function resolveGisOverlayStyle(
     Number.isFinite(clusterMaxZoomRaw) && clusterMaxZoomRaw >= 0
       ? clusterMaxZoomRaw
       : DEFAULT_GIS_OVERLAY.clusterMaxZoom;
+  const heatmapIntensityRaw = Number(overlay?.heatmapIntensity);
+  const heatmapIntensity =
+    Number.isFinite(heatmapIntensityRaw) && heatmapIntensityRaw >= 0.4 && heatmapIntensityRaw <= 2
+      ? heatmapIntensityRaw
+      : DEFAULT_GIS_OVERLAY.heatmapIntensity;
+  const heatmapRadiusMaxRaw = Number(overlay?.heatmapRadiusMax);
+  const heatmapRadiusMax =
+    Number.isFinite(heatmapRadiusMaxRaw) && heatmapRadiusMaxRaw >= 6 && heatmapRadiusMaxRaw <= 48
+      ? heatmapRadiusMaxRaw
+      : DEFAULT_GIS_OVERLAY.heatmapRadiusMax;
+  const heatmapCrossfadeZoomRaw = Number(overlay?.heatmapCrossfadeZoom);
+  const heatmapCrossfadeZoom =
+    Number.isFinite(heatmapCrossfadeZoomRaw) && heatmapCrossfadeZoomRaw >= 6 && heatmapCrossfadeZoomRaw <= 14
+      ? heatmapCrossfadeZoomRaw
+      : DEFAULT_GIS_OVERLAY.heatmapCrossfadeZoom;
+  const clusterRadiusRaw = Number(overlay?.clusterRadius);
+  const clusterRadius =
+    Number.isFinite(clusterRadiusRaw) && clusterRadiusRaw >= 24 && clusterRadiusRaw <= 96
+      ? clusterRadiusRaw
+      : DEFAULT_GIS_OVERLAY.clusterRadius;
+  const circleBlurRaw = Number(overlay?.circleBlur);
+  const circleBlur =
+    Number.isFinite(circleBlurRaw) && circleBlurRaw >= 0 && circleBlurRaw <= 1
+      ? circleBlurRaw
+      : DEFAULT_GIS_OVERLAY.circleBlur;
+  const heatmapPreset =
+    overlay?.heatmapPreset === "scientific" ? "scientific" : DEFAULT_GIS_OVERLAY.heatmapPreset;
+  const sizeCurve =
+    overlay?.sizeCurve === "linear" ? "linear" : DEFAULT_GIS_OVERLAY.sizeCurve;
+
   return {
     color,
     radiusMin,
     radiusMax,
     opacity,
-    showLabels: overlay?.showLabels !== false,
+    showLabels: overlay?.showLabels ?? DEFAULT_GIS_OVERLAY.showLabels,
     labelMinZoom,
     scaleByMetric: overlay?.scaleByMetric !== false,
     strokeColor,
@@ -356,6 +421,13 @@ export function resolveGisOverlayStyle(
     cluster: overlay?.cluster !== false,
     clusterMaxZoom,
     colorByCategory: overlay?.colorByCategory !== false,
+    heatmapPreset,
+    heatmapIntensity,
+    heatmapRadiusMax,
+    heatmapCrossfadeZoom,
+    clusterRadius,
+    sizeCurve,
+    circleBlur,
   };
 }
 
@@ -537,6 +609,7 @@ function normalizeGisProjectOverlay(input: unknown): GisProjectOverlay | undefin
   if (Number.isFinite(radiusMax) && radiusMax >= 0) next.radiusMax = radiusMax;
   const opacity = Number(raw.opacity);
   if (Number.isFinite(opacity) && opacity >= 0 && opacity <= 1) next.opacity = opacity;
+  if (raw.showLabels === true) next.showLabels = true;
   if (raw.showLabels === false) next.showLabels = false;
   const labelMinZoom = Number(raw.labelMinZoom);
   if (Number.isFinite(labelMinZoom) && labelMinZoom >= 0) next.labelMinZoom = labelMinZoom;
@@ -551,6 +624,28 @@ function normalizeGisProjectOverlay(input: unknown): GisProjectOverlay | undefin
   const clusterMaxZoom = Number(raw.clusterMaxZoom);
   if (Number.isFinite(clusterMaxZoom) && clusterMaxZoom >= 0) next.clusterMaxZoom = clusterMaxZoom;
   if (raw.colorByCategory === false) next.colorByCategory = false;
+  if (raw.heatmapPreset === "scientific" || raw.heatmapPreset === "night") {
+    next.heatmapPreset = raw.heatmapPreset;
+  }
+  const heatmapIntensity = Number(raw.heatmapIntensity);
+  if (Number.isFinite(heatmapIntensity) && heatmapIntensity >= 0.4 && heatmapIntensity <= 2) {
+    next.heatmapIntensity = heatmapIntensity;
+  }
+  const heatmapRadiusMax = Number(raw.heatmapRadiusMax);
+  if (Number.isFinite(heatmapRadiusMax) && heatmapRadiusMax >= 6 && heatmapRadiusMax <= 48) {
+    next.heatmapRadiusMax = heatmapRadiusMax;
+  }
+  const heatmapCrossfadeZoom = Number(raw.heatmapCrossfadeZoom);
+  if (Number.isFinite(heatmapCrossfadeZoom) && heatmapCrossfadeZoom >= 6 && heatmapCrossfadeZoom <= 14) {
+    next.heatmapCrossfadeZoom = heatmapCrossfadeZoom;
+  }
+  const clusterRadius = Number(raw.clusterRadius);
+  if (Number.isFinite(clusterRadius) && clusterRadius >= 24 && clusterRadius <= 96) {
+    next.clusterRadius = clusterRadius;
+  }
+  if (raw.sizeCurve === "linear" || raw.sizeCurve === "perceptual") next.sizeCurve = raw.sizeCurve;
+  const circleBlur = Number(raw.circleBlur);
+  if (Number.isFinite(circleBlur) && circleBlur >= 0 && circleBlur <= 1) next.circleBlur = circleBlur;
   return Object.keys(next).length > 0 ? next : undefined;
 }
 

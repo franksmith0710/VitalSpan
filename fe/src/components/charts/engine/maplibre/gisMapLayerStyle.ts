@@ -1,5 +1,11 @@
+import {
+  buildScatterRadiusExpression,
+  buildHeatmapDetailCirclePaint,
+  buildHeatmapPaint,
+  gisLayerHeatmapDetailId,
+} from "@/components/charts/engine/maplibre/gisOverlayVisual";
 import type { LayerSpecification, StyleSpecification } from "maplibre-gl";
-import type { GisBasemapFlavor, GisProjectLayer } from "@/components/charts/engine/maplibre/gisProject";
+import type { GisProjectLayer } from "@/components/charts/engine/maplibre/gisProject";
 import {
   buildGisOverlayCirclePaint,
   buildGisOverlayLabelLayout,
@@ -22,46 +28,42 @@ export function gisLayerHeatmapId(layerId: string): string {
   return `vs-gis-layer-${layerId}-heat`;
 }
 
+export { gisLayerHeatmapDetailId } from "@/components/charts/engine/maplibre/gisOverlayVisual";
+
 export type GisLayerRuntimeEntry = {
   layer: GisProjectLayer;
   geoJson: GeoJSON.FeatureCollection | null;
   options: GisOverlayLayerOptions;
 };
 
-function buildHeatmapLayer(
+function buildHeatmapLayers(
   layerId: string,
   sourceId: string,
   resolved: ReturnType<typeof resolveGisOverlayStyle>,
   layerOpacity: number,
-): LayerSpecification {
-  const radius = (resolved.radiusMin + resolved.radiusMax) / 2;
-  return {
-    id: gisLayerHeatmapId(layerId),
-    type: "heatmap",
-    source: sourceId,
-    layout: { visibility: "visible" },
-    paint: {
-      "heatmap-weight": ["coalesce", ["get", "value"], 0.5],
-      "heatmap-intensity": 1,
-      "heatmap-radius": radius * 2,
-      "heatmap-opacity": resolved.opacity * layerOpacity,
-      "heatmap-color": [
-        "interpolate",
-        ["linear"],
-        ["heatmap-density"],
-        0,
-        "rgba(0, 0, 255, 0)",
-        0.2,
-        "rgb(0, 0, 255)",
-        0.5,
-        "rgb(0, 255, 255)",
-        0.8,
-        "rgb(255, 255, 0)",
-        1,
-        "rgb(255, 0, 0)",
-      ],
+  chartColors?: string[],
+  visible = true,
+): LayerSpecification[] {
+  const visibility = visible ? "visible" : "none";
+  const accent = chartColors?.[0] ?? resolved.color;
+  return [
+    {
+      id: gisLayerHeatmapId(layerId),
+      type: "heatmap",
+      source: sourceId,
+      maxzoom: resolved.heatmapCrossfadeZoom + 1,
+      layout: { visibility },
+      paint: buildHeatmapPaint(resolved, layerOpacity, chartColors),
     },
-  };
+    {
+      id: gisLayerHeatmapDetailId(layerId),
+      type: "circle",
+      source: sourceId,
+      minzoom: resolved.heatmapCrossfadeZoom - 0.5,
+      layout: { visibility },
+      paint: buildHeatmapDetailCirclePaint(resolved, layerOpacity, accent),
+    },
+  ];
 }
 
 function buildLayerDefinitions(entry: GisLayerRuntimeEntry) {
@@ -77,12 +79,14 @@ function buildLayerDefinitions(entry: GisLayerRuntimeEntry) {
         id: sourceId,
         spec: { type: "geojson" as const, data },
       },
-      layers: [
-        {
-          ...buildHeatmapLayer(entry.layer.id, sourceId, resolved, layerOpacity),
-          layout: { visibility: visible ? "visible" : "none" },
-        },
-      ],
+      layers: buildHeatmapLayers(
+        entry.layer.id,
+        sourceId,
+        resolved,
+        layerOpacity,
+        entry.options.chartColors,
+        visible,
+      ),
     };
   }
 
@@ -155,10 +159,25 @@ export function syncGisProjectLayerStyle(
 
     if (entry.layer.kind === "heatmap") {
       const heatId = gisLayerHeatmapId(entry.layer.id);
-      if (!map.getLayer(heatId)) return;
-      map.setLayoutProperty(heatId, "visibility", visible);
+      const detailId = gisLayerHeatmapDetailId(entry.layer.id);
       const resolved = resolveGisOverlayStyle(entry.layer.style, entry.options.chartColors);
-      map.setPaintProperty(heatId, "heatmap-opacity", resolved.opacity * layerOpacity);
+      for (const id of [heatId, detailId]) {
+        if (!map.getLayer(id)) continue;
+        map.setLayoutProperty(id, "visibility", visible);
+      }
+      if (map.getLayer(heatId)) {
+        const paint = buildHeatmapPaint(resolved, layerOpacity, entry.options.chartColors);
+        for (const [key, value] of Object.entries(paint)) {
+          map.setPaintProperty(heatId, key, value);
+        }
+      }
+      if (map.getLayer(detailId)) {
+        const accent = entry.options.chartColors?.[0] ?? resolved.color;
+        const paint = buildHeatmapDetailCirclePaint(resolved, layerOpacity, accent);
+        for (const [key, value] of Object.entries(paint)) {
+          map.setPaintProperty(detailId, key, value);
+        }
+      }
       return;
     }
 
