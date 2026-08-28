@@ -1187,6 +1187,75 @@ describe("PixelCanvas", () => {
     expect(moved!.y).toBe(95);
   });
 
+  it("shows horizontal and vertical mark lines while resizing southwest near neighbors", async () => {
+    const leftNeighbor: PixelLayoutWidget = {
+      id: "w-left",
+      type: "chart",
+      title: "左",
+      order: 2,
+      x: 20,
+      y: 80,
+      width: 80,
+      height: 200,
+    };
+    const bottomNeighbor: PixelLayoutWidget = {
+      id: "w-bottom",
+      type: "chart",
+      title: "下",
+      order: 3,
+      x: 100,
+      y: 288,
+      width: 300,
+      height: 120,
+    };
+    const snapLayout: DashboardLayoutV2 = {
+      ...layout,
+      styleConfig: {
+        chrome: {
+          alignmentSnap: {
+            enableMarkLineSnap: true,
+            markLineThresholdPx: 16,
+            snapEdges: true,
+            snapCenters: false,
+          },
+        },
+      },
+      widgets: [widget, leftNeighbor, bottomNeighbor],
+    };
+    renderPixelCanvas(
+      <PixelCanvas
+        mode="edit"
+        layout={snapLayout}
+        styleConfig={snapLayout.styleConfig}
+        selectedIds={new Set(["w1"])}
+        onLayoutChange={vi.fn()}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    await pinPixelHostMetrics();
+
+    const handle = screen.getByLabelText("调整组件大小：左下");
+    fireEvent.pointerDown(handle, {
+      pointerId: 72,
+      clientX: 100,
+      clientY: 280,
+      button: 0,
+    });
+    // 向内收缩：指针越过按下点（右+上）时仍应稳定显示双轴参考线
+    fireEvent.pointerMove(document, { pointerId: 72, clientX: 112, clientY: 268 });
+    await flushPixelPointerFrames();
+
+    const horizontalIds = ["mark-line-xt", "mark-line-xc", "mark-line-xb"];
+    const verticalIds = ["mark-line-yl", "mark-line-yc", "mark-line-yr"];
+    expect(horizontalIds.some((id) => screen.queryByTestId(id))).toBe(true);
+    expect(verticalIds.some((id) => screen.queryByTestId(id))).toBe(true);
+
+    fireEvent.pointerUp(document, { pointerId: 72, clientX: 112, clientY: 268 });
+    await flushPixelPointerFrames();
+    expect(horizontalIds.every((id) => screen.queryByTestId(id) == null)).toBe(true);
+    expect(verticalIds.every((id) => screen.queryByTestId(id) == null)).toBe(true);
+  });
+
   it("keeps southeast resize with neighbors and alignment snap enabled", async () => {
     const neighbors: PixelLayoutWidget[] = [
       { id: "w2", type: "chart", title: "上", order: 2, x: 80, y: 20, width: 340, height: 50 },
