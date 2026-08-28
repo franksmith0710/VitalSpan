@@ -1106,8 +1106,8 @@ html.admin-fill-lock #root {
   flex: 1;
 }
 
-.pixel-canvas-host .embedded-chart-live-surface svg,
-.pixel-canvas-host .dashboard-no-drag svg {
+/* 仅 D3/ECharts 场景 SVG 填满容器；内嵌表格（.embedded-chart-table-host）的 lucide 图标保持 Tailwind size-* */
+.pixel-canvas-host .embedded-chart-live-surface:not(:has(.embedded-chart-table-host)) svg {
   display: block;
   width: 100%;
   height: 100%;

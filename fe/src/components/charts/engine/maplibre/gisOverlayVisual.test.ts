@@ -64,16 +64,16 @@ describe("gisOverlayVisual", () => {
     expect(paint["heatmap-color"]?.[0]).toBe("interpolate");
   });
 
-  it("builds cluster count with light halo and white text", () => {
-    const paint = buildClusterCountPaint();
+  it("builds cluster count with accent text halo", () => {
+    const paint = buildClusterCountPaint(["#3b82f6"]);
     expect(paint["text-color"]).toBe("#ffffff");
-    expect(paint["text-halo-width"]).toBeLessThan(1.2);
+    expect(paint["text-halo-color"]).toBe("#3b82f6");
   });
 
-  it("builds saturated cluster circles from chart accent", () => {
+  it("builds glassy cluster core without hard stroke", () => {
     const resolved = resolveGisOverlayStyle({ opacity: 0.9 });
     const paint = buildClusterCirclePaint(resolved, ["#3b82f6", "#22d3ee", "#f59e0b", "#e11d48"]);
-    expect(paint["circle-color"]?.[0]).toBe("interpolate");
-    expect(paint["circle-blur"]).toBeLessThan(0.2);
+    expect(paint["circle-stroke-width"]).toBe(0);
+    expect(paint["circle-blur"]).toBeGreaterThan(0.2);
   });
 });

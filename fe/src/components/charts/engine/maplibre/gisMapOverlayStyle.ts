@@ -4,6 +4,7 @@ import {
   buildClusterCountLayout,
   buildClusterCountPaint,
   buildClusterGlowPaint,
+  buildClusterHaloPaint,
   buildScatterCorePaint,
   buildScatterGlowPaint,
   buildScatterHaloPaint,
@@ -14,6 +15,7 @@ import {
   GIS_OVERLAY_CLUSTER_COUNT_LAYER_ID,
   GIS_OVERLAY_CLUSTER_FILTER,
   GIS_OVERLAY_CLUSTER_GLOW_LAYER_ID,
+  GIS_OVERLAY_CLUSTER_HALO_LAYER_ID,
   GIS_OVERLAY_CLUSTER_LAYER_ID,
   GIS_OVERLAY_GLOW_LAYER_ID,
   GIS_OVERLAY_LABEL_LAYER_ID,
@@ -49,7 +51,7 @@ export function buildGisOverlayCirclePaint(
   return buildScatterCorePaint(resolved, 1, chartColors, flavor);
 }
 
-export { buildClusterCirclePaint, buildClusterCountLayout, buildClusterCountPaint, buildClusterGlowPaint };
+export { buildClusterCirclePaint, buildClusterCountLayout, buildClusterCountPaint, buildClusterGlowPaint, buildClusterHaloPaint };
 
 function overlayLabelPaint(flavor: GisBasemapFlavor) {
   const darkBasemap = flavor === "dark" || flavor === "black";
@@ -60,8 +62,8 @@ function overlayLabelPaint(flavor: GisBasemapFlavor) {
   };
 }
 
-function clusterCountPaint(): Record<string, unknown> {
-  return buildClusterCountPaint();
+function clusterCountPaint(chartColors?: string[]): Record<string, unknown> {
+  return buildClusterCountPaint(chartColors);
 }
 
 export function buildGisOverlayLabelLayout(
@@ -144,6 +146,13 @@ function buildClusterLayers(
 ): LayerSpecification[] {
   return [
     {
+      id: GIS_OVERLAY_CLUSTER_HALO_LAYER_ID,
+      type: "circle",
+      source: GIS_OVERLAY_SOURCE_ID,
+      filter: GIS_OVERLAY_CLUSTER_FILTER,
+      paint: buildClusterHaloPaint(resolved, options.chartColors),
+    },
+    {
       id: GIS_OVERLAY_CLUSTER_GLOW_LAYER_ID,
       type: "circle",
       source: GIS_OVERLAY_SOURCE_ID,
@@ -163,7 +172,7 @@ function buildClusterLayers(
       source: GIS_OVERLAY_SOURCE_ID,
       filter: GIS_OVERLAY_CLUSTER_FILTER,
       layout: buildClusterCountLayout(),
-      paint: clusterCountPaint(),
+      paint: clusterCountPaint(options.chartColors),
     },
     buildHaloLayer(resolved, options, GIS_OVERLAY_UNCLUSTERED_FILTER),
     buildGlowLayer(resolved, options, GIS_OVERLAY_UNCLUSTERED_FILTER),
@@ -259,13 +268,13 @@ export function syncGisOverlayStyle(map: MapLibreMap, options: GisOverlayLayerOp
     applyCirclePaint(map, GIS_OVERLAY_GLOW_LAYER_ID, buildScatterGlowPaint(resolved, 1, options.chartColors));
     applyCirclePaint(
       map,
-      GIS_OVERLAY_CLUSTER_GLOW_LAYER_ID,
-      buildClusterGlowPaint(resolved, options.chartColors),
+      GIS_OVERLAY_CLUSTER_HALO_LAYER_ID,
+      buildClusterHaloPaint(resolved, options.chartColors),
     );
     applyCirclePaint(
       map,
-      GIS_OVERLAY_CIRCLE_LAYER_ID,
-      buildGisOverlayCirclePaint(resolved, options.chartColors, options.flavor),
+      GIS_OVERLAY_CLUSTER_GLOW_LAYER_ID,
+      buildClusterGlowPaint(resolved, options.chartColors),
     );
     applyCirclePaint(map, GIS_OVERLAY_CLUSTER_LAYER_ID, buildClusterCirclePaint(resolved, options.chartColors));
     if (map.getLayer(GIS_OVERLAY_CLUSTER_COUNT_LAYER_ID)) {
@@ -273,11 +282,16 @@ export function syncGisOverlayStyle(map: MapLibreMap, options: GisOverlayLayerOp
       for (const [key, value] of Object.entries(countLayout)) {
         map.setLayoutProperty(GIS_OVERLAY_CLUSTER_COUNT_LAYER_ID, key, value);
       }
-      const countPaint = clusterCountPaint();
+      const countPaint = clusterCountPaint(options.chartColors);
       for (const [key, value] of Object.entries(countPaint)) {
         map.setPaintProperty(GIS_OVERLAY_CLUSTER_COUNT_LAYER_ID, key, value);
       }
     }
+    applyCirclePaint(
+      map,
+      GIS_OVERLAY_CIRCLE_LAYER_ID,
+      buildGisOverlayCirclePaint(resolved, options.chartColors, options.flavor),
+    );
     applyLabelStyle(map, resolved, options.flavor);
   });
 }

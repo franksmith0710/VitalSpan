@@ -411,26 +411,68 @@ export function buildScatterCorePaint(
   };
 }
 
-export function buildClusterGlowPaint(
+export function buildClusterHaloPaint(
   resolved: ResolvedGisOverlayStyle,
   chartColors?: string[],
 ): Record<string, unknown> {
   const accent = chartColors?.[0] ?? resolved.color;
+  const warm = chartColors?.[2] ?? "#fbbf24";
   return {
-    "circle-color": accent,
+    "circle-color": [
+      "interpolate",
+      ["linear"],
+      ["get", "point_count"],
+      2,
+      accent,
+      40,
+      warm,
+    ],
     "circle-radius": [
       "step",
       ["get", "point_count"],
-      22,
+      26,
       10,
-      28,
+      32,
       50,
-      36,
+      40,
       200,
-      44,
+      48,
     ],
-    "circle-opacity": resolved.opacity * resolved.glowStrength * 0.42,
-    "circle-blur": 0.95,
+    "circle-opacity": resolved.opacity * resolved.glowStrength * 0.38,
+    "circle-blur": 1,
+    "circle-stroke-width": 0,
+  };
+}
+
+export function buildClusterGlowPaint(
+  resolved: ResolvedGisOverlayStyle,
+  chartColors?: string[],
+): Record<string, unknown> {
+  const accent = chartColors?.[1] ?? chartColors?.[0] ?? resolved.color;
+  const warm = chartColors?.[2] ?? "#fde047";
+  return {
+    "circle-color": [
+      "interpolate",
+      ["linear"],
+      ["get", "point_count"],
+      2,
+      accent,
+      40,
+      warm,
+    ],
+    "circle-radius": [
+      "step",
+      ["get", "point_count"],
+      18,
+      10,
+      22,
+      50,
+      28,
+      200,
+      34,
+    ],
+    "circle-opacity": resolved.opacity * resolved.glowStrength * 0.58,
+    "circle-blur": 0.82,
     "circle-stroke-width": 0,
   };
 }
@@ -454,21 +496,19 @@ export function buildClusterCirclePaint(
       100,
       hot,
     ],
-    "circle-opacity": Math.min(1, resolved.opacity * 0.98),
-    "circle-stroke-color": "rgba(255, 255, 255, 0.9)",
-    "circle-stroke-width": 1.25,
-    "circle-stroke-opacity": 0.95,
-    "circle-blur": 0.06,
+    "circle-opacity": Math.min(1, resolved.opacity * 0.72),
+    "circle-stroke-width": 0,
+    "circle-blur": 0.28,
     "circle-radius": [
       "step",
       ["get", "point_count"],
-      14,
       10,
-      18,
+      10,
+      12,
       50,
-      24,
+      15,
       200,
-      30,
+      18,
     ],
   };
 }
@@ -476,18 +516,19 @@ export function buildClusterCirclePaint(
 export function buildClusterCountLayout(): Record<string, unknown> {
   return {
     "text-field": ["get", "point_count_abbreviated"],
-    "text-size": ["step", ["get", "point_count"], 12, 20, 13, 100, 14],
+    "text-size": ["step", ["get", "point_count"], 11, 20, 12, 100, 13],
     "text-allow-overlap": true,
     "text-font": ["Noto Sans Bold"],
   };
 }
 
-export function buildClusterCountPaint(): Record<string, unknown> {
+export function buildClusterCountPaint(chartColors?: string[]): Record<string, unknown> {
+  const accent = chartColors?.[0] ?? "#38bdf8";
   return {
     "text-color": "#ffffff",
-    "text-halo-color": "rgba(0, 0, 0, 0.28)",
-    "text-halo-width": 0.85,
-    "text-opacity": 1,
+    "text-halo-color": accent,
+    "text-halo-width": 1.6,
+    "text-opacity": 0.98,
   };
 }
 
@@ -517,4 +558,8 @@ export function gisLayerScatterGlowId(layerId: string): string {
 
 export function gisLayerClusterGlowId(layerId: string): string {
   return `vs-gis-layer-${layerId}-cluster-glow`;
+}
+
+export function gisLayerClusterHaloId(layerId: string): string {
+  return `vs-gis-layer-${layerId}-cluster-halo`;
 }

@@ -3,6 +3,7 @@ import {
   buildClusterCountLayout,
   buildClusterCountPaint,
   buildClusterGlowPaint,
+  buildClusterHaloPaint,
   buildHeatmapDetailCirclePaint,
   buildHeatmapDetailGlowPaint,
   buildHeatmapGlowPaint,
@@ -12,6 +13,7 @@ import {
   buildScatterGlowPaint,
   buildScatterHaloPaint,
   gisLayerClusterGlowId,
+  gisLayerClusterHaloId,
   gisLayerHeatmapDetailGlowId,
   gisLayerHeatmapDetailId,
   gisLayerHeatmapGlowId,
@@ -44,6 +46,7 @@ export function gisLayerHeatmapId(layerId: string): string {
 
 export {
   gisLayerClusterGlowId,
+  gisLayerClusterHaloId,
   gisLayerHeatmapDetailGlowId,
   gisLayerHeatmapDetailId,
   gisLayerHeatmapGlowId,
@@ -124,6 +127,7 @@ function remapOverlayLayerId(spec: LayerSpecification, entry: GisLayerRuntimeEnt
   const layerId = entry.layer.id;
   const id = spec.id
     .replace("vs-gis-overlay-scatter-halo", gisLayerScatterHaloId(layerId))
+    .replace("vs-gis-overlay-cluster-halo", gisLayerClusterHaloId(layerId))
     .replace("vs-gis-overlay-cluster-glow", gisLayerClusterGlowId(layerId))
     .replace("vs-gis-overlay-glow", gisLayerScatterGlowId(layerId))
     .replace("vs-gis-overlay", `vs-gis-layer-${layerId}`);
@@ -134,6 +138,9 @@ function remapOverlayLayerId(spec: LayerSpecification, entry: GisLayerRuntimeEnt
   if (spec.type === "circle") {
     if (id.endsWith("-scatter-halo")) {
       paint = buildScatterHaloPaint(resolved, layerOpacity, entry.options.chartColors);
+    } else if (id.endsWith("-cluster-halo")) {
+      paint = buildClusterHaloPaint(resolved, entry.options.chartColors);
+      paint = scaleCircleOpacity(paint, layerOpacity);
     } else if (id.endsWith("-cluster-glow")) {
       paint = buildClusterGlowPaint(resolved, entry.options.chartColors);
       paint = scaleCircleOpacity(paint, layerOpacity);
@@ -262,17 +269,23 @@ export function syncGisProjectLayerStyle(
     }
 
     const haloId = gisLayerScatterHaloId(entry.layer.id);
+    const clusterHaloId = gisLayerClusterHaloId(entry.layer.id);
     const clusterGlowId = gisLayerClusterGlowId(entry.layer.id);
     const glowId = gisLayerScatterGlowId(entry.layer.id);
     const circleId = `vs-gis-layer-${entry.layer.id}-circles`;
     const clusterId = `vs-gis-layer-${entry.layer.id}-clusters`;
     const clusterCountId = `vs-gis-layer-${entry.layer.id}-cluster-count`;
     const labelId = `vs-gis-layer-${entry.layer.id}-labels`;
-    for (const id of [haloId, clusterGlowId, glowId, circleId, clusterId, clusterCountId, labelId]) {
+    for (const id of [haloId, clusterHaloId, clusterGlowId, glowId, circleId, clusterId, clusterCountId, labelId]) {
       if (!map.getLayer(id)) continue;
       map.setLayoutProperty(id, "visibility", visible);
     }
     applyCirclePaint(map, haloId, buildScatterHaloPaint(resolved, layerOpacity, chartColors));
+    applyCirclePaint(
+      map,
+      clusterHaloId,
+      scaleCircleOpacity(buildClusterHaloPaint(resolved, chartColors), layerOpacity),
+    );
     applyCirclePaint(
       map,
       clusterGlowId,
@@ -294,7 +307,7 @@ export function syncGisProjectLayerStyle(
       for (const [key, value] of Object.entries(countLayout)) {
         map.setLayoutProperty(clusterCountId, key, value);
       }
-      const countPaint = buildClusterCountPaint();
+      const countPaint = buildClusterCountPaint(chartColors);
       for (const [key, value] of Object.entries(countPaint)) {
         map.setPaintProperty(clusterCountId, key, value);
       }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   gisLayerClusterGlowId,
+  gisLayerClusterHaloId,
   gisLayerHeatmapDetailGlowId,
   gisLayerHeatmapGlowId,
   gisLayerHeatmapHaloId,
@@ -20,5 +21,6 @@ describe("gisMapLayerStyle ids", () => {
     expect(gisLayerScatterHaloId("layer-a")).toBe("vs-gis-layer-layer-a-scatter-halo");
     expect(gisLayerScatterGlowId("layer-a")).toBe("vs-gis-layer-layer-a-glow");
     expect(gisLayerClusterGlowId("layer-a")).toBe("vs-gis-layer-layer-a-cluster-glow");
+    expect(gisLayerClusterHaloId("layer-a")).toBe("vs-gis-layer-layer-a-cluster-halo");
   });
 });

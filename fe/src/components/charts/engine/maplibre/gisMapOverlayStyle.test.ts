@@ -15,6 +15,7 @@ import { appendGisOverlayLayers, buildPmtilesStyle } from "@/components/charts/e
 import {
   GIS_OVERLAY_CIRCLE_LAYER_ID,
   GIS_OVERLAY_CLUSTER_GLOW_LAYER_ID,
+  GIS_OVERLAY_CLUSTER_HALO_LAYER_ID,
   GIS_OVERLAY_CLUSTER_LAYER_ID,
   GIS_OVERLAY_GLOW_LAYER_ID,
   GIS_OVERLAY_LABEL_LAYER_ID,
@@ -160,8 +161,9 @@ describe("syncGisOverlayStyle", () => {
       getLayer: (id: string) =>
         id === GIS_OVERLAY_SCATTER_HALO_LAYER_ID ||
         id === GIS_OVERLAY_GLOW_LAYER_ID ||
-        id === GIS_OVERLAY_CIRCLE_LAYER_ID ||
+        id === GIS_OVERLAY_CLUSTER_HALO_LAYER_ID ||
         id === GIS_OVERLAY_CLUSTER_GLOW_LAYER_ID ||
+        id === GIS_OVERLAY_CIRCLE_LAYER_ID ||
         id === GIS_OVERLAY_CLUSTER_LAYER_ID ||
         id === GIS_OVERLAY_LABEL_LAYER_ID
           ? {}
