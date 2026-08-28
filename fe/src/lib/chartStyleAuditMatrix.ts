@@ -55,7 +55,6 @@ function gateField(type: ChartType, wired: boolean): "wired" | "hidden" | "n/a" 
 const P1_BACKLOG: Partial<Record<string, string>> = {
   map: "profile 无 label 分区但 caps.label=true；2D 区域标签样式待决策",
   funnel: "caps.label=true 无独立 label 分区（标签在 palette 内嵌）",
-  sankey: "caps 与 profile legend/label 分叉",
   graph: "caps 与 profile legend/label 分叉",
   "chart-mix-dual-line": "legend partial，主系列覆盖待确认",
   pie: "seriesGradient 未接线（P0 已隐藏 UI）",

@@ -64,7 +64,7 @@ const D3_WIRING_BY_TYPE: Record<string, D3InspectorFeatureMatrix> = {
   "stock-line": { legend: "missing", label: "wired", dataZoom: "missing", markLines: "missing", conditional: "wired" },
   "bullet-graph": { legend: "missing", label: "wired", dataZoom: "missing", markLines: "missing", conditional: "wired" },
   funnel: { legend: "wired", label: "wired", dataZoom: "missing", markLines: "missing", conditional: "wired" },
-  sankey: { legend: "missing", label: "missing", dataZoom: "missing", markLines: "missing", conditional: "missing" },
+  sankey: { legend: "missing", label: "wired", dataZoom: "missing", markLines: "missing", conditional: "missing" },
   "circle-packing": { legend: "missing", label: "wired", dataZoom: "missing", markLines: "missing", conditional: "wired" },
   graph: { legend: "missing", label: "wired", dataZoom: "missing", markLines: "missing", conditional: "missing" },
 };

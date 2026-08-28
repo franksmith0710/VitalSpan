@@ -1,8 +1,9 @@
 import {
+  anyBoxesOverlap,
+  anyVerticalBandsOverlap,
   bboxFromAnchor,
   estimateLabelPixelWidth,
   pickCandidatesWithoutOverlap,
-  pickThinIndicesWithoutBBoxOverlap,
   type LabelPlacementCandidate,
 } from "@/components/charts/engine/d3/core/labelOverlap";
 
@@ -10,28 +11,71 @@ export function verticalLabelBandHeight(fontSize: number): number {
   return Math.round(fontSize * 1.15);
 }
 
-/** 单列纵向堆叠标签：均匀抽稀 + bbox 防重叠 */
+function pickUniformIndices(count: number, targetCount: number): number[] {
+  if (count <= 0 || targetCount <= 0) return [];
+  if (targetCount === 1) return [0];
+  if (count <= targetCount) return Array.from({ length: count }, (_, index) => index);
+  const indices: number[] = [];
+  for (let k = 0; k < targetCount; k += 1) {
+    indices.push(Math.round((k * (count - 1)) / (targetCount - 1)));
+  }
+  return [...new Set(indices)].sort((a, b) => a - b);
+}
+
+function verticalBandsForIndices(
+  indices: number[],
+  centerYAt: (index: number) => number,
+  halfBand: number,
+): Array<{ top: number; bottom: number }> {
+  return indices.map((index) => {
+    const center = centerYAt(index);
+    return { top: center - halfBand, bottom: center + halfBand };
+  });
+}
+
+/** 同列纵向标签：不叠字则全显；必须抽稀时均匀取点 */
 export function pickVerticalStackIndicesWithoutOverlap(
   count: number,
   centerYAt: (index: number) => number,
   labelFor: (index: number) => string,
   fontSize: number,
-  minGapPx = 4,
+  minGapPx = 2,
 ): number[] {
   if (count <= 0) return [];
-  const half = verticalLabelBandHeight(fontSize) / 2;
-  return pickThinIndicesWithoutBBoxOverlap(
-    count,
-    labelFor,
-    fontSize,
-    centerYAt,
-    (index, text) => {
-      const y = centerYAt(index);
-      const width = estimateLabelPixelWidth(text, fontSize);
-      return { left: 0, right: width, top: y - half, bottom: y + half };
-    },
-    minGapPx,
+
+  const withText = Array.from({ length: count }, (_, index) => index).filter((index) =>
+    labelFor(index).trim(),
   );
+  if (withText.length <= 1) return withText;
+
+  const halfBand = verticalLabelBandHeight(fontSize) / 2;
+  if (!anyVerticalBandsOverlap(verticalBandsForIndices(withText, centerYAt, halfBand), minGapPx)) {
+    return withText;
+  }
+
+  for (let target = withText.length - 1; target >= 1; target -= 1) {
+    const indices = pickUniformIndices(count, target).filter((index) => labelFor(index).trim());
+    if (!anyVerticalBandsOverlap(verticalBandsForIndices(indices, centerYAt, halfBand), minGapPx)) {
+      return indices;
+    }
+  }
+
+  return [withText[0]!];
+}
+
+/** 二维标签：无 bbox 重叠则全显，否则按优先级贪心避让 */
+export function pickSpatialLabelKeysWithoutOverlap(
+  candidates: LabelPlacementCandidate[],
+  pad = 3,
+): Set<string> {
+  if (candidates.length <= 1) {
+    return new Set(candidates.map((item) => item.key));
+  }
+  const boxes = candidates.map((item) => item.bbox);
+  if (!anyBoxesOverlap(boxes, pad)) {
+    return new Set(candidates.map((item) => item.key));
+  }
+  return pickCandidatesWithoutOverlap(candidates, [], pad);
 }
 
 type SankeyLayoutNode = { id: string; depth: number; y: number; height: number };
@@ -118,16 +162,16 @@ export function pickGraphVisibleLabelIds(input: {
       bbox: bboxFromAnchor(node.x, centerY, width, height, "middle"),
     });
   }
-  return pickCandidatesWithoutOverlap(candidates);
+  return pickSpatialLabelKeysWithoutOverlap(candidates);
 }
 
 function graphLabelCenterY(
   node: GraphLayoutNode,
   nodeRadius: (id: string) => number,
-  fontSize: number,
+  _fontSize: number,
 ): number {
   const radius = nodeRadius(node.id);
-  return (node.y ?? 0) + radius + 22 - fontSize * 0.35;
+  return (node.y ?? 0) + radius + 11;
 }
 
 export function pickTreemapVisibleLabelKeys(input: {
@@ -170,5 +214,5 @@ export function pickTreemapVisibleLabelKeys(input: {
     });
   }
 
-  return pickCandidatesWithoutOverlap(candidates);
+  return pickSpatialLabelKeysWithoutOverlap(candidates);
 }

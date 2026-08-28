@@ -50,6 +50,32 @@ export function anyBoxesOverlap(boxes: LabelBBox[], pad = 3): boolean {
   return false;
 }
 
+/** 仅比较纵向字块是否重叠（桑基/关系图同列标签） */
+export function verticalBandsOverlap(
+  topA: number,
+  bottomA: number,
+  topB: number,
+  bottomB: number,
+  pad = 3,
+): boolean {
+  return topA < bottomB + pad && bottomA > topB - pad;
+}
+
+export function anyVerticalBandsOverlap(
+  bands: Array<{ top: number; bottom: number }>,
+  pad = 3,
+): boolean {
+  const sorted = [...bands].sort((a, b) => a.top - b.top);
+  for (let index = 1; index < sorted.length; index += 1) {
+    const prev = sorted[index - 1]!;
+    const curr = sorted[index]!;
+    if (verticalBandsOverlap(prev.top, prev.bottom, curr.top, curr.bottom, pad)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function pickUniformIndices(count: number, targetCount: number): number[] {
   if (count <= 0 || targetCount <= 0) return [];
   if (targetCount === 1) return [0];

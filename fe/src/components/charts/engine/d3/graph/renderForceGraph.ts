@@ -269,8 +269,9 @@ export function renderD3ForceGraph(container: HTMLElement, config: D3RenderConfi
   if (showLabel) {
     node
       .append("text")
-      .attr("dy", 22)
+      .attr("y", (d) => nodeRadius(d.id) + 11)
       .attr("text-anchor", "middle")
+      .attr("dominant-baseline", "middle")
       .attr("fill", theme.axisLabel)
       .style("font-size", `${labelFontSize}px`)
       .style("pointer-events", "none")

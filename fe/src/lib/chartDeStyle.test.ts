@@ -354,6 +354,10 @@ describe("readChartShowLabel", () => {
     expect(readChartShowLabel(baseCfg)).toBe(false);
   });
 
+  it("defaults sankey node labels to on when unset", () => {
+    expect(readChartShowLabel({ ...baseCfg, chartType: "sankey" })).toBe(true);
+  });
+
   it("prefers explicit label.show over deFeatures.showLabel", () => {
     const cfg: ChartViewConfig = {
       ...baseCfg,

@@ -2,6 +2,10 @@ import { expect } from "vitest";
 import { anyBoxesOverlap, estimateLabelPixelWidth, type LabelBBox } from "./labelOverlap";
 import { verticalLabelBandHeight } from "./nodeLabelThinning";
 
+import { expect } from "vitest";
+import { anyBoxesOverlap, anyVerticalBandsOverlap, estimateLabelPixelWidth, type LabelBBox } from "./labelOverlap";
+import { verticalLabelBandHeight } from "./nodeLabelThinning";
+
 export function assertVerticalLabelsNoOverlap(
   container: HTMLElement,
   selector: string,
@@ -9,13 +13,11 @@ export function assertVerticalLabelsNoOverlap(
   minGapPx = 3,
 ): void {
   const half = verticalLabelBandHeight(fontSize) / 2;
-  const boxes: LabelBBox[] = [...container.querySelectorAll(selector)].map((node) => {
+  const bands = [...container.querySelectorAll(selector)].map((node) => {
     const y = Number(node.getAttribute("y") ?? 0);
-    const text = node.textContent ?? "";
-    const width = estimateLabelPixelWidth(text, fontSize);
-    return { left: 0, right: width, top: y - half, bottom: y + half };
+    return { top: y - half, bottom: y + half };
   });
-  expect(anyBoxesOverlap(boxes, minGapPx)).toBe(false);
+  expect(anyVerticalBandsOverlap(bands, minGapPx)).toBe(false);
 }
 
 export function assertTreemapVisibleLabelsNoOverlap(container: HTMLElement, fontSize: number): void {

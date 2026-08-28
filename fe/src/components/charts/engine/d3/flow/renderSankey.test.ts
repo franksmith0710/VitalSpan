@@ -174,6 +174,33 @@ describe("renderD3SankeyChart", () => {
     const labels = [...container.querySelectorAll("text.node-label")];
     expect(labels.length).toBeGreaterThan(0);
     expect(labels.length).toBeLessThan(18);
-    assertVerticalLabelsNoOverlap(container, "text.node-label", 10);
+    const denseColumnLabels = [...container.querySelectorAll('text.node-label[text-anchor="start"]')];
+    expect(denseColumnLabels.length).toBeGreaterThan(3);
+    assertVerticalLabelsNoOverlap(container, 'text.node-label[text-anchor="start"]', 10);
+  });
+
+  it("renders no node labels when showLabel is false", () => {
+    const manyLinks = Array.from({ length: 12 }, (_, i) => ({
+      source: "企业直销",
+      target: `2024-${String(i + 1).padStart(2, "0")}-01`,
+      value: 12 + i,
+    }));
+    const container = document.createElement("div");
+    runD3Renderer(container, () =>
+      renderD3SankeyChart(container, {
+        width: 320,
+        height: 200,
+        colors: ["#465fff", "#12b76a", "#f79009"],
+        theme: getAntvThemeTokens("light"),
+        showLabel: false,
+        showTooltip: false,
+        showLegend: false,
+        labelFontSize: 10,
+        options: { data: manyLinks },
+      }),
+    );
+
+    const labels = [...container.querySelectorAll("text.node-label")];
+    expect(labels.length).toBe(0);
   });
 });

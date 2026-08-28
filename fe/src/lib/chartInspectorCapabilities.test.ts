@@ -45,4 +45,9 @@ describe("chartInspectorCapabilities", () => {
     expect(filterStyleSectionsForChart("funnel", ["label", "legend"])).toContain("label");
     expect(filterStyleSectionsForChart("graph", ["label", "graphShape"])).toContain("label");
   });
+
+  it("enables sankey node label section", () => {
+    expect(chartInspectorCapabilities("sankey").label).toBe(true);
+    expect(filterStyleSectionsForChart("sankey", ["label", "sankeyShape"])).toContain("label");
+  });
 });

@@ -24,9 +24,10 @@ describe("chartStylePanelGates", () => {
     expect(filterStyleSectionsForChart("kpi", ["label", "palette"])).toEqual(["label", "palette"]);
   });
 
-  it("keeps label section for funnel and treemap", () => {
+  it("keeps label section for funnel, treemap and sankey", () => {
     expect(filterStyleSectionsForChart("funnel", ["legend", "label", "funnelShape"])).toContain("label");
     expect(filterStyleSectionsForChart("treemap", ["remark", "label", "treemapShape"])).toContain("label");
+    expect(filterStyleSectionsForChart("sankey", ["label", "sankeyShape"])).toContain("label");
   });
 
   it("depth visual for bar, line, gauge and related cartesian types", () => {

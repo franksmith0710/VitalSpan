@@ -54,6 +54,12 @@ describe("chartTypeStyleProfiles", () => {
     expect(chartStyleSectionsFromProfile("gauge")).toContain("gaugeShape");
   });
 
+  it("sankey exposes label section before sankeyShape", () => {
+    const sections = chartStyleSectionsFromProfile("sankey");
+    expect(sections).toContain("label");
+    expect(sections.indexOf("label")).toBeLessThan(sections.indexOf("sankeyShape"));
+  });
+
   it("heatmap exposes axis style section", () => {
     expect(chartStyleSectionsFromProfile("heatmap")).toContain("axis");
   });

@@ -195,7 +195,7 @@ export function renderD3SankeyChart(container: HTMLElement, config: D3RenderConf
       .attr("x", (d) => d.x + (d.depth === 0 ? -6 : nodeWidth + 6))
       .attr("y", (d) => d.y + d.height / 2)
       .attr("text-anchor", (d) => (d.depth === 0 ? "end" : "start"))
-      .attr("dy", "0.35em")
+      .attr("dominant-baseline", "middle")
       .attr("fill", theme.axisLabel)
       .style("font-size", `${labelFontSize}px`)
       .text((d) => formatSankeyNodeLabel(d.id));
