@@ -6,6 +6,7 @@ import {
   buildClusterGlowPaint,
   buildScatterCorePaint,
   buildScatterGlowPaint,
+  buildScatterHaloPaint,
   buildScatterRadiusExpression,
 } from "@/components/charts/engine/maplibre/gisOverlayVisual";
 import {
@@ -16,6 +17,7 @@ import {
   GIS_OVERLAY_CLUSTER_LAYER_ID,
   GIS_OVERLAY_GLOW_LAYER_ID,
   GIS_OVERLAY_LABEL_LAYER_ID,
+  GIS_OVERLAY_SCATTER_HALO_LAYER_ID,
   GIS_OVERLAY_SOURCE_ID,
   GIS_OVERLAY_UNCLUSTERED_FILTER,
 } from "@/components/charts/engine/maplibre/gisMapStyle";
@@ -82,6 +84,20 @@ export function buildGisOverlayLabelPaint(flavor: GisBasemapFlavor): Record<stri
   return overlayLabelPaint(flavor);
 }
 
+function buildHaloLayer(
+  resolved: ResolvedGisOverlayStyle,
+  options: GisOverlayLayerOptions,
+  filter?: typeof GIS_OVERLAY_UNCLUSTERED_FILTER,
+): LayerSpecification {
+  return {
+    id: GIS_OVERLAY_SCATTER_HALO_LAYER_ID,
+    type: "circle",
+    source: GIS_OVERLAY_SOURCE_ID,
+    ...(filter ? { filter } : {}),
+    paint: buildScatterHaloPaint(resolved, 1, options.chartColors),
+  };
+}
+
 function buildGlowLayer(
   resolved: ResolvedGisOverlayStyle,
   options: GisOverlayLayerOptions,
@@ -102,6 +118,7 @@ function buildSimpleLayers(
   options: GisOverlayLayerOptions,
 ): LayerSpecification[] {
   return [
+    buildHaloLayer(resolved, options),
     buildGlowLayer(resolved, options),
     {
       id: GIS_OVERLAY_CIRCLE_LAYER_ID,
@@ -148,6 +165,7 @@ function buildClusterLayers(
       layout: buildClusterCountLayout(),
       paint: clusterCountPaint(),
     },
+    buildHaloLayer(resolved, options, GIS_OVERLAY_UNCLUSTERED_FILTER),
     buildGlowLayer(resolved, options, GIS_OVERLAY_UNCLUSTERED_FILTER),
     {
       id: GIS_OVERLAY_CIRCLE_LAYER_ID,
@@ -235,10 +253,15 @@ export function syncGisOverlayStyle(map: MapLibreMap, options: GisOverlayLayerOp
     const resolved = resolveGisOverlayStyle(options.overlay, options.chartColors);
     applyCirclePaint(
       map,
+      GIS_OVERLAY_SCATTER_HALO_LAYER_ID,
+      buildScatterHaloPaint(resolved, 1, options.chartColors),
+    );
+    applyCirclePaint(map, GIS_OVERLAY_GLOW_LAYER_ID, buildScatterGlowPaint(resolved, 1, options.chartColors));
+    applyCirclePaint(
+      map,
       GIS_OVERLAY_CLUSTER_GLOW_LAYER_ID,
       buildClusterGlowPaint(resolved, options.chartColors),
     );
-    applyCirclePaint(map, GIS_OVERLAY_GLOW_LAYER_ID, buildScatterGlowPaint(resolved, 1, options.chartColors));
     applyCirclePaint(
       map,
       GIS_OVERLAY_CIRCLE_LAYER_ID,

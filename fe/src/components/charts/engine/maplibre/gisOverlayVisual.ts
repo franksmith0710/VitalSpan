@@ -9,18 +9,18 @@ const EMBER_HEAT_COLOR: ExpressionSpecification = [
   ["heatmap-density"],
   0,
   "rgba(0, 0, 0, 0)",
-  0.05,
+  0.04,
   "rgba(0, 0, 0, 0)",
-  0.18,
-  "rgba(255, 100, 40, 0.10)",
-  0.4,
-  "rgba(255, 150, 50, 0.32)",
-  0.65,
-  "rgba(255, 190, 70, 0.52)",
-  0.85,
-  "rgba(255, 225, 120, 0.68)",
+  0.15,
+  "rgba(255, 110, 35, 0.18)",
+  0.35,
+  "rgba(255, 155, 45, 0.52)",
+  0.58,
+  "rgba(255, 195, 70, 0.78)",
+  0.78,
+  "rgba(255, 230, 130, 0.9)",
   1,
-  "rgba(255, 248, 210, 0.78)",
+  "rgba(255, 252, 220, 0.98)",
 ];
 
 const NIGHT_HEAT_COLOR: ExpressionSpecification = [
@@ -29,37 +29,41 @@ const NIGHT_HEAT_COLOR: ExpressionSpecification = [
   ["heatmap-density"],
   0,
   "rgba(0, 0, 0, 0)",
-  0.1,
-  "rgba(56, 189, 248, 0)",
-  0.28,
-  "rgba(56, 189, 248, 0.28)",
-  0.55,
-  "rgba(251, 191, 36, 0.48)",
-  0.82,
-  "rgba(248, 113, 113, 0.62)",
+  0.08,
+  "rgba(34, 211, 238, 0)",
+  0.22,
+  "rgba(34, 211, 238, 0.48)",
+  0.48,
+  "rgba(167, 139, 250, 0.72)",
+  0.72,
+  "rgba(251, 113, 133, 0.88)",
+  0.9,
+  "rgba(255, 220, 180, 0.94)",
   1,
-  "rgba(239, 68, 68, 0.75)",
+  "rgba(255, 255, 255, 0.98)",
 ];
 
 function scientificHeatColor(chartColors?: string[]): ExpressionSpecification {
-  const c0 = chartColors?.[0] ?? "#3b82f6";
+  const c0 = chartColors?.[0] ?? "#60a5fa";
   const c1 = chartColors?.[1] ?? "#22d3ee";
-  const c2 = chartColors?.[2] ?? "#fbbf24";
-  const c3 = chartColors?.[3] ?? "#ef4444";
+  const c2 = chartColors?.[2] ?? "#fde047";
+  const c3 = chartColors?.[3] ?? "#fb7185";
   return [
     "interpolate",
     ["linear"],
     ["heatmap-density"],
     0,
     "rgba(0, 0, 0, 0)",
-    0.15,
+    0.12,
     c0,
-    0.4,
+    0.38,
     c1,
-    0.65,
+    0.62,
     c2,
-    1,
+    0.85,
     c3,
+    1,
+    "rgba(255, 255, 255, 0.96)",
   ];
 }
 
@@ -76,6 +80,32 @@ function metricSizeInput(resolved: ResolvedGisOverlayStyle): ExpressionSpecifica
   const metric = ["coalesce", ["get", "sizeNorm"], 0.45] as ExpressionSpecification;
   if (resolved.sizeCurve === "linear") return metric;
   return ["sqrt", metric];
+}
+
+function emissiveGlowOpacity(
+  resolved: ResolvedGisOverlayStyle,
+  layerOpacity: number,
+  tier: "halo" | "glow" | "core",
+): ExpressionSpecification {
+  const glow = resolved.glowStrength;
+  const base = resolved.opacity * layerOpacity;
+  const tiers = {
+    halo: { z2: 0.48, z5: 0.62, z8: 0.68 },
+    glow: { z2: 0.58, z5: 0.78, z8: 0.85 },
+    core: { z2: 0.62, z5: 0.88, z8: 0.98 },
+  } as const;
+  const t = tiers[tier];
+  return [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    2,
+    base * glow * t.z2,
+    5,
+    base * glow * t.z5,
+    8,
+    base * (tier === "core" ? t.z8 : glow * t.z8),
+  ];
 }
 
 export function buildScatterRadiusExpression(
@@ -134,9 +164,9 @@ export function buildMetricColorExpression(
     return ["coalesce", ["get", "color"], resolved.color];
   }
   if (resolved.scaleByMetric) {
-    const low = chartColors?.[1] ?? "rgba(34, 211, 238, 0.88)";
-    const mid = chartColors?.[2] ?? "rgba(251, 191, 36, 0.92)";
-    const high = chartColors?.[3] ?? chartColors?.[0] ?? "rgba(244, 63, 94, 0.95)";
+    const low = chartColors?.[1] ?? "#67e8f9";
+    const mid = chartColors?.[2] ?? "#fde047";
+    const high = chartColors?.[3] ?? chartColors?.[0] ?? "#fb7185";
     return [
       "interpolate",
       ["linear"],
@@ -155,23 +185,22 @@ export function buildMetricColorExpression(
 export function buildScatterOpacityExpression(
   resolved: ResolvedGisOverlayStyle,
   layerOpacity = 1,
-): ExpressionSpecification | number {
-  const base = resolved.opacity * layerOpacity;
-  return [
-    "interpolate",
-    ["linear"],
-    ["zoom"],
-    2,
-    base * 0.4,
-    5,
-    base * 0.75,
-    8,
-    base,
-  ];
+): ExpressionSpecification {
+  return emissiveGlowOpacity(resolved, layerOpacity, "core");
 }
 
 export function buildHeatmapWeightExpression(): ExpressionSpecification {
-  return ["coalesce", ["get", "weightNorm"], ["coalesce", ["get", "sizeNorm"], 0.35]];
+  return [
+    "interpolate",
+    ["linear"],
+    ["coalesce", ["get", "weightNorm"], ["coalesce", ["get", "sizeNorm"], 0.35]],
+    0,
+    0.15,
+    0.5,
+    0.65,
+    1,
+    1,
+  ];
 }
 
 export function buildHeatmapPaint(
@@ -189,35 +218,76 @@ export function buildHeatmapPaint(
       ["linear"],
       ["zoom"],
       0,
-      intensityBase * 1.3,
+      intensityBase * 1.55,
       6,
-      intensityBase,
+      intensityBase * 1.15,
       fadeZoom,
-      intensityBase * 0.4,
+      intensityBase * 0.5,
     ],
     "heatmap-radius": [
       "interpolate",
       ["linear"],
       ["zoom"],
       0,
-      Math.max(2, radiusMax * 0.18),
+      Math.max(3, radiusMax * 0.22),
       4,
-      radiusMax * 0.5,
+      radiusMax * 0.58,
       8,
-      radiusMax * 0.88,
+      radiusMax * 0.95,
       12,
-      radiusMax,
+      radiusMax * 1.08,
     ],
     "heatmap-opacity": [
       "interpolate",
       ["linear"],
       ["zoom"],
       fadeZoom - 1,
-      resolved.opacity * layerOpacity,
+      Math.min(1, resolved.opacity * layerOpacity * 1.05),
       fadeZoom + 1,
       0,
     ],
     "heatmap-color": buildHeatmapColorExpression(resolved.heatmapPreset, chartColors),
+  };
+}
+
+function heatmapPointRadius(resolved: ResolvedGisOverlayStyle, scale: number): ExpressionSpecification {
+  return [
+    "interpolate",
+    ["linear"],
+    ["coalesce", ["get", "weightNorm"], ["get", "sizeNorm"], 0.4],
+    0,
+    6 * scale,
+    0.5,
+    18 * scale,
+    1,
+    32 * scale,
+  ];
+}
+
+export function buildHeatmapHaloPaint(
+  resolved: ResolvedGisOverlayStyle,
+  layerOpacity: number,
+  chartColors?: string[],
+): Record<string, unknown> {
+  const fade = resolved.heatmapCrossfadeZoom;
+  const accent = chartColors?.[0] ?? resolved.color;
+  const glow = resolved.glowStrength;
+  return {
+    "circle-radius": heatmapPointRadius(resolved, 1.55),
+    "circle-color": accent,
+    "circle-opacity": [
+      "interpolate",
+      ["linear"],
+      ["zoom"],
+      2,
+      resolved.opacity * layerOpacity * glow * 0.38,
+      fade - 1.5,
+      resolved.opacity * layerOpacity * glow * 0.18,
+      fade,
+      0,
+    ],
+    "circle-blur": 1,
+    "circle-stroke-width": 0,
   };
 }
 
@@ -227,32 +297,47 @@ export function buildHeatmapGlowPaint(
   chartColors?: string[],
 ): Record<string, unknown> {
   const fade = resolved.heatmapCrossfadeZoom;
-  const accent = chartColors?.[0] ?? resolved.color;
+  const accent = chartColors?.[1] ?? chartColors?.[0] ?? resolved.color;
+  const glow = resolved.glowStrength;
   return {
-    "circle-radius": [
-      "interpolate",
-      ["linear"],
-      ["coalesce", ["get", "weightNorm"], ["get", "sizeNorm"], 0.4],
-      0,
-      5,
-      0.5,
-      16,
-      1,
-      28,
-    ],
+    "circle-radius": heatmapPointRadius(resolved, 1.05),
     "circle-color": accent,
     "circle-opacity": [
       "interpolate",
       ["linear"],
       ["zoom"],
       2,
-      resolved.opacity * layerOpacity * 0.28,
+      resolved.opacity * layerOpacity * glow * 0.52,
       fade - 1.5,
-      resolved.opacity * layerOpacity * 0.12,
+      resolved.opacity * layerOpacity * glow * 0.28,
       fade,
       0,
     ],
-    "circle-blur": 0.9,
+    "circle-blur": 0.92,
+    "circle-stroke-width": 0,
+  };
+}
+
+export function buildHeatmapDetailGlowPaint(
+  resolved: ResolvedGisOverlayStyle,
+  layerOpacity: number,
+  chartColors?: string[],
+): Record<string, unknown> {
+  const metricResolved = { ...resolved, scaleByMetric: true, colorByCategory: false };
+  const fade = resolved.heatmapCrossfadeZoom;
+  return {
+    "circle-radius": buildScatterRadiusExpression(metricResolved, 2.65),
+    "circle-color": buildMetricColorExpression(metricResolved, chartColors),
+    "circle-opacity": [
+      "interpolate",
+      ["linear"],
+      ["zoom"],
+      fade - 0.5,
+      0,
+      fade,
+      resolved.opacity * layerOpacity * resolved.glowStrength * 0.72,
+    ],
+    "circle-blur": 0.95,
     "circle-stroke-width": 0,
   };
 }
@@ -273,11 +358,25 @@ export function buildHeatmapDetailCirclePaint(
       resolved.heatmapCrossfadeZoom - 0.5,
       0,
       resolved.heatmapCrossfadeZoom,
-      resolved.opacity * layerOpacity * 0.92,
+      Math.min(1, resolved.opacity * layerOpacity * 1.02),
     ],
-    "circle-stroke-color": resolved.strokeColor,
-    "circle-stroke-width": resolved.strokeWidth,
-    "circle-blur": resolved.circleBlur * 0.35,
+    "circle-stroke-color": "rgba(255, 255, 255, 0.78)",
+    "circle-stroke-width": 0.55,
+    "circle-blur": 0.1,
+  };
+}
+
+export function buildScatterHaloPaint(
+  resolved: ResolvedGisOverlayStyle,
+  layerOpacity = 1,
+  chartColors?: string[],
+): Record<string, unknown> {
+  return {
+    "circle-radius": buildScatterRadiusExpression(resolved, 3.5),
+    "circle-color": buildMetricColorExpression(resolved, chartColors),
+    "circle-opacity": emissiveGlowOpacity(resolved, layerOpacity, "halo"),
+    "circle-blur": 1,
+    "circle-stroke-width": 0,
   };
 }
 
@@ -286,23 +385,11 @@ export function buildScatterGlowPaint(
   layerOpacity = 1,
   chartColors?: string[],
 ): Record<string, unknown> {
-  const glow = resolved.glowStrength;
-  const base = resolved.opacity * layerOpacity;
   return {
-    "circle-radius": buildScatterRadiusExpression(resolved, 2.15),
+    "circle-radius": buildScatterRadiusExpression(resolved, 2.35),
     "circle-color": buildMetricColorExpression(resolved, chartColors),
-    "circle-opacity": [
-      "interpolate",
-      ["linear"],
-      ["zoom"],
-      2,
-      base * glow * 0.32,
-      5,
-      base * glow * 0.48,
-      8,
-      base * glow * 0.55,
-    ],
-    "circle-blur": 0.68,
+    "circle-opacity": emissiveGlowOpacity(resolved, layerOpacity, "glow"),
+    "circle-blur": 0.88,
     "circle-stroke-width": 0,
   };
 }
@@ -311,19 +398,16 @@ export function buildScatterCorePaint(
   resolved: ResolvedGisOverlayStyle,
   layerOpacity = 1,
   chartColors?: string[],
-  flavor?: GisBasemapFlavor,
+  _flavor?: GisBasemapFlavor,
 ): Record<string, unknown> {
-  const lightBasemap = !flavor || flavor === "light" || flavor === "white" || flavor === "grayscale";
-  const strokeColor = lightBasemap ? "rgba(255, 255, 255, 0.95)" : resolved.strokeColor;
-  const strokeWidth = lightBasemap ? Math.min(resolved.strokeWidth, 0.65) : resolved.strokeWidth;
   return {
     "circle-radius": buildScatterRadiusExpression(resolved),
     "circle-color": buildMetricColorExpression(resolved, chartColors),
     "circle-opacity": buildScatterOpacityExpression(resolved, layerOpacity),
-    "circle-stroke-color": strokeColor,
-    "circle-stroke-width": strokeWidth,
-    "circle-stroke-opacity": 0.88,
-    "circle-blur": resolved.circleBlur * 0.2,
+    "circle-stroke-color": "rgba(255, 255, 255, 0.82)",
+    "circle-stroke-width": 0.55,
+    "circle-stroke-opacity": 0.92,
+    "circle-blur": 0.08,
   };
 }
 
@@ -337,16 +421,16 @@ export function buildClusterGlowPaint(
     "circle-radius": [
       "step",
       ["get", "point_count"],
-      18,
-      10,
       22,
-      50,
+      10,
       28,
+      50,
+      36,
       200,
-      34,
+      44,
     ],
-    "circle-opacity": resolved.opacity * 0.22,
-    "circle-blur": 0.72,
+    "circle-opacity": resolved.opacity * resolved.glowStrength * 0.42,
+    "circle-blur": 0.95,
     "circle-stroke-width": 0,
   };
 }
@@ -356,8 +440,8 @@ export function buildClusterCirclePaint(
   chartColors?: string[],
 ): Record<string, unknown> {
   const accent = chartColors?.[0] ?? resolved.color;
-  const warm = chartColors?.[2] ?? "#f59e0b";
-  const hot = chartColors?.[3] ?? "#e11d48";
+  const warm = chartColors?.[2] ?? "#fbbf24";
+  const hot = chartColors?.[3] ?? "#fb7185";
   return {
     "circle-color": [
       "interpolate",
@@ -370,11 +454,11 @@ export function buildClusterCirclePaint(
       100,
       hot,
     ],
-    "circle-opacity": resolved.opacity * 0.94,
-    "circle-stroke-color": "rgba(255, 255, 255, 0.92)",
-    "circle-stroke-width": 1.5,
-    "circle-stroke-opacity": 0.96,
-    "circle-blur": 0.08,
+    "circle-opacity": Math.min(1, resolved.opacity * 0.98),
+    "circle-stroke-color": "rgba(255, 255, 255, 0.9)",
+    "circle-stroke-width": 1.25,
+    "circle-stroke-opacity": 0.95,
+    "circle-blur": 0.06,
     "circle-radius": [
       "step",
       ["get", "point_count"],
@@ -411,8 +495,20 @@ export function gisLayerHeatmapDetailId(layerId: string): string {
   return `vs-gis-layer-${layerId}-heat-points`;
 }
 
+export function gisLayerHeatmapDetailGlowId(layerId: string): string {
+  return `vs-gis-layer-${layerId}-heat-detail-glow`;
+}
+
+export function gisLayerHeatmapHaloId(layerId: string): string {
+  return `vs-gis-layer-${layerId}-heat-halo`;
+}
+
 export function gisLayerHeatmapGlowId(layerId: string): string {
   return `vs-gis-layer-${layerId}-heat-glow`;
+}
+
+export function gisLayerScatterHaloId(layerId: string): string {
+  return `vs-gis-layer-${layerId}-scatter-halo`;
 }
 
 export function gisLayerScatterGlowId(layerId: string): string {

@@ -307,13 +307,13 @@ export const DEFAULT_GIS_OVERLAY: Required<
   clusterMaxZoom: 12,
   colorByCategory: false,
   heatmapPreset: "ember",
-  heatmapIntensity: 1.15,
-  heatmapRadiusMax: 28,
+  heatmapIntensity: 1.4,
+  heatmapRadiusMax: 32,
   heatmapCrossfadeZoom: 8.5,
   clusterRadius: 56,
   sizeCurve: "perceptual",
-  circleBlur: 0.22,
-  glowStrength: 0.55,
+  circleBlur: 0.28,
+  glowStrength: 0.78,
 };
 
 const DEFAULT_GIS_OVERLAY_COLOR = "#2563eb";

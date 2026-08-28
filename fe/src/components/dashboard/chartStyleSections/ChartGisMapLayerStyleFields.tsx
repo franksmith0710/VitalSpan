@@ -153,7 +153,7 @@ export function ChartGisMapLayerStyleFields({
           />
           <InspectorSliderField
             label="光晕强度"
-            hint="散点底层柔光，增强球面观感"
+            hint="自发光柔光；散点与热力共用"
             value={Math.round(resolved.glowStrength * 100)}
             min={0}
             max={100}

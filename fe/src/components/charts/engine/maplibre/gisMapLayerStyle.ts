@@ -4,14 +4,20 @@ import {
   buildClusterCountPaint,
   buildClusterGlowPaint,
   buildHeatmapDetailCirclePaint,
+  buildHeatmapDetailGlowPaint,
   buildHeatmapGlowPaint,
+  buildHeatmapHaloPaint,
   buildHeatmapPaint,
   buildScatterCorePaint,
   buildScatterGlowPaint,
+  buildScatterHaloPaint,
   gisLayerClusterGlowId,
+  gisLayerHeatmapDetailGlowId,
   gisLayerHeatmapDetailId,
   gisLayerHeatmapGlowId,
+  gisLayerHeatmapHaloId,
   gisLayerScatterGlowId,
+  gisLayerScatterHaloId,
 } from "@/components/charts/engine/maplibre/gisOverlayVisual";
 import type { LayerSpecification, StyleSpecification } from "maplibre-gl";
 import type { GisProjectLayer } from "@/components/charts/engine/maplibre/gisProject";
@@ -38,9 +44,12 @@ export function gisLayerHeatmapId(layerId: string): string {
 
 export {
   gisLayerClusterGlowId,
+  gisLayerHeatmapDetailGlowId,
   gisLayerHeatmapDetailId,
   gisLayerHeatmapGlowId,
+  gisLayerHeatmapHaloId,
   gisLayerScatterGlowId,
+  gisLayerScatterHaloId,
 } from "@/components/charts/engine/maplibre/gisOverlayVisual";
 
 export type GisLayerRuntimeEntry = {
@@ -66,12 +75,21 @@ function buildHeatmapLayers(
   visible = true,
 ): LayerSpecification[] {
   const visibility = visible ? "visible" : "none";
+  const fade = resolved.heatmapCrossfadeZoom;
   return [
+    {
+      id: gisLayerHeatmapHaloId(layerId),
+      type: "circle",
+      source: sourceId,
+      maxzoom: fade + 1,
+      layout: { visibility },
+      paint: buildHeatmapHaloPaint(resolved, layerOpacity, chartColors),
+    },
     {
       id: gisLayerHeatmapGlowId(layerId),
       type: "circle",
       source: sourceId,
-      maxzoom: resolved.heatmapCrossfadeZoom + 1,
+      maxzoom: fade + 1,
       layout: { visibility },
       paint: buildHeatmapGlowPaint(resolved, layerOpacity, chartColors),
     },
@@ -79,15 +97,23 @@ function buildHeatmapLayers(
       id: gisLayerHeatmapId(layerId),
       type: "heatmap",
       source: sourceId,
-      maxzoom: resolved.heatmapCrossfadeZoom + 1,
+      maxzoom: fade + 1,
       layout: { visibility },
       paint: buildHeatmapPaint(resolved, layerOpacity, chartColors),
+    },
+    {
+      id: gisLayerHeatmapDetailGlowId(layerId),
+      type: "circle",
+      source: sourceId,
+      minzoom: fade - 0.5,
+      layout: { visibility },
+      paint: buildHeatmapDetailGlowPaint(resolved, layerOpacity, chartColors),
     },
     {
       id: gisLayerHeatmapDetailId(layerId),
       type: "circle",
       source: sourceId,
-      minzoom: resolved.heatmapCrossfadeZoom - 0.5,
+      minzoom: fade - 0.5,
       layout: { visibility },
       paint: buildHeatmapDetailCirclePaint(resolved, layerOpacity, chartColors),
     },
@@ -97,6 +123,7 @@ function buildHeatmapLayers(
 function remapOverlayLayerId(spec: LayerSpecification, entry: GisLayerRuntimeEntry): LayerSpecification {
   const layerId = entry.layer.id;
   const id = spec.id
+    .replace("vs-gis-overlay-scatter-halo", gisLayerScatterHaloId(layerId))
     .replace("vs-gis-overlay-cluster-glow", gisLayerClusterGlowId(layerId))
     .replace("vs-gis-overlay-glow", gisLayerScatterGlowId(layerId))
     .replace("vs-gis-overlay", `vs-gis-layer-${layerId}`);
@@ -105,7 +132,9 @@ function remapOverlayLayerId(spec: LayerSpecification, entry: GisLayerRuntimeEnt
   const resolved = resolveGisOverlayStyle(entry.layer.style, entry.options.chartColors);
   let paint = spec.paint ?? {};
   if (spec.type === "circle") {
-    if (id.endsWith("-cluster-glow")) {
+    if (id.endsWith("-scatter-halo")) {
+      paint = buildScatterHaloPaint(resolved, layerOpacity, entry.options.chartColors);
+    } else if (id.endsWith("-cluster-glow")) {
       paint = buildClusterGlowPaint(resolved, entry.options.chartColors);
       paint = scaleCircleOpacity(paint, layerOpacity);
     } else if (id.endsWith("-glow")) {
@@ -210,13 +239,16 @@ export function syncGisProjectLayerStyle(
     const chartColors = entry.options.chartColors;
 
     if (entry.layer.kind === "heatmap") {
+      const haloId = gisLayerHeatmapHaloId(entry.layer.id);
       const glowId = gisLayerHeatmapGlowId(entry.layer.id);
       const heatId = gisLayerHeatmapId(entry.layer.id);
+      const detailGlowId = gisLayerHeatmapDetailGlowId(entry.layer.id);
       const detailId = gisLayerHeatmapDetailId(entry.layer.id);
-      for (const id of [glowId, heatId, detailId]) {
+      for (const id of [haloId, glowId, heatId, detailGlowId, detailId]) {
         if (!map.getLayer(id)) continue;
         map.setLayoutProperty(id, "visibility", visible);
       }
+      applyCirclePaint(map, haloId, buildHeatmapHaloPaint(resolved, layerOpacity, chartColors));
       applyCirclePaint(map, glowId, buildHeatmapGlowPaint(resolved, layerOpacity, chartColors));
       if (map.getLayer(heatId)) {
         const heatPaint = buildHeatmapPaint(resolved, layerOpacity, chartColors);
@@ -224,20 +256,23 @@ export function syncGisProjectLayerStyle(
           map.setPaintProperty(heatId, key, value);
         }
       }
+      applyCirclePaint(map, detailGlowId, buildHeatmapDetailGlowPaint(resolved, layerOpacity, chartColors));
       applyCirclePaint(map, detailId, buildHeatmapDetailCirclePaint(resolved, layerOpacity, chartColors));
       return;
     }
 
+    const haloId = gisLayerScatterHaloId(entry.layer.id);
     const clusterGlowId = gisLayerClusterGlowId(entry.layer.id);
     const glowId = gisLayerScatterGlowId(entry.layer.id);
     const circleId = `vs-gis-layer-${entry.layer.id}-circles`;
     const clusterId = `vs-gis-layer-${entry.layer.id}-clusters`;
     const clusterCountId = `vs-gis-layer-${entry.layer.id}-cluster-count`;
     const labelId = `vs-gis-layer-${entry.layer.id}-labels`;
-    for (const id of [clusterGlowId, glowId, circleId, clusterId, clusterCountId, labelId]) {
+    for (const id of [haloId, clusterGlowId, glowId, circleId, clusterId, clusterCountId, labelId]) {
       if (!map.getLayer(id)) continue;
       map.setLayoutProperty(id, "visibility", visible);
     }
+    applyCirclePaint(map, haloId, buildScatterHaloPaint(resolved, layerOpacity, chartColors));
     applyCirclePaint(
       map,
       clusterGlowId,

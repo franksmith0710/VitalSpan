@@ -19,6 +19,7 @@ import { buildPmtilesVectorSourceUrl } from "@/components/charts/engine/maplibre
 import type { TileServiceResolve } from "@/lib/tileServices";
 
 export const GIS_OVERLAY_SOURCE_ID = "vs-gis-overlay";
+export const GIS_OVERLAY_SCATTER_HALO_LAYER_ID = "vs-gis-overlay-scatter-halo";
 export const GIS_OVERLAY_GLOW_LAYER_ID = "vs-gis-overlay-glow";
 export const GIS_OVERLAY_CIRCLE_LAYER_ID = "vs-gis-overlay-circles";
 export const GIS_OVERLAY_LABEL_LAYER_ID = "vs-gis-overlay-labels";

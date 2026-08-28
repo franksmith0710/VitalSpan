@@ -18,6 +18,7 @@ import {
   GIS_OVERLAY_CLUSTER_LAYER_ID,
   GIS_OVERLAY_GLOW_LAYER_ID,
   GIS_OVERLAY_LABEL_LAYER_ID,
+  GIS_OVERLAY_SCATTER_HALO_LAYER_ID,
   GIS_OVERLAY_SOURCE_ID,
 } from "@/components/charts/engine/maplibre/gisMapStyle";
 
@@ -88,6 +89,7 @@ describe("appendGisOverlayLayers", () => {
       chartColors: ["#999999"],
     });
     expect(style.sources?.[GIS_OVERLAY_SOURCE_ID]).toBeDefined();
+    expect(style.layers?.some((layer) => layer.id === GIS_OVERLAY_SCATTER_HALO_LAYER_ID)).toBe(true);
     expect(style.layers?.some((layer) => layer.id === GIS_OVERLAY_GLOW_LAYER_ID)).toBe(true);
     const circle = style.layers?.find((layer) => layer.id === GIS_OVERLAY_CIRCLE_LAYER_ID);
     expect(circle?.paint?.["circle-color"]).toBe("#112233");
@@ -137,14 +139,14 @@ describe("readGisProject overlay", () => {
 });
 
 describe("buildGisOverlayCirclePaint", () => {
-  it("includes stroke properties", () => {
+  it("includes emissive stroke on core circles", () => {
     const paint = buildGisOverlayCirclePaint(
       resolveGisOverlayStyle({ strokeColor: "#000000", strokeWidth: 2 }),
       undefined,
       "dark",
     );
-    expect(paint["circle-stroke-color"]).toBe("#000000");
-    expect(paint["circle-stroke-width"]).toBe(2);
+    expect(paint["circle-stroke-color"]).toBe("rgba(255, 255, 255, 0.82)");
+    expect(paint["circle-stroke-width"]).toBe(0.55);
   });
 });
 
@@ -156,9 +158,10 @@ describe("syncGisOverlayStyle", () => {
     const map = {
       isStyleLoaded: () => true,
       getLayer: (id: string) =>
-        id === GIS_OVERLAY_CLUSTER_GLOW_LAYER_ID ||
+        id === GIS_OVERLAY_SCATTER_HALO_LAYER_ID ||
         id === GIS_OVERLAY_GLOW_LAYER_ID ||
         id === GIS_OVERLAY_CIRCLE_LAYER_ID ||
+        id === GIS_OVERLAY_CLUSTER_GLOW_LAYER_ID ||
         id === GIS_OVERLAY_CLUSTER_LAYER_ID ||
         id === GIS_OVERLAY_LABEL_LAYER_ID
           ? {}

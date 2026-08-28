@@ -7,6 +7,7 @@ import {
   buildHeatmapPaint,
   buildMetricColorExpression,
   buildScatterGlowPaint,
+  buildScatterHaloPaint,
   buildScatterRadiusExpression,
 } from "@/components/charts/engine/maplibre/gisOverlayVisual";
 
@@ -14,7 +15,7 @@ describe("gisOverlayVisual", () => {
   it("uses ember warm transparent start for heatmap color", () => {
     const expr = buildHeatmapColorExpression("ember");
     expect(expr[0]).toBe("interpolate");
-    expect(expr).toContain("rgba(255, 100, 40, 0.10)");
+    expect(expr).toContain("rgba(255, 110, 35, 0.18)");
   });
 
   it("uses night glow transparent start for heatmap color", () => {
@@ -36,6 +37,13 @@ describe("gisOverlayVisual", () => {
     const color = buildMetricColorExpression(resolved, ["#111", "#22d3ee", "#fbbf24", "#f43f5e"]);
     expect(color[0]).toBe("interpolate");
     expect(color[2]).toEqual(["coalesce", ["get", "sizeNorm"], 0.45]);
+  });
+
+  it("builds scatter halo with full blur for emissive bloom", () => {
+    const resolved = resolveGisOverlayStyle({ glowStrength: 0.78, opacity: 0.9 });
+    const paint = buildScatterHaloPaint(resolved, 1, ["#3366cc"]);
+    expect(paint["circle-blur"]).toBe(1);
+    expect((paint["circle-radius"] as unknown[])[0]).toBe("interpolate");
   });
 
   it("builds scatter glow radius with top-level zoom interpolate", () => {
