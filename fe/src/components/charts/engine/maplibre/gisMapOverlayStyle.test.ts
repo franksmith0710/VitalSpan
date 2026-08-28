@@ -15,6 +15,7 @@ import { appendGisOverlayLayers, buildPmtilesStyle } from "@/components/charts/e
 import {
   GIS_OVERLAY_CIRCLE_LAYER_ID,
   GIS_OVERLAY_CLUSTER_LAYER_ID,
+  GIS_OVERLAY_GLOW_LAYER_ID,
   GIS_OVERLAY_LABEL_LAYER_ID,
   GIS_OVERLAY_SOURCE_ID,
 } from "@/components/charts/engine/maplibre/gisMapStyle";
@@ -82,13 +83,14 @@ describe("appendGisOverlayLayers", () => {
     };
     const style = appendGisOverlayLayers(base, geojson, {
       flavor: "light",
-      overlay: { color: "#112233", opacity: 0.5, colorByCategory: false },
+      overlay: { color: "#112233", opacity: 0.5, colorByCategory: false, scaleByMetric: false },
       chartColors: ["#999999"],
     });
     expect(style.sources?.[GIS_OVERLAY_SOURCE_ID]).toBeDefined();
+    expect(style.layers?.some((layer) => layer.id === GIS_OVERLAY_GLOW_LAYER_ID)).toBe(true);
     const circle = style.layers?.find((layer) => layer.id === GIS_OVERLAY_CIRCLE_LAYER_ID);
     expect(circle?.paint?.["circle-color"]).toBe("#112233");
-    expect(circle?.paint?.["circle-opacity"]).toBe(0.5);
+    expect(circle?.paint?.["circle-opacity"]?.[0]).toBe("interpolate");
     expect(style.layers?.some((layer) => layer.id === GIS_OVERLAY_LABEL_LAYER_ID)).toBe(true);
   });
 });
@@ -149,6 +151,7 @@ describe("syncGisOverlayStyle", () => {
     const map = {
       isStyleLoaded: () => true,
       getLayer: (id: string) =>
+        id === GIS_OVERLAY_GLOW_LAYER_ID ||
         id === GIS_OVERLAY_CIRCLE_LAYER_ID ||
         id === GIS_OVERLAY_CLUSTER_LAYER_ID ||
         id === GIS_OVERLAY_LABEL_LAYER_ID

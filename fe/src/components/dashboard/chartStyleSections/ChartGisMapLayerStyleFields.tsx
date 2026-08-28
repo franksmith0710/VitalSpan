@@ -43,17 +43,20 @@ export function ChartGisMapLayerStyleFields({
         </div>
       ) : (
         <div className="grid gap-1.5">
-          <InspectorFieldLabel label="热力色带" hint="Night 适配深色球面；Scientific 跟随图表配色" />
+          <InspectorFieldLabel label="热力色带" hint="Ember 暖色柔光；Night 冷色；Scientific 跟随图表配色" />
           <select
             className={INSPECTOR_CTRL}
             value={resolved.heatmapPreset}
             aria-label="热力色带"
-            onChange={(event) =>
+            onChange={(event) => {
+              const value = event.target.value;
               onPatch({
-                heatmapPreset: event.target.value === "scientific" ? "scientific" : "night",
-              })
-            }
+                heatmapPreset:
+                  value === "scientific" ? "scientific" : value === "night" ? "night" : "ember",
+              });
+            }}
           >
+            <option value="ember">Ember Glow</option>
             <option value="night">Night Glow</option>
             <option value="scientific">Scientific</option>
           </select>
@@ -147,6 +150,16 @@ export function ChartGisMapLayerStyleFields({
             step={5}
             unit="%"
             onChange={(next) => onPatch({ circleBlur: next / 100 })}
+          />
+          <InspectorSliderField
+            label="光晕强度"
+            hint="散点底层柔光，增强球面观感"
+            value={Math.round(resolved.glowStrength * 100)}
+            min={0}
+            max={100}
+            step={5}
+            unit="%"
+            onChange={(next) => onPatch({ glowStrength: next / 100 })}
           />
           <InspectorSwitchRow
             label="感知缩放"

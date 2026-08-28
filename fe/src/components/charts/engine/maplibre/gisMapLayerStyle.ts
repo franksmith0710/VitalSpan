@@ -1,13 +1,17 @@
 import {
-  buildScatterRadiusExpression,
+  buildClusterCirclePaint,
   buildHeatmapDetailCirclePaint,
+  buildHeatmapGlowPaint,
   buildHeatmapPaint,
+  buildScatterCorePaint,
+  buildScatterGlowPaint,
   gisLayerHeatmapDetailId,
+  gisLayerHeatmapGlowId,
+  gisLayerScatterGlowId,
 } from "@/components/charts/engine/maplibre/gisOverlayVisual";
 import type { LayerSpecification, StyleSpecification } from "maplibre-gl";
 import type { GisProjectLayer } from "@/components/charts/engine/maplibre/gisProject";
 import {
-  buildGisOverlayCirclePaint,
   buildGisOverlayLabelLayout,
   buildGisOverlayLabelPaint,
   buildGisOverlayLayerDefinitions,
@@ -28,13 +32,25 @@ export function gisLayerHeatmapId(layerId: string): string {
   return `vs-gis-layer-${layerId}-heat`;
 }
 
-export { gisLayerHeatmapDetailId } from "@/components/charts/engine/maplibre/gisOverlayVisual";
+export {
+  gisLayerHeatmapDetailId,
+  gisLayerHeatmapGlowId,
+  gisLayerScatterGlowId,
+} from "@/components/charts/engine/maplibre/gisOverlayVisual";
 
 export type GisLayerRuntimeEntry = {
   layer: GisProjectLayer;
   geoJson: GeoJSON.FeatureCollection | null;
   options: GisOverlayLayerOptions;
 };
+
+function scaleCircleOpacity(paint: Record<string, unknown>, layerOpacity: number): Record<string, unknown> {
+  const opacity = paint["circle-opacity"];
+  if (typeof opacity === "number") {
+    return { ...paint, "circle-opacity": opacity * layerOpacity };
+  }
+  return paint;
+}
 
 function buildHeatmapLayers(
   layerId: string,
@@ -45,8 +61,15 @@ function buildHeatmapLayers(
   visible = true,
 ): LayerSpecification[] {
   const visibility = visible ? "visible" : "none";
-  const accent = chartColors?.[0] ?? resolved.color;
   return [
+    {
+      id: gisLayerHeatmapGlowId(layerId),
+      type: "circle",
+      source: sourceId,
+      maxzoom: resolved.heatmapCrossfadeZoom + 1,
+      layout: { visibility },
+      paint: buildHeatmapGlowPaint(resolved, layerOpacity, chartColors),
+    },
     {
       id: gisLayerHeatmapId(layerId),
       type: "heatmap",
@@ -61,9 +84,40 @@ function buildHeatmapLayers(
       source: sourceId,
       minzoom: resolved.heatmapCrossfadeZoom - 0.5,
       layout: { visibility },
-      paint: buildHeatmapDetailCirclePaint(resolved, layerOpacity, accent),
+      paint: buildHeatmapDetailCirclePaint(resolved, layerOpacity, chartColors),
     },
   ];
+}
+
+function remapOverlayLayerId(spec: LayerSpecification, entry: GisLayerRuntimeEntry): LayerSpecification {
+  const layerId = entry.layer.id;
+  const id = spec.id
+    .replace("vs-gis-overlay-glow", gisLayerScatterGlowId(layerId))
+    .replace("vs-gis-overlay", `vs-gis-layer-${layerId}`);
+  const layerOpacity = entry.layer.opacity ?? 1;
+  const visible = entry.layer.visible !== false;
+  const resolved = resolveGisOverlayStyle(entry.layer.style, entry.options.chartColors);
+  let paint = spec.paint ?? {};
+  if (spec.type === "circle") {
+    if (id.endsWith("-glow")) {
+      paint = buildScatterGlowPaint(resolved, layerOpacity, entry.options.chartColors);
+    } else if (id.endsWith("-circles")) {
+      paint = buildScatterCorePaint(resolved, layerOpacity, entry.options.chartColors);
+    } else if (id.endsWith("-clusters")) {
+      paint = buildClusterCirclePaint(resolved);
+      paint = scaleCircleOpacity(paint, layerOpacity);
+    }
+  }
+  return {
+    ...spec,
+    id,
+    source: gisLayerSourceId(layerId),
+    layout: {
+      ...(spec.layout ?? {}),
+      visibility: visible ? "visible" : "none",
+    },
+    paint,
+  };
 }
 
 function buildLayerDefinitions(entry: GisLayerRuntimeEntry) {
@@ -93,26 +147,7 @@ function buildLayerDefinitions(entry: GisLayerRuntimeEntry) {
   const { source, layers } = buildGisOverlayLayerDefinitions(data, entry.options);
   return {
     source: { id: sourceId, spec: source.spec },
-    layers: layers.map((spec) => ({
-      ...spec,
-      id: spec.id.replace("vs-gis-overlay", `vs-gis-layer-${entry.layer.id}`),
-      source: sourceId,
-      layout: {
-        ...(spec.layout ?? {}),
-        visibility: visible ? "visible" : "none",
-      },
-      paint: {
-        ...(spec.paint ?? {}),
-        ...(spec.type === "circle"
-          ? {
-              "circle-opacity":
-                typeof (spec.paint as Record<string, unknown>)?.["circle-opacity"] === "number"
-                  ? ((spec.paint as Record<string, number>)["circle-opacity"] ?? 1) * layerOpacity
-                  : layerOpacity,
-            }
-          : {}),
-      },
-    })),
+    layers: layers.map((spec) => remapOverlayLayerId(spec, entry)),
   };
 }
 
@@ -148,6 +183,13 @@ export function syncGisProjectLayerData(
   });
 }
 
+function applyCirclePaint(map: MapLibreMap, layerId: string, paint: Record<string, unknown>) {
+  if (!map.getLayer(layerId)) return;
+  for (const [key, value] of Object.entries(paint)) {
+    map.setPaintProperty(layerId, key, value);
+  }
+}
+
 export function syncGisProjectLayerStyle(
   map: MapLibreMap,
   entry: GisLayerRuntimeEntry,
@@ -155,50 +197,44 @@ export function syncGisProjectLayerStyle(
   whenGisMapStyleReady(map, () => {
     const layerOpacity = entry.layer.opacity ?? 1;
     const visible = entry.layer.visible !== false ? "visible" : "none";
-    const sourceId = gisLayerSourceId(entry.layer.id);
+    const resolved = resolveGisOverlayStyle(entry.layer.style, entry.options.chartColors);
+    const chartColors = entry.options.chartColors;
 
     if (entry.layer.kind === "heatmap") {
+      const glowId = gisLayerHeatmapGlowId(entry.layer.id);
       const heatId = gisLayerHeatmapId(entry.layer.id);
       const detailId = gisLayerHeatmapDetailId(entry.layer.id);
-      const resolved = resolveGisOverlayStyle(entry.layer.style, entry.options.chartColors);
-      for (const id of [heatId, detailId]) {
+      for (const id of [glowId, heatId, detailId]) {
         if (!map.getLayer(id)) continue;
         map.setLayoutProperty(id, "visibility", visible);
       }
+      applyCirclePaint(map, glowId, buildHeatmapGlowPaint(resolved, layerOpacity, chartColors));
       if (map.getLayer(heatId)) {
-        const paint = buildHeatmapPaint(resolved, layerOpacity, entry.options.chartColors);
-        for (const [key, value] of Object.entries(paint)) {
+        const heatPaint = buildHeatmapPaint(resolved, layerOpacity, chartColors);
+        for (const [key, value] of Object.entries(heatPaint)) {
           map.setPaintProperty(heatId, key, value);
         }
       }
-      if (map.getLayer(detailId)) {
-        const accent = entry.options.chartColors?.[0] ?? resolved.color;
-        const paint = buildHeatmapDetailCirclePaint(resolved, layerOpacity, accent);
-        for (const [key, value] of Object.entries(paint)) {
-          map.setPaintProperty(detailId, key, value);
-        }
-      }
+      applyCirclePaint(map, detailId, buildHeatmapDetailCirclePaint(resolved, layerOpacity, chartColors));
       return;
     }
 
-    const resolved = resolveGisOverlayStyle(entry.layer.style, entry.options.chartColors);
+    const glowId = gisLayerScatterGlowId(entry.layer.id);
     const circleId = `vs-gis-layer-${entry.layer.id}-circles`;
     const clusterId = `vs-gis-layer-${entry.layer.id}-clusters`;
+    const clusterCountId = `vs-gis-layer-${entry.layer.id}-cluster-count`;
     const labelId = `vs-gis-layer-${entry.layer.id}-labels`;
-    for (const id of [circleId, clusterId, labelId]) {
+    for (const id of [glowId, circleId, clusterId, clusterCountId, labelId]) {
       if (!map.getLayer(id)) continue;
       map.setLayoutProperty(id, "visibility", visible);
     }
-    if (map.getLayer(circleId)) {
-      const paint = buildGisOverlayCirclePaint(resolved);
-      for (const [key, value] of Object.entries(paint)) {
-        if (key === "circle-opacity" && typeof value === "number") {
-          map.setPaintProperty(circleId, key, value * layerOpacity);
-        } else {
-          map.setPaintProperty(circleId, key, value);
-        }
-      }
-    }
+    applyCirclePaint(map, glowId, buildScatterGlowPaint(resolved, layerOpacity, chartColors));
+    applyCirclePaint(map, circleId, buildScatterCorePaint(resolved, layerOpacity, chartColors));
+    applyCirclePaint(
+      map,
+      clusterId,
+      scaleCircleOpacity(buildClusterCirclePaint(resolved), layerOpacity),
+    );
     if (map.getLayer(labelId)) {
       const labelLayout = buildGisOverlayLabelLayout(resolved);
       for (const [key, value] of Object.entries(labelLayout)) {
@@ -210,7 +246,6 @@ export function syncGisProjectLayerStyle(
         map.setPaintProperty(labelId, key, value);
       }
     }
-    void sourceId;
   });
 }
 

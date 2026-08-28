@@ -1,10 +1,16 @@
 import type { ExpressionSpecification, LayerSpecification } from "maplibre-gl";
-import { buildScatterRadiusExpression } from "@/components/charts/engine/maplibre/gisOverlayVisual";
+import {
+  buildClusterCirclePaint,
+  buildScatterCorePaint,
+  buildScatterGlowPaint,
+  buildScatterRadiusExpression,
+} from "@/components/charts/engine/maplibre/gisOverlayVisual";
 import {
   GIS_OVERLAY_CIRCLE_LAYER_ID,
   GIS_OVERLAY_CLUSTER_COUNT_LAYER_ID,
   GIS_OVERLAY_CLUSTER_FILTER,
   GIS_OVERLAY_CLUSTER_LAYER_ID,
+  GIS_OVERLAY_GLOW_LAYER_ID,
   GIS_OVERLAY_LABEL_LAYER_ID,
   GIS_OVERLAY_SOURCE_ID,
   GIS_OVERLAY_UNCLUSTERED_FILTER,
@@ -29,47 +35,14 @@ export function buildGisOverlayCircleRadius(resolved: ResolvedGisOverlayStyle): 
   return buildScatterRadiusExpression(resolved);
 }
 
-function buildCircleColor(resolved: ResolvedGisOverlayStyle): string | ExpressionSpecification {
-  if (resolved.colorByCategory) {
-    return ["coalesce", ["get", "color"], resolved.color];
-  }
-  return resolved.color;
-}
-
 export function buildGisOverlayCirclePaint(
   resolved: ResolvedGisOverlayStyle,
+  chartColors?: string[],
 ): Record<string, unknown> {
-  return {
-    "circle-radius": buildGisOverlayCircleRadius(resolved),
-    "circle-color": buildCircleColor(resolved),
-    "circle-opacity": resolved.opacity,
-    "circle-stroke-color": resolved.strokeColor,
-    "circle-stroke-width": resolved.strokeWidth,
-    "circle-blur": resolved.circleBlur,
-  };
+  return buildScatterCorePaint(resolved, 1, chartColors);
 }
 
-function buildClusterCirclePaint(resolved: ResolvedGisOverlayStyle): Record<string, unknown> {
-  return {
-    "circle-color": resolved.color,
-    "circle-opacity": ["step", ["get", "point_count"], resolved.opacity * 0.78, 10, resolved.opacity * 0.86, 50, resolved.opacity * 0.94],
-    "circle-stroke-color": resolved.strokeColor,
-    "circle-stroke-width": Math.max(1, resolved.strokeWidth + 0.35),
-    "circle-stroke-opacity": 0.9,
-    "circle-blur": resolved.circleBlur * 0.35,
-    "circle-radius": [
-      "step",
-      ["get", "point_count"],
-      resolved.radiusMin + 2,
-      10,
-      (resolved.radiusMin + resolved.radiusMax) / 2 + 2,
-      50,
-      resolved.radiusMax + 2,
-      200,
-      resolved.radiusMax + 6,
-    ],
-  };
-}
+export { buildClusterCirclePaint };
 
 function overlayLabelPaint(flavor: GisBasemapFlavor) {
   const darkBasemap = flavor === "dark" || flavor === "black";
@@ -77,6 +50,14 @@ function overlayLabelPaint(flavor: GisBasemapFlavor) {
     "text-color": darkBasemap ? "#f8fafc" : "#0f172a",
     "text-halo-color": darkBasemap ? "rgba(15, 23, 42, 0.88)" : "rgba(255, 255, 255, 0.92)",
     "text-halo-width": 1.25,
+  };
+}
+
+function clusterCountPaint(): Record<string, unknown> {
+  return {
+    "text-color": "#ffffff",
+    "text-halo-color": "rgba(0, 0, 0, 0.55)",
+    "text-halo-width": 1.5,
   };
 }
 
@@ -100,16 +81,32 @@ export function buildGisOverlayLabelPaint(flavor: GisBasemapFlavor): Record<stri
   return overlayLabelPaint(flavor);
 }
 
+function buildGlowLayer(
+  resolved: ResolvedGisOverlayStyle,
+  options: GisOverlayLayerOptions,
+  filter?: typeof GIS_OVERLAY_UNCLUSTERED_FILTER,
+): LayerSpecification {
+  return {
+    id: GIS_OVERLAY_GLOW_LAYER_ID,
+    type: "circle",
+    source: GIS_OVERLAY_SOURCE_ID,
+    ...(filter ? { filter } : {}),
+    paint: buildScatterGlowPaint(resolved, 1, options.chartColors),
+  };
+}
+
 function buildSimpleLayers(
   resolved: ResolvedGisOverlayStyle,
   flavor: GisBasemapFlavor,
+  options: GisOverlayLayerOptions,
 ): LayerSpecification[] {
   return [
+    buildGlowLayer(resolved, options),
     {
       id: GIS_OVERLAY_CIRCLE_LAYER_ID,
       type: "circle",
       source: GIS_OVERLAY_SOURCE_ID,
-      paint: buildGisOverlayCirclePaint(resolved),
+      paint: buildGisOverlayCirclePaint(resolved, options.chartColors),
     },
     {
       id: GIS_OVERLAY_LABEL_LAYER_ID,
@@ -125,6 +122,7 @@ function buildSimpleLayers(
 function buildClusterLayers(
   resolved: ResolvedGisOverlayStyle,
   flavor: GisBasemapFlavor,
+  options: GisOverlayLayerOptions,
 ): LayerSpecification[] {
   return [
     {
@@ -144,14 +142,15 @@ function buildClusterLayers(
         "text-size": ["step", ["get", "point_count"], 11, 50, 12, 200, 13],
         "text-allow-overlap": true,
       },
-      paint: buildGisOverlayLabelPaint(flavor),
+      paint: clusterCountPaint(),
     },
+    buildGlowLayer(resolved, options, GIS_OVERLAY_UNCLUSTERED_FILTER),
     {
       id: GIS_OVERLAY_CIRCLE_LAYER_ID,
       type: "circle",
       source: GIS_OVERLAY_SOURCE_ID,
       filter: GIS_OVERLAY_UNCLUSTERED_FILTER,
-      paint: buildGisOverlayCirclePaint(resolved),
+      paint: buildGisOverlayCirclePaint(resolved, options.chartColors),
     },
     {
       id: GIS_OVERLAY_LABEL_LAYER_ID,
@@ -180,8 +179,8 @@ export function buildGisOverlayLayerDefinitions(
       }
     : { type: "geojson" as const, data: overlay };
   const layers = resolved.cluster
-    ? buildClusterLayers(resolved, options.flavor)
-    : buildSimpleLayers(resolved, options.flavor);
+    ? buildClusterLayers(resolved, options.flavor, options)
+    : buildSimpleLayers(resolved, options.flavor, options);
   return {
     source: { id: GIS_OVERLAY_SOURCE_ID, spec: sourceSpec },
     layers,
@@ -230,8 +229,15 @@ export function syncGisOverlayStyle(map: MapLibreMap, options: GisOverlayLayerOp
       return;
     }
     const resolved = resolveGisOverlayStyle(options.overlay, options.chartColors);
-    applyCirclePaint(map, GIS_OVERLAY_CIRCLE_LAYER_ID, buildGisOverlayCirclePaint(resolved));
+    applyCirclePaint(map, GIS_OVERLAY_GLOW_LAYER_ID, buildScatterGlowPaint(resolved, 1, options.chartColors));
+    applyCirclePaint(map, GIS_OVERLAY_CIRCLE_LAYER_ID, buildGisOverlayCirclePaint(resolved, options.chartColors));
     applyCirclePaint(map, GIS_OVERLAY_CLUSTER_LAYER_ID, buildClusterCirclePaint(resolved));
+    if (map.getLayer(GIS_OVERLAY_CLUSTER_COUNT_LAYER_ID)) {
+      const countPaint = clusterCountPaint();
+      for (const [key, value] of Object.entries(countPaint)) {
+        map.setPaintProperty(GIS_OVERLAY_CLUSTER_COUNT_LAYER_ID, key, value);
+      }
+    }
     applyLabelStyle(map, resolved, options.flavor);
   });
 }

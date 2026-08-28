@@ -211,7 +211,9 @@ export type GisProjectOverlay = {
   /** 按标签/类别字段分色（palette） */
   colorByCategory?: boolean;
   /** 热力色带预设 */
-  heatmapPreset?: "night" | "scientific";
+  heatmapPreset?: "ember" | "night" | "scientific";
+  /** 散点/热力光晕强度 0–1 */
+  glowStrength?: number;
   /** 热力全局强度 0.4–2 */
   heatmapIntensity?: number;
   /** 热力模糊半径上限（px，随 zoom 插值） */
@@ -289,11 +291,12 @@ export const DEFAULT_GIS_OVERLAY: Required<
     | "clusterRadius"
     | "sizeCurve"
     | "circleBlur"
+    | "glowStrength"
   >
 > = {
-  radiusMin: 5,
-  radiusMax: 18,
-  opacity: 0.88,
+  radiusMin: 6,
+  radiusMax: 20,
+  opacity: 0.9,
   showLabels: false,
   labelMinZoom: 10,
   scaleByMetric: true,
@@ -302,14 +305,15 @@ export const DEFAULT_GIS_OVERLAY: Required<
   autoFit: true,
   cluster: true,
   clusterMaxZoom: 12,
-  colorByCategory: true,
-  heatmapPreset: "night",
-  heatmapIntensity: 1,
-  heatmapRadiusMax: 22,
-  heatmapCrossfadeZoom: 9,
+  colorByCategory: false,
+  heatmapPreset: "ember",
+  heatmapIntensity: 1.15,
+  heatmapRadiusMax: 28,
+  heatmapCrossfadeZoom: 8.5,
   clusterRadius: 56,
   sizeCurve: "perceptual",
-  circleBlur: 0.15,
+  circleBlur: 0.22,
+  glowStrength: 0.55,
 };
 
 const DEFAULT_GIS_OVERLAY_COLOR = "#2563eb";
@@ -328,13 +332,14 @@ export type ResolvedGisOverlayStyle = {
   cluster: boolean;
   clusterMaxZoom: number;
   colorByCategory: boolean;
-  heatmapPreset: "night" | "scientific";
+  heatmapPreset: "ember" | "night" | "scientific";
   heatmapIntensity: number;
   heatmapRadiusMax: number;
   heatmapCrossfadeZoom: number;
   clusterRadius: number;
   sizeCurve: "linear" | "perceptual";
   circleBlur: number;
+  glowStrength: number;
 };
 
 export function resolveGisOverlayStyle(
@@ -403,9 +408,18 @@ export function resolveGisOverlayStyle(
       ? circleBlurRaw
       : DEFAULT_GIS_OVERLAY.circleBlur;
   const heatmapPreset =
-    overlay?.heatmapPreset === "scientific" ? "scientific" : DEFAULT_GIS_OVERLAY.heatmapPreset;
+    overlay?.heatmapPreset === "scientific"
+      ? "scientific"
+      : overlay?.heatmapPreset === "night"
+        ? "night"
+        : DEFAULT_GIS_OVERLAY.heatmapPreset;
   const sizeCurve =
     overlay?.sizeCurve === "linear" ? "linear" : DEFAULT_GIS_OVERLAY.sizeCurve;
+  const glowStrengthRaw = Number(overlay?.glowStrength);
+  const glowStrength =
+    Number.isFinite(glowStrengthRaw) && glowStrengthRaw >= 0 && glowStrengthRaw <= 1
+      ? glowStrengthRaw
+      : DEFAULT_GIS_OVERLAY.glowStrength;
 
   return {
     color,
@@ -428,6 +442,7 @@ export function resolveGisOverlayStyle(
     clusterRadius,
     sizeCurve,
     circleBlur,
+    glowStrength,
   };
 }
 
@@ -624,8 +639,16 @@ function normalizeGisProjectOverlay(input: unknown): GisProjectOverlay | undefin
   const clusterMaxZoom = Number(raw.clusterMaxZoom);
   if (Number.isFinite(clusterMaxZoom) && clusterMaxZoom >= 0) next.clusterMaxZoom = clusterMaxZoom;
   if (raw.colorByCategory === false) next.colorByCategory = false;
-  if (raw.heatmapPreset === "scientific" || raw.heatmapPreset === "night") {
+  if (
+    raw.heatmapPreset === "scientific" ||
+    raw.heatmapPreset === "night" ||
+    raw.heatmapPreset === "ember"
+  ) {
     next.heatmapPreset = raw.heatmapPreset;
+  }
+  const glowStrength = Number(raw.glowStrength);
+  if (Number.isFinite(glowStrength) && glowStrength >= 0 && glowStrength <= 1) {
+    next.glowStrength = glowStrength;
   }
   const heatmapIntensity = Number(raw.heatmapIntensity);
   if (Number.isFinite(heatmapIntensity) && heatmapIntensity >= 0.4 && heatmapIntensity <= 2) {
