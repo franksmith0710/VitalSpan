@@ -3,7 +3,8 @@ name: create-evolution-plan
 description: >-
   人工交互创建或调整 docs/automate/plan.md（外部里程碑干预通道）。交互循环提议分节 → 用户调整 → 写入；
   支持从 prd.md 内嵌里程碑迁移。里程碑只排真实可交付的生产能力切片，禁止骨架/stub/MVP demo 假完成。
-  由用户手动触发；演化 P5 自动勾选条目，本 skill 负责结构与体检对账。
+  由用户手动触发完整模式；演化 P5 可自动勾选条目；本 skill 负责结构与体检对账。
+  loop-goal-prd / go-fast 仅可走 mode=honest-writeback（勾选回写子集）。
 ---
 
 # Create Evolution Plan（人工交互）
@@ -13,6 +14,7 @@ description: >-
 - 用户手动触发，为自动化演化设置阶段性人工干预（里程碑与顺序）
 - SOP 中「禁止创建/修改 plan.md」约束的是**演化流程内 subagent**；人工干预统一经本 skill
 - 典型时机：项目启动排期、picker 回传 `SATURATED`（评分饱和）、方向调整
+- **例外 · `honest-writeback`**：仅 [loop-goal-prd](../loop-goal-prd/SKILL.md) / [go-fast](../go-fast/SKILL.md) 在合回且真实验收后，按下方子集勾选对应 plan 行
 
 ## 生产姿态（全程强制）
 
@@ -46,6 +48,23 @@ description: >-
 | 体检 | `plan.md` 已存在 | 质量评分 + 对账清单 + 调整建议 |
 | 干预 | STUCK / SATURATED / 方向调整 | 重排、插入或拆分里程碑 |
 | 迁移 | PRD hub 内嵌里程碑 | 独立 `plan.md` + hub 引用行 |
+| **honest-writeback** | loop-goal-prd / go-fast 合回且真实验收后 | 仅将对应 prd ID 行 `[ ]` → `[x]` 并注完成日；见下节 |
+
+## mode: honest-writeback（loop / go-fast 专用子集）
+
+**允许**：
+
+- 对已真实验收的 prd ID：`- [ ]` → `- [x] …（完成于 YYYY-MM-DD）`
+- 假绿/未通过：保持未勾选；若先前误勾 → **反勾**并注明原因（可在修订记录或 ledger 记一笔）
+
+**禁止**：
+
+- 重排节、插入新里程碑、拆分/合并节、改节目标措辞
+- 新增无 prd 映射的自由文本任务
+- 未经真实验收勾选；用 stub/骨架冒充完成
+
+**写者**：默认 go-fast（编排契约 §3）；编排方校验，漏写可按本子集补写。  
+**无需**用户预览确认（已过合回+相关测门）。与 P5 自动勾选兼容：同一诚实标准。
 
 ## plan.md 结构
 
@@ -75,6 +94,7 @@ description: >-
 4. 检查提议项的 PRD 验收是否含 mock/stub/demo 完成定义 → 有则先提示修订 PRD，再排入 plan
 5. **交互循环**：用户增删项 / 重排节 / 改目标 → 重新呈现完整 plan → 直到用户确认
 6. 写入前展示完整预览，确认后写入 `docs/automate/plan.md`
+7. **用语对齐**：节目标与勾选名称跟 prd 分片规范名一致（不另造「演示版 / 临时模块」别名）
 
 ## 重复执行（plan.md 已存在）
 
@@ -162,7 +182,7 @@ description: >-
 ```yaml
 status: DONE | DONE_WITH_CONCERNS | BLOCKED
 phase: create-evolution-plan
-mode: create | audit | intervene | migrate
+mode: create | audit | intervene | migrate | honest-writeback
 score: 0
 artifacts:
   - docs/automate/plan.md
@@ -176,7 +196,8 @@ followups:
 
 - 每节列出的 prd ID 须可在 hub 定位（8 维总表，或功能索引指向的分片）；完全不存在 → 先提示走 `create-evolution-prd` 补条目；仅功能索引缺行 → 本 skill 顺手补一行索引即可
 - 不写与 prd 无映射的自由文本任务
-- 写入前必须展示预览并获得确认
-- **禁止**演化流程调用本 skill
+- 写入前必须展示预览并获得确认（**例外**：`honest-writeback`）
+- **禁止**演化流程 subagent 调用完整模式（新建/干预/迁移）；P5 勾选与 loop **`honest-writeback`** 除外
+- **禁止**`honest-writeback` 重排/发明里程碑或假绿勾选
 - **禁止**将 stub / mock 假服务 / 骨架空壳 / MVP·demo 假完成排进里程碑完成定义
 - **禁止**用「先假后真」作为排序或拆分理由；拆分只允许窄而真实的生产路径

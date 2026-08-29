@@ -59,13 +59,13 @@ Controller 必须读：
 ## Controller 主循环
 
 1. `init` → 展示 `launch_menu` + composition + token 预估；**等待用户**。`start` 确认后写入 Stack Card；幂等 `task-plan` 挂载维度。
-2. 反复调用不带槽位猜测的 `orchestrate-tick`。默认 `max`/`auto` 首轮请求全部 runnable 目标；宿主拒绝后学习 `host_capacity`。目标很多时改走 **Fleet**（`fleet-plan` / worktree / ≤20 shard-controller），不要死磕单窗。
+2. 反复调用不带槽位猜测的 `orchestrate-tick`。默认 `max`/`auto` 首轮请求全部 runnable 目标；宿主拒绝后学习 `host_capacity`。目标很多时改走 **Fleet**（`fleet-plan` / worktree / ≤20 shard-controller），不要死磕单窗。父 session 有 fleet plan 后**禁止** tick；子 session 开跑前必须 `fleet-preflight` 通过（见 [fleet-mode.md](references/fleet-mode.md) 三层防护）。
 3. 对每个 action 尝试创建新的独占 context。创建成功后，Reviewer 用 `task-start --lease` ACK，verifier 用 `verifier-start --lease` ACK；随后把本轮所有接受/拒绝项一次性写入 `orchestrate-report`。
 4. Reviewer 只审一个 Primary Target，按需调用 Cursor 原生 Read/Search/Grep/Git/Shell。Controller 不顺手审小文件，不复用 reviewer context。
 5. 证据闭环才 `submit`。Reviewer 提交 `existing_code`，程序校正 path/line/fingerprint；模型提供的路径和行号不受信任。
 6. Reviewer 提交 Coverage 后调用 `complete`，立即释放 reviewer 槽位；待验证 Finding 留在 verifier backlog。下一次 tick 优先 verifier。
 7. 所有 reviewer 和 Finding verifier 完成后执行 `dedup-plan`，再由独立 context 逐候选 `dedup-verify`。
-8. 调用 `finalize`。遇到 `VERIFIER_PENDING` 或 `DEDUP_VERIFIER_PENDING` 必须继续排空，不能发布 partial 冒充最终结果。
+8. 调用 `finalize`（Fleet 扫描默认在 finalize 后自动 `fleet-cleanup` 删除 worktree；调试可用 `--no-fleet-cleanup`）。遇到 `VERIFIER_PENDING` 或 `DEDUP_VERIFIER_PENDING` 必须继续排空，不能发布 partial 冒充最终结果。
 9. 自动向用户展示一次最终摘要与 `result.md` 路径；不要把全部分片重新读回上下文。
 
 ## 中止、恢复与进度
@@ -100,7 +100,9 @@ ocr_review.py init --repo <repo> --mode scan --scope runtime-code|apps-packages|
 ocr_review.py start --session <dir> [--concurrency max|auto|N] [--choice <menu-id>]
 ocr_review.py fleet-plan --session <dir> [--fleet-cap 20]
 ocr_review.py fleet-shard-open --session <dir> --shard shard-01 --repo <worktree>
-ocr_review.py fleet-status|fleet-merge --session <dir>
+ocr_review.py fleet-preflight --session <child-session-dir>
+ocr_review.py fleet-status --session <dir>
+ocr_review.py fleet-status|fleet-merge|fleet-cleanup --session <dir>
 ocr_review.py init ... --yes
 ocr_review.py orchestrate-tick --session <dir>
 ocr_review.py orchestrate-report --session <dir> --launch <id> --input <launch-report.json>

@@ -105,7 +105,7 @@ dashiai-ppt = 视觉渲染（默认、强制优先）
 
 ### Step 4–5 — 出片（dashi）
 
-见 [dashi-bridge.md](dashi-bridge.md)。关键命令形态：
+见 [dashi-bridge.md](references/dashi-bridge.md)。关键命令形态：
 
 ```bash
 DASHI=~/.agents/skills/dashiai-ppt

@@ -95,6 +95,8 @@ AUTO_REPROBE_COMPLETIONS = 5
 DEFAULT_CONCURRENCY = "max"
 FLEET_CAP_DEFAULT = 20
 FLEET_RECOMMEND_THRESHOLD = 16
+FLEET_BULK_REJECT_THRESHOLD = 50
+FLEET_BRANCH_PREFIX = "ocr-fleet/"
 RESULT_SHARD_MAX_BYTES = 512 * 1024
 RESULT_PREVIEW_LIMIT = 20
 SEMANTIC_HINT_MAX_CHARS = 512
@@ -1405,8 +1407,191 @@ def record_task_failure(task: dict[str, Any], reason: str) -> str:
     return task["status"]
 
 
+def is_fleet_worktree_repo(repo: Path) -> bool:
+    return any(
+        part.startswith("ocr-fleet-shard-") or part.startswith("ocr-fleet-")
+        for part in repo.resolve().parts
+    )
+
+
+def fleet_plan_file_exists(session_dir: Path) -> bool:
+    return fleet_plan_path(session_dir).is_file()
+
+
+def expected_shard_task_count(session_dir: Path, session_json: dict[str, Any]) -> int | None:
+    if not session_json.get("fleet_shard_id"):
+        return None
+    shard_meta = session_dir.parent / "shard.json"
+    if shard_meta.is_file():
+        return len(read_json(shard_meta).get("task_ids", []))
+    return None
+
+
+def evaluate_fleet_preflight(
+    session_dir: Path,
+    session_json: dict[str, Any],
+    manifest: dict[str, Any],
+) -> dict[str, Any]:
+    tasks = manifest.get("tasks", {})
+    actual = sum(1 for task in tasks.values() if task.get("status") != "removed")
+    runnable = sum(1 for task in tasks.values() if task.get("status") in RUNNABLE_TASK_STATES)
+    shard_id = session_json.get("fleet_shard_id")
+    parent_session_id = session_json.get("parent_session_id")
+    expected = expected_shard_task_count(session_dir, session_json)
+    issues: list[dict[str, Any]] = []
+
+    if shard_id:
+        if not parent_session_id:
+            issues.append(
+                {
+                    "code": "MISSING_PARENT_SESSION",
+                    "message": "Shard child session must set parent_session_id",
+                }
+            )
+        if expected is None:
+            issues.append(
+                {
+                    "code": "MISSING_SHARD_METADATA",
+                    "message": "Cannot read expected task_ids from shard.json",
+                }
+            )
+        elif actual != expected:
+            issues.append(
+                {
+                    "code": "FLEET_SHARD_CONTAMINATION",
+                    "message": (
+                        f"Child session task count {actual} does not match shard expected {expected}"
+                    ),
+                    "actual_tasks": actual,
+                    "expected_tasks": expected,
+                }
+            )
+        if session_json.get("dispatch_strategy") != "shard-window":
+            issues.append(
+                {
+                    "code": "UNEXPECTED_DISPATCH_STRATEGY",
+                    "severity": "warning",
+                    "message": "Shard session should use dispatch_strategy=shard-window",
+                }
+            )
+    elif fleet_plan_file_exists(session_dir):
+        issues.append(
+            {
+                "code": "PARENT_FLEET_PLAN_ACTIVE",
+                "severity": "info",
+                "message": (
+                    "Parent session has a fleet plan; open shards and orchestrate-tick child sessions only"
+                ),
+            }
+        )
+
+    blocking = {
+        issue["code"]
+        for issue in issues
+        if issue.get("code")
+        in {
+            "MISSING_PARENT_SESSION",
+            "MISSING_SHARD_METADATA",
+            "FLEET_SHARD_CONTAMINATION",
+        }
+    }
+    ok = not blocking
+    if shard_id and ok:
+        next_action = "shard_controller_orchestrate_tick"
+    elif shard_id:
+        next_action = "abort_child_session_and_reopen_shard"
+    elif fleet_plan_file_exists(session_dir):
+        next_action = "fleet_shard_open_then_preflight"
+    else:
+        next_action = "dispatch_runnable_tasks"
+    return {
+        "ok": ok,
+        "role": "shard" if shard_id else ("parent" if fleet_plan_file_exists(session_dir) else "single"),
+        "fleet_shard_id": shard_id,
+        "parent_session_id": parent_session_id,
+        "actual_tasks": actual,
+        "expected_tasks": expected,
+        "runnable_tasks": runnable,
+        "issues": issues,
+        "next_action": next_action,
+    }
+
+
+def assert_fleet_dispatch_allowed(
+    session_dir: Path,
+    session_json: dict[str, Any],
+    manifest: dict[str, Any],
+) -> None:
+    if session_json.get("fleet_shard_id"):
+        preflight = evaluate_fleet_preflight(session_dir, session_json, manifest)
+        if not preflight["ok"]:
+            contamination = next(
+                (
+                    issue
+                    for issue in preflight["issues"]
+                    if issue.get("code") == "FLEET_SHARD_CONTAMINATION"
+                ),
+                preflight["issues"][0] if preflight["issues"] else None,
+            )
+            if contamination:
+                raise ReviewError(
+                    contamination.get("code", "FLEET_SHARD_CONTAMINATION"),
+                    contamination["message"],
+                    "abort_child_session_and_reopen_shard",
+                    actual_tasks=contamination.get("actual_tasks"),
+                    expected_tasks=contamination.get("expected_tasks"),
+                    fleet_preflight=preflight,
+                )
+            raise ReviewError(
+                "FLEET_SHARD_INVALID",
+                "Shard child session failed fleet preflight",
+                "abort_child_session_and_reopen_shard",
+                fleet_preflight=preflight,
+            )
+        return
+    if fleet_plan_file_exists(session_dir):
+        raise ReviewError(
+            "FLEET_PARENT_DISPATCH_FORBIDDEN",
+            "Parent session with fleet plan must not orchestrate-tick; open shards and tick child sessions only",
+            "fleet_shard_open_then_shard_controller_tick",
+            fleet_plan=str(fleet_plan_path(session_dir)),
+        )
+
+
+def bulk_reject_fleet_recommendation(
+    session_dir: Path,
+    session_json: dict[str, Any],
+    manifest: dict[str, Any],
+    rejected: int,
+) -> dict[str, Any] | None:
+    if session_json.get("fleet_shard_id") or fleet_plan_file_exists(session_dir):
+        return None
+    primary = len(manifest.get("tasks", {}))
+    if rejected < FLEET_BULK_REJECT_THRESHOLD or primary < FLEET_RECOMMEND_THRESHOLD:
+        return None
+    return {
+        "recommended": True,
+        "fleet_cap": FLEET_CAP_DEFAULT,
+        "reason": (
+            f"Single-window rejected {rejected} leases while {primary} Primary Targets remain; "
+            "switch to fleet-worktree sharding instead of bulk host_capacity rejection"
+        ),
+        "command": "ocr_review.py fleet-plan --session <dir> --fleet-cap 20",
+    }
+
+
 def cmd_init(args: argparse.Namespace) -> dict[str, Any]:
-    repo = git_root(Path(args.repo).resolve())
+    requested_repo = Path(args.repo).resolve()
+    if is_fleet_worktree_repo(requested_repo) and not getattr(
+        args, "allow_fleet_worktree_init", False
+    ):
+        raise ReviewError(
+            "FLEET_WORKTREE_INIT_FORBIDDEN",
+            "Do not init a new scan session inside an ocr-fleet worktree; use fleet-shard-open on the parent session",
+            "fleet_shard_open_then_shard_controller_tick",
+            repo_root=str(requested_repo),
+        )
+    repo = git_root(requested_repo)
     if args.token_budget < 0:
         raise ReviewError("INVALID_TOKEN_BUDGET", "token-budget must be non-negative")
     if args.mode is None:
@@ -1725,6 +1910,161 @@ def load_fleet_plan(session_dir: Path) -> dict[str, Any]:
     return read_json(path)
 
 
+def is_safe_fleet_branch(branch_name: str) -> bool:
+    normalized = branch_name.strip()
+    return normalized.startswith(FLEET_BRANCH_PREFIX) or normalized.startswith("ocr-fleet-")
+
+
+def git_command(
+    repo: Path, *args: str, check: bool = True
+) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", "-c", "core.quotepath=false", *args],
+        cwd=repo,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        capture_output=True,
+        check=False,
+    )
+
+
+def worktree_path_key(path: Path | str) -> str:
+    return os.path.normcase(str(Path(path).resolve()))
+
+
+def git_worktree_paths(repo: Path) -> dict[str, str]:
+    proc = git_command(repo, "worktree", "list", "--porcelain")
+    if proc.returncode != 0:
+        raise ReviewError(
+            "GIT_FAILED",
+            proc.stderr.strip() or "git worktree list failed",
+            "fix_git_state",
+        )
+    paths: dict[str, str] = {}
+    for line in proc.stdout.splitlines():
+        if line.startswith("worktree "):
+            raw = line.split(" ", 1)[1]
+            paths[worktree_path_key(raw)] = raw
+    return paths
+
+
+def remove_fleet_worktree(repo_root: Path, worktree_path: Path) -> dict[str, Any]:
+    resolved = worktree_path.resolve()
+    registered_paths = git_worktree_paths(repo_root)
+    registered_raw = registered_paths.get(worktree_path_key(resolved))
+    if registered_raw:
+        proc = git_command(repo_root, "worktree", "remove", "--force", registered_raw)
+        if proc.returncode != 0:
+            return {
+                "path": str(resolved),
+                "status": "failed",
+                "error": proc.stderr.strip() or "git worktree remove failed",
+            }
+        return {"path": str(resolved), "status": "removed"}
+    if not resolved.is_dir():
+        return {"path": str(resolved), "status": "already_removed"}
+    shutil.rmtree(resolved, ignore_errors=True)
+    return {"path": str(resolved), "status": "removed"}
+
+
+def delete_fleet_branch(repo_root: Path, branch_name: str) -> dict[str, Any]:
+    branch = branch_name.strip()
+    if not branch:
+        return {"branch": branch, "status": "skipped", "reason": "empty"}
+    if not is_safe_fleet_branch(branch):
+        return {
+            "branch": branch,
+            "status": "skipped",
+            "reason": "not_a_fleet_branch",
+        }
+    proc = git_command(repo_root, "branch", "-D", branch)
+    if proc.returncode == 0:
+        return {"branch": branch, "status": "removed"}
+    stderr = proc.stderr.strip()
+    if "not found" in stderr.lower():
+        return {"branch": branch, "status": "already_removed"}
+    return {"branch": branch, "status": "failed", "error": stderr or "git branch -D failed"}
+
+
+def perform_fleet_cleanup(
+    session_dir: Path,
+    session_json: dict[str, Any],
+    plan: dict[str, Any],
+    *,
+    allow_partial: bool = False,
+    keep_worktrees: bool = False,
+) -> dict[str, Any]:
+    fleet = session_json.get("fleet") or {}
+    fleet_status = fleet.get("status")
+    if fleet_status not in {"merged", "partial-merged"}:
+        raise ReviewError(
+            "FLEET_NOT_MERGED",
+            "Fleet worktrees can only be cleaned up after fleet-merge",
+            "run_fleet_merge",
+            fleet_status=fleet_status,
+        )
+    if fleet_status == "partial-merged" and not allow_partial:
+        raise ReviewError(
+            "FLEET_MERGE_INCOMPLETE",
+            "Partial fleet merge still has open shards; pass --partial to cleanup anyway",
+            "wait_for_shard_controllers_or_fleet_merge_partial",
+        )
+    if fleet.get("cleanup", {}).get("done"):
+        return {
+            **fleet["cleanup"],
+            "idempotent": True,
+        }
+
+    repo_root = Path(session_json["repo_root"]).resolve()
+    removed_worktrees: list[dict[str, Any]] = []
+    removed_branches: list[dict[str, Any]] = []
+    remaining: list[dict[str, Any]] = []
+    kept: list[dict[str, Any]] = []
+
+    for shard in plan.get("shards", []):
+        worktree_raw = shard.get("worktree")
+        branch_name = str(shard.get("branch_name") or "")
+        if not worktree_raw:
+            worktree_name = shard.get("worktree_name")
+            if worktree_name:
+                worktree_raw = str(repo_root / ".worktrees" / worktree_name)
+        if keep_worktrees:
+            if worktree_raw:
+                kept.append({"shard": shard.get("id"), "worktree": worktree_raw})
+            continue
+        if worktree_raw:
+            outcome = remove_fleet_worktree(repo_root, Path(worktree_raw))
+            outcome["shard"] = shard.get("id")
+            if outcome["status"] == "failed":
+                remaining.append(outcome)
+            else:
+                removed_worktrees.append(outcome)
+        if branch_name:
+            branch_outcome = delete_fleet_branch(repo_root, branch_name)
+            branch_outcome["shard"] = shard.get("id")
+            if branch_outcome["status"] == "failed":
+                remaining.append(branch_outcome)
+            elif branch_outcome["status"] != "skipped":
+                removed_branches.append(branch_outcome)
+
+    cleanup = {
+        "done": not remaining,
+        "at": now(),
+        "removed_worktrees": removed_worktrees,
+        "removed_branches": removed_branches,
+        "remaining": remaining,
+        "kept": kept,
+    }
+    plan["cleanup"] = cleanup
+    atomic_json(fleet_plan_path(session_dir), plan)
+    fleet["cleanup"] = cleanup
+    if cleanup["done"]:
+        fleet["status"] = "cleaned"
+    session_json["fleet"] = fleet
+    return cleanup
+
+
 def cmd_fleet_plan(args: argparse.Namespace) -> dict[str, Any]:
     session_dir, session_json, manifest = load_session(args.session)
     if session_json.get("status") not in {"running", "paused", "awaiting_start"}:
@@ -1765,8 +2105,8 @@ def cmd_fleet_plan(args: argparse.Namespace) -> dict[str, Any]:
             "fleet-shard-open --shard <id> --repo <worktree-abs-path>",
             "Spawn ≤ fleet_cap shard-controller subagents in one wave (cwd=worktree)",
             "Each shard runs orchestrate-tick loop with concurrency=max inside its worktree",
-            "Parent polls fleet-status; when all terminal → fleet-merge → dedup-plan → finalize",
-            "Cleanup worktrees after merge like go-fast",
+            "Parent polls fleet-status; when all terminal → fleet-merge → dedup-plan → finalize → fleet-cleanup",
+            "Cleanup removes .worktrees/ocr-fleet-* and ocr-fleet/* branches after merge (auto on finalize)",
         ],
     }
     (session_dir / "fleet").mkdir(parents=True, exist_ok=True)
@@ -1864,7 +2204,12 @@ def cmd_fleet_shard_open(args: argparse.Namespace) -> dict[str, Any]:
             "repo_root": child_session.get("repo_root"),
             "primary_tasks": len(shard.get("task_ids", [])),
             "idempotent": True,
-            "next_action": "shard_controller_orchestrate_tick",
+            "next_action": "fleet_preflight_then_shard_controller_tick",
+            "fleet_preflight": evaluate_fleet_preflight(
+                child_session_dir,
+                child_session,
+                read_json(child_session_dir / "manifest.json"),
+            ),
         }
 
     child_tasks: dict[str, Any] = {}
@@ -1975,6 +2320,7 @@ def cmd_fleet_shard_open(args: argparse.Namespace) -> dict[str, Any]:
     fleet["shards"] = list(registry.values())
     session_json["dispatch_strategy"] = "fleet-worktree"
     save_session(session_dir, session_json, manifest)
+    preflight = evaluate_fleet_preflight(child_session_dir, child_session, child_manifest)
     return {
         "session_id": child_session_id,
         "shard_id": shard["id"],
@@ -1982,10 +2328,12 @@ def cmd_fleet_shard_open(args: argparse.Namespace) -> dict[str, Any]:
         "repo_root": str(repo),
         "primary_tasks": len(child_tasks),
         "concurrency": "max",
-        "next_action": "shard_controller_orchestrate_tick",
+        "next_action": "fleet_preflight_then_shard_controller_tick",
+        "fleet_preflight": preflight,
         "shard_controller_hint": (
-            "In this worktree, run orchestrate-tick → create reviewer contexts → "
-            "orchestrate-report → submit/complete until shard tasks are terminal."
+            "In this worktree, run fleet-preflight → orchestrate-tick on THIS session_dir only → "
+            "create reviewer contexts → orchestrate-report → submit/complete until shard tasks are terminal. "
+            "Never init or orchestrate-tick the parent session."
         ),
     }
 
@@ -2022,11 +2370,15 @@ def cmd_fleet_status(args: argparse.Namespace) -> dict[str, Any]:
             opened += 1
             child_manifest = read_json(child_dir / "manifest.json")
             child_session = read_json(child_dir / "session.json")
+            child_preflight = evaluate_fleet_preflight(child_dir, child_session, child_manifest)
             statuses = Counter(
                 task.get("status") for task in child_manifest.get("tasks", {}).values()
             )
             entry["task_status"] = dict(statuses)
             entry["child_status"] = child_session.get("status")
+            entry["fleet_preflight"] = child_preflight
+            if not child_preflight.get("ok"):
+                entry["status"] = "contaminated"
             runnable = sum(statuses.get(state, 0) for state in RUNNABLE_TASK_STATES)
             running = statuses.get("running", 0)
             done = sum(statuses.get(state, 0) for state in TERMINAL_TASK_STATES)
@@ -2145,10 +2497,48 @@ def cmd_fleet_merge(args: argparse.Namespace) -> dict[str, Any]:
         "incomplete_count": len(incomplete),
         "incomplete": incomplete[:20],
         "next_action": (
-            "dedup_plan_then_finalize"
+            "dedup_plan_then_finalize_then_fleet_cleanup"
             if not incomplete
             else "wait_for_shard_controllers"
         ),
+    }
+
+
+def cmd_fleet_cleanup(args: argparse.Namespace) -> dict[str, Any]:
+    session_dir, session_json, manifest = load_session(args.session)
+    if session_json.get("fleet_shard_id"):
+        raise ReviewError(
+            "FLEET_CLEANUP_PARENT_ONLY",
+            "fleet-cleanup must run on the parent session, not a shard child session",
+            "run_fleet_cleanup_on_parent_session",
+        )
+    plan = load_fleet_plan(session_dir)
+    cleanup = perform_fleet_cleanup(
+        session_dir,
+        session_json,
+        plan,
+        allow_partial=bool(getattr(args, "partial", False)),
+        keep_worktrees=bool(getattr(args, "keep_worktrees", False)),
+    )
+    save_session(session_dir, session_json, manifest)
+    return {
+        "session_id": session_json["session_id"],
+        "cleanup": cleanup,
+        "next_action": (
+            "inspect_cleanup_remaining"
+            if cleanup.get("remaining")
+            else "fleet_worktrees_cleaned"
+        ),
+    }
+
+
+def cmd_fleet_preflight(args: argparse.Namespace) -> dict[str, Any]:
+    session_dir, session_json, manifest = load_session(args.session)
+    preflight = evaluate_fleet_preflight(session_dir, session_json, manifest)
+    return {
+        "session_id": session_json["session_id"],
+        "fleet_preflight": preflight,
+        "next_action": preflight["next_action"],
     }
 
 
@@ -2799,6 +3189,7 @@ def lease_orchestration_actions(
 
 def cmd_orchestrate_tick(args: argparse.Namespace) -> dict[str, Any]:
     session_dir, session_json, manifest = load_session(args.session)
+    assert_fleet_dispatch_allowed(session_dir, session_json, manifest)
     lease_seconds = int(args.lease_seconds)
     if lease_seconds < 30 or lease_seconds > 86_400:
         raise ReviewError("INVALID_LEASE_SECONDS", "lease-seconds must be between 30 and 86400")
@@ -3124,7 +3515,7 @@ def cmd_orchestrate_report(args: argparse.Namespace) -> dict[str, Any]:
     scheduling["launch_in_flight"] = None
     save_session(session_dir, session_json, manifest)
     accepted_concurrency = active_context_count(session_dir, manifest)
-    return {
+    result = {
         "launch_id": launch["id"],
         "accepted": accepted,
         "rejected": rejected,
@@ -3135,6 +3526,13 @@ def cmd_orchestrate_report(args: argparse.Namespace) -> dict[str, Any]:
         "probe_state": scheduling.get("probe_state"),
         "next_action": scheduling_next_action(manifest),
     }
+    fleet_recommendation = bulk_reject_fleet_recommendation(
+        session_dir, session_json, manifest, rejected
+    )
+    if fleet_recommendation:
+        result["fleet_recommendation"] = fleet_recommendation
+        result["next_action"] = "fleet_plan_then_worktree_shards"
+    return result
 
 
 def cmd_submit(args: argparse.Namespace) -> dict[str, Any]:
@@ -4053,6 +4451,9 @@ def cmd_status(args: argparse.Namespace) -> dict[str, Any]:
         },
         "next_action": next_action,
     }
+    result["fleet_preflight"] = evaluate_fleet_preflight(session_dir, session_json, manifest)
+    if not result["fleet_preflight"].get("ok"):
+        result["next_action"] = result["fleet_preflight"]["next_action"]
     if getattr(args, "verbose", False):
         result["task_details"] = [
             {
@@ -4972,7 +5373,19 @@ def cmd_export_fix_queue(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def cmd_finalize(args: argparse.Namespace) -> dict[str, Any]:
-    reconciled = cmd_resume(argparse.Namespace(session=args.session, rule=None))
+    session_dir, session_json, _manifest = load_session(args.session)
+    if session_json.get("fleet_shard_id"):
+        reconciled = {
+            "status": session_json.get("status", "running"),
+            "stale_tasks": [],
+            "interrupted_tasks": [],
+            "blocked_tasks": [],
+            "removed_tasks": [],
+            "added_tasks": [],
+            "next_action": "finalize",
+        }
+    else:
+        reconciled = cmd_resume(argparse.Namespace(session=args.session, rule=None))
     session_dir, session_json, manifest = load_session(args.session)
     repo = Path(session_json["repo_root"])
     stale_tasks = reconciled["stale_tasks"]
@@ -5152,14 +5565,42 @@ def cmd_finalize(args: argparse.Namespace) -> dict[str, Any]:
     atomic_text(session_dir / "result.md", result_markdown)
     session_json["status"] = completion_status
     session_json["assurance"] = assurance
+    fleet_cleanup: dict[str, Any] | None = None
+    if (
+        not session_json.get("fleet_shard_id")
+        and fleet_plan_path(session_dir).is_file()
+        and not getattr(args, "no_fleet_cleanup", False)
+    ):
+        fleet = session_json.get("fleet") or {}
+        if fleet.get("status") in {"merged", "partial-merged"} and not fleet.get("cleanup", {}).get(
+            "done"
+        ):
+            try:
+                plan = load_fleet_plan(session_dir)
+                fleet_cleanup = perform_fleet_cleanup(
+                    session_dir,
+                    session_json,
+                    plan,
+                    allow_partial=fleet.get("status") == "partial-merged",
+                )
+            except ReviewError as exc:
+                fleet_cleanup = {
+                    "done": False,
+                    "skipped": True,
+                    "reason": exc.payload.get("error"),
+                    "message": str(exc),
+                }
     save_session(session_dir, session_json, manifest)
-    return {
+    response = {
         **result,
         "result_json": str(session_dir / "result.json"),
         "result_markdown": str(session_dir / "result.md"),
         "fix_queue_json": fix_queue["json"],
         "fix_queue_markdown": fix_queue["markdown"],
     }
+    if fleet_cleanup is not None:
+        response["fleet_cleanup"] = fleet_cleanup
+    return response
 
 
 def add_session_argument(parser: argparse.ArgumentParser) -> None:
@@ -5189,6 +5630,11 @@ def build_parser() -> argparse.ArgumentParser:
         "--yes",
         action="store_true",
         help="Skip launch menu confirmation and start immediately (CI / explicit go-ahead)",
+    )
+    init.add_argument(
+        "--allow-fleet-worktree-init",
+        action="store_true",
+        help="Test-only escape hatch: allow init inside an ocr-fleet worktree",
     )
     init.set_defaults(func=cmd_init)
 
@@ -5337,6 +5783,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     finalize = sub.add_parser("finalize", help="Freshness-check and render authoritative output")
     add_session_argument(finalize)
+    finalize.add_argument(
+        "--no-fleet-cleanup",
+        action="store_true",
+        help="Skip automatic removal of fleet scan worktrees after finalize",
+    )
     finalize.set_defaults(func=cmd_finalize)
 
     export_fix_queue = sub.add_parser(
@@ -5371,6 +5822,13 @@ def build_parser() -> argparse.ArgumentParser:
     add_session_argument(fleet_status)
     fleet_status.set_defaults(func=cmd_fleet_status)
 
+    fleet_preflight = sub.add_parser(
+        "fleet-preflight",
+        help="Validate shard child session task budget before dispatching reviewers",
+    )
+    add_session_argument(fleet_preflight)
+    fleet_preflight.set_defaults(func=cmd_fleet_preflight)
+
     fleet_merge = sub.add_parser(
         "fleet-merge",
         help="Merge terminal shard findings/task states back into the parent session",
@@ -5382,6 +5840,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="Allow merge while some shards are still incomplete",
     )
     fleet_merge.set_defaults(func=cmd_fleet_merge)
+
+    fleet_cleanup = sub.add_parser(
+        "fleet-cleanup",
+        help="Remove fleet scan git worktrees and ocr-fleet/* branches after fleet-merge",
+    )
+    add_session_argument(fleet_cleanup)
+    fleet_cleanup.add_argument(
+        "--partial",
+        action="store_true",
+        help="Allow cleanup after a partial fleet-merge",
+    )
+    fleet_cleanup.add_argument(
+        "--keep-worktrees",
+        action="store_true",
+        help="Record cleanup without deleting worktrees (debug / user retain)",
+    )
+    fleet_cleanup.set_defaults(func=cmd_fleet_cleanup)
     return parser
 
 
@@ -5395,7 +5870,8 @@ def main() -> int:
             "checkpoint", "complete", "pause", "abort", "heartbeat", "start",
             "dedup-plan", "dedup-verify", "stack-card", "resume", "finalize",
             "export-fix-queue",
-            "fleet-plan", "fleet-shard-open", "fleet-status", "fleet-merge",
+            "fleet-plan", "fleet-shard-open", "fleet-status", "fleet-preflight", "fleet-merge",
+            "fleet-cleanup",
         }:
             with session_lock(Path(args.session).resolve()):
                 _session_dir, session_json, _manifest = load_session(args.session)

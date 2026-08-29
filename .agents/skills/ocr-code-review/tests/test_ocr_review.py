@@ -1766,7 +1766,7 @@ class OcrReviewCliTest(unittest.TestCase):
 
         merged = self.cli("fleet-merge", "--session", session)
         self.assertEqual(20, merged["merged_tasks"])
-        self.assertEqual("dedup_plan_then_finalize", merged["next_action"])
+        self.assertEqual("dedup_plan_then_finalize_then_fleet_cleanup", merged["next_action"])
         parent_manifest = json.loads((session / "manifest.json").read_text(encoding="utf-8"))
         self.assertEqual(
             20,
@@ -1776,6 +1776,151 @@ class OcrReviewCliTest(unittest.TestCase):
             0,
             sum(task["status"] == "fleeted" for task in parent_manifest["tasks"].values()),
         )
+
+    def test_fleet_cleanup_removes_worktrees_after_merge(self):
+        for index in range(8):
+            self.write(f"fleetwt{index:02d}/main.go", f"package p{index}\nfunc F() {{}}\n")
+        self.commit_all()
+        session = self.init_scan(concurrency="max", yes=False, session_id="fleet-cleanup")
+        self.cli("start", "--session", session, "--choice", "scan-runtime")
+        planned = self.cli("fleet-plan", "--session", session, "--fleet-cap", "2")
+        worktree_paths: list[Path] = []
+        for shard in planned["shards"]:
+            worktree_path = self.repo / ".worktrees" / shard["worktree_name"]
+            worktree_path.parent.mkdir(parents=True, exist_ok=True)
+            self.git("worktree", "add", str(worktree_path), "-b", shard["branch_name"])
+            worktree_paths.append(worktree_path)
+            opened = self.cli(
+                "fleet-shard-open",
+                "--session",
+                session,
+                "--shard",
+                shard["id"],
+                "--repo",
+                worktree_path,
+            )
+            child = Path(opened["session_dir"])
+            for task_id in json.loads((child / "manifest.json").read_text(encoding="utf-8"))["tasks"]:
+                self.start_task(child, task_id)
+                self.cli(
+                    "complete",
+                    "--session",
+                    child,
+                    "--task",
+                    task_id,
+                    "--coverage",
+                    self.coverage_file(f"{shard['id']}-{task_id}.json"),
+                )
+        self.cli("fleet-merge", "--session", session)
+        cleanup = self.cli("fleet-cleanup", "--session", session)
+        self.assertTrue(
+            cleanup["cleanup"]["done"],
+            msg=json.dumps(cleanup["cleanup"].get("remaining"), ensure_ascii=False),
+        )
+        self.assertEqual(len(planned["shards"]), len(cleanup["cleanup"]["removed_worktrees"]))
+        for worktree_path in worktree_paths:
+            self.assertFalse(worktree_path.exists())
+        for shard in planned["shards"]:
+            proc = subprocess.run(
+                ["git", "branch", "--list", shard["branch_name"]],
+                cwd=self.repo,
+                text=True,
+                capture_output=True,
+                check=True,
+            )
+            self.assertEqual("", proc.stdout.strip())
+
+    def test_fleet_parent_dispatch_forbidden_after_plan(self):
+        for index in range(20):
+            self.write(f"pkg{index:02d}/main.go", f"package p{index}\nfunc F() {{}}\n")
+        self.commit_all()
+        session = self.init_scan(concurrency="max", yes=False, session_id="fleet-guard-parent")
+        self.cli("start", "--session", session, "--choice", "scan-runtime")
+        self.cli("fleet-plan", "--session", session, "--fleet-cap", "5")
+        blocked = self.cli("orchestrate-tick", "--session", session, expect=2)
+        self.assertEqual("FLEET_PARENT_DISPATCH_FORBIDDEN", blocked["error"])
+        self.assertEqual(
+            "fleet_shard_open_then_shard_controller_tick",
+            blocked["next_action"],
+        )
+
+    def test_fleet_child_contamination_blocks_tick(self):
+        for index in range(20):
+            self.write(f"pkg{index:02d}/main.go", f"package p{index}\nfunc F() {{}}\n")
+        self.commit_all()
+        session = self.init_scan(concurrency="max", yes=False, session_id="fleet-guard-child")
+        self.cli("start", "--session", session, "--choice", "scan-runtime")
+        planned = self.cli("fleet-plan", "--session", session, "--fleet-cap", "5")
+        opened = self.cli(
+            "fleet-shard-open",
+            "--session",
+            session,
+            "--shard",
+            planned["shards"][0]["id"],
+            "--repo",
+            self.repo,
+        )
+        child = Path(opened["session_dir"])
+        self.assertTrue(opened["fleet_preflight"]["ok"])
+        child_manifest = json.loads((child / "manifest.json").read_text(encoding="utf-8"))
+        extra_task = dict(next(iter(child_manifest["tasks"].values())))
+        extra_task["id"] = "task-extra-contamination"
+        extra_task["path"] = "extra.go"
+        child_manifest["tasks"][extra_task["id"]] = extra_task
+        (child / "manifest.json").write_text(
+            json.dumps(child_manifest, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+        blocked = self.cli("orchestrate-tick", "--session", child, expect=2)
+        self.assertEqual("FLEET_SHARD_CONTAMINATION", blocked["error"])
+        preflight = self.cli("fleet-preflight", "--session", child)
+        self.assertFalse(preflight["fleet_preflight"]["ok"])
+
+    def test_fleet_worktree_init_forbidden(self):
+        worktree = self.repo / ".worktrees" / "ocr-fleet-shard-99"
+        worktree.mkdir(parents=True, exist_ok=True)
+        blocked = self.cli(
+            "init",
+            "--repo",
+            worktree,
+            "--mode",
+            "scan",
+            "--session-id",
+            "fleet-worktree-init",
+            "--state-root",
+            self.state,
+            expect=2,
+        )
+        self.assertEqual("FLEET_WORKTREE_INIT_FORBIDDEN", blocked["error"])
+
+    def test_bulk_host_rejection_recommends_fleet(self):
+        for index in range(60):
+            self.write(f"bulk{index:02d}.go", f"package b{index}\nfunc F{index}() {{}}\n")
+        self.commit_all()
+        session = self.init_scan(concurrency="max", session_id="fleet-bulk-reject")
+        tick = self.cli("orchestrate-tick", "--session", session)
+        launch_id = tick["launch_id"]
+        report = {
+            "accepted": [],
+            "rejected": [
+                {"lease_id": action["lease_id"], "reason": "host_capacity"}
+                for action in tick["actions"]
+            ],
+        }
+        report_path = self.repo / "launch-report-bulk.json"
+        report_path.write_text(json.dumps(report), encoding="utf-8")
+        result = self.cli(
+            "orchestrate-report",
+            "--session",
+            session,
+            "--launch",
+            launch_id,
+            "--input",
+            report_path,
+        )
+        self.assertEqual(60, result["rejected"])
+        self.assertTrue(result.get("fleet_recommendation", {}).get("recommended"))
+        self.assertEqual("fleet_plan_then_worktree_shards", result["next_action"])
 
     def test_launch_menu_includes_budgets_for_every_option_and_reply_guide(self):
         self.write("apps/main.go", "package main\nfunc main() {}\n")

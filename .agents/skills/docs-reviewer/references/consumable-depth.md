@@ -1,6 +1,6 @@
 # API / Domain 可消费深度闸门
 
-本文件定义 `docs/api`、`docs/domain` 何时算「写够了」——以能否直接支撑 **Postman**、**APISix（或同类网关）**、**业务流程测试** 为准。对账与毕业判定须引用本闸门；模板正文见 [templates.md](templates.md)。
+本文件定义 `docs/api`、`docs/domain` 何时算「写够了」——以能否直接支撑 **Postman**、**APISix（或同类网关）**、**业务流程测试** 为准。对账与毕业判定须引用本闸门；模板正文见 [templates/api.md](templates/api.md) · [templates/domain.md](templates/domain.md)（索引 [templates.md](templates.md)）。
 
 ## 为何需要
 

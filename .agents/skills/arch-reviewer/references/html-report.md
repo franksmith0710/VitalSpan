@@ -5,16 +5,21 @@
 ## 路径与打开
 
 ```bash
-# 解析 temp
-TMP="${TMPDIR:-/tmp}"   # Windows: %TEMP%
+# unix（macOS / Linux）：禁止写死 /tmp
+TMP="$(mktemp -d)"
 OUT="$TMP/architecture-review-$(date +%Y%m%d-%H%M%S).html"
-# 写入后打开
 open "$OUT"        # macOS
 # xdg-open "$OUT"  # Linux
-# start "$OUT"     # Windows
 ```
 
-**禁止**默认写入仓库。用户明确要求归档时，再复制到约定路径（如 `docs/reviews/`）。
+```powershell
+# Windows PowerShell
+$OUT = Join-Path $env:TEMP ("architecture-review-{0}.html" -f (Get-Date -Format yyyyMMdd-HHmmss))
+Start-Process $OUT     # 等价于 cmd 的 start "" "%OUT%"
+```
+
+**禁止**默认把 HTML 写入仓库。用户明确要求归档时，再复制到约定路径（如 `docs/reviews/`）。  
+注意：这条只管 HTML；**Markdown 主报告必须**落 `docs/material/arch-reviewer/<YYYY-MM-DD>-<slug>.md`（见 SKILL Phase 2.5）。
 
 ## Scaffold
 
@@ -56,15 +61,29 @@ open "$OUT"        # macOS
 | 块 | 要求 |
 |----|------|
 | Title | 短；点名加深（如「Collapse the Order intake pipeline」） |
-| Badge | 强度：`Strong` emerald / `Worth exploring` amber / `Speculative` slate；依赖标签：`in-process` 等 |
+| Badge | 强度：`Strong` emerald / `Worth exploring` amber / `Speculative` slate；**授权级：`polish_safe` sky / `local-deepen` violet / `structural` rose`**；依赖标签：`in-process` 等 |
 | Files | `font-mono text-sm` 路径列表 |
 | Before / After | 并排；见下图模式 |
 | Problem | **一句** |
 | Solution | **一句** |
 | Wins | ≤6 词/条；用 locality / leverage / depth 词汇 |
+| **Evidence refs** | 挂摩擦证据池 F-* 列表（每条可点开看代码引用）|
 | ADR callout | 可选；琥珀底一句 |
 
 禁止大段解释。图需要段落才能懂 → **重画图**。
+
+## 摩擦证据池（Friction pool）— 候选卡下方的整表
+
+候选画册下方**必须**有一张可折叠的「摩擦证据池」表，列出 subagent 探索发现的**全部**摩擦点（不限数，不归并）。这张表是候选卡的证据原材料，也供用户决定「先做哪个」时看全貌。
+
+| 列 | 内容 |
+|----|------|
+| F-ID | F-1, F-2, … |
+| Friction | F1～F6 类别（shallow / seam leakage / locality / leverage / 单 adapter 假缝 / 难测宽 interface）|
+| Path + Line | 精确文件:行号 |
+| Evidence | ≥2 个代码引用（verbatim 关键行 + 行号）|
+| Candidate | 关联候选卡 ID（如 C-1）；unassigned 表示尚未归入候选 |
+| Confidence | high / medium / low |
 
 ## Diagram patterns（混用，勿张张同款）
 

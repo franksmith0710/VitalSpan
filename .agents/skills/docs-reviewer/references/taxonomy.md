@@ -34,7 +34,7 @@ docs/
 | domain | 业务流程名 | `docs/domain/order-fulfillment.md` | 面向业务语言，少技术词 |
 | service | 进程/部署单元名 | `docs/service/api-gateway.md` | 与二进制、compose 服务名对齐 |
 | mock | 服务或模块名 | `docs/mock/payment.md` | 与被模拟对象同名 |
-| ui | 表面或关键流 | `docs/ui/console-ia.md`、`docs/ui/checkout-flow.md` | IA/全站一文；复杂流可另文 |
+| ui | 设计锚 + 表面或关键流 | `docs/ui/anchor.md`（必有）、`docs/ui/console-ia.md`、`docs/ui/checkout-flow.md` | 锚一文；IA/全站一文；复杂流可另文。缺 `anchor.md` = 视觉基准无源，按 P1 报（见 [create-ui-docs](../../create-ui-docs/references/anchor.md)） |
 | data | 域或存储名 | `docs/data/order.md`、`docs/data/redis-cache.md` | 按限界上下文或存储引擎 |
 
 一律：**小写 + 连字符**；禁止空格、下划线混用、中文文件名（标题内可用中文）。

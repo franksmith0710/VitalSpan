@@ -13,9 +13,12 @@
 - 前端：…（无则写「无 SPA」）
 - Worker/Agent/边车：…
 - 配置：…（yaml/env/helm）
-- 数据：…（sqlite/pg/migrate/seed）
+- 数据：…（sqlite/pg/migrate/seed；**多 Driver 则 L3 必查 §9**）
 - 交付：…（docker/k8s/systemd）
-- 建议 lane：L1–L5、L7（+L6 若有 IaC/CI）
+- 建议 lane：L1–L5、L7（+L6 若有 IaC/CI；**+L8** 若有仓外依赖；**+L9** 若有 HTTP/API 层；**+L10** 若有鉴权/写接口/用户输入；**+L11** 若有服务端 API/worker——含 §17；`ha_mode: claimed` 时 L11 含 §18）
+- 仓外依赖清单（L8 用）：…（协议/厂商 × 适配器目录 × 有无 `contracts/*.smoke.*`）
+- **ha_mode**：claimed / single / unknown（判据见 finding-catalog §18；读 docs/arch.md H3、README、Helm replicas）
+- 证据层：有 / 无 `.evidence/`（有 → Phase 2.5 必读）
 - 跳过 lane：…（原因）
 - 本仓标杆 UI（若有）：path…
 - 宣称客户端：Web / Desktop / Admin / CLI …（用于 L7 对账）
@@ -89,6 +92,10 @@ skeleton|Skeleton|lorem ipsum|fakeSuccess|alert\(['\"]todo
 - 用通用关键词 + 该生态配置惯例（`appsettings.Development.json`、`config/*.toml`）
 - Subagent 提示写：「先找入口与 config load，再查默认值是否可进 release 构建」
 
+### 隐式假通（L8 · 所有栈通用）
+
+搜法与判定要点**以 [finding-catalog §8](finding-catalog.md) 的「检测清单」为准**（列调用点 → 对账 smoke 工件 → 失败语义 → 契约参数出处 → 凭据入码），subagent 提示里原样粘贴该清单，不要另编关键词。按栈补调用惯例即可：Go `http.Client{Timeout}` / `context.WithTimeout`；TS `AbortSignal.timeout` / axios `timeout`；Python `requests(timeout=)` / `httpx.Timeout`；Java `OkHttpClient.Builder().callTimeout`；Rust `reqwest::ClientBuilder::timeout`。**默认值缺失即 finding**，不要默认「框架会兜」。
+
 ### IaC / CI（L6）
 
 ```text
@@ -100,18 +107,22 @@ FORCE_STUB|ALLOW_DEV|RejectDevDefaults|NODE_ENV|values-dev|image: .*latest|USE_M
 
 ## Subagent 划分示例
 
-**中型全栈（后端 + SPA）** — 一次并行 5～6 个 explore：
+**中型全栈（后端 + SPA）** — 一次并行 8～11 个 explore：
 
 1. 后端假绿 + stub 零容忍（含 flag 包裹）
 2. 配置/启动硬编码+进程门禁  
-3. 可靠性（队列、health、隔离）  
-4. FE 坏表单  
-5. FE 风格 vs 标杆页  
+3. 可靠性（队列、health、隔离）+ **多库 SQL** + **日志分类**  
+4. FE 表单 UX（path/json + **校验/结构/承载**）  
+5. FE 风格 + **文案** + **嵌套边框** vs 标杆页  
 6. **L7 产品表面**：API/能力清单 × 各端路由/菜单；有入口页查骨架/假数据/残交互  
+7. **L8 隐式假通**（有仓外依赖时必开）
+8. **L9 API 信封与错误面**（有 BFF/handler 时必开）
+9. **L10 安全与参数隐患**（有写接口/鉴权时必开）
+10. **L11 性能热点 + HA**：§17 必开（有服务端）；Stack Card `ha_mode: claimed` 时加 §18
 
-**纯前端库**：L4+L5+L7（半成品）为主；L2 看 demo 密钥与 env。  
-**纯后端服务**：L1–L3 + L6；L4/L5 标「无 UI，跳过」；若文档宣称有客户端则 L7 对账外部仓或记 P1「宣称端未纳入本仓」。  
-**PR/变更面**：主根 = diff 目录；L1/L2/L7 提示中写明「上追路由表/菜单/调用方一层」。  
+**纯前端库**：L4+L5+L7 为主；L2 看 demo 密钥；调三方 SDK 则加 L8；无后端则 L9/L10/L11 跳过。  
+**纯后端服务**：L1–L3 + L6 + L8 + **L9 + L10 + L11**；L4/L5 标「无 UI，跳过」；若文档宣称有客户端则 L7 对账外部仓或记 P1「宣称端未纳入本仓」。  
+**PR/变更面**：主根 = diff 目录；L1/L2/L7 提示中写明「上追路由表/菜单/调用方一层」；diff 触及适配器/client → L8 必开；diff 触及 handler/DAO/队列 → L11 必开。  
 **双仓对比**：每个仓一套 Stack Card，同 lane 并行两个 agent，主 agent 合并对照表。  
 **无 Task / 极小仓**：主 agent 按 lane 串行，仍用下方回传格式自检。
 
@@ -122,37 +133,39 @@ FORCE_STUB|ALLOW_DEV|RejectDevDefaults|NODE_ENV|values-dev|image: .*latest|USE_M
 
 项目根：{ROOT}
 范围模式：{整仓 | PR·变更面}；主扫路径：{PATHS}；若为变更面：上追路由/菜单/调用方一层。
-Stack Card 摘要：{语言/框架/前端/排除目录}
-Lane：{L1|L2|…|L7} — 只查这一类问题，不要扩到其他 lane。
+Stack Card 摘要：{语言/框架/前端/排除目录/ha_mode}
+scan_tools：{ast-grep|codegraph|rg-only 组合；主 agent Phase 0.5 已探测}
+Lane：{L1|L2|…|L11} — 只查这一类问题，不要扩到其他 lane。
 宣称判据（L7/假绿升级）：UI「已支持/已具备」；README/对外 docs 已交付；OpenAPI/SDK 标 GA/shipped。
+ha_mode（L11）：claimed → 必须覆盖 finding-catalog §18；single/unknown → 只做 §17，§18 写跳过。
 搜法提示（按本栈，勿抄错语言）：{从本文「按栈：搜法种子」粘贴对应段落}
+扫描工具（L1/L7）：有 ast-grep → 先 `ast-grep scan --json=compact` / 临时 pattern，再用 rg 补漏；有新鲜 codegraph → L7 可用 `codegraph callers`（「没找到」须 rg 复核路由）；仅 rg → 词法种子 + Blind spot 注明结构性扫描不可用。**只用 CLI，禁止写 MCP。**
 排除：node_modules/dist/vendor/生成物；*_test.* / *.test.* / *.spec.* / __mocks__ / fixture → 命中放入 Skipped，不进 findings。
-Stub 政策：非测试主路径 stub/mock/假成功 → P0；有 env/flag/Badge/degraded 也不能降级或标 non-issue。
+L11 禁令：禁止编造 QPS/延迟；每条 finding 必须有入口+放大机制+路径。Stub 政策：非测试主路径 stub/mock/假成功 → P0；有 env/flag/Badge/degraded 也不能降级或标 non-issue。
+覆盖度诚实：**没扫到 ≠ 没问题**。跑不动/读不了/超范围的部分一律写进 Blind spots（含未覆盖路径与原因），
+**禁止**为了交差把未覆盖范围写成「无发现」。宁可交「扫了 60% + Blind spots + 已覆盖范围内**全部** finding」也不要交「全绿」或「举 3 个例子交差」。
+穷尽盘点：本 lane 命中即**全部列出**（每条一行）；禁止 Top N / 代表样例；回传须含 `hits=N listed=N`（listed 必须等于 hits）。
+不同 path 默认可各成一条；仅同一改动点能修完时才合并，且证据列齐全部 path。
 
 按以下格式回传（不要长篇叙事）：
 ### Lane Lx 结果
 - Stack assumed: …
+- Covered: …（实际扫到的目录/文件模式）
+- hits / listed: N / N
 - P0: …
 - P1: …
 - P2: …
 - Skipped (non-issue/test): …
-- Blind spots: …（权限不够、生成代码未读、子模块未拉）
+- Blind spots: …（未覆盖路径 + 原因：权限不够、生成代码未读、子模块未拉、超时）
 
 每条 finding 一行：`[Px] 标题 — path:hint — 行为 — 建议`
+（同根因多 path 时：主行 + 缩进实例表，path 列齐，禁止「等 N 处」）
 ```
 
 ## 回传格式（要求 subagent 遵守）
 
-```markdown
-### Lane Lx 结果
-- Stack assumed: …
-- P0: …
-- P1: …
-- P2: …
-- Skipped (non-issue/test): …
-- Blind spots: …（权限不够或生成代码未读）
-```
+同上模板（`Stack assumed` / `Covered` / `hits/listed` / `P0-P2` / `Skipped` / `Blind spots`）。**Blind spots 为空只有在真的全覆盖时才能写「无」。`listed < hits` 视为 lane 失败。**
 
 每条 finding：`[Px] 标题 — path:hint — 行为 — 建议`
 
-主 agent 合并时遵守 SKILL「合并去重协议」：同证据取严、L1∩L7 合并为一条、稳定 ID。
+主 agent 合并时遵守 SKILL「合并去重协议」：同证据取严、L1∩L7 / L3∩L11 合并为一条、稳定 ID。

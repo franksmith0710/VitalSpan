@@ -19,9 +19,13 @@
 ├── config.yaml          # 主配置（环境地图 + 走查目标）
 ├── secrets.env          # 仅密钥（按环境分前缀）
 ├── baselines/           # 可选：像素金样
+│   └── _candidates/     # 新页自动收录的候选金样，待人确认后转正（建议 gitignore）
 ├── playbooks/           # 可选：scenario-playbook 产出
 └── walkthrough/         # 运行产物（必 gitignore）
 ```
+
+`config.yaml` 另有顶层 `integrations:` 段（第三方服务凭据的**变量名**登记，与走查无关，本文忽略）——
+其 schema 真源在 [create-dev-config/references/write-checklist.md](../../create-dev-config/references/write-checklist.md) §3.1。
 
 若仓内已有习惯（如 `.dev/admin.json`），Agent 应**适配读取**并在 Dev Card 写明映射；新仓按本约定初始化。
 
@@ -66,6 +70,9 @@ environments:
       method: ""               # helm / compose / systemd / 流水线名
       region: ""
       link: ""                 # 部署控制台或流水线 URL
+      # 以下可选键由 create-dev-config 阶段 D 填写；本 Skill（走查）忽略
+      # script / ssh_host / remote_root / remote_root_env / health_path
+      # 顶层 release: 见 create-dev-config/references/release-deploy-schema.md
     # —— 可观测 ——
     logs:
       url: ""                  # 日志查询页（Grafana/Loki/云日志…）

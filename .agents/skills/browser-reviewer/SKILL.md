@@ -55,6 +55,7 @@ description: >
 | 可访问应用 | `base_url` 已监听；本 Skill **可**按 `.dev` 提示启动命令，但启动失败须停并报告 |
 | 浏览器能力 | Cursor 浏览器 / MCP browser / 仓内 Playwright 任一可用；全无 → Blind spot，不得假装已走查 |
 | 截图目录 | 默认写入 `.dev/walkthrough/<date>/`（gitignored）；报告只引用相对路径 |
+| 证据留存 | 截图采集走证据层：`python3 ~/.agents/skills/_bin/evidence-run --slice <场景或路由 id> --phase screenshot --label "<页面/态>" -- <截图命令>`；工件路径进回传 `evidence.screenshots`（见 [evidence.md](../go-fast/references/evidence.md)）。手工点+MCP 截图无命令可包时，用一条落盘脚本包住，**禁止**事后补一条无关 evidence-run |
 
 ## 验收深度（五维）
 
@@ -91,10 +92,11 @@ description: >
 2. **先加载剧本，再点**：优先业务剧本（见 Phase 1）；无剧本则先 scenario-playbook 或降级通用幕并披露；禁止只点首页交差。
 3. **每页至少一张关键态截图**；失败步骤必截。
 4. **Console 与网络与页面绑定**：切换路由后清空或分段记录，避免张冠李戴。
-5. **像素对照**：有 `.dev/baselines/`（或配置的 baseline 根）→ 必跑 diff；无则视觉读图，报告写明「无 baseline」。
-6. **先报告后改代码**：默认只产出报告与截图；修复需用户确认（可转 ui-ux-reviewer / code-reviewer 批次）。
-7. **工具降级须披露**：用 Playwright 替代 MCP 浏览器等写进报告「扫描方式」。
-8. **遵守剧本写边界**：`needs_confirm` / `allow_writes=false` / destructive 规则以剧本 + `.dev` 为准，取更严者。
+5. **像素对照**：有 `.dev/baselines/`（或配置的 baseline 根）→ 必跑 diff；无则视觉读图，报告写明「无 baseline」，且**禁止**宣称做了数字 diff 或「像素级通过」（定义见 [visual-qa.md](references/visual-qa.md) §D）。
+6. **新页截图自动收录候选金样**：无 baseline 的页，本次关键态截图直接复制到 `.dev/baselines/_candidates/`，并在报告「待确认金样」清单逐条列出（路由 + 路径 + viewport）。让用户**一次性批量看 20 张图**，比后期整批返工便宜。收录为**候选**不等于通过验收；转正需用户确认后移入 `.dev/baselines/`。
+7. **先报告后改代码**：默认只产出报告与截图；修复需用户确认（可转 ui-ux-reviewer / code-reviewer 批次）。
+8. **工具降级须披露**：用 Playwright 替代 MCP 浏览器等写进报告「扫描方式」。
+9. **遵守剧本写边界**：`needs_confirm` / `allow_writes=false` / destructive 规则以剧本 + `.dev` 为准，取更严者。
 
 ---
 
@@ -132,18 +134,63 @@ description: >
 1. 读图检查：对齐、间距、溢出、对比度明显问题  
 2. 风格矩阵：同菜谱 ≥2 页对照  
 3. 若有 baseline：diff → 超阈值（默认感知差或像素比见 visual-qa）记 finding  
+4. 无 baseline 的页：截图收录 `_candidates/` → 汇总「待确认金样」清单进报告（硬规则 6）  
 
 ### Phase 4 · 报告
 
-套 [report-template.md](references/report-template.md) → 附截图索引 → **停等确认**（若需修）。
+套 [report-template.md](references/report-template.md) → 附截图索引 + 待确认金样清单 + `evidence.screenshots` 工件路径 → **落盘**（见下）→ **停等确认**（若需修）。
+
+**自动落盘**（默认，不必等用户点名）：主报告写入 `docs/material/browser-reviewer/<YYYY-MM-DD>-<slug>.md`，再走查 `…-r<N>.md`（`N≥2`；**禁止**覆盖上轮文件）。目录不存在则创建；`slug` = 剧本或范围短名，如 `order-critical`。  
+**截图产物不入 `docs/`**：仍留在 `.dev/walkthrough/<date>/`（gitignored）——那是证据不是报告；主报告只引用其相对路径。  
+对话展示摘要 + **落盘绝对路径**；回传 `report` 填该路径。用户明确说「勿落盘 / 只聊」→ 可跳过写文件，并在回传注明。
 
 ### Phase 5 ·（确认后）修复分流
 
 - UI/风格/空态 → 建议用 [ui-ux-reviewer](../ui-ux-reviewer/SKILL.md) 批次或本会话按确认修  
 - Console 源于业务 bug/假绿 → [code-reviewer](../code-reviewer/SKILL.md)  
-- 仅更新 baseline（用户确认「接受现状为金样」）→ 复制截图到 baselines  
+- 金样转正（用户确认「接受现状为金样」）→ `_candidates/` 对应图移入 `.dev/baselines/`；未确认的留在候选目录，下次继续列  
 
 ---
+
+## 回传格式
+
+```yaml
+status: DONE | DONE_WITH_CONCERNS | BLOCKED
+phase: browser-reviewer
+mode: review                # 本 Skill 只有一种模式：走查取证、默认不改代码
+scope: ""                   # 剧本 ID / 场景或路由范围
+report: ""                  # 落盘路径 docs/material/browser-reviewer/<YYYY-MM-DD>-<slug>[-rN].md
+env:
+  active_env: ""            # .dev active 环境名
+  base_url: ""              # 密码/Token 一律不出现在回传
+  backend: mcp | playwright | none   # none → BLOCKED
+playbook:
+  source: business | generic | none  # generic/none 须在报告披露
+  path: ""
+steps:
+  total: 0
+  passed: 0
+  failed: 0
+  skipped: 0                # 含 destructive 主动跳过、blocked 场景
+console_errors:
+  error: 0                  # 未捕获 error 计数；>0 → status 禁止 DONE
+  warning: 0
+  network_failures: 0       # 主路径 4xx/5xx（预期 401/403 不计）
+evidence:
+  screenshots: []           # evidence-run 工件路径（.dev/walkthrough/<date>/...）；空 → 禁止声称已走查
+  baseline_diff: true|false # 无 baseline 时 false，且禁止宣称「像素级通过」
+  gold_candidates: []       # 待确认金样（.dev/baselines/_candidates/...）
+findings: []                # {id, severity: P0|P1|P2, step, route, screenshot, repro}
+remaining: []               # 未走完场景 / 需人裁定 / 盲区
+coverage:
+  blind_spots: []           # 未消解盲区：`场景或路由 | 未覆盖原因`；非空 → status 禁止 DONE
+blockers:
+  - ""
+followups:
+  - "create-dev-config / scenario-playbook / ui-ux-reviewer / code-reviewer"
+```
+
+**`status` 与覆盖度的绑定**：剧本 `ready` 步骤全走完（含写明理由的合理跳过）且无未消解盲区 → 可 `DONE`；盲区仅在边缘面（次要场景、响应式抽检、无 baseline 的观感项…）→ 最多 `DONE_WITH_CONCERNS` 且盲区原样进 `remaining`；盲区覆盖**登录 / 主流程场景 / 主 CRUD 路由**，或无浏览器后端、`.dev` 缺必填 → `BLOCKED`，此时「没发现 P0」不成立。
 
 ## 进度清单
 
@@ -151,9 +198,9 @@ description: >
 - [ ] 0. Dev Card + .dev 校验 + 应用可达 + 浏览器后端
 - [ ] 1. 加载业务剧本（或 scenario-playbook / 降级通用幕）→ 勾选表
 - [ ] 2. 登录 + 按剧本走查 + 逐步截图 + Console/网络
-- [ ] 3. 视觉读图 + 风格对照 + baseline diff（若有）
-- [ ] 4. 标准报告；密钥已脱敏；停等确认
-- [ ] 5. （确认后）修复分流或更新 baseline
+- [ ] 3. 视觉读图 + 风格对照 + baseline diff（若有）+ 新页收候选金样
+- [ ] 4. 标准报告（含待确认金样清单 + evidence.screenshots）；落盘 `docs/material/browser-reviewer/`；密钥已脱敏；停等确认
+- [ ] 5. （确认后）修复分流或候选金样转正
 ```
 
 ## 禁止
@@ -167,6 +214,9 @@ description: >
 - 未确认执行删除/对外副作用  
 - 把静态 ui-ux-reviewer 结果冒充真机证据  
 - 把 `blocked` 场景标成通过  
+- 无 baseline 却宣称做了像素 diff / 「像素级通过」  
+- 把候选金样当成「已验收基准」，或未经确认覆盖 `.dev/baselines/`  
+- 报告只贴在对话、默认跳过落盘（用户明示「勿落盘」除外）；把截图证据搬进 `docs/material/`  
 
 ## 关联
 

@@ -71,6 +71,15 @@ shots/W3.orders.1-list.png
 
 优先用场景步 ID（`S1-2`）；降级通用幕仍用 `W*.*`。失败用 `-FAIL` 后缀，便于报告索引。
 
+采集包一层证据层（工件进回传 `evidence.screenshots`）：
+
+```bash
+python3 ~/.agents/skills/_bin/evidence-run --slice <场景或路由 id> --phase screenshot \
+  --label "<路由/态>" -- <落盘截图的命令或脚本>
+```
+
+无 baseline 的路由：截完顺手 `cp` 一份到 `.dev/baselines/_candidates/<route-slug>-<viewport>.png`，汇总进报告「待确认金样」。
+
 ## 勾选表生成提示（可交 subagent 只读生成）
 
 **有业务剧本时：**

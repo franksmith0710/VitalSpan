@@ -1,6 +1,6 @@
 # 确认后批量写文档 / 修规则
 
-仅在用户确认批次后执行。默认 **修补优于整文件覆写**；新建文件套 [templates.md](templates.md)。
+仅在用户确认批次后执行。默认 **修补优于整文件覆写**；新建文件套对应域模板（索引 [templates.md](templates.md) → `templates/<域>.md`，只读本批命中的域）。
 
 ## 执行顺序
 
@@ -43,7 +43,7 @@ R0  prd-sync.mdc + docs/README.md（串行，先于一切）
 批次：{{BATCH_ID}}
 本任务目标文件：{{PATHS}}
 对应 finding：{{FINDING_IDS}}
-类型模板：按 docs-reviewer references/templates.md 的「{{TYPE}}」节
+类型模板：docs-reviewer references/templates/{{TYPE}}.md（+ 索引 templates.md 的「共用元信息」；只读本域，勿全读 templates/）
 prd-sync：已与 taxonomy 对齐（R0 已完成 / 若未完成先停）
 
 要求：

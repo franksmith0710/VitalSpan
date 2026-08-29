@@ -34,12 +34,12 @@ description: >
 ## 必读顺序（≤3 次）
 
 1. 本文件「文档分类」+「流程」+「严重度」+「非问题」
-2. [references/taxonomy.md](references/taxonomy.md) + [references/templates.md](references/templates.md) + [references/consumable-depth.md](references/consumable-depth.md) + [references/prd-sync-rule.md](references/prd-sync-rule.md)
+2. [references/taxonomy.md](references/taxonomy.md) + [references/templates.md](references/templates.md)（**只读索引**，再按需取 `references/templates/<域>.md`，禁止整目录全读）+ [references/consumable-depth.md](references/consumable-depth.md) + [references/prd-sync-rule.md](references/prd-sync-rule.md)
 3. 报告 [references/report-template.md](references/report-template.md)；扫描 [references/scan-workflow.md](references/scan-workflow.md)；确认后写文档 [references/batch-write-workflow.md](references/batch-write-workflow.md)
 
 ## 文档分类（标准树）
 
-默认根目录 `docs/`。命名与何时必建见 [taxonomy.md](references/taxonomy.md)。每类标准正文见 [templates.md](references/templates.md)；api/domain 深度闸门见 [consumable-depth.md](references/consumable-depth.md)。
+默认根目录 `docs/`。命名与何时必建见 [taxonomy.md](references/taxonomy.md)。每类标准正文按域拆分，索引见 [templates.md](references/templates.md)（域文件在 `references/templates/`，用哪个域读哪个）；api/domain 深度闸门见 [consumable-depth.md](references/consumable-depth.md)。
 
 | 目录 | 文件约定 | 内容 | 何时必建 |
 |------|----------|------|----------|
@@ -48,7 +48,7 @@ description: >
 | `docs/domain/` | `<业务流程>.md` | **可测业务域**：角色、夹具、主/异常逐步表、状态机、Given/When/Then 规则、**Process Test Pack**；能直接支撑业务流程测试 | 有清晰业务闭环或领域模型 |
 | `docs/service/` | `<服务>.md` | 进程/命令：职责、配置、部署、健康、运维 | 每个可独立运行的服务/worker/CLI |
 | `docs/mock/` | `<服务\|模块>.md` | **诚实**假能力/占位清单（路径+如何启用+计划） | 非测试主路径存在 stub/mock/假数据 |
-| `docs/ui/` | `<表面\|流程>.md` | 信息架构、关键流、页菜谱、Token/组件约定 | 有 SPA/Console/Admin 等产品表面 |
+| `docs/ui/` | `anchor.md`（**设计锚，有前端时必有**）+ `layout.md` + `<表面\|流程>-ia.md` | 设计锚（组件库/token 真源/外部参考锚/可信度）、壳层、信息架构、关键流、页菜谱 | 有 SPA/Console/Admin 等产品表面 |
 | `docs/data/` | `<域\|存储>.md` | 数据模型、持久化、迁移、一致性与保留策略 | 有 DB/缓存/对象存储/队列持久化 |
 | `docs/README.md` | 固定 | 文档索引：类型说明 + 目录表 + 维护约定 | 只要启用本体系就必有 |
 
@@ -79,7 +79,7 @@ description: >
 
 1. **先 Docs Card，再扫**：禁止未盘点现有 `docs/` 与代码面就批量新建。
 2. **代码为真源，文档对齐代码**：漂移时默认修文档；若代码是 stub，文档进 `mock/` 诚实写，**禁止**在 api/domain 写成已交付。
-3. **标准模板必填节不可空**：见 templates；**api/domain 另过可消费深度闸门**（[consumable-depth.md](references/consumable-depth.md)）；未知写「待确认」并挂 P2，禁止臆造端点/表结构。
+3. **标准模板必填节不可空**：见 [templates.md](references/templates.md) 索引 → 对应 `references/templates/<域>.md`；**api/domain 另过可消费深度闸门**（[consumable-depth.md](references/consumable-depth.md)）；未知写「待确认」并挂 P2，禁止臆造端点/表结构。
 4. **命名与路径遵守 taxonomy**：修正 prd-sync 时与本表一致；禁止另起 `documentation/`、`doc/` 平行树（除非仓内已锁定且用户要求兼容）。
 5. **先报告后写**：确认批次后再生成/覆盖；精修过的文档默认 **diff 修补**，非用户点名不整文件覆写。
 6. **prd-sync 必检**：每次整仓跑完须给出规则「合适 / 需改」结论；需改则进入修复批次（通常优先）。
@@ -158,6 +158,40 @@ description: >
 | 用户确认 | 明确批次（如「R0+D1+D4」或「全部 P0」） |
 | 再动手 | 按批写文档；禁止一次混改无关模块业务代码 |
 
+## 落盘位置
+
+报告统一落 `docs/material/docs-reviewer/<YYYY-MM-DD>-<slug>.md`（`slug` = 范围标识，如 `full-repo` / `order-service`）；被评审/生成的文档本体仍落各自 `docs/<type>/`，不进 material。
+
+## 回传格式
+
+```yaml
+status: DONE | DONE_WITH_CONCERNS | BLOCKED
+phase: docs-reviewer
+mode: review | init | drift | rule-only
+fix_mode: confirm | auto | none
+scope: full_repo | change_surface | modules
+report: ""                  # docs/material/docs-reviewer/<YYYY-MM-DD>-<slug>.md
+domains:                    # 每个文档域一条；未适用也要列并写 skipped 理由
+  - domain: api | adr | domain | service | mock | ui | data | index_rule
+    lane: D1                # D1…D8
+    state: ok | missing | stale | non_compliant | skipped
+    severity: P0 | P1 | P2 | none
+    findings: []            # finding ID
+    paths: []               # 现有或应有的文档路径
+    consumable: pass | fail | n/a   # api/domain 的 A1–A8 / D1–D8 闸门；其余 n/a
+    note: ""                # skipped 必填理由（无前端 / 无持久化 …）
+written: []                 # 已写/已修文档路径；confirm 未确认前 []
+prd_sync: ok | needs_change | missing | not_checked
+remaining: []               # 待确认 / 需裁定 / 盲区未修
+coverage:
+  blind_spots: []           # `lane | 未覆盖路径 | 原因`；非空 → status 禁止 DONE
+  lanes_run: []             # 实跑 lane；与 domains 对账
+blockers:
+  - ""
+```
+
+**`status` 与覆盖度的绑定**：全 lane 已扫（含写明理由的合理 `skipped`）且无未消解盲区 → 可 `DONE`；盲区仅落在**边缘面**（无前端仓的 D6、无持久化的 D7、可选 runbook…）→ 最多 `DONE_WITH_CONCERNS`，盲区原样进 `remaining`；盲区落在**主路径**（对外 API 契约面 / 宣称已交付能力 / 关键服务运维文档 / prd-sync 规则）→ `BLOCKED`，此时「没发现 P0」不成立，更不得写「文档可毕业」。
+
 ## 禁止
 
 - 未做 Docs Card 就整树生成
@@ -171,7 +205,7 @@ description: >
 
 ## 关联
 
-- [taxonomy.md](references/taxonomy.md) · [templates.md](references/templates.md) · [consumable-depth.md](references/consumable-depth.md)
+- [taxonomy.md](references/taxonomy.md) · [templates.md](references/templates.md)（索引 → `references/templates/{api,adr,domain,service,mock,ui,data,readme-index}.md`）· [consumable-depth.md](references/consumable-depth.md)
 - [prd-sync-rule.md](references/prd-sync-rule.md) · [scan-workflow.md](references/scan-workflow.md)
 - [report-template.md](references/report-template.md) · [batch-write-workflow.md](references/batch-write-workflow.md)
 - 姊妹：[code-reviewer](../code-reviewer/SKILL.md) · [ui-ux-reviewer](../ui-ux-reviewer/SKILL.md) · [browser-reviewer](../browser-reviewer/SKILL.md) · [user-guide-writer](../user-guide-writer/SKILL.md)

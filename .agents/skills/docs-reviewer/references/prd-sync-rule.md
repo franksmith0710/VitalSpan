@@ -73,7 +73,7 @@ alwaysApply: false
 ## 模板
 
 新文档必须包含对应类型的必填节（概述/契约或职责、相关链接、`last_verified` 等）。
-完整模板以仓内约定或 docs-reviewer skill 的 `references/templates.md` 为准。
+完整模板以仓内约定或 docs-reviewer skill 的 `references/templates/<域>.md`（索引 `references/templates.md`）为准。
 **api / domain** 另须满足可消费深度（`references/consumable-depth.md`）：能直接支撑 Postman、APISix/网关配路由、业务流程测试；禁止只有端点名表或概念散文。
 
 文首元信息至少含：`type`、`status`、`last_verified`、`related`。

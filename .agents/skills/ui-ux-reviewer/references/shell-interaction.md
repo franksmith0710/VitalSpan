@@ -25,7 +25,7 @@
 | 权限不足页与「未实现」空页难以区分 | P1 | 误判产品烂尾 | 专用 forbidden 态文案 |
 
 **非问题**：按钮按权限隐藏（无入口）且文档未宣称该角色可用。  
-**安全深挖**（越权 API）→ [code-reviewer](../code-reviewer/SKILL.md)，本 Skill 只评**表面体验**。
+**安全深挖**（越权 API）→ [code-reviewer](../../code-reviewer/SKILL.md)，本 Skill 只评**表面体验**。
 
 ## 3. 异步与提交反馈 — 优先 P1
 

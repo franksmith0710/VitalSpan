@@ -40,9 +40,19 @@
   dashboard-desktop.png
   <route-slug>-desktop.png
   <route-slug>-mobile.png    # 仅当抽检 mobile
+  _candidates/               # 本次新页自动收录的候选金样（未确认）
+    <route-slug>-desktop.png
 ```
 
 命名：`路由 slug` + `-` + `viewport 名`。与当次 `shots/` 中文件名对齐以便脚本/人工对比。
+
+### 候选金样（新页自动收录）
+
+无 baseline 的页：关键态截图**自动**复制进 `_candidates/`，并在报告出「待确认金样」清单（路由 / 路径 / viewport）。理由：批量看一次图的成本，远低于风格漂移到验收才发现的整批返工。
+
+- 候选**不是**验收结论，**禁止**据此写「视觉已通过」或拿来做 diff 基准。
+- 用户确认后移入 `.dev/baselines/` 转正；未确认的留在候选目录，下次走查继续列。
+- 采集命令走证据层：`python3 ~/.agents/skills/_bin/evidence-run --slice <route-id> --phase screenshot --label "<路由/态>" -- <截图命令>`，工件路径进回传 `evidence.screenshots`。
 
 ### 模式（来自 `.dev` `walkthrough.pixel.mode`）
 
@@ -56,7 +66,7 @@
 
 - 超过 threshold 且肉眼为布局/组件回归 → **P1**  
 - 超过 threshold 但仅为时间戳/图表抖动 → 记备注或遮罩后复比；勿虚报 P0  
-- 缺 baseline 的新页 → P2「建议收录金样」，不做 P0  
+- 缺 baseline 的新页 → 走上面的候选金样流程（不是 finding，是待确认清单）；页面本身的问题照常按读图分级  
 
 ### 抖动处理
 
@@ -65,15 +75,9 @@
 ## D. 「像素级」含义（本 Skill 定义）
 
 1. **有 baseline**：自动 diff + 人工确认超阈值区域（真像素级回归闸门）。  
-2. **无 baseline**：Agent 逐张读图，按网格检查对齐与间距，**不宣称**数字像素 diff。  
-3. 禁止在无截图时写「像素级通过」。
+2. **无 baseline**：Agent 逐张读图，按网格检查对齐与间距，**不宣称**数字像素 diff、不写百分比差值 —— 报告必须写「无 baseline，读图判断」。  
+3. **禁止**在无截图时写「像素级通过」；**禁止**把候选金样当 baseline 自比自过。
 
 ## E. 与 ui-ux-reviewer
 
-| 问题 | 谁主 |
-|------|------|
-| 代码层反模式、复用、菜谱 | ui-ux-reviewer |
-| 跑起来才出现的错位、Console、真数据空态 | **本 Skill** |
-| 风格漂移 | 两边可报；本 Skill 必须带截图对 |
-
-修复 UI 时优先对齐本仓标杆页与 ui-ux-reviewer 菜谱，禁止新 UI 库。
+分工见 SKILL.md 首表。风格漂移两边可报，**本 Skill 必须带截图对**；修 UI 时对齐 `docs/ui` 设计锚与本仓标杆页，禁止新 UI 库。

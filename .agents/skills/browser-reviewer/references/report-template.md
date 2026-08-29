@@ -15,8 +15,8 @@
 | Dev Card | browser_url…；api…；角色 admin；deploy/logs 摘要… |
 | 浏览器后端 | MCP browser / Playwright / … |
 | Viewport | desktop 1440×900；（+…） |
-| Baseline | 有（n 张）/ 无；pixel mode=… |
-| 产物目录 | `.dev/walkthrough/YYYY-MM-DD/` |
+| Baseline | 有（n 张）/ 无；pixel mode=…；本次新收候选金样 n 张 |
+| 产物目录 | `.dev/walkthrough/YYYY-MM-DD/`；证据工件 `.evidence/<run_id>/`（screenshot n 条） |
 | 勾选 | 过 n · fail n · 跳过 n |
 | Console error | n（白名单外） |
 | P0 / P1 / P2 | n / n / n |
@@ -64,6 +64,16 @@
 | V1 | 像素回归 | 与 baseline 差 3.2% | `baselines/…` vs `shots/…` |
 | V2 | 风格 | 页头与金样不一致 | `shots/A` vs `shots/B` |
 
+（无 baseline 时此表只写读图结论，**禁止**写百分比差值。）
+
+## 待确认金样（新页自动收录 · 请批量过目）
+
+| 路由 | viewport | 候选图 | 建议 |
+|------|----------|--------|------|
+| `/assets` | desktop | `baselines/_candidates/assets-desktop.png` | 认可 → 转正 / 不认可 → 走 UI 修复 |
+
+一次看完比后期整批返工便宜。未确认的下次继续列。
+
 ## P0 Findings
 
 ### P0-1 · [短标题]
@@ -96,7 +106,7 @@
 |------|------|
 | A 修 P0 功能/Console | 可本会话或转 code-reviewer |
 | B 修视觉/风格 | 建议对齐 ui-ux-reviewer 标杆 |
-| C 接受截图为新 baseline | 仅用户明确同意后复制到 `.dev/baselines/` |
+| C 候选金样转正 | 认可的图从 `_candidates/` 移入 `.dev/baselines/` |
 | D 补 `.dev` / gitignore | 配置或安全问题 |
 
 **请确认**：要执行的修复选项。默认本 Skill 只交付报告与截图，不改业务代码。

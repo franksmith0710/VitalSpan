@@ -47,10 +47,20 @@ fleet-plan --fleet-cap 20
   → 每 shard 建 .worktrees/ocr-fleet-shard-NN
   → fleet-shard-open（同波）
   → ≤20 个 shard-controller（cwd=worktree，窗内 concurrency=max）
-  → fleet-status → fleet-merge → dedup → finalize → 清理 worktree
+  → fleet-status → fleet-merge → dedup → finalize → fleet-cleanup（finalize 默认自动清理 worktree）
 ```
 
-产品并发上限是 **`fleet_cap`（默认 20）个 shard-controller**，总吞吐约 `shards × 单窗容量`。禁止在单窗只接受 8 路后把其余 bulk reject 为 `host_capacity` 却不转 fleet。
+产品并发上限是 **`fleet_cap`（默认 20）个 shard-controller**，总吞吐约 `shards × 单窗容量`。禁止在单窗只接受 8 路后把其余 bulk reject 为 `host_capacity` 却不转 fleet。详见 [fleet-mode.md](fleet-mode.md) **三层防护**。
+
+## Fleet 开跑门禁（第二层）
+
+`fleet-shard-open` 之后、派 shard-controller 之前：
+
+```text
+ocr_review.py fleet-preflight --session <child_session_dir>
+```
+
+仅当 `fleet_preflight.ok=true` 且 `actual_tasks == expected_tasks` 时才允许 `orchestrate-tick`。父 session 在 `fleet/plan.json` 存在后**禁止** `orchestrate-tick`（程序返回 `FLEET_PARENT_DISPATCH_FORBIDDEN`）。
 
 ## Tick 与租约
 

@@ -116,6 +116,42 @@ description: >
 - [ ] 3. README 索引 + 交接 browser-reviewer 路径
 ```
 
+## 落盘位置
+
+| 产物 | 位置 | 说明 |
+|------|------|------|
+| 剧本本体 | `.dev/playbooks/<YYYY-MM-DD>/`（无 `.dev` → `docs/qa/playbooks/<YYYY-MM-DD>/`） | 可执行产物，browser-reviewer 直接消费 |
+| 回报摘要 | `docs/material/scenario-playbook/<YYYY-MM-DD>-<slug>.md` | 模式、场景表、blocked/待确认、交接指引；剧本只链不复制 |
+
+## 回传格式
+
+```yaml
+status: DONE | DONE_WITH_CONCERNS | BLOCKED
+phase: scenario-playbook
+mode: specified | auto
+report: ""                  # docs/material/scenario-playbook/<YYYY-MM-DD>-<slug>.md
+playbooks: []               # 剧本文件路径（README.md / critical.md / optional.md 全列）
+playbook_root: ""           # .dev/playbooks/<YYYY-MM-DD>/ 或 docs/qa/playbooks/<YYYY-MM-DD>/
+scenario_count:
+  total: 0
+  critical: 0               # 主剧本 P0/P1 场景
+  optional: 0
+  blocked: 0
+blocked:                    # 写成剧本但不可执行的场景
+  - id: ""
+    title: ""
+    reason: ""              # stub / 即将推出 / 缺夹具 / 缺权限
+write_boundary: from_dev_config | needs_confirm   # 无 .dev allow_* 时为 needs_confirm
+remaining: []               # 待确认路由·文案、未纳入的建议场景
+coverage:
+  blind_spots: []           # `来源 | 未覆盖流程或路由 | 原因`；非空 → status 禁止 DONE
+  sources_read: []          # routes / menu / docs/domain / README 宣称 / .dev
+blockers:
+  - ""
+```
+
+**`status` 与覆盖度的绑定**：指定场景全展开、或自动模式核心路径已覆盖且无未消解盲区 → 可 `DONE`；盲区仅在**边缘面**（optional 候选、非关键次级路由、可选角色）→ 最多 `DONE_WITH_CONCERNS` 且盲区进 `remaining`；盲区落在**主路径**（登录壳 / 宣称已交付的主业务闭环 / 用户点名的指定流程）→ `BLOCKED`，不得把半成品剧本交给 browser-reviewer。
+
 ## 禁止
 
 - 未判定模式就既扫全仓又忽略用户指定  
