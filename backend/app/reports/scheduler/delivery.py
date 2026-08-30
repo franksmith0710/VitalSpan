@@ -26,6 +26,7 @@ def dispatch_artifact(
     im_missing: dict[str, list[str]] | None = None,
     notify_group: bool = False,
     email_smtp_slot: str | None = EMAIL_SLOT_QQ,
+    owner_id=None,
 ) -> dict:
     att_list = attachments or []
     if not att_list and attachment_bytes and attachment_filename:
@@ -44,6 +45,7 @@ def dispatch_artifact(
             notify_group=notify_group,
             email_smtp_slot=email_smtp_slot,
             session=session,
+            owner_id=owner_id,
         )
     else:
         result = _legacy_deliver(

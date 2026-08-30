@@ -45,6 +45,7 @@ const MOCK_TYPES = {
     { type: "tidb", displayName: "TiDB", category: "relational", capabilities: ["sql"], displayGroup: "oltp", categoryLabel: "关系型数据库" },
     { type: "gaussdb", displayName: "GaussDB", category: "relational", capabilities: ["sql"], displayGroup: "oltp", categoryLabel: "关系型数据库" },
     { type: "rest_api", displayName: "REST API", category: "api", capabilities: ["api"], displayGroup: "api", categoryLabel: "API" },
+    { type: "roapi", displayName: "RoAPI", category: "api", capabilities: ["api"], displayGroup: "api", categoryLabel: "API" },
     { type: "excel", displayName: "Excel", category: "file", capabilities: ["file"], displayGroup: "file", categoryLabel: "文件" },
     { type: "csv", displayName: "CSV", category: "file", capabilities: ["file"], displayGroup: "file", categoryLabel: "文件" },
     { type: "db2", displayName: "IBM Db2", category: "relational", capabilities: ["sql"], displayGroup: "oltp", categoryLabel: "关系型数据库" },
@@ -271,6 +272,33 @@ describe("DatasourceFormPage redshift smoke", () => {
     await selectType("OLAP", "AWS Redshift");
     const portInput = screen.getByLabelText(/端口/i) as HTMLInputElement;
     expect(portInput.value).toBe("5439");
+  });
+});
+
+describe("DatasourceFormPage roapi smoke", () => {
+  beforeEach(() => {
+    mockApiFetch.mockReset();
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path === "/api/v1/datasources/types") return MOCK_TYPES;
+      throw new Error(`unexpected path ${path}`);
+    });
+  });
+  afterEach(() => cleanup());
+
+  it("T-CONN-R028-FE-01: roapi 类型在 API 分组可选", async () => {
+    renderForm();
+    await waitFor(() => screen.getByRole("button", { name: /API/ }));
+    await selectType("API", "RoAPI");
+    expect(screen.getByRole("heading", { name: "填写连接信息" })).toBeInTheDocument();
+  });
+
+  it("T-CONN-R028-FE-02: 选中 roapi 显示 RoAPI 地址而非端口", async () => {
+    renderForm();
+    await waitFor(() => screen.getByRole("button", { name: /API/ }));
+    await selectType("API", "RoAPI");
+    expect(screen.getByLabelText("RoAPI 地址")).toBeInTheDocument();
+    expect(screen.queryByLabelText("端口")).not.toBeInTheDocument();
+    expect(screen.getByLabelText("Schema 探测路径")).toHaveValue("/api/schema");
   });
 });
 

@@ -1,7 +1,7 @@
 # PRD 分片索引
 
-> **16 域 · 129 项**（合同 **129** 已实现 · **M-RPT** companion 深化进行中）· hub **v1.2.120**  
-> 来源 SRS V3.7 + 附录 E/F + FR-DATA/FR-ETL（F16）+ M-FINAL 连接器扩展（CONN-023~027）  
+> **16 域 · 130 项**（合同 **129** 已实现 + **CONN-028** M1B companion）· hub **v1.2.126**  
+> 来源 SRS V3.7 + 附录 E/F + FR-DATA/FR-ETL（F16）+ M-FINAL 连接器扩展（CONN-023~027）+ M1B RoAPI（CONN-028）  
 > Hub 索引：[`../prd.md`](../prd.md) · 执行范围：[`../plan.md`](../plan.md)（**§M-RPT 报表中心深度收官**）
 
 > **非计数实现追溯（2026-07-13）**：F02 仍 **8 项**（AUTH-001～008）。账户资料与修改密码无独立 PRD ID；见 hub/F02 边界说明、[BUG-001](../../bugs/BUG-001_account-password-security_2026-07-13.md) 与 [`plans/archive/2026-07-08-account-self-service.md`](../plans/archive/2026-07-08-account-self-service.md)。
@@ -11,7 +11,7 @@
 | [F01-BOOT.md](./F01-BOOT.md) | BOOT-001 ~ BOOT-006 | P0 | P0 | 6 |
 | [F02-AUTH.md](./F02-AUTH.md) | AUTH-001 ~ AUTH-008 | M7-RLS | 一期 | 8 |
 | [F03-DS.md](./F03-DS.md) | DS-001 ~ DS-008 | 连接层 | 一期 | 8 |
-| [F04-CONN.md](./F04-CONN.md) | CONN-001 ~ CONN-027 | 连接层 | 一～四期 + 收官 | 27 |
+| [F04-CONN.md](./F04-CONN.md) | CONN-001 ~ CONN-028 | 连接层 | 一～四期 + 收官 + M1B | 28 |
 | [F05-QUERY.md](./F05-QUERY.md) | QUERY-001 ~ QUERY-009 | M3 | 一/三/四期 | 9 |
 | [F06-VIZ.md](./F06-VIZ.md) | VIZ-001 ~ VIZ-008 | M4 | 一/三期 | 8 |
 | [F07-DASH.md](./F07-DASH.md) | DASH-001 ~ DASH-006 | M5 | 一/二期 | 6 |

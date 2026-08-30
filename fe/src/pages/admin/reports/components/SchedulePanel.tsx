@@ -18,7 +18,7 @@ import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { summarizeRecipients } from "@/lib/scheduleSourceMeta";
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
-import { pickActiveSchedule, scheduleRowToForm, EMAIL_ONLY_DELIVERY } from "../scheduleFormUtils";
+import { pickActiveSchedule, scheduleRowToForm, deliveryPayloadFromForm } from "../scheduleFormUtils";
 import { describeCron } from "./ScheduleWizard";
 import {
   DEFAULT_SCHEDULE_FORM,
@@ -108,7 +108,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
           timezone: form.timezone,
           recipients: form.recipients.filter((r) => r.value.trim()),
           attachmentFormats: form.attachmentFormats,
-          ...EMAIL_ONLY_DELIVERY,
+          ...deliveryPayloadFromForm(form),
           emailSmtpSlot: form.emailSmtpSlot,
         }),
       }),
@@ -131,7 +131,7 @@ export function SchedulePanel({ catalogNodeId, readOnly }: { catalogNodeId: stri
           timezone: form.timezone,
           recipients: form.recipients.filter((r) => r.value.trim()),
           attachmentFormats: form.attachmentFormats,
-          ...EMAIL_ONLY_DELIVERY,
+          ...deliveryPayloadFromForm(form),
           emailSmtpSlot: form.emailSmtpSlot,
         }),
       }),

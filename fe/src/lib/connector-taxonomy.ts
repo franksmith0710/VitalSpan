@@ -127,6 +127,7 @@ const TYPE_ICON: Partial<Record<string, LucideIcon>> = {
   excel: FileSpreadsheet,
   csv: FileSpreadsheet,
   rest_api: Globe,
+  roapi: Globe,
 };
 
 const GROUP_FALLBACK_ICON: Record<DisplayGroup, LucideIcon> = {

@@ -9,7 +9,16 @@ from sqlalchemy.orm import Session
 from app.auth.deps import UserContext, get_current_user
 from app.auth.im_oauth.bindings import delete_binding
 from app.auth.im_oauth.oauth import ImOAuthError
-from app.auth.im_oauth.service import ImBindingsOut, list_user_im_bindings, start_authorize
+from app.auth.im_oauth.service import (
+    DeviceAuthCompleteIn,
+    DeviceAuthCompleteOut,
+    DeviceAuthStartOut,
+    ImBindingsOut,
+    complete_feishu_device_auth_session,
+    list_user_im_bindings,
+    start_authorize,
+    start_feishu_device_auth_session,
+)
 from app.auth.models import get_meta_session
 from app.auth.profile import service as profile_service
 
@@ -72,3 +81,32 @@ def delete_my_im_binding(
     delete_binding(db, user_id=user_id, channel=channel)
     db.commit()
     return Response(status_code=204)
+
+
+@router.post("/me/im-bindings/feishu/device-auth/start", response_model=DeviceAuthStartOut)
+def start_feishu_device_binding(
+    current_user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> DeviceAuthStartOut | JSONResponse:
+    try:
+        user_id = profile_service.resolve_actor_user_id(db, current_user.id, current_user.username)
+        return start_feishu_device_auth_session(db, user_id=user_id)
+    except ImOAuthError as exc:
+        return _oauth_error(exc)
+
+
+@router.post("/me/im-bindings/feishu/device-auth/complete", response_model=DeviceAuthCompleteOut)
+def complete_feishu_device_binding(
+    payload: DeviceAuthCompleteIn,
+    current_user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> DeviceAuthCompleteOut | JSONResponse:
+    try:
+        user_id = profile_service.resolve_actor_user_id(db, current_user.id, current_user.username)
+        return complete_feishu_device_auth_session(
+            db,
+            user_id=user_id,
+            session_id=payload.session_id,
+        )
+    except ImOAuthError as exc:
+        return _oauth_error(exc)

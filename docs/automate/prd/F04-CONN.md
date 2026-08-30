@@ -484,3 +484,24 @@
 - **依赖**：DS-001、QUERY-001、CONN-002（PG 协议委托基础）
 - **演化建议**：r250 PG 委托 + REDSHIFT_* 错误域 + 7 backend + 2 FE smoke 通过；后续 Redshift Serverless IAM 认证、UNLOAD 外链、compose 集成 smoke 留 companion
 - **里程碑对齐**：M-FINAL · F-G · 已完成 · 2026-07-07
+
+### [CONN-028] RoAPI 联邦查询连接器
+
+- **状态**：已实现
+- **goal_ref**：goal.md §2.2（G2）
+- **期次**：M1B+（内网 sidecar 可选）
+- **描述**：RoAPI（Apache Arrow + DataFusion）只读查询网关连接器。通过 RoAPI HTTP 接口发现 YAML 注册表、执行 SQL 或表 REST 查询；与 `rest_api`（通用 JSON HTTP）及 `trino`（湖仓联邦集群）并列，面向轻量 Parquet/CSV/JSON 联邦场景。
+- **验收标准**：
+  - [x] type=`roapi` 已注册（`ConnectorRegistry` + `GET /api/v1/datasources/types` 可见）
+  - [x] UI 可选（`RoapiConnectionFields`：Base URL、Bearer Token、探测路径 `/api/schema`）
+  - [x] 连通性测试结构化错误（`ROAPI_AUTH_FAILED` / `ROAPI_PROBE_FAILED` / `ROAPI_INVALID_URL`）
+  - [x] 元数据浏览：`GET /api/schema` → schema/table/column
+  - [x] 只读 native 查询：`body.sql` 透传 `/api/sql` 或 `body.table` 走 `/api/tables/{table}`
+  - [x] category=`api` 查询模式 `native`；凭证 API 响应无明文 secret
+  - [x] 插件零侵入：`dialects/roapi.py` + 注册
+  - [x] mock 集成 smoke（`tests/test_conn_roapi_r028.py`）
+  - [x] docker compose optional profile `roapi` + 演示 CSV 表
+- **代码锚点**：`backend/app/datasources/dialects/roapi.py` · `backend/app/datasources/__init__.py` · `backend/app/query/capabilities.py` · `fe/src/pages/admin/datasources/components/RoapiConnectionFields.tsx` · `docker/roapi/` · `tests/test_conn_roapi_r028.py`
+- **依赖**：DS-001、QUERY-003（Native 双路径）
+- **演化建议**：RoAPI 版本锁定与 compose 真机 E2E；ingestion 入湖、GraphQL 前端留远期
+- **里程碑对齐**：M1B · RoAPI sidecar 可选接入

@@ -11,6 +11,7 @@ def test_me_im_bindings_lists_channels(client, admin_auth_headers):
         ImBindingItemOut(
             channel="wecom",
             label="企业微信",
+            deliveryMode="corporate_app",
             appConfigured=False,
             bound=False,
             deliverable=False,
@@ -18,6 +19,7 @@ def test_me_im_bindings_lists_channels(client, admin_auth_headers):
         ImBindingItemOut(
             channel="dingtalk",
             label="钉钉",
+            deliveryMode="corporate_app",
             appConfigured=False,
             bound=False,
             deliverable=False,
@@ -25,6 +27,7 @@ def test_me_im_bindings_lists_channels(client, admin_auth_headers):
         ImBindingItemOut(
             channel="feishu",
             label="飞书",
+            deliveryMode="corporate_app",
             appConfigured=False,
             bound=False,
             deliverable=False,

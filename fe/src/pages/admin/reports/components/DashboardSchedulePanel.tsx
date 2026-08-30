@@ -18,7 +18,7 @@ import {
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { mapApiError } from "@/lib/apiError";
 import { summarizeRecipients } from "@/lib/scheduleSourceMeta";
-import { scheduleRowToForm, EMAIL_ONLY_DELIVERY, toEmailOnlyRecipients } from "../scheduleFormUtils";
+import { scheduleRowToForm, deliveryPayloadFromForm, toEmailOnlyRecipients } from "../scheduleFormUtils";
 import {
   localizeScheduleStatus,
   SCHEDULE_ACTION_LABELS,
@@ -178,7 +178,7 @@ export function DashboardSchedulePanel({
         timezone: form.timezone,
         recipients: form.recipients.filter((r) => r.value.trim()),
         attachmentFormats: ["pdf"],
-        ...EMAIL_ONLY_DELIVERY,
+        ...deliveryPayloadFromForm(form),
         emailSmtpSlot: form.emailSmtpSlot,
       });
       setShowCreate(false);
@@ -202,7 +202,7 @@ export function DashboardSchedulePanel({
           timezone: form.timezone,
           recipients: form.recipients.filter((r) => r.value.trim()),
           attachmentFormats: ["pdf"],
-          ...EMAIL_ONLY_DELIVERY,
+          ...deliveryPayloadFromForm(form),
           emailSmtpSlot: form.emailSmtpSlot,
         },
       });

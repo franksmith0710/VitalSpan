@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.auth.models import Base
 
 IM_CHANNELS = ("dingtalk", "wecom", "feishu")
+IM_DELIVERY_MODES = ("corporate_app", "user_delegated")
 IM_LABELS = {
     "dingtalk": "钉钉",
     "wecom": "企业微信",
@@ -40,6 +41,9 @@ class PlatformImConnectConfig(Base):
 
     channel: Mapped[str] = mapped_column(String(16), primary_key=True)
     state: Mapped[str] = mapped_column(String(16), nullable=False)
+    delivery_mode: Mapped[str] = mapped_column(
+        String(32), nullable=False, server_default="corporate_app"
+    )
     callback_domain: Mapped[str | None] = mapped_column(String(255), nullable=True)
     credentials_encrypted: Mapped[str | None] = mapped_column(Text, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(

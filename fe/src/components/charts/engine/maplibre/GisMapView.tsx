@@ -43,7 +43,7 @@ import {
   type GisMapCamera,
 } from "@/components/charts/engine/maplibre/gisMapRuntime";
 import { resolveGisProjectSun } from "@/components/charts/engine/maplibre/gisProjectSun";
-import { createGisSunEngine, applyGisSunLive } from "@/components/charts/engine/maplibre/gisSunRuntime";
+import { createGisSunEngine } from "@/components/charts/engine/maplibre/gisSunRuntime";
 import type { GisSunEngine } from "@/components/charts/engine/maplibre/gisSunEngine";
 import { registerGisMapViewLiveControl } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
@@ -117,6 +117,23 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     [project.sun],
   );
   const sunEnabled = resolveGisProjectSun(project.sun).enabled;
+
+  const ensureSunEngine = useCallback((map: MapLibreMap | null = mapRef.current) => {
+    if (!map?.isStyleLoaded()) return;
+    const resolved = resolveGisProjectSun(projectRef.current.sun);
+    if (!resolved.enabled) {
+      sunEngineRef.current?.destroy();
+      sunEngineRef.current = null;
+      return;
+    }
+    const { enabled: _enabled, ...settings } = resolved;
+    if (!sunEngineRef.current) {
+      sunEngineRef.current = createGisSunEngine(map, projectRef.current.sun);
+    } else {
+      sunEngineRef.current.applySettings(settings);
+    }
+    sunEngineRef.current.render();
+  }, []);
   const [pmtilesStyle, setPmtilesStyle] = useState<StyleSpecification | null>(null);
   const [pmtilesLoading, setPmtilesLoading] = useState(false);
   const [pmtilesErrorHint, setPmtilesErrorHint] = useState<string | null>(null);
@@ -278,8 +295,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     } else if (!layerEntriesRef.current.some((entry) => entry.geoJson)) {
       overlayFitKeyRef.current = null;
     }
-    sunEngineRef.current?.render();
-  }, []);
+    ensureSunEngine(map);
+  }, [ensureSunEngine]);
 
   const mapStyleKey = useMemo(
     () =>
@@ -459,6 +476,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       if (map && resyncDataLayers) {
         map.off("style.load", resyncDataLayers);
       }
+      sunEngineRef.current?.destroy();
+      sunEngineRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
       appliedStyleKeyRef.current = null;
@@ -570,28 +589,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
   useEffect(() => {
     const map = mapRef.current;
-    if (!map || !sunEnabled) {
-      sunEngineRef.current?.destroy();
-      sunEngineRef.current = null;
-      return;
-    }
-    const mount = () => {
-      sunEngineRef.current?.destroy();
-      sunEngineRef.current = createGisSunEngine(map, projectRef.current.sun);
-    };
-    if (map.isStyleLoaded()) mount();
-    else map.once("load", mount);
-    return () => {
-      sunEngineRef.current?.destroy();
-      sunEngineRef.current = null;
-    };
-  }, [styleKey, sunEnabled]);
-
-  useEffect(() => {
-    if (!sunEngineRef.current) return;
-    const { enabled: _enabled, ...settings } = resolveGisProjectSun(project.sun);
-    sunEngineRef.current.applySettings(settings);
-  }, [project.sun, sunKey]);
+    if (!map || gisPaintState !== "ready") return;
+    const mountSun = () => ensureSunEngine(map);
+    if (map.isStyleLoaded()) mountSun();
+    else map.once("style.load", mountSun);
+  }, [ensureSunEngine, gisPaintState, mapRuntimeEpoch, sunEnabled, sunKey]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -806,22 +808,18 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         if (sun) {
           projectRef.current = { ...projectRef.current, sun: { ...projectRef.current.sun, ...sun } };
         }
-        const resolved = resolveGisProjectSun(projectRef.current.sun);
-        if (!resolved.enabled) {
-          sunEngineRef.current?.destroy();
-          sunEngineRef.current = null;
-          return true;
+        if (patch) {
+          projectRef.current = {
+            ...projectRef.current,
+            sun: { ...projectRef.current.sun, ...patch },
+          };
         }
-        if (!sunEngineRef.current) {
-          sunEngineRef.current = createGisSunEngine(map, projectRef.current.sun);
-        } else {
-          applyGisSunLive(sunEngineRef.current, projectRef.current.sun, patch);
-        }
+        ensureSunEngine(map);
         return true;
       },
       getSunSettings: () => sunEngineRef.current?.getSettings() ?? null,
     });
-  }, [instanceKey, remountMapControls, syncLayersRuntime]);
+  }, [ensureSunEngine, instanceKey, remountMapControls, syncLayersRuntime]);
 
   const statusHint = pmtilesErrorHint ?? mapErrorHint;
   const dataHint = useMemo(

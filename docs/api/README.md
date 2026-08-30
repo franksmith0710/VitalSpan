@@ -104,6 +104,8 @@ redoc: /redoc
 | GET | `/api/v1/me/im-bindings` | 当前用户三通道绑定状态 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | GET | `/api/v1/me/im-bindings/{channel}/authorize` | 发起 OAuth 授权跳转 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | DELETE | `/api/v1/me/im-bindings/{channel}` | 解绑指定 IM 通道 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
+| POST | `/api/v1/me/im-bindings/feishu/device-auth/start` | 飞书 device-code 绑定启动（user_delegated） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
+| POST | `/api/v1/me/im-bindings/feishu/device-auth/complete` | 飞书 device-code 轮询完成 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | GET | `/api/v1/auth/im/{channel}/callback` | IM OAuth 回调（公开路径，state 校验） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/im_auth.py` |
 | GET/POST | `/api/v1/resource-grants` | AUTH-004 资源授权列表/创建 | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
 | DELETE | `/api/v1/resource-grants/{grant_id}` | 删除单条资源授权（204） | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
@@ -131,7 +133,7 @@ redoc: /redoc
 
 | 方法 | 路径 | 说明 | IF | 期次 | PRD | 状态 | 代码锚点 |
 |------|------|------|-----|------|-----|------|----------|
-| GET | `/api/v1/datasources/types` | 已注册连接器类型清单（含 M11：`starrocks`/`trino`/`presto`/`influxdb`/`tdengine`/`timescaledb`；**r249** `rest_api`/`excel`/`csv`/`db2`/`impala`；**r250** `redshift`（category=olap）；`type`、`displayName`、`category`、`capabilities`、**`displayGroup`**（`oltp`/`olap`/`warehouse`/`file`/`api`/`extension`）、**`categoryLabel`**（中文组名）） | IF-06 | 一期 | DS-007 · CONN-023~027 | 已实现（r250） | `backend/app/api/v1/datasources.py` |
+| GET | `/api/v1/datasources/types` | 已注册连接器类型清单（含 M11：`starrocks`/`trino`/`presto`/`influxdb`/`tdengine`/`timescaledb`；**r249** `rest_api`/`excel`/`csv`/`db2`/`impala`；**r250** `redshift`（category=olap）；**CONN-028** `roapi`（category=api）；`type`、`displayName`、`category`、`capabilities`、**`displayGroup`**（`oltp`/`olap`/`warehouse`/`file`/`api`/`extension`）、**`categoryLabel`**（中文组名）） | IF-06 | 一期 | DS-007 · CONN-023~028 | 已实现 | `backend/app/api/v1/datasources.py` |
 | POST | `/api/v1/datasources` | 创建数据源；请求/响应可选 `connectionOptions`（charset/collation/sslMode/connectTimeoutSec/readTimeoutSec） | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
 | GET | `/api/v1/datasources` | 数据源列表（`?limit=&offset=&type=&q=&includeManaged=`）；默认不含托管分析库；`includeManaged=true` 才返回 | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |
 | GET | `/api/v1/datasources/{id}` | 数据源详情（无明文密码）；含 `connectionOptions` | IF-06 | 一期 | DS-002 | 已实现 | `backend/app/api/v1/datasources.py` |

@@ -497,9 +497,9 @@ _R40_NEW_TYPES = ("mongodb", "influxdb", "tdengine", "sqlite", "timescaledb")
 
 
 def test_r40_export_type_catalog_count():
-    """T-REG-R40-01: export_type_catalog 返回 30 种 type（含 r46 gbase + r49 opensearch + r249 五型 + r250 redshift）。"""
+    """T-REG-R40-01: export_type_catalog 返回 31 种 type（含 r250 redshift + CONN-028 roapi）。"""
     catalog = export_type_catalog()
-    assert len(catalog) == 30
+    assert len(catalog) == 31
 
 
 @pytest.mark.parametrize("connector_type", _R40_NEW_TYPES)

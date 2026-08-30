@@ -25,13 +25,13 @@ export const emptyForm: FormState = {
 };
 
 export function hostFieldLabel(type: string): string {
-  if (type === "rest_api") return "Base URL";
+  if (type === "rest_api" || type === "roapi") return "Base URL";
   if (type === "excel" || type === "csv") return "文件路径 / URL";
   return "主机";
 }
 
 export function hidePortField(type: string): boolean {
-  return type === "excel" || type === "csv" || type === "rest_api";
+  return type === "excel" || type === "csv" || type === "rest_api" || type === "roapi";
 }
 
 export type ConnectionStat = { label: string; value: string };
@@ -56,6 +56,14 @@ export function buildConnectionStats(
       { label: "Base URL", value: baseUrl },
       { label: "健康检查路径", value: database || "/" },
       { label: "认证", value: authLabel },
+    ];
+  }
+  if (type === "roapi") {
+    const baseUrl = /^https?:\/\//i.test(host) ? host : `${host}:${port}`;
+    return [
+      { label: "RoAPI 地址", value: baseUrl },
+      { label: "Schema 路径", value: database || "/api/schema" },
+      { label: "认证", value: username === "bearer" ? "Bearer" : "无" },
     ];
   }
   if (type === "excel" || type === "csv") {
@@ -86,6 +94,7 @@ export const CONNECTOR_FIELD_HINTS: Record<
   tidb: { port: "4000", databaseLabel: "数据库", usernameLabel: "用户名" },
   gaussdb: { port: "5432", databaseLabel: "数据库 / Schema", usernameLabel: "用户名" },
   rest_api: { port: "443", databaseLabel: "API 探测路径", usernameLabel: "用户名（Basic，可选）" },
+  roapi: { port: "8086", databaseLabel: "Schema 探测路径", usernameLabel: "Bearer Token（可选）" },
   excel: { port: "1", databaseLabel: "Sheet 名（可选）", usernameLabel: "用户名" },
   csv: { port: "1", databaseLabel: "数据库", usernameLabel: "用户名" },
   db2: { port: "50000", databaseLabel: "数据库", usernameLabel: "用户名" },
@@ -142,6 +151,7 @@ export const CONNECTOR_PICKER_SUBTITLES: Record<string, string> = {
   excel: "Excel 工作簿文件",
   csv: "逗号分隔文本文件",
   rest_api: "HTTP REST 接口数据源",
+  roapi: "RoAPI 只读联邦查询 sidecar（Parquet/CSV/SQL）",
 };
 
 export function connectorPickerSubtitle(

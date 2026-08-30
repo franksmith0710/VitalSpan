@@ -18,7 +18,7 @@ import {
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { mapApiError } from "@/lib/apiError";
 import { summarizeRecipients } from "@/lib/scheduleSourceMeta";
-import { pickActiveSchedule, scheduleRowToForm, EMAIL_ONLY_DELIVERY, toEmailOnlyRecipients } from "../scheduleFormUtils";
+import { pickActiveSchedule, scheduleRowToForm, deliveryPayloadFromForm, toEmailOnlyRecipients } from "../scheduleFormUtils";
 import { describeCron } from "./ScheduleWizard";
 import {
   DEFAULT_SCHEDULE_FORM,
@@ -97,7 +97,7 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
         timezone: form.timezone,
         recipients: form.recipients.filter((item) => item.value.trim()),
         attachmentFormats: ["pdf"],
-        ...EMAIL_ONLY_DELIVERY,
+        ...deliveryPayloadFromForm(form),
         emailSmtpSlot: form.emailSmtpSlot,
       });
       if (created.allowedActions.includes("schedule")) {
@@ -119,7 +119,7 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
           timezone: form.timezone,
           recipients: form.recipients.filter((item) => item.value.trim()),
           attachmentFormats: ["pdf"],
-          ...EMAIL_ONLY_DELIVERY,
+          ...deliveryPayloadFromForm(form),
           emailSmtpSlot: form.emailSmtpSlot,
         },
       });

@@ -12,7 +12,8 @@ import { applyTypePort, DatasourceTypeField, TypeHint } from "./DatasourceTypeFi
 import { FileSourceConnectionFields } from "./FileSourceConnectionFields";
 import { GenericConnectionFields } from "./GenericConnectionFields";
 import { RestApiConnectionFields } from "./RestApiConnectionFields";
-import type { FileSourceCompanionState, RestApiCompanionState } from "./datasource-form-types";
+import { RoapiConnectionFields } from "./RoapiConnectionFields";
+import type { FileSourceCompanionState, RestApiCompanionState, RoapiCompanionState } from "./datasource-form-types";
 import { CONNECTION_CONTROL_CLASS, ConnectionFormField } from "./ConnectionFormField";
 
 export const DATASOURCE_CONNECTION_FORM_ID = "datasource-connection-form";
@@ -29,6 +30,7 @@ type Props = {
   advancedOpen: boolean;
   codeInputRef: RefObject<HTMLInputElement | null>;
   restApiCompanion: RestApiCompanionState;
+  roapiCompanion: RoapiCompanionState;
   fileCompanion: FileSourceCompanionState;
   embedded?: boolean;
   formId?: string;
@@ -38,6 +40,7 @@ type Props = {
   onFieldChange: (key: keyof FormState, value: string) => void;
   onTypeChange: (type: string) => void;
   onRestApiChange: (next: RestApiCompanionState) => void;
+  onRoapiChange: (next: RoapiCompanionState) => void;
   onFileChange: (next: FileSourceCompanionState) => void;
   onSubmit: () => void;
 };
@@ -128,6 +131,7 @@ export function DatasourceConnectionForm({
   advancedOpen,
   codeInputRef,
   restApiCompanion,
+  roapiCompanion,
   fileCompanion,
   embedded = false,
   formId = DATASOURCE_CONNECTION_FORM_ID,
@@ -137,6 +141,7 @@ export function DatasourceConnectionForm({
   onFieldChange,
   onTypeChange,
   onRestApiChange,
+  onRoapiChange,
   onFileChange,
   onSubmit,
 }: Props) {
@@ -216,6 +221,8 @@ export function DatasourceConnectionForm({
 
         {form.type === "rest_api" ? (
           <RestApiConnectionFields value={restApiCompanion} onChange={onRestApiChange} />
+        ) : form.type === "roapi" ? (
+          <RoapiConnectionFields value={roapiCompanion} onChange={onRoapiChange} />
         ) : form.type === "excel" || form.type === "csv" ? (
           <FileSourceConnectionFields sourceType={form.type} value={fileCompanion} onChange={onFileChange} />
         ) : (

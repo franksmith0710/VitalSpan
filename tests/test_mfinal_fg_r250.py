@@ -65,11 +65,11 @@ def client():
 
 
 def test_r250_027_01_redshift_in_catalog():
-    """T-CONN-R250-027-01: redshift 在 export_type_catalog；category=olap；catalog count == 30。"""
+    """T-CONN-R250-027-01: redshift 在 export_type_catalog；category=olap；catalog count == 31。"""
     catalog = {item["type"]: item for item in export_type_catalog()}
     assert "redshift" in catalog
     assert catalog["redshift"]["category"] == "olap"
-    assert len(catalog) == 30
+    assert len(catalog) == 31
 
 
 def test_r250_027_02_types_api_contains_redshift(client):

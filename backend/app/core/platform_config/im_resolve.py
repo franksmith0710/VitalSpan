@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.models import get_meta_session
 from app.core.config import Settings, get_settings
-from app.core.platform_config.im_connect_model import IM_CHANNELS, PlatformImConnectConfig
+from app.core.platform_config.im_connect_model import IM_CHANNELS, IM_DELIVERY_MODES, PlatformImConnectConfig
 from app.core.platform_config.im_credentials import (
     ImCredentials,
     decrypt_credentials_payload,
@@ -42,12 +42,14 @@ def _from_env(settings: Settings, channel: str) -> ImCredentials:
 
 def _from_row(row: PlatformImConnectConfig) -> ImCredentials:
     channel = row.channel
+    mode = row.delivery_mode if row.delivery_mode in IM_DELIVERY_MODES else "corporate_app"
     payload = decrypt_credentials_payload(row.credentials_encrypted or "")
     callback = (row.callback_domain or "").strip() or None
     if channel == "dingtalk":
         return ImCredentials(
             channel=channel,
             source="db",
+            delivery_mode=mode,
             callback_domain=callback,
             app_key=payload.get("app_key") or None,
             app_secret=payload.get("app_secret") or None,
@@ -57,6 +59,7 @@ def _from_row(row: PlatformImConnectConfig) -> ImCredentials:
         return ImCredentials(
             channel=channel,
             source="db",
+            delivery_mode=mode,
             callback_domain=callback,
             corp_id=payload.get("corp_id") or None,
             secret=payload.get("secret") or None,
@@ -65,6 +68,7 @@ def _from_row(row: PlatformImConnectConfig) -> ImCredentials:
     return ImCredentials(
         channel=channel,
         source="db",
+        delivery_mode=mode,
         callback_domain=callback,
         app_id=payload.get("app_id") or None,
         app_secret=payload.get("app_secret") or None,
@@ -91,6 +95,16 @@ def resolve_im_credentials(
     finally:
         if owns:
             db.close()
+
+
+def resolve_im_delivery_mode(session: Session, channel: str) -> str:
+    normalized = normalize_im_channel(channel)
+    row = session.get(PlatformImConnectConfig, normalized)
+    if row is None or row.state != "active":
+        return "corporate_app"
+    if row.delivery_mode in IM_DELIVERY_MODES:
+        return row.delivery_mode
+    return "corporate_app"
 
 
 def resolve_all_im_credentials(

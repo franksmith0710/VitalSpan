@@ -13,6 +13,7 @@ export type ImConfigSummary = {
   label: string;
   configured: boolean;
   source: "db" | "env" | "none";
+  deliveryMode?: "corporate_app" | "user_delegated";
   callbackDomain?: string | null;
   corpId?: string | null;
   agentId?: string | null;

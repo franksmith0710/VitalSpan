@@ -1,6 +1,6 @@
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { MessageSquare } from "lucide-react";
+import { ExternalLink, MessageSquare } from "lucide-react";
 import { useSearchParams } from "react-router";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +13,7 @@ import { queryKeys } from "@/lib/queryKeys";
 type ImBindingItem = {
   channel: ImChannel;
   label: string;
+  deliveryMode?: "corporate_app" | "user_delegated";
   appConfigured: boolean;
   bound: boolean;
   maskedAccount?: string | null;
@@ -25,14 +26,33 @@ type ImBindingsResponse = {
   items: ImBindingItem[];
 };
 
+type DeviceAuthStart = {
+  sessionId: string;
+  verificationUri: string;
+  userCode: string;
+  expiresIn: number;
+  interval: number;
+};
+
+type DeviceAuthComplete = {
+  status: "pending" | "success" | "failed";
+  message?: string | null;
+  interval?: number | null;
+};
+
 const SOURCE_LABEL: Record<string, string> = {
-  oauth: "自助绑定",
+  oauth: "网页授权",
+  device: "扫码绑定",
   admin: "管理员修改",
 };
 
 export function ImBindingsCard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const qc = useQueryClient();
+  const pollTimer = useRef<number | null>(null);
+  const [deviceSession, setDeviceSession] = useState<DeviceAuthStart | null>(null);
+  const [devicePolling, setDevicePolling] = useState(false);
+
   const bindingsQuery = useQuery({
     queryKey: queryKeys.meImBindings,
     queryFn: () => apiFetch<ImBindingsResponse>("/api/v1/me/im-bindings"),
@@ -54,19 +74,70 @@ export function ImBindingsCard() {
     void qc.invalidateQueries({ queryKey: queryKeys.meImBindings });
   }, [qc, searchParams, setSearchParams]);
 
+  useEffect(() => {
+    return () => {
+      if (pollTimer.current !== null) {
+        window.clearTimeout(pollTimer.current);
+      }
+    };
+  }, []);
+
   const unbindMutation = useMutation({
     mutationFn: (channel: ImChannel) =>
       apiFetch<void>(`/api/v1/me/im-bindings/${channel}`, { method: "DELETE" }),
     onSuccess: async () => {
       toast.success("已解绑");
+      setDeviceSession(null);
       await qc.invalidateQueries({ queryKey: queryKeys.meImBindings });
     },
     onError: (err) => toast.error(mapApiError(err)),
   });
 
-  const startBind = (channel: ImChannel) => {
+  const startOAuthBind = (channel: ImChannel) => {
     const redirect = encodeURIComponent("/admin/account/profile");
     window.location.href = `/api/v1/me/im-bindings/${channel}/authorize?redirectAfter=${redirect}`;
+  };
+
+  const pollDeviceComplete = async (sessionId: string, intervalMs: number) => {
+    try {
+      const result = await apiFetch<DeviceAuthComplete>("/api/v1/me/im-bindings/feishu/device-auth/complete", {
+        method: "POST",
+        body: JSON.stringify({ sessionId }),
+      });
+      if (result.status === "success") {
+        setDevicePolling(false);
+        setDeviceSession(null);
+        toast.success("飞书绑定成功");
+        await qc.invalidateQueries({ queryKey: queryKeys.meImBindings });
+        return;
+      }
+      pollTimer.current = window.setTimeout(
+        () => void pollDeviceComplete(sessionId, intervalMs),
+        Math.max(intervalMs, 3) * 1000,
+      );
+    } catch (err) {
+      setDevicePolling(false);
+      toast.error(mapApiError(err));
+    }
+  };
+
+  const deviceStartMutation = useMutation({
+    mutationFn: () =>
+      apiFetch<DeviceAuthStart>("/api/v1/me/im-bindings/feishu/device-auth/start", { method: "POST" }),
+    onSuccess: (data) => {
+      setDeviceSession(data);
+      setDevicePolling(true);
+      void pollDeviceComplete(data.sessionId, data.interval);
+    },
+    onError: (err) => toast.error(mapApiError(err)),
+  });
+
+  const startBind = (item: ImBindingItem) => {
+    if (item.channel === "feishu" && item.deliveryMode === "user_delegated") {
+      deviceStartMutation.mutate();
+      return;
+    }
+    startOAuthBind(item.channel);
   };
 
   const items = bindingsQuery.data?.items ?? [];
@@ -84,6 +155,27 @@ export function ImBindingsCard() {
           </p>
         </div>
       </div>
+
+      {deviceSession ? (
+        <div className="mb-4 rounded-xl border border-brand-200 bg-brand-50/60 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
+          <p className="text-theme-sm font-medium text-gray-900 dark:text-white">飞书扫码授权</p>
+          <p className="mt-1 text-theme-xs text-gray-600 dark:text-gray-300">
+            请在浏览器打开下方链接并输入验证码 <span className="font-mono font-semibold">{deviceSession.userCode}</span>
+          </p>
+          <a
+            href={deviceSession.verificationUri}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-2 inline-flex items-center gap-1 text-theme-sm text-brand-600 hover:underline"
+          >
+            打开飞书授权页
+            <ExternalLink className="size-3.5" aria-hidden />
+          </a>
+          <p className="mt-2 text-theme-xs text-gray-500">
+            {devicePolling ? "等待授权中…" : "授权轮询已停止，可重新点击绑定"}
+          </p>
+        </div>
+      ) : null}
 
       {bindingsQuery.isLoading ? (
         <p className="text-theme-sm text-gray-500">加载中…</p>
@@ -117,7 +209,9 @@ export function ImBindingsCard() {
                   {item.bound
                     ? `账号 ${item.maskedAccount ?? "—"}${item.source ? ` · ${SOURCE_LABEL[item.source] ?? item.source}` : ""}`
                     : item.appConfigured
-                      ? "点击绑定后将在厂商页面确认身份"
+                      ? item.deliveryMode === "user_delegated"
+                        ? "点击绑定后将展示飞书扫码链接"
+                        : "点击绑定后将在厂商页面确认身份"
                       : item.probeError || "请管理员在平台对接中配置并探测通过"}
                 </p>
               </div>
@@ -137,8 +231,8 @@ export function ImBindingsCard() {
                     type="button"
                     variant="primary"
                     size="sm"
-                    disabled={!item.appConfigured}
-                    onClick={() => startBind(item.channel)}
+                    disabled={!item.appConfigured || deviceStartMutation.isPending}
+                    onClick={() => startBind(item)}
                   >
                     绑定{item.label}
                   </Button>

@@ -169,6 +169,8 @@ export function ScheduleFormFields({
   const deliveryChannelsField = showDeliveryChannels ? (
     <ScheduleDeliveryChannelsField
       disabled={disabled}
+      deliveryChannels={value.deliveryChannels}
+      onDeliveryChannelsChange={(deliveryChannels) => patch({ deliveryChannels })}
       emailSmtpSlot={value.emailSmtpSlot}
       onEmailSmtpSlotChange={(emailSmtpSlot) => patch({ emailSmtpSlot })}
       embedded={embeddedLayout}

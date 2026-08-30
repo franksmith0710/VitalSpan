@@ -40,10 +40,11 @@ NATIVE_QUERY_CAPABLE = frozenset({
     "csv",
     "excel",
     "rest_api",
+    "roapi",
     "influxdb",
 })
 # Native 执行器需传递 offset 的类型（非 search index 路径）
-NATIVE_OFFSET_TYPES = frozenset({"mongodb", "csv", "excel", "rest_api"})
+NATIVE_OFFSET_TYPES = frozenset({"mongodb", "csv", "excel", "rest_api", "roapi"})
 
 
 def resolve_sql_dialect_type(connector_type: str) -> str:

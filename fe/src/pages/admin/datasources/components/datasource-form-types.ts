@@ -125,6 +125,67 @@ export function buildRestApiPayload(
   return payload;
 }
 
+export type RoapiCompanionState = {
+  baseUrl: string;
+  bearerToken: string;
+  schemaPath: string;
+  connectTimeoutSec: number;
+};
+
+export const defaultRoapiCompanion = (): RoapiCompanionState => ({
+  baseUrl: "",
+  bearerToken: "",
+  schemaPath: "/api/schema",
+  connectTimeoutSec: 5,
+});
+
+/** 新建向导选 RoAPI 时的本地 compose 默认值。 */
+export const sampleRoapiCompanionDefaults = (): RoapiCompanionState => ({
+  baseUrl: "http://127.0.0.1:8086",
+  bearerToken: "",
+  schemaPath: "/api/schema",
+  connectTimeoutSec: 5,
+});
+
+export function buildRoapiPayload(
+  form: BaseFormSlice,
+  companion: RoapiCompanionState,
+  mode: "create" | "edit",
+  passwordFromForm: string,
+): Record<string, unknown> {
+  const host = normalizeBaseUrl(companion.baseUrl);
+  const port = derivePortFromBaseUrl(host);
+  const rawPath = companion.schemaPath.trim() || "/api/schema";
+  const database = (rawPath.startsWith("/") ? rawPath : `/${rawPath}`).replace(/\/+/g, "/");
+  const hasBearer = Boolean(companion.bearerToken.trim());
+  const username = hasBearer ? "bearer" : "none";
+  const password = hasBearer
+    ? companion.bearerToken
+    : mode === "create"
+      ? "-"
+      : passwordFromForm || undefined;
+
+  const payload: Record<string, unknown> = {
+    name: form.name,
+    type: form.type,
+    host,
+    port,
+    database,
+    username,
+    description: form.description || null,
+    connectionOptions: {
+      connectTimeoutSec: companion.connectTimeoutSec,
+    },
+  };
+  if (mode === "create") {
+    payload.code = form.code;
+    payload.password = password;
+  } else if (password) {
+    payload.password = password;
+  }
+  return payload;
+}
+
 export type FileSourceMode = "remote" | "local";
 
 export type FileSourceCompanionState = {

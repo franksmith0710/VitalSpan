@@ -20,6 +20,7 @@ import {
 type ImConfig = ImConfigSummary;
 
 type FormState = {
+  deliveryMode: "corporate_app" | "user_delegated";
   callbackDomain: string;
   corpId: string;
   secret: string;
@@ -31,6 +32,7 @@ type FormState = {
 
 function emptyForm(): FormState {
   return {
+    deliveryMode: "corporate_app",
     callbackDomain: "",
     corpId: "",
     secret: "",
@@ -55,6 +57,7 @@ export function ImChannelForm({
 
   useEffect(() => {
     setForm({
+      deliveryMode: config.deliveryMode ?? "corporate_app",
       callbackDomain: config.callbackDomain ?? "",
       corpId: config.corpId ?? "",
       secret: "",
@@ -68,7 +71,8 @@ export function ImChannelForm({
   const saveMutation = useMutation({
     mutationFn: () => {
       const body: Record<string, string | null> = {
-        callbackDomain: form.callbackDomain.trim(),
+        deliveryMode: form.deliveryMode,
+        callbackDomain: form.deliveryMode === "user_delegated" ? null : form.callbackDomain.trim() || null,
       };
       if (config.channel === "wecom") {
         body.corpId = form.corpId.trim();
@@ -113,6 +117,8 @@ export function ImChannelForm({
   });
 
   const pending = saveMutation.isPending || clearMutation.isPending;
+  const userDelegated = form.deliveryMode === "user_delegated";
+  const userDelegatedSupported = config.channel === "feishu";
 
   return (
     <div className="flex flex-col gap-5">
@@ -122,11 +128,43 @@ export function ImChannelForm({
           <p>来源：{SOURCE_LABEL[config.source] ?? config.source}</p>
           {config.probeError ? <p>{config.probeError}</p> : null}
           {!config.configured ? (
-            <p>保存后将向厂商应用发起 gettoken 探测；通过后同事可在个人中心绑定并接收工作通知。</p>
+            <p>
+              {userDelegated
+                ? "用户委托模式仅需 OAuth 客户端凭证；同事扫码绑定后即可由调度 owner 发信。"
+                : "保存后将向厂商应用发起 gettoken 探测；通过后同事可在个人中心绑定并接收工作通知。"}
+            </p>
           ) : null}
         </AlertDescription>
       </Alert>
 
+      {userDelegatedSupported ? (
+        <ConnectFormSection title="投递模式" description="方案 2 无需备案回调域名，首期仅飞书支持。" icon={Server}>
+          <div className="flex flex-wrap gap-3">
+            <label className="flex cursor-pointer items-center gap-2 text-theme-sm">
+              <input
+                type="radio"
+                name={`im-mode-${config.channel}`}
+                checked={form.deliveryMode === "corporate_app"}
+                disabled={disabled || pending}
+                onChange={() => setForm((prev) => ({ ...prev, deliveryMode: "corporate_app" }))}
+              />
+              企业应用工作通知
+            </label>
+            <label className="flex cursor-pointer items-center gap-2 text-theme-sm">
+              <input
+                type="radio"
+                name={`im-mode-${config.channel}`}
+                checked={form.deliveryMode === "user_delegated"}
+                disabled={disabled || pending}
+                onChange={() => setForm((prev) => ({ ...prev, deliveryMode: "user_delegated" }))}
+              />
+              用户委托（扫码绑定）
+            </label>
+          </div>
+        </ConnectFormSection>
+      ) : null}
+
+      {!userDelegated ? (
       <ConnectFormSection
         title="回调域名"
         description="须与开放平台登记的重定向域名一致，用于 OAuth 绑定回跳。"
@@ -142,6 +180,7 @@ export function ImChannelForm({
           />
         </ConnectField>
       </ConnectFormSection>
+      ) : null}
 
       <ConnectFormSection title="应用凭证" description="Secret 仅写入不回显；留空表示保留已保存值。" icon={KeyRound}>
         <div className="grid gap-4 sm:grid-cols-2">

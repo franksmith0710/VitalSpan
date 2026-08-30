@@ -20,6 +20,16 @@ export const EMAIL_ONLY_DELIVERY: Pick<
   emailSmtpSlot: DEFAULT_EMAIL_SMTP_SLOT,
 };
 
+export function deliveryPayloadFromForm(
+  form: Pick<ScheduleFormValue, "deliveryChannels" | "notifyGroup" | "emailSmtpSlot">,
+) {
+  return {
+    deliveryChannels: form.deliveryChannels,
+    notifyGroup: form.notifyGroup,
+    emailSmtpSlot: form.emailSmtpSlot,
+  };
+}
+
 export function pickActiveSchedule(items: ReportScheduleRow[]): ReportScheduleRow | null {
   return items.find((item) => item.status !== "cancelled") ?? null;
 }
@@ -47,7 +57,10 @@ export function scheduleRowToForm(schedule: ReportScheduleRow): ScheduleFormValu
     attachmentFormats: (schedule.attachmentFormats?.length
       ? schedule.attachmentFormats
       : ["pdf"]) as ScheduleFormValue["attachmentFormats"],
-    ...EMAIL_ONLY_DELIVERY,
+    deliveryChannels: (schedule.deliveryChannels?.length
+      ? schedule.deliveryChannels
+      : ["email"]) as ScheduleFormValue["deliveryChannels"],
+    notifyGroup: schedule.notifyGroup ?? false,
     emailSmtpSlot: (schedule.emailSmtpSlot === "163" ? "163" : "qq") as EmailSmtpSlot,
   };
 }

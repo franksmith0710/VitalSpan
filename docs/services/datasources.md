@@ -25,6 +25,7 @@
 | 托管分析库 `analytics`（同步入湖目标；列表默认隐藏，`includeManaged=true` 内部可见） | 用户当普通业务源增删托管分析库 |
 | CONN-014~016：`probe_readonly_*` + `execute_native_query`（MongoDB find / ES·OS search） | GridFS 写入、集群管理、OpenSearch Dashboards 嵌入 |
 | CONN-023~026（**r249**）：REST API / Excel·CSV 文件 / Db2 / Impala 方言注册与连通链 | OAuth2 专用表单项、文件上传 UI、`query/native/executor` HTTP 出数（companion） |
+| CONN-028（**r028**）：RoAPI 联邦查询 sidecar（`type=roapi`；schema/SQL native；compose optional profile） | ingestion 自动入湖、GraphQL 查询前端、RoAPI 动态表注册 UI |
 | 连接器插件目录 `dialects/`（mysql、postgresql） | Dataset 语义层（四期 → `metadata` + `query`） |
 | 数据源列表/详情 ACL 过滤（grant 可见性） | M7 完整 RLS 执行链 |
 | 类型发现、schema 浏览 REST API | Admin UI 数据源管理界面 |
@@ -70,6 +71,7 @@
 | `dialects/db2.py` | IBM Db2 关系型（ibm_db，`probe_readonly_sql`，`DB2_*`） | CONN-025 | 已实现（r249） |
 | `dialects/impala.py` | Apache Impala 湖仓（pyhive.hive，`category=lake`，`IMPALA_*`） | CONN-026 | 已实现（r249） |
 | `dialects/redshift.py` | AWS Redshift 云数仓（psycopg3 委托 PostgresConnector，port 5439，SSL required，`category=olap`，`REDSHIFT_*`） | CONN-027 | 已实现（r250，M-FINAL F-G 收官） |
+| `dialects/roapi.py` | RoAPI 联邦查询 sidecar（httpx，`category=api`，`ROAPI_*`；schema/SQL native 查询） | CONN-028 | 已实现 |
 | `pool.py` | 按 dataSourceId 隔离连接池 | DS-006 | 已实现 |
 | `metadata/service.py` | schema/table/column 浏览编排 | DS-004 | 已实现 |
 | `acl.py` | 数据源可见性守卫 | DS-008 | 已实现 |
@@ -81,7 +83,16 @@
 
 ## 实现笔记
 
-### 官方演示数据源（可视化模板）
+### RoAPI sidecar 选型（CONN-028）
+
+| 类型 | 典型场景 | 查询方式 |
+|------|----------|----------|
+| **roapi** | 内网轻量 sidecar；Parquet/CSV/JSON + 少量表联邦 | DataFusion SQL / RoAPI REST |
+| **trino/presto** | 已有湖仓联邦集群 | Trino SQL |
+| **rest_api** | 业务系统不规则 JSON API | path + jsonPath |
+
+本地 PoC：`docker compose --profile roapi up -d roapi` → `http://127.0.0.1:8086/api/schema`。
+
 
 - **物理库**：compose `sample-mysql:3307` / `sample_db`；首次 init 见 `docker/demo-mysql/tables.sql`；**存量卷**由启动时 `ensure_sample_db_schema()` 应用 `docker/demo-mysql/migrations/` 增量迁移（含 `vs_official_*` 视图；`004` 将事实表补齐至少 600 行）
 - **元库注册**：启动顺序 `ensure_sample_db_schema` → `ensure_official_demo_datasource()`（`ENSURE_OFFICIAL_DEMO_DATASOURCE`，默认开）幂等写入 code **`demo`**；legacy `official-demo-mysql` 一次性 rename；`delete` 对 `demo` 返回 409

@@ -1,19 +1,19 @@
 # VitalSpan — 产品需求文档（PRD · Hub）
 
 ```yaml
-version: 1.2.125
-last_updated: 2026-08-20
+version: 1.2.126
+last_updated: 2026-08-30
 truth_source: true
 evolution_hub: true
 goal_ref: docs/automate/goal.md
 features_ref: docs/automate/prd/
 scoring_ref: .cursor/automate/skills/prd-scoring/SKILL.md
-feature_count: 129
+feature_count: 130
 domain_count: 16
 ```
 
 > **本文件是索引层（hub）**：8 维评分、薄弱项汇总、功能索引**仅在本文件**维护。
-> 验收标准、代码锚点、逐条说明在 [`prd/`](./prd/) 分片（**16 域 · 129 项**），按 ID 按需加载。
+> 验收标准、代码锚点、逐条说明在 [`prd/`](./prd/) 分片（**16 域 · 130 项**（129 合同 + CONN-028 companion）），按 ID 按需加载。
 
 ## 系统薄弱项汇总（按总分升序，供选题）
 
@@ -188,7 +188,7 @@ domain_count: 16
 
 > **非计数实现纠错（2026-07-13）**：`AUTH-003` 仅指用户角色绑定，**不包含**账户资料自服务（`PATCH /api/v1/me`）与修改密码（`POST /api/v1/auth/change-password`）。上述能力无独立 SRS/PRD 功能 ID；实现与缺陷修复追溯见 [BUG-001](../bugs/BUG-001_account-password-security_2026-07-13.md)、[`plans/archive/2026-07-08-account-self-service.md`](./plans/archive/2026-07-08-account-self-service.md) 与 [`F02-AUTH.md`](./prd/F02-AUTH.md) 边界说明。`feature_count: 129` 不变。
 | F03-DS.md | DS-001 ~ DS-008 | `prd/F03-DS.md` |
-| F04-CONN.md | CONN-001 ~ CONN-027 | `prd/F04-CONN.md` |
+| F04-CONN.md | CONN-001 ~ CONN-028 | `prd/F04-CONN.md` |
 | F05-QUERY.md | QUERY-001 ~ QUERY-009 | `prd/F05-QUERY.md` |
 | F06-VIZ.md | VIZ-001 ~ VIZ-008 | `prd/F06-VIZ.md` |
 | F07-DASH.md | DASH-001 ~ DASH-006 | `prd/F07-DASH.md` |
@@ -252,6 +252,7 @@ domain_count: 16
 | 1.2.119 | 2026-07-20 | 文档卫生：`feature_count` 与正文 129 项对齐；数据大屏 companion 执行见 `plans/` 与 `evolution-state.md`（不扩合同 ID） |
 | 1.2.118 | 2026-07-13 | 非计数文档纠错：明确 AUTH-003 不含账户自服务 profile/change-password；追溯 BUG-001 + Account Self-Service plan；`feature_count`/评分/F02 ID 范围不变 |
 | 1.2.117 | 2026-07-10 | PRD 分片同步 §M-DEPTH：META-004/QUERY-009/DASH-002·004/AUTH-006·008/RPT-005/API-003 补深度 companion `[ ]`；BOOT-002/DASH-001 勾 F-0；API-006/DESIGN-001/BOOT-002 标 F-D 可选；`prd/README` 对齐 |
+| 1.2.126 | 2026-08-30 | CONN-028 RoAPI 独立连接器（M1B companion）：`dialects/roapi.py` + Admin `RoapiConnectionFields` + compose optional profile + pytest/vitest smoke；F04 扩展至 CONN-028（130 项 = 129 合同 + 1 companion） |
 | 1.2.116 | 2026-07-10 | 人工 plan 干预：插入 §M-DEPTH（Dataset 打穿 / 筛选器 / 消费落差）；执行范围对齐 plan v3.0.0；G2 解除饱和 |
 | 1.2.115 | 2026-07-09 | F-F 全量 companion 收官：plan 20 项全勾；五轨 worktree merge；hub 执行范围→整体毕业 |
 | 1.2.114 | 2026-07-09 | 毕业收官：M-DASH-UX 必做全勾 + M-PRODUCT F-D 书面 E2E；执行范围更新；剩余 F-F 18 + 可选 2 |

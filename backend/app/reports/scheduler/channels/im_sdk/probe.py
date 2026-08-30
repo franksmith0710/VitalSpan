@@ -99,6 +99,15 @@ def probe_im_credentials_bundle(creds: ImCredentials) -> dict[str, Any]:
     channel = creds.channel
     if not creds.is_configured:
         return {"channel": channel, "skipped": True, "ok": False, "error": None}
+    if creds.delivery_mode == "user_delegated":
+        if channel == "feishu":
+            return {"channel": channel, "skipped": False, "ok": True, "error": None}
+        return {
+            "channel": channel,
+            "skipped": False,
+            "ok": False,
+            "error": "用户委托模式暂不支持该通道",
+        }
     try:
         if channel == "wecom":
             probe_wecom_token(corp_id=creds.corp_id or "", secret=creds.secret or "")

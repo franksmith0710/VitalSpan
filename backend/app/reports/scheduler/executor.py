@@ -443,21 +443,28 @@ def semi_real_execute_schedule(
     att_bytes = attachments[0][0] if attachments else None
     att_mime = attachments[0][1] if attachments else None
     att_name = attachments[0][2] if attachments else None
-    delivery = dispatch_artifact(
-        artifact_ref,
-        channels,
-        delivery_mock,
-        recipient_emails=recipient_emails,
-        artifact_kind=artifact_kind,
-        attachment_bytes=att_bytes,
-        attachment_filename=att_name,
-        attachment_mime=att_mime,
-        attachments=attachments,
-        im_targets=im_targets,
-        im_missing=im_missing,
-        notify_group=bool(row.get("notify_group", False)),
-        email_smtp_slot=row.get("email_smtp_slot") or "qq",
-    )
+    owner_id = row.get("owner_id")
+    delivery_session = get_meta_session()
+    try:
+        delivery = dispatch_artifact(
+            artifact_ref,
+            channels,
+            delivery_mock,
+            session=delivery_session,
+            recipient_emails=recipient_emails,
+            artifact_kind=artifact_kind,
+            attachment_bytes=att_bytes,
+            attachment_filename=att_name,
+            attachment_mime=att_mime,
+            attachments=attachments,
+            im_targets=im_targets,
+            im_missing=im_missing,
+            notify_group=bool(row.get("notify_group", False)),
+            email_smtp_slot=row.get("email_smtp_slot") or "qq",
+            owner_id=owner_id,
+        )
+    finally:
+        delivery_session.close()
     error_message: str | None = None
     if delivery_mock == "fail":
         status = "semi_real_failed"

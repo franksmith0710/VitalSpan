@@ -8,55 +8,32 @@
 |------|----|
 | phase | **A8_CLOSE** |
 | status | **DONE** |
-| request | 报表域收尾复验（M0 + F-D 交叉表） |
-| type | verify-only |
-| goal | 确认未提交改动可交付；测试全绿；mr-check 顾问报告 |
-| last_verified_command | `pytest tests/test_report_crosstab*.py tests/test_standard_schedule_delivery.py tests/test_report_dashboard_schedule.py tests/test_standard_theme_aggregate_dates.py -q` + `pnpm exec vitest run src/pages/admin/reports` |
+| request | IM 投递改方案 2（用户委托 + device-code，规避备案/企业应用） |
+| type | feature |
+| goal | delivery_mode=user_delegated；飞书 device-code 绑定 + owner token 发信；测试绿 |
+| plan | `docs/automate/plans/2026-08-30-im-user-delegated-delivery.md` |
+| last_verified_command | `pytest tests/test_im_user_delegated.py -q` |
 | last_verified_exit_code | 0 |
 | repair_rounds | 0 |
-| started_at | 2026-08-24 |
-| completed_at | 2026-08-24 |
+| started_at | 2026-08-30 |
+| completed_at | 2026-08-30 |
 
 ## 当前需求契约
 
-- **request**: 收尾复验（用户 grill-me: Q1D Q2A Q3A）
-- **type**: verify-only
-- **goal**: 报表域 pytest/vitest 全绿；列出未提交文件与 MR 建议
-- **scope_include**: M0 信任链 + F-D 交叉表 MVP 相关改动
-- **scope_exclude**: 新功能开发、自动 git commit/push
-- **acceptance**: 上述测试命令 exit 0
-- **risk_level**: low
+- **request**: /dev-autopilot 改成方案2制定计划并完成
+- **type**: feature
+- **goal**: 方案 2 用户委托 IM 投递（飞书首期）；无需回调域名备案；调度 owner 发信
+- **scope_include**: delivery_mode、device-code、token 存储、work_notice 分支、FE 绑定、调度 UI IM 通道
+- **scope_exclude**: CLI spawn、企微钉钉 user_delegated 二期、自动 commit
+- **acceptance**: `pytest tests/test_im_user_delegated.py -q` 绿；绑定/发信契约测试通过
+- **risk_level**: medium
 - **autonomy_policy**: auto_accept_low_risk
-
-## 验证摘要
-
-| 套件 | 结果 |
-|------|------|
-| 报表域 pytest（30） | 全绿 |
-| 报表域 vitest（97） | 全绿 |
-
-## 未提交工作区（需人工 commit）
-
-| 路径 | 状态 |
-|------|------|
-| `backend/app/reports/engine/crosstab_apply.py` | modified |
-| `fe/.../CrosstabBlockFields.tsx` | untracked |
-| `fe/.../TemplateBlockEditor.tsx` · `useReportTemplates.ts` | modified |
-| `fe/.../report-templates.smoke.test.tsx` | modified |
-| `tests/test_report_crosstab.py` · `test_report_crosstab_template.py` | untracked |
-| `docs/automate/evolution-state.md` | modified |
-
-## 上一轮（归档）
-
-| 字段 | 值 |
-|------|----|
-| request | 报表 F-D 交叉表 MVP |
-| phase | A8_CLOSE · DONE |
+- **assumptions**: 飞书 OAuth 应用可由管理员创建（仅需 AppId/Secret，无备案回调）；调度 owner 须先完成带发信 scope 的绑定
 
 ## 修订记录
 
 | 日期 | 说明 |
 |------|------|
-| 2026-08-24 | 收尾复验完成；测试 30+97 绿 |
-| 2026-08-24 | F-D 交叉表 MVP 完成 |
-| 2026-08-23 | M0 信任链闭环完成 |
+| 2026-08-30 | IM 方案 2（user_delegated）实现完成；迁移 0060；9 项单测绿 |
+| 2026-08-30 | 启动 IM 方案 2 Headless Plan + 执行 |
+| 2026-08-24 | 报表域收尾复验 DONE |

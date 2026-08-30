@@ -121,6 +121,26 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  # RoAPI 只读查询 sidecar（可选；CONN-028 PoC；见 docker/roapi/README.md）
+  roapi:
+    profiles: ["roapi"]
+    image: ghcr.io/roapi/roapi:v0.11.3
+    ports:
+      - "8086:8080"
+    command:
+      - --addr-http
+      - 0.0.0.0:8080
+      - --table
+      - demo_orders=/data/demo_orders.csv
+    volumes:
+      - ./docker/roapi/demo_orders.csv:/data/demo_orders.csv:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/api/schema || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
   # 全球 PMTiles 外部瓦片服务（可选；非 VitalSpan 内置；见 docker/pmtiles-tile-server/README.md）
   pmtiles-tile-server:
     profiles: ["pmtiles-external"]

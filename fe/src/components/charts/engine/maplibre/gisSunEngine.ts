@@ -90,8 +90,11 @@ export class GisSunEngine {
     const wasPlaying = this.settings.playing;
     this.settings = normalizeGisSunSettings({ ...this.settings, ...settings });
     this.render();
-    if (this.settings.playing && !wasPlaying) this.play();
-    else if (!this.settings.playing && wasPlaying) this.pause();
+    if (this.settings.playing) {
+      if (!wasPlaying || this.rafId === null) this.play();
+    } else if (wasPlaying) {
+      this.pause();
+    }
   }
 
   destroy(): void {
@@ -177,6 +180,9 @@ export class GisSunEngine {
 
   render(): void {
     if (this.destroyed) return;
+    if (!this.map.getSource(NIGHT_SOURCE_ID)) {
+      this.ensureLayers();
+    }
     const source = this.map.getSource(NIGHT_SOURCE_ID) as CanvasSource | undefined;
     if (!source) return;
     this.drawNightMask();

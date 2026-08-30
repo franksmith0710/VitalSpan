@@ -9,6 +9,7 @@ from app.core.platform_config.email_service import PlatformConfigError
 from app.core.platform_config.im_connect_model import (
     AUDIT_TARGET_BY_IM_CHANNEL,
     IM_CHANNELS,
+    IM_DELIVERY_MODES,
     IM_LABELS,
     PlatformImConnectConfig,
 )
@@ -37,11 +38,21 @@ def _effective_source(session: Session, channel: str) -> str:
 
 
 
+def _delivery_mode(row: PlatformImConnectConfig | None, payload: ImDeliveryConfigPut | None = None) -> str:
+    if payload and payload.delivery_mode in IM_DELIVERY_MODES:
+        return payload.delivery_mode
+    if row and row.delivery_mode in IM_DELIVERY_MODES:
+        return row.delivery_mode
+    return "corporate_app"
+
+
 def _out_fields(channel: str, creds, row: PlatformImConnectConfig | None, source: str) -> dict:
+    mode = _delivery_mode(row)
     base = {
         "channel": channel,
         "label": IM_LABELS[channel],
         "source": source,
+        "delivery_mode": mode,
         "callback_domain": row.callback_domain if row and row.state == "active" else creds.callback_domain,
         "has_secret": False,
     }
@@ -89,8 +100,19 @@ def list_im_configs(session: Session, *, probe: bool = True) -> ImDeliverySlotsO
     return ImDeliverySlotsOut(items=[get_im_config(session, ch, probe=probe) for ch in IM_CHANNELS])
 
 
-def _validate_put(channel: str, payload: ImDeliveryConfigPut) -> dict[str, str]:
-    callback = payload.callback_domain.strip()
+def _validate_put(channel: str, payload: ImDeliveryConfigPut, mode: str) -> dict[str, str]:
+    if mode == "user_delegated":
+        if channel != "feishu":
+            raise PlatformConfigError(
+                "PLATFORM_IM_MODE_UNSUPPORTED",
+                "用户委托模式首期仅支持飞书",
+                422,
+            )
+        app_id = (payload.app_id or "").strip()
+        if not app_id:
+            raise PlatformConfigError("PLATFORM_IM_FIELDS_REQUIRED", "飞书 AppId 不能为空", 422)
+        return {"app_id": app_id}
+    callback = (payload.callback_domain or "").strip()
     if not callback:
         raise PlatformConfigError("PLATFORM_IM_CALLBACK_REQUIRED", "回调域名不能为空", 422)
     if channel == "dingtalk":
@@ -137,14 +159,17 @@ def save_im_config(
     normalized = normalize_im_channel(channel)
     row = _row_or_none(session, normalized)
     existing_cipher = row.credentials_encrypted if row and row.state == "active" else None
-    fields = _validate_put(normalized, payload)
+    mode = _delivery_mode(row, payload)
+    fields = _validate_put(normalized, payload, mode)
     secret = _resolve_secret(normalized, payload, existing_cipher)
     if not secret:
         raise PlatformConfigError("PLATFORM_IM_SECRET_REQUIRED", "应用 Secret 不能为空", 422)
     secret_key = {"dingtalk": "app_secret", "wecom": "secret", "feishu": "app_secret"}[normalized]
     cred_payload = {**fields, secret_key: secret}
-    callback = payload.callback_domain.strip()
-    probe_result = probe_im_credentials_bundle_from_payload(normalized, callback, cred_payload)
+    callback = (payload.callback_domain or "").strip() or None
+    probe_result = probe_im_credentials_bundle_from_payload(
+        normalized, callback or "", cred_payload, delivery_mode=mode
+    )
     if not probe_result.get("ok"):
         raise PlatformConfigError(
             "PLATFORM_IM_PROBE_FAILED",
@@ -156,6 +181,7 @@ def save_im_config(
         session.add(row)
     else:
         row.state = "active"
+    row.delivery_mode = mode
     row.callback_domain = callback
     row.credentials_encrypted = encrypt_credentials_payload(cred_payload)
     row.updated_by = uuid.UUID(actor_id)
@@ -166,7 +192,7 @@ def save_im_config(
         target_type="platform_im_connect",
         target_id=AUDIT_TARGET_BY_IM_CHANNEL[normalized],
         action=f"platform_connect.im.{normalized}.save",
-        detail={"channel": normalized, "callback_domain": callback},
+        detail={"channel": normalized, "callback_domain": callback, "delivery_mode": mode},
         trace_id=trace_id,
     )
     session.commit()
@@ -187,6 +213,7 @@ def clear_im_config(
         row = PlatformImConnectConfig(channel=normalized, state="cleared")
         session.add(row)
     row.state = "cleared"
+    row.delivery_mode = "corporate_app"
     row.callback_domain = None
     row.credentials_encrypted = None
     row.updated_by = uuid.UUID(actor_id)
@@ -208,9 +235,24 @@ def probe_im_credentials_bundle_from_payload(
     channel: str,
     callback_domain: str,
     payload: dict[str, str],
+    *,
+    delivery_mode: str = "corporate_app",
 ) -> dict:
     from app.core.platform_config.im_credentials import ImCredentials
 
+    if delivery_mode == "user_delegated":
+        if channel == "feishu":
+            creds = ImCredentials(
+                channel=channel,
+                source="db",
+                delivery_mode=delivery_mode,
+                app_id=payload.get("app_id"),
+                app_secret=payload.get("app_secret"),
+            )
+            if creds.is_configured:
+                return {"channel": channel, "skipped": False, "ok": True, "error": None}
+            return {"channel": channel, "skipped": False, "ok": False, "error": "飞书 AppId/Secret 不完整"}
+        return {"channel": channel, "skipped": False, "ok": False, "error": "用户委托模式暂不支持该通道"}
     if channel == "dingtalk":
         creds = ImCredentials(
             channel=channel,

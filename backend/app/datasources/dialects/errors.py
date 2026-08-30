@@ -558,6 +558,28 @@ def map_rest_api_error(exc: Exception) -> tuple[str, str]:
     return REST_API_PROBE_FAILED, detail
 
 
+ROAPI_INVALID_URL = "ROAPI_INVALID_URL"
+ROAPI_AUTH_FAILED = "ROAPI_AUTH_FAILED"
+ROAPI_TIMEOUT = "ROAPI_TIMEOUT"
+ROAPI_PROBE_FAILED = "ROAPI_PROBE_FAILED"
+ROAPI_QUERY_FAILED = "ROAPI_QUERY_FAILED"
+ROAPI_TABLE_NOT_FOUND = "ROAPI_TABLE_NOT_FOUND"
+
+
+def map_roapi_error(exc: Exception) -> tuple[str, str]:
+    detail = str(exc)
+    lowered = detail.lower()
+    if "401" in lowered or "unauthorized" in lowered:
+        return ROAPI_AUTH_FAILED, detail
+    if "timeout" in lowered or "timed out" in lowered:
+        return ROAPI_TIMEOUT, detail
+    if "invalid url" in lowered or "missing scheme" in lowered:
+        return ROAPI_INVALID_URL, detail
+    if "404" in lowered or "not found" in lowered:
+        return ROAPI_TABLE_NOT_FOUND, detail
+    return ROAPI_PROBE_FAILED, detail
+
+
 FILE_NOT_FOUND = "FILE_NOT_FOUND"
 FILE_PARSE_ERROR = "FILE_PARSE_ERROR"
 FILE_REMOTE_HTTP_ERROR = "FILE_REMOTE_HTTP_ERROR"
@@ -740,6 +762,12 @@ __all__ = [
     "REST_API_INVALID_URL",
     "REST_API_PROBE_FAILED",
     "REST_API_TIMEOUT",
+    "ROAPI_AUTH_FAILED",
+    "ROAPI_INVALID_URL",
+    "ROAPI_PROBE_FAILED",
+    "ROAPI_QUERY_FAILED",
+    "ROAPI_TABLE_NOT_FOUND",
+    "ROAPI_TIMEOUT",
     "PG_CONN_REFUSED",
     "PG_SSL_ERROR",
     "PG_TIMEOUT",

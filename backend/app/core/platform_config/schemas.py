@@ -40,6 +40,7 @@ class ImDeliveryConfigOut(BaseModel):
     label: str
     configured: bool
     source: str = Field(description="db | env | none")
+    delivery_mode: str = Field(default="corporate_app", alias="deliveryMode")
     callback_domain: str | None = Field(default=None, alias="callbackDomain")
     corp_id: str | None = Field(default=None, alias="corpId")
     agent_id: str | None = Field(default=None, alias="agentId")
@@ -58,7 +59,8 @@ class ImDeliverySlotsOut(BaseModel):
 
 
 class ImDeliveryConfigPut(BaseModel):
-    callback_domain: str = Field(min_length=1, max_length=255, alias="callbackDomain")
+    delivery_mode: str | None = Field(default=None, alias="deliveryMode")
+    callback_domain: str | None = Field(default=None, max_length=255, alias="callbackDomain")
     corp_id: str | None = Field(default=None, max_length=128, alias="corpId")
     secret: str | None = Field(default=None, max_length=256)
     agent_id: str | None = Field(default=None, max_length=64, alias="agentId")

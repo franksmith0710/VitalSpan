@@ -144,11 +144,21 @@ VitalSpan **已实现** C 路径（`PUSH_*_WEBHOOK` + `notify_group`），与 B 
 
 照搬插件简单体验前，应先闭合 B 方案产品链：
 
-1. 个人中心 authorize 须带 Bearer（现 `window.location.href` 可能 401）
-2. 调度 UI 开放 IM 通道（现 `EMAIL_ONLY_DELIVERY`）
-3. 钉钉绑定 userid 与 `asyncsend_v2` 对齐
+1. ~~个人中心 authorize 须带 Bearer~~ → **user_delegated** 下飞书改 device-code API（Bearer 发 POST）
+2. ~~调度 UI 开放 IM 通道~~ → 已移除 `EMAIL_ONLY_DELIVERY` 硬编码，表单可选 IM
+3. 钉钉绑定 userid 与 `asyncsend_v2` 对齐（仍属 corporate_app）
 
-## 9. 参考路径
+## 9. 方案 2：`user_delegated`（2026-08-30）
+
+| 项 | 说明 |
+|----|------|
+| 配置 | `platform_im_connect_configs.delivery_mode=user_delegated`；飞书仅需 AppId/Secret |
+| 绑定 | RFC 8628 device-code（`accounts.feishu.cn/oauth/v1/device_authorization`） |
+| 发信 | 调度 **owner** 的 `user_access_token` → 收件人 `account_id` |
+| 兼容 | `corporate_app` 保留；企微/钉钉 user_delegated 二期 |
+| 迁移 | `0060_im_user_delegated_delivery.py` |
+
+## 10. 参考路径
 
 | 材料 | 路径 |
 |------|------|

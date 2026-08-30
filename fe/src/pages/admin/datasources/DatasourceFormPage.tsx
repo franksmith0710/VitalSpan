@@ -30,12 +30,16 @@ import { DatasourceWizardStepper } from "./components/DatasourceWizardStepper";
 import {
   buildFileSourcePayload,
   buildRestApiPayload,
+  buildRoapiPayload,
   defaultFileSourceCompanion,
   defaultRestApiCompanion,
+  defaultRoapiCompanion,
   sampleRestApiCompanionDefaults,
+  sampleRoapiCompanionDefaults,
   validateRestApiBaseUrl,
   type FileSourceCompanionState,
   type RestApiCompanionState,
+  type RoapiCompanionState,
 } from "./components/datasource-form-types";
 
 type WizardStep = "category" | "type" | "form";
@@ -67,6 +71,7 @@ function serializeDatasourceDraft({
   selectedGroup,
   form,
   restApiCompanion,
+  roapiCompanion,
   fileCompanion,
 }: {
   mode: "create" | "edit";
@@ -74,6 +79,7 @@ function serializeDatasourceDraft({
   selectedGroup: DisplayGroup | null;
   form: FormState;
   restApiCompanion: RestApiCompanionState;
+  roapiCompanion: RoapiCompanionState;
   fileCompanion: FileSourceCompanionState;
 }): string {
   return JSON.stringify({
@@ -82,6 +88,7 @@ function serializeDatasourceDraft({
     selectedGroup: mode === "create" ? selectedGroup : null,
     form: { ...form, password: form.password || "" },
     restApiCompanion,
+    roapiCompanion,
     fileCompanion: { ...fileCompanion, fileError: null },
   });
 }
@@ -98,6 +105,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
   const [errorCode, setErrorCode] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [restApiCompanion, setRestApiCompanion] = useState(defaultRestApiCompanion);
+  const [roapiCompanion, setRoapiCompanion] = useState(defaultRoapiCompanion);
   const [fileCompanion, setFileCompanion] = useState(defaultFileSourceCompanion);
   const codeInputRef = useRef<HTMLInputElement>(null);
 
@@ -134,9 +142,10 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
       selectedGroup,
       form,
       restApiCompanion,
+      roapiCompanion,
       fileCompanion,
     }),
-    [mode, wizardStep, selectedGroup, form, restApiCompanion, fileCompanion],
+    [mode, wizardStep, selectedGroup, form, restApiCompanion, roapiCompanion, fileCompanion],
   );
 
   const { isDirty, isBaselineReady, resetBaseline, markSaved } = useFormDirtyState(
@@ -161,6 +170,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
         selectedGroup: null,
         form: emptyForm,
         restApiCompanion: defaultRestApiCompanion(),
+        roapiCompanion: defaultRoapiCompanion(),
         fileCompanion: defaultFileSourceCompanion(),
       });
       return;
@@ -179,6 +189,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
       description: ds.description ?? "",
     };
     let nextRestApi = restApiCompanion;
+    let nextRoapi = roapiCompanion;
     let nextFile = fileCompanion;
     if (ds.type === "rest_api") {
       const restAuthMode =
@@ -198,6 +209,13 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
         healthPath: ds.database || "/",
         connectTimeoutSec: ds.connectionOptions?.connectTimeoutSec ?? 5,
       };
+    } else if (ds.type === "roapi") {
+      nextRoapi = {
+        baseUrl: ds.host,
+        bearerToken: "",
+        schemaPath: ds.database || "/api/schema",
+        connectTimeoutSec: ds.connectionOptions?.connectTimeoutSec ?? 5,
+      };
     } else if (ds.type === "excel" || ds.type === "csv") {
       const isRemote = ds.host.startsWith("http://") || ds.host.startsWith("https://");
       nextFile = {
@@ -211,6 +229,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
     }
     setForm(nextForm);
     setRestApiCompanion(nextRestApi);
+    setRoapiCompanion(nextRoapi);
     setFileCompanion(nextFile);
     resetBaseline({
       mode,
@@ -218,6 +237,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
       selectedGroup: null,
       form: nextForm,
       restApiCompanion: nextRestApi,
+      roapiCompanion: nextRoapi,
       fileCompanion: nextFile,
     });
   }, [detailQuery.data, mode, resetBaseline]);
@@ -234,6 +254,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
         selectedGroup,
         form,
         restApiCompanion,
+        roapiCompanion,
         fileCompanion,
       });
     }
@@ -244,6 +265,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
     selectedGroup,
     form,
     restApiCompanion,
+    roapiCompanion,
     fileCompanion,
     resetBaseline,
   ]);
@@ -278,6 +300,13 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
           return false;
         }
         payload = buildRestApiPayload(slice, restApiCompanion, mode, form.password);
+      } else if (form.type === "roapi") {
+        const urlError = validateRestApiBaseUrl(roapiCompanion.baseUrl);
+        if (urlError) {
+          setError(urlError.replace("Base URL", "RoAPI 地址"));
+          return false;
+        }
+        payload = buildRoapiPayload(slice, roapiCompanion, mode, form.password);
       } else if (form.type === "excel" || form.type === "csv") {
         payload = buildFileSourcePayload(slice, fileCompanion, mode, form.password);
       } else {
@@ -424,6 +453,9 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                   if (type === "rest_api") {
                     setRestApiCompanion(sampleRestApiCompanionDefaults());
                   }
+                  if (type === "roapi") {
+                    setRoapiCompanion(sampleRoapiCompanionDefaults());
+                  }
                   setWizardStep("form");
                 }}
               />
@@ -441,6 +473,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                 advancedOpen={advancedOpen}
                 codeInputRef={codeInputRef}
                 restApiCompanion={restApiCompanion}
+                roapiCompanion={roapiCompanion}
                 fileCompanion={fileCompanion}
                 embedded
                 onChangeType={() => setWizardStep("type")}
@@ -452,6 +485,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                   setForm((prev) => ({ ...prev, type: v, port: applyTypePort(v, prev.port) }));
                 }}
                 onRestApiChange={setRestApiCompanion}
+                onRoapiChange={setRoapiCompanion}
                 onFileChange={setFileCompanion}
                 onSubmit={() => void handleSave()}
                 submitDisabled={mode === "edit" && !isDirty}
@@ -480,6 +514,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                 advancedOpen={advancedOpen}
                 codeInputRef={codeInputRef}
                 restApiCompanion={restApiCompanion}
+                roapiCompanion={roapiCompanion}
                 fileCompanion={fileCompanion}
                 onAdvancedOpenChange={setAdvancedOpen}
                 onClearError={clearError}
@@ -489,6 +524,7 @@ export function DatasourceFormPage({ mode }: { mode: "create" | "edit" }) {
                   setForm((prev) => ({ ...prev, type: v, port: applyTypePort(v, prev.port) }));
                 }}
                 onRestApiChange={setRestApiCompanion}
+                onRoapiChange={setRoapiCompanion}
                 onFileChange={setFileCompanion}
                 onSubmit={() => void handleSave()}
               />
