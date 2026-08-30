@@ -58,12 +58,18 @@ def create_state(
     return token
 
 
+def _as_utc_aware(value: datetime) -> datetime:
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
 def consume_state(session: Session, state: str, channel: str) -> ImOAuthState:
     normalized = normalize_im_channel(channel)
     row = session.get(ImOAuthState, state)
     if row is None or row.channel != normalized:
         raise ImOAuthError("IM_OAUTH_STATE_INVALID", "授权状态无效或已过期", 400)
-    if row.expires_at < datetime.now(UTC):
+    if _as_utc_aware(row.expires_at) < datetime.now(UTC):
         session.delete(row)
         session.flush()
         raise ImOAuthError("IM_OAUTH_STATE_EXPIRED", "授权已过期，请重新绑定", 400)

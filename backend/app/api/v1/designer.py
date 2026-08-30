@@ -229,7 +229,9 @@ def save_output_fields(
 ) -> OutputFieldsConfig | JSONResponse:
     try:
         output_fields_service.validate_output_fields_config(db, payload, dataset_id=dataset_id)
-        config, _ = output_fields_service.save_output_fields(db, payload, _owner_uuid(actor))
+        config, _ = output_fields_service.save_output_fields(
+            db, payload, _owner_uuid(actor), dataset_id=dataset_id,
+        )
         return config
     except ConfigError as exc:
         return _config_error(exc)
@@ -277,8 +279,10 @@ def get_compute_rules(
     _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
     ref_type: str = "design_draft",
-    ref_id: uuid.UUID | None = None,
+    ref_id: uuid.UUID | None = Query(default=None, alias="ref_id"),
+    ref_id_camel: uuid.UUID | None = Query(default=None, alias="refId"),
 ) -> ComputeRulesConfig | JSONResponse:
+    ref_id = ref_id if ref_id is not None else ref_id_camel
     if ref_id is None:
         return JSONResponse(
             status_code=422,

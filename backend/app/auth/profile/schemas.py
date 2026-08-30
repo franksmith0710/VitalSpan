@@ -25,6 +25,16 @@ class MeProfileUpdate(BaseModel):
     display_name: str | None = Field(default=None, min_length=1, max_length=128, alias="displayName")
     email: str | None = Field(default=None, min_length=3, max_length=255)
 
+    @field_validator("display_name")
+    @classmethod
+    def validate_display_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return value
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("display name must not be blank")
+        return normalized
+
     @field_validator("email")
     @classmethod
     def validate_email(cls, value: str | None) -> str | None:
@@ -39,5 +49,5 @@ class MeProfileUpdate(BaseModel):
 class ChangePasswordIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    current_password: str = Field(min_length=1, alias="currentPassword")
+    current_password: str = Field(min_length=1, max_length=128, alias="currentPassword")
     new_password: str = Field(min_length=8, max_length=128, alias="newPassword")

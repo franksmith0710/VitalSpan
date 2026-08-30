@@ -3,6 +3,7 @@ import {
   pickGraphVisibleLabelIds,
   pickSankeyVisibleLabelIds,
   pickTreemapVisibleLabelKeys,
+  treemapLeafLabelKey,
   pickVerticalStackIndicesWithoutOverlap,
   verticalLabelBandHeight,
 } from "@/components/charts/engine/d3/core/nodeLabelThinning";
@@ -94,7 +95,7 @@ describe("nodeLabelThinning", () => {
       fontSize: 12,
       labelLinesFor: (leaf) => [leaf.data.name, "1,234", "12.3%"],
     });
-    expect(visible.has("big")).toBe(true);
+    expect(visible.has(treemapLeafLabelKey(leaves[0]!))).toBe(true);
     expect(visible.size).toBeLessThan(leaves.length);
   });
 

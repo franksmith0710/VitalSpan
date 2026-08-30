@@ -12,6 +12,7 @@ CONNECTOR_SQL_DIALECT_ALIASES: dict[str, str] = {
     "gbase": "mysql",
     "kingbase": "postgresql",
     "gaussdb": "postgresql",
+    "postgres": "postgresql",
     "redshift": "postgresql",
     "timescaledb": "postgresql",
     "dm": "oracle",

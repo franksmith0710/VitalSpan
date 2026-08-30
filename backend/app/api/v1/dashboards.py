@@ -87,11 +87,11 @@ def _filter_error(exc: GlobalFilterError) -> JSONResponse:
 @router.post("/global-filters/validate", response_model=GlobalFilterLinkageItem)
 def validate_global_filters(
     payload: GlobalFilterLinkageItem,
-    _: Annotated[UserContext, Depends(require_permission(PERM_READ))],
+    actor: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     db: Annotated[Session, Depends(_db)],
 ) -> GlobalFilterLinkageItem | JSONResponse:
     try:
-        return global_filter_service.validate_linkage(db, payload)
+        return global_filter_service.validate_linkage(db, payload, actor)
     except GlobalFilterError as exc:
         return _filter_error(exc)
 

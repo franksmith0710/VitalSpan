@@ -48,19 +48,35 @@ export function useScrollTop(ref: RefObject<HTMLElement | null>) {
   const [viewportHeight, setViewportHeight] = useState(0);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const onScroll = () => {
-      setScrollTop(el.scrollTop);
-      setViewportHeight(el.clientHeight);
+    let cancelled = false;
+    let detach: (() => void) | undefined;
+
+    const attach = () => {
+      const el = ref.current;
+      if (!el) {
+        if (!cancelled) {
+          requestAnimationFrame(attach);
+        }
+        return;
+      }
+      const onScroll = () => {
+        setScrollTop(el.scrollTop);
+        setViewportHeight(el.clientHeight);
+      };
+      onScroll();
+      el.addEventListener("scroll", onScroll, { passive: true });
+      const ro = new ResizeObserver(onScroll);
+      ro.observe(el);
+      detach = () => {
+        el.removeEventListener("scroll", onScroll);
+        ro.disconnect();
+      };
     };
-    onScroll();
-    el.addEventListener("scroll", onScroll, { passive: true });
-    const ro = new ResizeObserver(onScroll);
-    ro.observe(el);
+
+    attach();
     return () => {
-      el.removeEventListener("scroll", onScroll);
-      ro.disconnect();
+      cancelled = true;
+      detach?.();
     };
   }, [ref]);
 

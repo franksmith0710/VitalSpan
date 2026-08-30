@@ -1160,8 +1160,9 @@
         "background",
         "palette",
         "title",
-        "sankeyShape",
-        "tooltip"
+        "label",
+        "tooltip",
+        "sankeyShape"
       ]
     },
     {
@@ -1847,13 +1848,13 @@
     {
       "id": "sankey",
       "category": "chart",
-      "styleSections": "background → palette → title → sankeyShape → tooltip",
-      "inspectorCaps": "remark",
-      "d3Matrix": "legend:missing; label:missing; dataZoom:missing; markLines:missing; conditional:missing",
+      "styleSections": "background → palette → title → label → tooltip → sankeyShape",
+      "inspectorCaps": "label, remark",
+      "d3Matrix": "legend:missing; label:wired; dataZoom:missing; markLines:missing; conditional:missing",
       "paletteOpacity": "hidden",
       "seriesGradient": "hidden",
-      "knownGaps": "caps 与 profile legend/label 分叉; paletteOpacity UI 已门控隐藏",
-      "status": "p1-backlog"
+      "knownGaps": "paletteOpacity UI 已门控隐藏",
+      "status": "p0-fixed"
     },
     {
       "id": "circle-packing",

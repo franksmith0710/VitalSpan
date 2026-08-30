@@ -118,7 +118,10 @@ class ExcelConnector:
         sheet_name = table or (workbook.sheetnames[0] if hasattr(workbook, "sheetnames") else "Sheet1")
         ws = workbook[sheet_name]
         row = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), ())
-        return [ColumnInfo(name=str(c), data_type="string", nullable=True) for c in row if c is not None]
+        return [
+            ColumnInfo(name=str(c) if c is not None else f"col_{idx}", data_type="string", nullable=True)
+            for idx, c in enumerate(row)
+        ]
 
     def execute_native_query(
         self,
@@ -134,7 +137,8 @@ class ExcelConnector:
         sheet = body.get("table") or database or "Sheet1"
         ws = workbook[str(sheet)]
         rows_iter = ws.iter_rows(values_only=True)
-        header = [str(c) for c in next(rows_iter, ()) if c is not None]
+        header_row = next(rows_iter, ())
+        header = [str(c) if c is not None else f"col_{idx}" for idx, c in enumerate(header_row)]
         data = [list(r) for r in rows_iter if any(r)]
         data = data[offset : offset + limit + 1]
         truncated = len(data) > limit

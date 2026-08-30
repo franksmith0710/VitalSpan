@@ -4,6 +4,7 @@ import csv
 import os
 import tempfile
 import time
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any
 
@@ -66,6 +67,26 @@ def _resolve_connection_path(connection: Any) -> Path:
     raise ValueError(FILE_NOT_FOUND)
 
 
+@contextmanager
+def _open_csv_path(connection: Any):
+    temp_path: Path | None = None
+    try:
+        if isinstance(connection, dict) and connection.get("remote"):
+            path = _resolve_connection_path(connection)
+            temp_path = path
+            yield path
+        elif isinstance(connection, Path):
+            yield connection
+        else:
+            raise ValueError(FILE_NOT_FOUND)
+    finally:
+        if temp_path is not None:
+            try:
+                os.unlink(temp_path)
+            except OSError:
+                pass
+
+
 class CsvFileConnector:
     type = "csv"
     category = "file"
@@ -120,7 +141,8 @@ class CsvFileConnector:
         return [TableInfo(name="data", type="TABLE")]
 
     def list_columns(self, connection: Any, schema: str, table: str) -> list[ColumnInfo]:
-        header, _ = _read_csv_rows(_resolve_connection_path(connection))
+        with _open_csv_path(connection) as path:
+            header, _ = _read_csv_rows(path)
         return [ColumnInfo(name=c, data_type="string", nullable=True) for c in header]
 
     def execute_native_query(
@@ -133,7 +155,8 @@ class CsvFileConnector:
         database: str | None = None,
     ) -> tuple[list[str], list[list], bool]:
         guard_native_injection(body)
-        header, data = _read_csv_rows(_resolve_connection_path(connection))
+        with _open_csv_path(connection) as path:
+            header, data = _read_csv_rows(path)
         data = data[offset : offset + limit + 1]
         truncated = len(data) > limit
         return header, data[:limit], truncated

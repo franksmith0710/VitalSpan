@@ -19,9 +19,11 @@ class GlobalFilterProbeResult:
     ok: bool
 
 
-def probe_validate_linkage_budget_ms(session: Session, item: GlobalFilterLinkageItem) -> GlobalFilterProbeResult:
+def probe_validate_linkage_budget_ms(
+    session: Session, item: GlobalFilterLinkageItem, actor: UserContext,
+) -> GlobalFilterProbeResult:
     started = time.perf_counter()
-    gf_service.validate_linkage(session, item)
+    gf_service.validate_linkage(session, item, actor)
     elapsed = (time.perf_counter() - started) * 1000
     return GlobalFilterProbeResult(elapsed_ms=elapsed, ok=elapsed < probe_linkage_budget_ms_limit)
 

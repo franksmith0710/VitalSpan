@@ -5,9 +5,15 @@ from typing import Any
 
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
 from app.datasources.dialects.errors import TDENGINE_DRIVER_MISSING, map_tdengine_error
+from app.query.rls.guard import validate_identifier
 
 TDENGINE_MAX_COLUMNS = 500
 _SYSTEM_DBS = frozenset({"information_schema"})
+
+
+def _quote_ident(name: str) -> str:
+    validate_identifier(name)
+    return f"`{name}`"
 
 
 def _import_taos():
@@ -79,7 +85,7 @@ class TdengineConnector:
             return []
         try:
             cur = connection.cursor()
-            cur.execute(f"USE {schema}")
+            cur.execute(f"USE {_quote_ident(schema)}")
             cur.execute("SHOW STABLES")
             stables = {row[0]: "stable" for row in cur.fetchall()}
             cur.execute("SHOW TABLES")
@@ -94,7 +100,7 @@ class TdengineConnector:
             return []
         try:
             cur = connection.cursor()
-            cur.execute(f"DESCRIBE {schema}.{table}")
+            cur.execute(f"DESCRIBE {_quote_ident(schema)}.{_quote_ident(table)}")
             columns = [
                 ColumnInfo(name=row[0], data_type=str(row[1]), nullable=True)
                 for row in cur.fetchall()

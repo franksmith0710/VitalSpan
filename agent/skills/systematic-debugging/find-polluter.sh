@@ -25,6 +25,13 @@ TOTAL=$(echo "$TEST_FILES" | wc -l | tr -d ' ')
 echo "Found $TOTAL test files"
 echo ""
 
+if [ -e "$POLLUTION_CHECK" ]; then
+  echo "❌ Pollution already exists before running any test: $POLLUTION_CHECK"
+  echo "   Remove it or pick a clean baseline before bisecting."
+  ls -la "$POLLUTION_CHECK" 2>/dev/null || true
+  exit 1
+fi
+
 COUNT=0
 for TEST_FILE in $TEST_FILES; do
   COUNT=$((COUNT + 1))

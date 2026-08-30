@@ -174,6 +174,15 @@ function graphLabelCenterY(
   return (node.y ?? 0) + radius + 11;
 }
 
+export function treemapLeafLabelKey(leaf: {
+  x0: number;
+  y0: number;
+  x1: number;
+  y1: number;
+}): string {
+  return `${leaf.x0}:${leaf.y0}:${leaf.x1}:${leaf.y1}`;
+}
+
 export function pickTreemapVisibleLabelKeys(input: {
   leaves: Array<{
     data: { name: string };
@@ -203,7 +212,7 @@ export function pickTreemapVisibleLabelKeys(input: {
     if (height < minHeight) continue;
 
     candidates.push({
-      key: leaf.data.name,
+      key: treemapLeafLabelKey(leaf),
       priority: width * height,
       bbox: {
         left: leaf.x0 + 6,

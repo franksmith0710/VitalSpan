@@ -93,7 +93,7 @@ def assert_query_design_execute(
     return get_query_rls_fragment(session, actor)
 
 
-def assert_workflow_transition(actor: UserContext, action: str, actor_role: str) -> None:
+def workflow_role_for_action(action: str) -> str | None:
     role_map = {
         "submit": "requester",
         "approve": "approver",
@@ -101,10 +101,15 @@ def assert_workflow_transition(actor: UserContext, action: str, actor_role: str)
         "complete_design": "designer",
         "publish": "publisher",
     }
-    required = role_map.get(action)
+    return role_map.get(action)
+
+
+def assert_workflow_transition(actor: UserContext, action: str, actor_role: str) -> None:
+    _ = actor_role
+    required = workflow_role_for_action(action)
     if actor.is_root:
         return
-    if required and actor_role != required and required not in actor.roles:
+    if required and required not in actor.roles:
         raise GovAclError("GOV_WORKFLOW_FORBIDDEN", f"Role cannot {action}", 403)
 
 

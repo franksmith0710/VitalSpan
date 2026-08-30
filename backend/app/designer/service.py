@@ -31,6 +31,12 @@ def _check_value_type(item: ConditionItem) -> None:
     val = item.value
     if item.operator in ("is_null", "is_not_null"):
         return
+    if item.operator in ("in", "not_in") and vt != "array":
+        raise DesignerError(
+            "DESIGN_VALUE_TYPE_MISMATCH",
+            "Operator in/not_in requires valueType=array",
+            422,
+        )
     if vt == "string" and not isinstance(val, str):
         raise DesignerError("DESIGN_VALUE_TYPE_MISMATCH", "Value does not match valueType", 422)
     if vt == "number" and (not isinstance(val, (int, float)) or isinstance(val, bool)):

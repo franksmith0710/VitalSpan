@@ -244,6 +244,18 @@ def list_dashboards(
     )
 
 
+def _release_soft_deleted_slug(db: Session, slug: str) -> None:
+    deleted = db.scalar(
+        select(Dashboard).where(
+            Dashboard.slug == slug,
+            Dashboard.deleted_at.is_not(None),
+        ),
+    )
+    if deleted is not None:
+        deleted.slug = f"{slug}--deleted-{deleted.id.hex[:8]}"
+        db.flush()
+
+
 def create_dashboard(
     db: Session,
     payload: DashboardCreate | None = None,
@@ -260,6 +272,7 @@ def create_dashboard(
     if name is None:
         raise DashboardError("DASH_INVALID", "name is required", 422)
     resolved_slug = slug or _slugify(name)
+    _release_soft_deleted_slug(db, resolved_slug)
     row = Dashboard(
         name=name,
         slug=resolved_slug,

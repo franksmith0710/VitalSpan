@@ -90,7 +90,6 @@ export function DimensionsPanel({
   const themes = useQuery({
     queryKey: queryKeys.metadataHub.themes("null"),
     queryFn: () => apiFetch<{ items: ThemeNode[] }>("/api/v1/metadata/themes?parent_id=null&limit=100"),
-    enabled: open,
   });
   const themeNames = new Map((themes.data?.items ?? []).map((t) => [t.id, t.name]));
   const inv = () => void qc.invalidateQueries({ queryKey: ["metadata", "dimensions"] });

@@ -51,6 +51,12 @@ def assert_readonly_sql(sql: str) -> None:
         raise QueryError("QUERY_NOT_READONLY", "Write operations are not allowed", 400)
     if _FORBIDDEN_CLAUSES.search(normalized):
         raise QueryError("QUERY_NOT_READONLY", "Forbidden SQL clause", 400)
+    if normalized.upper().startswith("WITH") and re.search(
+        r"\b(INSERT|UPDATE|DELETE|MERGE|REPLACE|TRUNCATE|DROP|ALTER|CREATE)\b",
+        normalized,
+        re.IGNORECASE,
+    ):
+        raise QueryError("QUERY_NOT_READONLY", "Write operations are not allowed", 400)
 
 
 _UNSAFE_PARAM_PATTERN = re.compile(r"(--|/\*|;|\bDROP\b|\bUNION\b)", re.IGNORECASE)

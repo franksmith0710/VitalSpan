@@ -31,8 +31,9 @@ def _build_client(**kwargs: Any) -> Any:
     port = kwargs.get("port", 8086)
     org = kwargs.get("username", "")
     token = kwargs.get("password", "")
+    timeout_sec = float(kwargs.get("timeout_sec", kwargs.get("connect_timeout_sec", 5.0)))
     url = f"http://{host}:{port}"
-    return InfluxDBClient(url=url, token=token, org=org)
+    return InfluxDBClient(url=url, token=token, org=org, timeout=int(timeout_sec * 1000))
 
 
 def _query_api(connection: Any) -> Any:

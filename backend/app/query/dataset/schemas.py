@@ -69,7 +69,7 @@ class DatasetRoutingOut(BaseModel):
 class ExecutePlanStep(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     step: Literal["path_resolve", "acl_check", "readonly_guard", "plan_ready"]
-    status: Literal["pass", "skip"]
+    status: Literal["pass", "skip", "fail"]
     detail: str | None = None
 
 

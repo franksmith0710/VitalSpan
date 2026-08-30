@@ -110,11 +110,6 @@ function CanvasSizeInput({
     lastAppliedRef.current = value;
   }, [value]);
 
-  useEffect(
-    () => registerDebouncedDraftFlusher(flushDraft),
-    [value, min, max, draft],
-  );
-
   const commitSized = (next: number) => {
     const clamped = Math.min(max, Math.max(min, Math.round(next)));
     if (!Number.isFinite(clamped) || clamped === lastAppliedRef.current) return;
@@ -131,6 +126,8 @@ function CanvasSizeInput({
     }
     commitSized(parsed);
   };
+
+  useEffect(() => registerDebouncedDraftFlusher(flushDraft), [value, min, max, draft]);
 
   const bump = (delta: number) => {
     const parsed = Number.parseInt(draft, 10);

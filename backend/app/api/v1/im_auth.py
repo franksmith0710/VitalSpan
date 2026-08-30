@@ -7,6 +7,7 @@ from fastapi.responses import RedirectResponse
 from sqlalchemy.orm import Session
 
 from app.auth.im_oauth.oauth import ImOAuthError
+from app.auth.im_oauth.redirect import sanitize_redirect_after
 from app.auth.im_oauth.service import complete_callback
 from app.auth.models import get_meta_session
 
@@ -44,6 +45,7 @@ def im_oauth_callback(
         )
     try:
         _, redirect_after = complete_callback(db, channel=channel, code=code, state=state)
+        redirect_after = sanitize_redirect_after(redirect_after)
         sep = "&" if "?" in redirect_after else "?"
         return RedirectResponse(
             url=f"{redirect_after}{sep}imBind={channel}&status=success",

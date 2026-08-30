@@ -88,13 +88,24 @@ class DataSourcePoolManager:
             raise
         finally:
             if conn is not None:
+                with self._lock:
+                    still_active = self._entries.get(data_source_id) is entry
                 if pool_broken:
-                    with self._lock:
-                        entry.connect_count = max(0, entry.connect_count - 1)
+                    if leased_new:
+                        with self._lock:
+                            entry.connect_count = max(0, entry.connect_count - 1)
                     try:
                         conn.close()
                     except Exception:
                         pass
+                elif not still_active:
+                    try:
+                        conn.close()
+                    except Exception:
+                        pass
+                    if leased_new:
+                        with self._lock:
+                            entry.connect_count = max(0, entry.connect_count - 1)
                 else:
                     try:
                         entry.queue.put_nowait(conn)

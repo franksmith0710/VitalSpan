@@ -108,7 +108,7 @@ def get_artifact(
     row = db.get(AiVizArtifact, artifact_id)
     if row is None:
         raise AiVizError("AIVIZ_NOT_FOUND", "artifact not found", 404)
-    if write and row.owner_user_id and str(row.owner_user_id) != actor.id:
+    if row.owner_user_id and str(row.owner_user_id) != actor.id:
         raise AiVizError("AIVIZ_FORBIDDEN", "artifact access denied", 403)
     return row
 

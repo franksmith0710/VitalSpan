@@ -174,7 +174,7 @@ export function ChartGeoStylePanel({ cfg, deStyle, chartType, onChange }: ChartG
       patchGeoColorTimersRef.current.forEach((timer) => window.clearTimeout(timer));
       patchGeoColorTimersRef.current.clear();
     },
-    [],
+    [cfg],
   );
   const isMap = chartType === "map" || chartType === "map-3d";
   const is3d = chartType === "map-3d";

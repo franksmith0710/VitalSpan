@@ -84,6 +84,13 @@ def _validate_item(session: Session, item: EntityOverviewItem) -> EntityOverview
                     422,
                     fields=[{"field": "drillTargets.widgetId", "message": drill.widget_id}],
                 )
+    elif item.drill_targets:
+        raise EntityOverviewError(
+            DASH_OVERVIEW_INVALID_DRILL_WIDGET,
+            "drill targets require layout widgets",
+            422,
+            fields=[{"field": "drillTargets", "message": "layout has no widgets"}],
+        )
     for card in item.stat_cards:
         if card.metric_source is None:
             continue

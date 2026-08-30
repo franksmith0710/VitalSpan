@@ -20,6 +20,7 @@ from app.core.logging import trace_id_var
 PUBLIC_PATHS_BASE: frozenset[str] = frozenset({
     "/health",
     "/api/v1/auth/login",
+    "/api/v1/auth-integration/oidc/callback",
 })
 
 PUBLIC_PATHS_DEV: frozenset[str] = frozenset({

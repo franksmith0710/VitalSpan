@@ -59,6 +59,14 @@ def _validate_upsert(payload: ConfigUpsert) -> None:
         _validate_dataset_query_payload(payload.payload)
 
 
+def _resolve_ref_id(payload: ConfigUpsert, ref_type: str, owner_id: uuid.UUID | None) -> uuid.UUID:
+    if payload.ref_id is not None:
+        return payload.ref_id
+    stable = json.dumps(payload.payload, sort_keys=True, separators=(",", ":"))
+    seed = f"{payload.config_type}:{ref_type}:{owner_id or ''}:{stable}"
+    return uuid.uuid5(uuid.NAMESPACE_URL, seed)
+
+
 def upsert_config(
     session: Session,
     payload: ConfigUpsert,
@@ -68,11 +76,12 @@ def upsert_config(
 ) -> QueryConfigRecord:
     _validate_upsert(payload)
     ref_type = payload.ref_type or DEFAULT_REF_TYPE
+    ref_id = _resolve_ref_id(payload, ref_type, owner_id)
     stmt = select(QueryConfigRecord).where(
         and_(
             QueryConfigRecord.config_type == payload.config_type,
             QueryConfigRecord.ref_type == ref_type,
-            QueryConfigRecord.ref_id == payload.ref_id,
+            QueryConfigRecord.ref_id == ref_id,
             QueryConfigRecord.schema_version == payload.schema_version,
         )
     )
@@ -114,7 +123,7 @@ def upsert_config(
         config_type=payload.config_type,
         schema_version=payload.schema_version,
         ref_type=ref_type,
-        ref_id=payload.ref_id,
+        ref_id=ref_id,
         owner_id=owner_id,
         payload=payload.payload,
         revision=1,

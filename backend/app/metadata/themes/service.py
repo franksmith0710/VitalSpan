@@ -102,7 +102,10 @@ def _resolve_parent_id(parent_id: uuid.UUID | None | str) -> uuid.UUID | None | 
     if parent_id == "null" or parent_id is None:
         return parent_id
     if isinstance(parent_id, str):
-        return uuid.UUID(parent_id)
+        try:
+            return uuid.UUID(parent_id)
+        except ValueError as exc:
+            raise ThemeError("META_THEME_INVALID_PARENT", "Invalid parent id", 422) from exc
     return parent_id
 
 

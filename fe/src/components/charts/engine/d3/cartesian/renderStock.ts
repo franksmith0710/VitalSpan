@@ -82,8 +82,8 @@ export function renderD3StockChart(container: HTMLElement, config: D3StockRender
             ?.style("opacity", "1")
             .html(
               `<div style="font-weight:600;margin-bottom:2px">${d.type}</div>` +
-                `<div>开 <strong>${formatChartValue(d.open, valueFormat)}</strong> · �?<strong>${formatChartValue(d.close, valueFormat)}</strong></div>` +
-                `<div>�?<strong>${formatChartValue(d.low, valueFormat)}</strong> · �?<strong>${formatChartValue(d.high, valueFormat)}</strong></div>`,
+                `<div>开 <strong>${formatChartValue(d.open, valueFormat)}</strong> · 收 <strong>${formatChartValue(d.close, valueFormat)}</strong></div>` +
+                `<div>低 <strong>${formatChartValue(d.low, valueFormat)}</strong> · 高 <strong>${formatChartValue(d.high, valueFormat)}</strong></div>`,
             );
         })
         .on("mousemove", (event) => {

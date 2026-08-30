@@ -111,7 +111,7 @@ def _guard_scope(audit_scope: str) -> None:
 
 def get_https_audit_status() -> HttpsAuditStatusOut:
     settings = get_settings()
-    https_enforced = bool(settings.cors_origins)
+    https_enforced = settings.vitalspan_env == "production"
     webhook_https_only = True
     return HttpsAuditStatusOut(
         httpsEnforced=https_enforced,
@@ -181,11 +181,16 @@ def record_audit_event(
     for key in body:
         if key in _MASK_KEYS and body[key] not in (None, "***"):
             masked_fields.append(key)
+    masked_body = {
+        key: ("***" if key in _MASK_KEYS else value)
+        for key, value in body.items()
+    }
     _AUDIT_RING.append({
         "traceId": trace_id,
         "path": path,
         "method": method,
         "maskedFields": masked_fields,
+        "body": masked_body,
         "timestamp": datetime.now(UTC).isoformat(),
     })
     return masked_fields
@@ -193,8 +198,11 @@ def record_audit_event(
 
 def _ring_has_plaintext_leak() -> bool:
     for entry in _AUDIT_RING:
+        body = entry.get("body")
+        if not isinstance(body, dict):
+            continue
         for key in _MASK_KEYS:
-            if key in entry and entry[key] not in (None, "***"):
+            if key in body and body[key] not in (None, "***"):
                 return True
     return False
 

@@ -43,8 +43,8 @@ def duplicate_catalog_node(
     new_template_key = None
     if source.template_key:
         raw = template_repo.get_template(source.template_key)
-        new_template_key = f"{source.template_key}-copy-{uuid.uuid4().hex[:6]}"
         if raw is not None:
+            new_template_key = f"{source.template_key}-copy-{uuid.uuid4().hex[:6]}"
             template_service.upsert_template_definition(
                 new_template_key,
                 TemplateDefinitionIn.model_validate({**raw, "templateKey": new_template_key}),
@@ -60,8 +60,13 @@ def duplicate_catalog_node(
     )
     created = catalog_service.create_node(payload, actor)
     if source.node_type == "template":
+        from app.reports.errors import ReportExtensionError
+
         try:
             ext = extension_service.get_extension(node_id)
+        except ReportExtensionError:
+            ext = None
+        if ext is not None:
             from app.reports.extension.schemas import ExtensionConfigUpsert
 
             extension_service.upsert(
@@ -69,8 +74,6 @@ def duplicate_catalog_node(
                 ExtensionConfigUpsert.model_validate(ext.model_dump()),
                 actor,
             )
-        except Exception:
-            pass
     center_prefs.record_recent_view(
         actor,
         resource_type="template",

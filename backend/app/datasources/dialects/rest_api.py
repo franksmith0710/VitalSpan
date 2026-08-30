@@ -74,8 +74,9 @@ def _payload_to_rows(payload: object, *, limit: int, offset: int, json_path: str
         if not payload:
             return [], [], False
         if isinstance(payload[0], dict):
-            columns = sorted({k for item in payload[:limit] for k in item})[:REST_API_MAX_COLUMNS]
-            rows = [[item.get(c) for c in columns] for item in payload[offset : offset + limit + 1]]
+            slice_items = payload[offset : offset + limit + 1]
+            columns = sorted({k for item in slice_items for k in item})[:REST_API_MAX_COLUMNS]
+            rows = [[item.get(c) for c in columns] for item in slice_items]
             truncated = len(rows) > limit
             return columns, rows[:limit], truncated
     return ["value"], [[json.dumps(payload)]], False

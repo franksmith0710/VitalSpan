@@ -81,7 +81,7 @@ def create_tile_service(
     db: Annotated[Session, Depends(_db)],
 ) -> TileServiceOut | JSONResponse:
     try:
-        return tile_service.create_tile_service(db, payload, updated_by=user.user_id)
+        return tile_service.create_tile_service(db, payload, updated_by=user.id)
     except tile_service.TileServiceError as exc:
         return _error_response(exc)
 
@@ -94,6 +94,6 @@ def patch_tile_service(
     db: Annotated[Session, Depends(_db)],
 ) -> TileServiceOut | JSONResponse:
     try:
-        return tile_service.patch_tile_service(db, service_id, payload, updated_by=user.user_id)
+        return tile_service.patch_tile_service(db, service_id, payload, updated_by=user.id)
     except tile_service.TileServiceError as exc:
         return _error_response(exc)

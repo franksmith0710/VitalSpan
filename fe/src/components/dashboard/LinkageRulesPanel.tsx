@@ -68,7 +68,7 @@ export function LinkageRulesPanel({
   const buildLinkagePayload = (nextRules: LinkageRule[], mode = refreshMode): Linkage => ({
     filters: resolvedLinkage?.filters ?? [],
     linkageRules: nextRules,
-    refreshMode,
+    refreshMode: mode,
   });
 
   const emitLinkage = (nextRules: LinkageRule[], mode?: Linkage["refreshMode"]) => {

@@ -1,17 +1,6 @@
 {
   "version": 3,
   "description": "DeepTalk compose：5 套 DE 大屏 + 6 套政企内置参考 + 10 套仪表板",
-  "legacyReferenceLayouts": {
-    "wf3Default": "rhythm+blocks",
-    "note": "de-* / dash-* preset 为参考金样；wf3 默认 list_layout_rhythms + compose(rhythm,blocks)",
-    "dataScreenPresetIds": [
-      "de-classic-cockpit",
-      "de-sales-command",
-      "de-balanced-four",
-      "de-map-command",
-      "de-kpi-flow-wall"
-    ]
-  },
   "recommendedDataScreen": [
     "de-classic-cockpit",
     "de-sales-command",

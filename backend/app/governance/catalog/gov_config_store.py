@@ -54,7 +54,7 @@ def get_json(
 
 
 def list_json(session: Session, *, config_type: str) -> list[dict]:
-    records, _ = config_store.list_configs(session, config_type=config_type)
+    records = config_store.list_configs_by_type(session, config_type)
     return [r.payload for r in records]
 
 
@@ -74,7 +74,7 @@ def delete_json(
 
 
 def clear_type(session: Session, config_type: str) -> None:
-    records, _ = config_store.list_configs(session, config_type=config_type, limit=10_000)
+    records = config_store.list_configs_by_type(session, config_type)
     for rec in records:
         session.delete(rec)
     session.commit()

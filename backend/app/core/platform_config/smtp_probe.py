@@ -55,8 +55,9 @@ def probe_smtp_connection(smtp: SmtpSettings, *, timeout: int = 8) -> dict:
         }
     try:
         with connect_smtp(smtp, timeout=timeout) as conn:
-            if smtp.username and smtp.password:
-                conn.login(smtp.username, smtp.password)
+            if smtp.password:
+                username = normalize_smtp_username(smtp.username, smtp.from_addr)
+                conn.login(username, smtp.password)
     except ValueError as exc:
         return {
             "status": "unreachable",

@@ -8,6 +8,8 @@ import urllib.error
 import urllib.request
 from uuid import UUID
 
+from urllib.parse import urlsplit, urlunsplit
+
 from app.core.config import get_settings
 from app.dashboard import service as dash_service
 from app.dashboard.export_fe_url import build_export_snapshot_url
@@ -39,6 +41,19 @@ MAX_PDF_PAGE_HEIGHT_PX = 19200
 
 _health_cache: dict | None = None
 _health_cache_at: float = 0.0
+
+
+def _redact_export_url(url: str) -> str:
+    parts = urlsplit(url)
+    if not parts.query:
+        return url
+    query_parts = []
+    for segment in parts.query.split("&"):
+        if segment.startswith("token="):
+            query_parts.append("token=***")
+        else:
+            query_parts.append(segment)
+    return urlunsplit((parts.scheme, parts.netloc, parts.path, "&".join(query_parts), parts.fragment))
 
 
 def _fe_probe_url() -> str:
@@ -175,6 +190,8 @@ def _pdf_options(layout_mode: ExportLayoutMode, page) -> dict:
         }
     if layout_mode == EXPORT_LAYOUT_FULL_PAGE:
         return _full_page_pdf_options(page)
+    if layout_mode == EXPORT_LAYOUT_COMBINED:
+        return _full_page_pdf_options(page)
     width, height = _measure_page_size(page)
     return {
         "width": f"{width}px",
@@ -248,16 +265,17 @@ def render_dashboard_visual_pdf(
             finally:
                 browser.close()
     except PlaywrightError as exc:
+        safe_url = _redact_export_url(url)
         logger.warning(
             "dashboard_visual_export_failed id=%s mode=%s url=%s err=%s",
             dashboard_id,
             mode,
-            url,
+            safe_url,
             exc,
         )
         raise dash_service.DashboardError(
             "DASH_EXPORT_RENDER_FAILED",
-            f"可视化导出渲染失败（{MODE_LABELS[mode]}，{url}）：{exc}",
+            f"可视化导出渲染失败（{MODE_LABELS[mode]}，{safe_url}）：{exc}",
             502,
         ) from exc
 

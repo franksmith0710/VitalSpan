@@ -25,9 +25,10 @@ def capture_snapshot(
     *,
     period_kind: str | None = None,
     period_key: str | None = None,
+    skip_acl: bool = False,
 ) -> SnapshotOut:
-    pack = pack_service.get_pack(pack_key, user)
-    run_out = pack_service.run_pack(db, pack_key, RunIn(theme=theme), user)
+    pack = pack_service.get_pack(pack_key, user, skip_acl=skip_acl)
+    run_out = pack_service.run_pack(db, pack_key, RunIn(theme=theme), user, skip_acl=skip_acl)
     kind, key = (
         (period_kind, period_key)
         if period_kind and period_key
@@ -40,10 +41,10 @@ def capture_snapshot(
 
 
 def capture_all_enabled_themes(db: Session, pack_key: str, user: UserContext) -> list[SnapshotOut]:
-    pack = pack_service.get_pack(pack_key, user)
+    pack = pack_service.get_pack(pack_key, user, skip_acl=True)
     results: list[SnapshotOut] = []
     for theme in pack.enabled_themes:
-        results.append(capture_snapshot(db, pack_key, theme, user))
+        results.append(capture_snapshot(db, pack_key, theme, user, skip_acl=True))
     return results
 
 

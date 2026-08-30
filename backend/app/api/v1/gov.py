@@ -119,7 +119,7 @@ from app.governance.catalog.cat03.schemas import (
     GeoRegionOut,
 )
 from app.governance.catalog.cat03 import service as cat03_service
-from app.governance.acl import GovAclError, assert_workflow_transition
+from app.governance.acl import GovAclError, assert_workflow_transition, workflow_role_for_action
 from app.governance.acl_matrix import describe_gov_permission_matrix
 from app.governance.bus.auto import auto_register
 from app.governance.bus.auto_schemas import AutoRegisterIn, AutoRegisterOut
@@ -314,17 +314,21 @@ def auto_register_probe(
     db: Annotated[Session, Depends(_db)],
 ) -> JSONResponse:
     from app.governance.bus.probe import probe_auto_register_budget_ms
+    from app.governance.catalog.models import CatalogEntry
+    from sqlalchemy import select
 
-    entry = catalog_service.create_entry(
-        db,
-        CatalogEntryCreate(
-            name="probe-fixture",
-            http_method="POST",
-            path=f"/api/v1/r68/probe-{uuid.uuid4().hex[:8]}",
-            category_codes=["CAT-01"],
-            status="published",
-        ),
+    entry = db.scalar(
+        select(CatalogEntry).where(CatalogEntry.status == "published").limit(1),
     )
+    if entry is None:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "code": "GOV_PROBE_NO_FIXTURE",
+                "message": "No published catalog entry available for probe",
+                "detail": None,
+            },
+        )
     result = probe_auto_register_budget_ms(db, actor, entry.id)
     return JSONResponse(
         status_code=200,
@@ -750,7 +754,14 @@ def transition_workflow_instance(
 ) -> WorkflowInstanceOut | JSONResponse:
     try:
         assert_workflow_transition(actor, payload.action, payload.actor_role)
-        return workflow_service.transition_instance(db, instance_id, payload.action, payload.actor_role)
+        required_role = workflow_role_for_action(payload.action)
+        if required_role is None:
+            return JSONResponse(
+                status_code=400,
+                content={"code": "GOV_WORKFLOW_INVALID_TRANSITION", "message": "Unknown action", "detail": None},
+            )
+        actor_role = required_role if not actor.is_root else payload.actor_role or required_role
+        return workflow_service.transition_instance(db, instance_id, payload.action, actor_role)
     except GovAclError as exc:
         return _gov_acl_error(exc)
     except WorkflowError as exc:

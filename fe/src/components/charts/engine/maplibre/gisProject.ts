@@ -434,7 +434,7 @@ export function resolveGisOverlayStyle(
     autoFit: overlay?.autoFit !== false,
     cluster: overlay?.cluster !== false,
     clusterMaxZoom,
-    colorByCategory: overlay?.colorByCategory !== false,
+    colorByCategory: overlay?.colorByCategory ?? DEFAULT_GIS_OVERLAY.colorByCategory,
     heatmapPreset,
     heatmapIntensity,
     heatmapRadiusMax,

@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from app.auth.deps import UserContext
 from app.dashboard import service as dash_service
 from app.dashboard.schemas import DashboardCreate
+from app.dashboard.preview_summary import sync_surface_kind_column
 from app.dashboard.surface_kind import read_surface_kind_from_layout
 from app.dashboard.templates.acl import (
     assert_template_manage,
@@ -288,6 +289,7 @@ def update_template(
         layout = sanitize_layout_for_template(payload.layout_json)
         dash_service.validate_layout(layout)
         row.layout_json = layout
+        row.surface_kind = sync_surface_kind_column(layout)
     if payload.visibility is not None:
         row.visibility = payload.visibility
     if payload.org_scope is not None:

@@ -5,7 +5,13 @@ import uuid
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.auth.im_oauth.bindings import delete_binding, list_binding_rows, mask_account_id, upsert_oauth_binding
+from app.auth.im_oauth.bindings import (
+    ImBindingError,
+    delete_binding,
+    list_binding_rows,
+    mask_account_id,
+    upsert_oauth_binding,
+)
 from app.auth.im_oauth.oauth import (
     ImOAuthError,
     build_authorize_url,
@@ -14,6 +20,7 @@ from app.auth.im_oauth.oauth import (
     exchange_code_for_account,
     purge_expired_states,
 )
+from app.auth.im_oauth.redirect import sanitize_redirect_after
 from app.core.platform_config.im_connect_model import IM_CHANNELS, IM_LABELS
 from app.core.platform_config.im_resolve import resolve_im_credentials
 from app.reports.scheduler.channels.im_sdk.probe import probe_im_credentials_bundle
@@ -80,7 +87,12 @@ def start_authorize(
             probe.get("error") or "应用探测未通过，暂不可绑定",
             422,
         )
-    state = create_state(session, user_id=user_id, channel=channel, redirect_after=redirect_after)
+    state = create_state(
+        session,
+        user_id=user_id,
+        channel=channel,
+        redirect_after=sanitize_redirect_after(redirect_after),
+    )
     session.commit()
     return build_authorize_url(creds, state=state)
 
@@ -94,12 +106,15 @@ def complete_callback(
 ) -> tuple[uuid.UUID, str]:
     oauth_state = consume_state(session, state, channel)
     account_id = exchange_code_for_account(session, channel, code)
-    upsert_oauth_binding(
-        session,
-        user_id=oauth_state.user_id,
-        channel=channel,
-        account_id=account_id,
-    )
+    try:
+        upsert_oauth_binding(
+            session,
+            user_id=oauth_state.user_id,
+            channel=channel,
+            account_id=account_id,
+        )
+    except ImBindingError as exc:
+        raise ImOAuthError(exc.code, exc.message, exc.status) from exc
     session.commit()
-    redirect = oauth_state.redirect_after or "/admin/account/profile"
+    redirect = sanitize_redirect_after(oauth_state.redirect_after)
     return oauth_state.user_id, redirect

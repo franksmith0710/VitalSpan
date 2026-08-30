@@ -114,24 +114,27 @@ def increment_poll(job_id: uuid.UUID) -> dict | None:
 def claim_next_job(worker_id: str, job_kind: str | None = None) -> dict | None:
     now = datetime.now(UTC)
     lease_until = now + timedelta(seconds=_LEASE_SECONDS)
-    with Session(bind=get_meta_engine()) as db:
-        stmt = (
-            select(ReportJob)
-            .where(ReportJob.status == ReportJobStatus.PENDING.value)
-            .order_by(ReportJob.created_at.asc())
-            .limit(1)
-        )
-        if job_kind:
-            stmt = stmt.where(ReportJob.job_kind == job_kind)
-        job = db.scalar(stmt.with_for_update(skip_locked=True))
-        if job is None:
-            return _claim_memory_job(worker_id, job_kind)
-        job.status = ReportJobStatus.PROCESSING.value
-        job.lease_owner = worker_id
-        job.lease_expires_at = lease_until
-        db.commit()
-        db.refresh(job)
-        return _row_to_dict(job)
+    try:
+        with Session(bind=get_meta_engine()) as db:
+            stmt = (
+                select(ReportJob)
+                .where(ReportJob.status == ReportJobStatus.PENDING.value)
+                .order_by(ReportJob.created_at.asc())
+                .limit(1)
+            )
+            if job_kind:
+                stmt = stmt.where(ReportJob.job_kind == job_kind)
+            job = db.scalar(stmt.with_for_update(skip_locked=True))
+            if job is None:
+                return _claim_memory_job(worker_id, job_kind)
+            job.status = ReportJobStatus.PROCESSING.value
+            job.lease_owner = worker_id
+            job.lease_expires_at = lease_until
+            db.commit()
+            db.refresh(job)
+            return _row_to_dict(job)
+    except Exception:
+        return _claim_memory_job(worker_id, job_kind)
 
 
 def _claim_memory_job(worker_id: str, job_kind: str | None) -> dict | None:
@@ -194,18 +197,34 @@ def fail_job(job_id: uuid.UUID, error_message: str) -> dict | None:
 
 def release_expired_leases() -> int:
     now = datetime.now(UTC)
-    with Session(bind=get_meta_engine()) as db:
-        result = db.execute(
-            update(ReportJob)
-            .where(
-                ReportJob.status == ReportJobStatus.PROCESSING.value,
-                ReportJob.lease_expires_at.is_not(None),
-                ReportJob.lease_expires_at < now,
+    released = 0
+    for row in _MEMORY_JOBS.values():
+        expires = row.get("lease_expires_at")
+        if (
+            row.get("status") == ReportJobStatus.PROCESSING.value
+            and expires is not None
+            and expires < now
+        ):
+            row["status"] = ReportJobStatus.PENDING.value
+            row["lease_owner"] = None
+            row["lease_expires_at"] = None
+            released += 1
+    try:
+        with Session(bind=get_meta_engine()) as db:
+            result = db.execute(
+                update(ReportJob)
+                .where(
+                    ReportJob.status == ReportJobStatus.PROCESSING.value,
+                    ReportJob.lease_expires_at.is_not(None),
+                    ReportJob.lease_expires_at < now,
+                )
+                .values(status=ReportJobStatus.PENDING.value, lease_owner=None, lease_expires_at=None),
             )
-            .values(status=ReportJobStatus.PENDING.value, lease_owner=None, lease_expires_at=None),
-        )
-        db.commit()
-        return int(result.rowcount or 0)
+            db.commit()
+            released += int(result.rowcount or 0)
+    except Exception:
+        pass
+    return released
 
 
 def reset_jobs_for_tests() -> None:

@@ -151,8 +151,13 @@ def _validate_linkage(session: Session, item: GlobalFilterLinkageItem) -> Global
     return item
 
 
-def validate_linkage(session: Session, item: GlobalFilterLinkageItem) -> GlobalFilterLinkageItem:
-    return _validate_linkage(session, item)
+def validate_linkage(
+    session: Session, item: GlobalFilterLinkageItem, actor: UserContext,
+) -> GlobalFilterLinkageItem:
+    item = _validate_linkage(session, item)
+    dashboard = dash_service.get_dashboard(session, item.dashboard_id)
+    _assert_dashboard_access(session, actor, item.dashboard_id, dashboard.created_by, slug=dashboard.slug)
+    return item
 
 
 def save_linkage(

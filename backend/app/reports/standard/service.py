@@ -92,12 +92,13 @@ def list_packs(user: UserContext) -> AnalysisPackListResponse:
     return AnalysisPackListResponse(items=items, total=len(items))
 
 
-def get_pack(key: str, user: UserContext) -> AnalysisPackOut:
+def get_pack(key: str, user: UserContext, *, skip_acl: bool = False) -> AnalysisPackOut:
     raw = standard_repo.get_pack(key)
     if raw is None:
         raise StandardAnalysisError(RPT_STD_NOT_FOUND, "Analysis pack not found", 404)
     pack = AnalysisPackOut.model_validate(raw)
-    _assert_read_access(user, pack.allowed_roles)
+    if not skip_acl:
+        _assert_read_access(user, pack.allowed_roles)
     return pack
 
 
@@ -134,11 +135,13 @@ def get_capabilities(key: str, user: UserContext) -> CapabilitiesOut:
     )
 
 
-def run_pack(db: Session, key: str, payload: RunIn, user: UserContext) -> RunOut:
+def run_pack(
+    db: Session, key: str, payload: RunIn, user: UserContext, *, skip_acl: bool = False,
+) -> RunOut:
     from app.reports.standard.dataset_binding import ensure_analysis_pack_dataset_binding
     from app.reports.standard.theme_aggregate import aggregate_pack_theme
 
-    pack = get_pack(key, user)
+    pack = get_pack(key, user, skip_acl=skip_acl)
     if payload.theme not in pack.enabled_themes:
         raise StandardAnalysisError(RPT_STD_THEME_DISABLED, "theme not enabled for pack", 422)
     bound_id = ensure_analysis_pack_dataset_binding(db, pack)

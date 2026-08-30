@@ -77,7 +77,13 @@ def delete_resource_grant(
     db: Annotated[Session, Depends(_db)],
 ):
     try:
-        grant_service.delete_grant(db, grant_id, **_audit_context(actor))
+        grant_service.delete_grant(
+            db,
+            grant_id,
+            **_audit_context(actor),
+            actor_permissions=set(actor.permissions),
+            actor_is_root=actor.is_root,
+        )
     except grant_service.GrantError as exc:
         return _grant_error_response(exc)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

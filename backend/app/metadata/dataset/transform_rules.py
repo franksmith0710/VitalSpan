@@ -120,10 +120,22 @@ def auto_align_transform_rules(dataset_id: str, user: UserContext) -> DatasetTra
                 "请先绑定物理表",
                 422,
             )
+        from app.datasources.models import DataSource
+        from app.query.capabilities import resolve_sql_dialect_type
+
         if "." in table_name:
             schema, _, table = table_name.partition(".")
         else:
-            schema, table = "public", table_name
+            table = table_name
+            schema = "public"
+            ds = session.get(DataSource, row.table_source_datasource_id)
+            if ds is not None:
+                dialect = resolve_sql_dialect_type(ds.type)
+                if dialect in {"mysql", "sqlite", "sqlserver"}:
+                    schema = ds.database or schema
+                elif dialect == "postgresql":
+                    opts = ds.connection_options if isinstance(ds.connection_options, dict) else {}
+                    schema = str(opts.get("schema") or "public")
         try:
             resp = list_columns(
                 session,

@@ -173,6 +173,13 @@ export function GovernancePublishPage() {
             <SheetTitle>OpenAPI 文档预览</SheetTitle>
           </SheetHeader>
           {openapiQuery.isLoading ? <Skeleton className="mt-4 h-64 w-full" /> : null}
+          {openapiQuery.isError ? (
+            <PageErrorBanner
+              className="mt-4"
+              message={mapApiError(openapiQuery.error)}
+              onRetry={() => void openapiQuery.refetch()}
+            />
+          ) : null}
           {openapiQuery.data ? (
             <Textarea
               readOnly

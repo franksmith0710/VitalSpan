@@ -9,7 +9,10 @@ import {
   appendMultilineSvgLabel,
   multilineLabelMinHeight,
 } from "@/components/charts/engine/d3/core/multilineLabel";
-import { pickTreemapVisibleLabelKeys } from "@/components/charts/engine/d3/core/nodeLabelThinning";
+import {
+  pickTreemapVisibleLabelKeys,
+  treemapLeafLabelKey,
+} from "@/components/charts/engine/d3/core/nodeLabelThinning";
 import { formatChartValue } from "@/lib/chartValueFormat";
 import {
   TREEMAP_CELL_HOVER_STROKE_WIDTH,
@@ -196,7 +199,7 @@ export function renderD3TreemapChart(container: HTMLElement, config: D3RenderCon
     });
 
     cells.each(function (d) {
-      if (!visibleLabelKeys.has(d.data.name)) return;
+      if (!visibleLabelKeys.has(treemapLeafLabelKey(d))) return;
       const w = d.x1 - d.x0;
       const h = d.y1 - d.y0;
       const lines = formatSimpleDataLabelLines(

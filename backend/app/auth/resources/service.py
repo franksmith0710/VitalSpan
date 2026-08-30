@@ -97,10 +97,26 @@ def delete_grant(
     actor_id: str,
     actor_username: str | None,
     trace_id: str,
+    actor_permissions: set[str] | None = None,
+    actor_is_root: bool = False,
 ) -> None:
+    from app.auth.org_scope import OrgScopeError, assert_role_in_org_scope, is_org_scoped_only
+
     grant = session.get(AuthResourceGrant, grant_id)
     if grant is None:
         raise GrantError("GRANT_NOT_FOUND", "Resource grant not found", 404)
+    perms = actor_permissions or set()
+    if is_org_scoped_only(permissions=perms, is_root=actor_is_root):
+        try:
+            assert_role_in_org_scope(
+                session,
+                permissions=perms,
+                is_root=actor_is_root,
+                actor_user_id=actor_id,
+                role_id=grant.role_id,
+            )
+        except OrgScopeError as exc:
+            raise GrantError(exc.code, exc.message, exc.status) from exc
     role = session.get(AuthRole, grant.role_id)
     detail = {
         "role_id": str(grant.role_id),

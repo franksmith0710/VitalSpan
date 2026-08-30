@@ -105,5 +105,5 @@ def fetch_sql_rows(job: SyncJob, dialect: str) -> list[dict[str, Any]]:
     }
     if dialect not in supported:
         raise RuntimeError(f"未实现的 SQL 方言拉数: {dialect}")
-    connector_type = job.source_type
+    connector_type = resolve_sql_dialect_type(job.source_type)
     return _fetch_registry_cursor_rows(job, connector_type, dialect)

@@ -223,46 +223,61 @@ export function renderD3ScatterChart(container: HTMLElement, config: D3RenderCon
     })
     .on("click", (_event, entry) => onPointClick?.(entry.row as D3Datum));
 
-  if (useCanvas && showTooltip) {
-    plot
+  if (useCanvas && (showTooltip || onPointClick)) {
+    const overlay = plot
       .append("rect")
       .attr("width", innerW)
       .attr("height", innerH)
       .attr("fill", "transparent")
-      .style("cursor", "crosshair")
-      .on("mousemove", (event) => {
-        const [mx, my] = d3.pointer(event);
-        let best: ScatterDatum | null = null;
-        let bestDist = Infinity;
-        let bestIndex = 0;
-        for (let i = 0; i < data.length; i++) {
-          const d = data[i]!;
-          const dx = resolveScatterX(d, i, xField, categoryMode, xScale, xPositions) - mx;
-          const dy = yScale(Number(d[yField])) - my;
-          const dist = dx * dx + dy * dy;
-          if (dist < bestDist) {
-            bestDist = dist;
-            best = d;
-            bestIndex = i;
-          }
+      .style("cursor", onPointClick ? "pointer" : "crosshair");
+
+    const findNearestPoint = (mx: number, my: number) => {
+      let best: ScatterDatum | null = null;
+      let bestDist = Infinity;
+      for (let i = 0; i < data.length; i++) {
+        const d = data[i]!;
+        const dx = resolveScatterX(d, i, xField, categoryMode, xScale, xPositions) - mx;
+        const dy = yScale(Number(d[yField])) - my;
+        const dist = dx * dx + dy * dy;
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = d;
         }
-        if (!best || !tooltip) return;
-        const series = colorField ? String(best[colorField] ?? "") : "";
-        const color = colorScale(series || "value") ?? colors[0] ?? theme.accent;
-        showMergedTooltip(
-          tooltip,
-          container,
-          event,
-          series || `${xField} / ${yField}`,
-          [
-            { name: xField, color, value: best[xField] },
-            { name: yField, color, value: best[yField] },
-          ],
-          valueFormat,
-          width,
-        );
-      })
-      .on("mouseleave", () => hideTooltip(tooltip));
+      }
+      return best;
+    };
+
+    if (showTooltip) {
+      overlay
+        .on("mousemove", (event) => {
+          const [mx, my] = d3.pointer(event);
+          const best = findNearestPoint(mx, my);
+          if (!best || !tooltip) return;
+          const series = colorField ? String(best[colorField] ?? "") : "";
+          const color = colorScale(series || "value") ?? colors[0] ?? theme.accent;
+          showMergedTooltip(
+            tooltip,
+            container,
+            event,
+            series || `${xField} / ${yField}`,
+            [
+              { name: xField, color, value: best[xField] },
+              { name: yField, color, value: best[yField] },
+            ],
+            valueFormat,
+            width,
+          );
+        })
+        .on("mouseleave", () => hideTooltip(tooltip));
+    }
+
+    if (onPointClick) {
+      overlay.on("click", (event) => {
+        const [mx, my] = d3.pointer(event);
+        const best = findNearestPoint(mx, my);
+        if (best) onPointClick(best as D3Datum);
+      });
+    }
   }
 
   if (showLabel && !useCanvas) {

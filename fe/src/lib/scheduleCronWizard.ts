@@ -21,7 +21,8 @@ export function cronFromWizard(state: ScheduleWizardState): string {
   if (frequency === "weekly") {
     return `${minute} ${hour} * * ${weekday}`;
   }
-  return `${minute} ${hour} ${dayOfMonth} * *`;
+  const dom = Math.min(28, Math.max(1, dayOfMonth));
+  return `${minute} ${hour} ${dom} * *`;
 }
 
 export function describeCron(cron: string): string {

@@ -81,7 +81,10 @@ def update_me_profile(
     permissions: list[str] | None = None,
     is_root: bool = False,
 ) -> MeProfileOut:
-    user = user_service.get_user(session, user_id)
+    try:
+        user = user_service.get_user(session, user_id)
+    except UserError as exc:
+        raise ProfileError(exc.code, exc.message, exc.status) from exc
     changes: dict[str, str] = {}
     if payload.display_name is not None:
         user.display_name = payload.display_name.strip()
@@ -115,7 +118,10 @@ def change_password(
     current_password: str,
     new_password: str,
 ) -> None:
-    user = user_service.get_user(session, user_id)
+    try:
+        user = user_service.get_user(session, user_id)
+    except UserError as exc:
+        raise ProfileError(exc.code, exc.message, exc.status) from exc
     if not user.password_hash:
         raise ProfileError("AUTH_PASSWORD_NOT_SET", "Password is not configured for this account", 422)
     if not verify_password(current_password, user.password_hash):

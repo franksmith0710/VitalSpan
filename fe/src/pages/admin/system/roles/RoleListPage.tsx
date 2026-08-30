@@ -251,10 +251,19 @@ export function RoleListPage() {
           }),
         });
         if (dashId || reportId) {
-          await apiFetch(`/api/v1/roles/${created.id}/default-views`, {
-            method: "PUT",
-            body: JSON.stringify({ dashboardId: dashId, reportTemplateNodeId: reportId }),
-          });
+          try {
+            await apiFetch(`/api/v1/roles/${created.id}/default-views`, {
+              method: "PUT",
+              body: JSON.stringify({ dashboardId: dashId, reportTemplateNodeId: reportId }),
+            });
+          } catch (err) {
+            try {
+              await apiFetch(`/api/v1/roles/${created.id}`, { method: "DELETE" });
+            } catch {
+              // best-effort rollback
+            }
+            throw err;
+          }
         }
       }
     },

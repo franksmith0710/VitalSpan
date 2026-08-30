@@ -40,7 +40,7 @@ class WorkflowTemplateCreateIn(BaseModel):
 
 class WorkflowTemplateUpdateIn(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
-    name: str | None = None
+    name: str | None = Field(default=None, min_length=1)
     nodes: list[WorkflowNode] | None = None
 
 

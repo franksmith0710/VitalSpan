@@ -55,8 +55,8 @@ class TileServicePatch(BaseModel):
     model_config = ConfigDict(populate_by_name=True, serialize_by_alias=True)
 
     name: str | None = Field(default=None, min_length=1, max_length=120)
-    base_url: str | None = Field(default=None, alias="baseUrl")
-    pmtiles_path: str | None = Field(default=None, alias="pmtilesPath")
+    base_url: str | None = Field(default=None, alias="baseUrl", min_length=1, max_length=512)
+    pmtiles_path: str | None = Field(default=None, alias="pmtilesPath", min_length=1, max_length=512)
     glyphs_url_template: str | None = Field(default=None, alias="glyphsUrlTemplate")
     sprite_url: str | None = Field(default=None, alias="spriteUrl")
     enabled: bool | None = None

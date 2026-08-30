@@ -410,6 +410,7 @@ export async function renderThreeChoroplethChart(
     });
     if (!renderer.getContext()) {
       renderer.dispose();
+      releaseSlot();
       return geo3dFailure(container, "webgl-unavailable");
     }
     renderer.outputColorSpace = THREE.SRGBColorSpace;

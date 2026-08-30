@@ -5,8 +5,14 @@ from typing import Any
 
 from app.datasources.dialects.base import ColumnInfo, SchemaInfo, TableInfo, TestConnectionResult
 from app.datasources.dialects.errors import map_impala_error
+from app.query.rls.guard import validate_identifier
 
 IMPALA_MAX_COLUMNS = 500
+
+
+def _quote_ident(name: str) -> str:
+    validate_identifier(name)
+    return f"`{name}`"
 
 
 class ImpalaConnector:
@@ -70,14 +76,14 @@ class ImpalaConnector:
         if not schema.strip():
             return []
         cur = connection.cursor()
-        cur.execute(f"SHOW TABLES IN {schema}")
+        cur.execute(f"SHOW TABLES IN {_quote_ident(schema)}")
         return [TableInfo(name=row[0], type="TABLE") for row in cur.fetchall() if row]
 
     def list_columns(self, connection: Any, schema: str, table: str) -> list[ColumnInfo]:
         if not schema.strip() or not table.strip():
             return []
         cur = connection.cursor()
-        cur.execute(f"DESCRIBE {schema}.{table}")
+        cur.execute(f"DESCRIBE {_quote_ident(schema)}.{_quote_ident(table)}")
         cols = []
         for row in cur.fetchall():
             if row and row[0] and not str(row[0]).startswith("#"):

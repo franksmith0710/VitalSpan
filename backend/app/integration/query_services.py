@@ -272,7 +272,7 @@ def execute_published_service(
     idempotency_key: str | None = None,
 ) -> QueryServiceExecuteOut:
     _assert_service_invoke(actor)
-    cache_key = f"{service_id}:{idempotency_key}" if idempotency_key else None
+    cache_key = f"{actor.id}:{service_id}:{idempotency_key}" if idempotency_key else None
     if cache_key:
         cached = idempotency_repo.get_cached(db, cache_key)
         if cached is not None:

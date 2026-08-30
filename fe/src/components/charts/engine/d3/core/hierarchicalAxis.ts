@@ -369,7 +369,7 @@ export function drawHierarchicalCategoryAxis(opts: DrawHierarchicalCategoryAxisO
 
     const nextRowIdx = rowIdx + 1;
     if (nextRowIdx < activeLevels.length) {
-      const nextRowY = opts.innerH + (nextRowIdx + 1) * rowHeight - 4;
+      const nextRowY = opts.innerH + categoryBottomAxisTickPadding() + (nextRowIdx + 1) * rowHeight - 4;
       for (const idx of visibleIndices) {
         const category = categories[idx]!;
         const edges = bandEdgePx(opts.xScale, category, bandWidth);

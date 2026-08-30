@@ -188,7 +188,12 @@ def dashboard_availability_smoke(
     simulate_breach: bool = Query(False, alias="simulateBreach"),
     actor: Annotated[UserContext, Depends(get_current_user)] = ...,
 ):
-    reports = probe_core_dashboards_smoke(actor, simulate_breach=simulate_breach)
+    try:
+        reports = probe_core_dashboards_smoke(actor, simulate_breach=simulate_breach)
+    except DashboardSlaError as exc:
+        return _dashboard_sla_error(exc)
+    except DashboardFirstScreenError as exc:
+        return _dashboard_first_screen_error(exc)
     all_ok = all(r.within_sla and r.within_first_screen_budget for r in reports)
     if not all_ok:
         return JSONResponse(

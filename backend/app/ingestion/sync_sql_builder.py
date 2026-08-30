@@ -15,8 +15,15 @@ def qualify_sync_table(dialect: SqlDialect, job: SyncJob) -> str:
     if dt == "sqlite":
         return dialect.quote_identifier(table)
     if dt == "trino":
-        validate_identifier(schema)
-        return f'"{schema}"."default".{dialect.quote_identifier(table)}'
+        catalog, table = resolve_sync_schema_and_table(job)
+        trino_schema = (job.source_schema or "default").strip()
+        validate_identifier(catalog)
+        validate_identifier(trino_schema)
+        return (
+            f"{dialect.quote_identifier(catalog)}."
+            f"{dialect.quote_identifier(trino_schema)}."
+            f"{dialect.quote_identifier(table)}"
+        )
     return dialect.qualify_table(schema, table)
 
 

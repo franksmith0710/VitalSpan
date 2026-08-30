@@ -152,8 +152,14 @@ def _output_payload(config: OutputFieldsConfig) -> dict:
     }
 
 
-def save_output_fields(session: Session, config: OutputFieldsConfig, owner_id: uuid.UUID | None = None):
-    validate_output_fields_config(session, config)
+def save_output_fields(
+    session: Session,
+    config: OutputFieldsConfig,
+    owner_id: uuid.UUID | None = None,
+    *,
+    dataset_id: uuid.UUID | None = None,
+):
+    validate_output_fields_config(session, config, dataset_id=dataset_id)
     record = config_store.upsert_config(
         session,
         ConfigUpsert(

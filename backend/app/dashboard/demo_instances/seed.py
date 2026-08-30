@@ -99,6 +99,8 @@ def _find_existing_demo_row(db: Session, spec: dict[str, Any]) -> Dashboard | No
 def seed_demo_instances(db: Session) -> int:
     """幂等 upsert 官方演示实例；sample_db 或模板缺失时跳过。"""
     demo_ds = resolve_sample_db_datasource_id(db)
+    if demo_ds is None:
+        return 0
     upserted = 0
     for spec in DEMO_INSTANCE_SPECS:
         template = db.scalar(
