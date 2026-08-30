@@ -14,6 +14,7 @@ from app.datasources.models import DataSource
 from app.datasources.pool import pool_manager
 from app.datasources.registry import ConnectorNotFoundError, registry
 from app.datasources.service import _resolve_connection_options
+from app.query.capabilities import is_native_sql_routed
 from app.query.dialects import get_sql_dialect
 from app.query.readonly import assert_readonly_sql
 from app.query.rls.guard import apply_rls_to_sql
@@ -115,21 +116,73 @@ class QueryExecutor:
         }
         return connector, kwargs, opts.pool_size
 
+    def _run_native_sql(
+        self,
+        row: DataSource,
+        connector: Any,
+        kwargs: dict,
+        pool_size: int,
+        sql: str,
+        *,
+        limit: int,
+        offset: int,
+        skip_wrap_limit: bool,
+    ) -> QueryResult:
+        dialect = get_sql_dialect(row.type)
+        final_sql = sql if skip_wrap_limit else dialect.wrap_limit(
+            sql, limit=limit, offset=offset,
+        )
+        with pool_manager.pooled_connection(
+            row.id, connector=connector, connect_kwargs=kwargs, pool_size=pool_size,
+        ) as conn:
+            columns, rows, truncated = connector.execute_native_query(
+                conn,
+                body={"sql": final_sql},
+                limit=limit,
+                offset=offset,
+            )
+        serialized = [[_serialize_cell(c) for c in r] for r in rows]
+        return QueryResult(
+            columns=columns,
+            rows=serialized,
+            row_count=len(serialized),
+            truncated=truncated,
+        )
+
     def _run(
         self, session: Session, user: UserContext, data_source_id: uuid.UUID, sql: str, *,
         limit: int, offset: int, rls_config: dict | None, apply_rls: bool,
         skip_wrap_limit: bool = False, parameters: dict[str, object] | None = None,
     ) -> QueryResult:
         row = self._load_row(session, data_source_id)
-        dialect = get_sql_dialect(row.type)
         assert_readonly_sql(sql)
+        connector, kwargs, pool_size = self._connector_kwargs(row)
         scoped_sql = sql
         if apply_rls:
             scoped_sql = apply_rls_to_sql(session, user, scoped_sql, rls_config=rls_config)
+        if is_native_sql_routed(row.type):
+            try:
+                return self._run_native_sql(
+                    row,
+                    connector,
+                    kwargs,
+                    pool_size,
+                    scoped_sql,
+                    limit=limit,
+                    offset=offset,
+                    skip_wrap_limit=skip_wrap_limit,
+                )
+            except QueryError:
+                raise
+            except Exception as exc:
+                msg = str(exc)
+                if "connection" in msg.lower() or "refused" in msg.lower():
+                    raise QueryError("QUERY_CONNECTION_FAILED", msg, 502) from exc
+                raise _map_execution_error(exc) from exc
+        dialect = get_sql_dialect(row.type)
         final_sql = scoped_sql if skip_wrap_limit else dialect.wrap_limit(
             scoped_sql, limit=limit, offset=offset,
         )
-        connector, kwargs, pool_size = self._connector_kwargs(row)
         try:
             with pool_manager.pooled_connection(
                 data_source_id, connector=connector, connect_kwargs=kwargs, pool_size=pool_size,

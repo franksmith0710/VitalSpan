@@ -8,6 +8,7 @@ from app.query.dialects.hive import HiveDialect
 from app.query.dialects.mysql import MySqlDialect
 from app.query.dialects.oracle import OracleDialect
 from app.query.dialects.postgres import PostgresDialect
+from app.query.dialects.roapi import RoapiDialect
 from app.query.dialects.sqlite import SqliteDialect
 from app.query.dialects.sqlserver import SqlServerDialect
 from app.query.dialects.tdengine import TdengineDialect
@@ -24,6 +25,7 @@ _REGISTRY: dict[str, SqlDialect] = {
     "trino": TrinoDialect(),
     "db2": Db2Dialect(),
     "tdengine": TdengineDialect(),
+    "roapi": RoapiDialect(),
 }
 
 
@@ -48,5 +50,6 @@ __all__ = [
     "TrinoDialect",
     "Db2Dialect",
     "TdengineDialect",
+    "RoapiDialect",
     "get_sql_dialect",
 ]

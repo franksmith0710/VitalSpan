@@ -338,6 +338,28 @@ export function buildGisLayersStyleKey(entries: GisLayerRuntimeEntry[]): string 
   );
 }
 
+/** 仅图层拓扑/源结构；散点颜色/半径等走 syncGisProjectLayerStyle，避免 setStyle 漂移视角。 */
+export function buildGisLayersStructuralKey(entries: GisLayerRuntimeEntry[]): string {
+  return JSON.stringify(
+    entries.map((entry) => {
+      const resolved = resolveGisOverlayStyle(entry.layer.style, entry.options.chartColors);
+      return {
+        id: entry.layer.id,
+        kind: entry.layer.kind,
+        flavor: entry.options.flavor,
+        visible: entry.layer.visible !== false,
+        cluster: resolved.cluster,
+        ...(resolved.cluster
+          ? { clusterMaxZoom: resolved.clusterMaxZoom, clusterRadius: resolved.clusterRadius }
+          : {}),
+        ...(entry.layer.kind === "heatmap"
+          ? { heatmapCrossfadeZoom: resolved.heatmapCrossfadeZoom }
+          : {}),
+      };
+    }),
+  );
+}
+
 export function gisScatterInteractionLayerIds(layerId: string, cluster: boolean): string[] {
   const prefix = `vs-gis-layer-${layerId}`;
   return cluster

@@ -282,6 +282,9 @@ export function MediaWidgetStylePanel({
           />
           <DeAttrField label="留白底色" compact className="border-b-0">
             <ColorField
+              variant="swatch"
+              showLabel={false}
+              showHintTooltip={false}
               compact
               allowClear
               swatches={SURFACE_COLOR_RECOMMENDED}

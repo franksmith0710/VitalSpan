@@ -71,6 +71,9 @@ export function DashboardCanvasBackgroundPanel({
     <DeAttrForm>
       <DeAttrField label="画布底色">
         <ColorField
+          variant="swatch"
+          showLabel={false}
+          showHintTooltip={false}
           compact
           value={styleConfig.canvasBackground ?? ""}
           swatches={CANVAS_BG_RECOMMENDED}
@@ -168,6 +171,9 @@ export function DashboardCanvasBackgroundPanel({
 
       <DeAttrField label="弹框背景">
         <ColorField
+          variant="swatch"
+          showLabel={false}
+          showHintTooltip={false}
           compact
           swatches={SURFACE_COLOR_RECOMMENDED}
           value={styleConfig.dialogStyle?.background ?? ""}
@@ -178,6 +184,9 @@ export function DashboardCanvasBackgroundPanel({
       </DeAttrField>
       <DeAttrField label="弹框字体">
         <ColorField
+          variant="swatch"
+          showLabel={false}
+          showHintTooltip={false}
           compact
           swatches={TEXT_COLOR_RECOMMENDED}
           value={styleConfig.dialogStyle?.fontColor ?? ""}

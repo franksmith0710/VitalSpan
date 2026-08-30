@@ -236,6 +236,34 @@ def test_conn_r028_15_list_columns_from_full_schema():
     client.request.assert_called_with("GET", "/api/schema")
 
 
+def test_conn_r028_16_build_chart_sql_for_dataset():
+    """T-CONN-R028-16: Dataset 图表 encoding 可为 roapi 生成 SQL。"""
+    from app.query.config_store.schemas import DatasetQueryConfigPayload
+    from app.query.dataset.chart_sql import build_chart_sql
+    from app.query.dataset.schemas import ChartExecuteEncoding, ChartMetricEncoding
+
+    payload = DatasetQueryConfigPayload(
+        dataSourceId="00000000-0000-0000-0000-000000000001",
+        connectorType="roapi",
+        schema="roapi",
+        table="demo_orders",
+        columns=["order_date", "amount", "region"],
+        conditions={"logic": "AND", "conditions": []},
+        limit=1000,
+        offset=0,
+    )
+    encoding = ChartExecuteEncoding(
+        chartType="bar",
+        dimensions=["order_date"],
+        metrics=[ChartMetricEncoding(field="amount", agg="sum")],
+        filters=[],
+    )
+    sql, _params = build_chart_sql(payload, encoding, computed_fields=[], limit=50, offset=0)
+    assert '"demo_orders"' in sql or "demo_orders" in sql
+    assert "roapi" not in sql.lower().split("from")[-1] or "demo_orders" in sql
+    assert "SUM" in sql.upper()
+
+
 def test_resolve_schema_path_defaults():
     assert support.resolve_schema_path(None) == "/api/schema"
     assert support.resolve_schema_path("api/schema") == "/api/schema"

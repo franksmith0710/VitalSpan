@@ -63,6 +63,14 @@ def is_query_capable(connector_type: str) -> bool:
     return is_sql_query_capable(connector_type) or is_native_query_capable(connector_type)
 
 
+# Native 连接器：图表/Dataset 生成的只读 SQL 经 execute_native_query(body.sql) 下发
+NATIVE_SQL_ROUTED = frozenset({"roapi"})
+
+
+def is_native_sql_routed(connector_type: str) -> bool:
+    return connector_type in NATIVE_SQL_ROUTED
+
+
 def resolve_query_mode_for_connector(connector_type: str) -> str | None:
     if is_native_query_capable(connector_type):
         return "native"

@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { type ReactNode } from "react";
+import { ChevronRight } from "lucide-react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -12,11 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { ColorSwatch } from "@/components/ui/color-field";
-import { ColorPickerPanel } from "@/components/ui/color-picker-panel";
-import { ColorSwatchChip } from "@/components/ui/color-swatch-chip";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { normalizeHexColor } from "@/components/ui/color-utils";
+import { ColorField, type ColorSwatch } from "@/components/ui/color-field";
 import { Switch } from "@/components/ui/switch";
 import { INSPECTOR_SWITCH_SIZE } from "./inspectorCompact";
 import { resolveChartColors } from "@/lib/chartPalette";
@@ -78,107 +74,31 @@ export function ChartPaletteSwatchStrip({
   );
 }
 
-/** 自定义配色栅格：对标 DE color-item（20×20 外框 + 14×14 色块） */
+/** 自定义配色栅格：pill 取色器（棋盘格色块 + 下拉箭头） */
 export function ChartPaletteColorSwatch({
   value,
   onChange,
   "aria-label": ariaLabel,
+  className,
 }: {
   value: string;
   onChange: (value: string) => void;
   "aria-label": string;
+  className?: string;
 }) {
-  const [open, setOpen] = useState(false);
-  const [local, setLocal] = useState(value);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (open || timerRef.current != null) return;
-    setLocal(value);
-  }, [value, open]);
-
-  useEffect(
-    () => () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    },
-    [],
-  );
-
-  const commit = (next: string) => {
-    const normalized = normalizeHexColor(next) ?? next;
-    setLocal(normalized);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      timerRef.current = null;
-      onChange(normalized);
-    }, 120);
-  };
-
-  const flushCommit = () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    const normalized = normalizeHexColor(local) ?? local;
-    onChange(normalized);
-  };
-
-  const handleOpenChange = useCallback((next: boolean) => {
-    if (!next) flushCommit();
-    setOpen(next);
-  }, [local, onChange]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (triggerRef.current?.contains(target)) return;
-      if (contentRef.current?.contains(target)) return;
-      handleOpenChange(false);
-    };
-    document.addEventListener("pointerdown", onPointerDown, true);
-    return () => document.removeEventListener("pointerdown", onPointerDown, true);
-  }, [open, handleOpenChange]);
-
-  const display = local || value;
-
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <button
-          ref={triggerRef}
-          type="button"
-          aria-label={ariaLabel}
-          aria-expanded={open}
-          onMouseDown={(event) => event.preventDefault()}
-          className={cn(
-            "size-5 shrink-0 rounded-[3px] border border-transparent p-0.5",
-            "transition-colors hover:border-brand-500/60",
-            "focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
-            open && "border-brand-500",
-          )}
-        >
-          <span
-            className="block size-3.5 rounded-[1px]"
-            style={{ backgroundColor: display }}
-          />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        ref={contentRef}
-        className="w-64 p-2"
-        align="start"
-        sideOffset={4}
-        onOpenAutoFocus={(event) => event.preventDefault()}
-        onCloseAutoFocus={(event) => event.preventDefault()}
-        onPointerDownOutside={(event) => event.preventDefault()}
-        onFocusOutside={(event) => event.preventDefault()}
-      >
-        <ColorPickerPanel value={display} onChange={commit} />
-      </PopoverContent>
-    </Popover>
+    <ColorField
+      variant="swatch"
+      showLabel={false}
+      showHintTooltip={false}
+      allowClear={false}
+      value={value}
+      buttonAriaLabel={ariaLabel}
+      className={className}
+      onChange={(next) => {
+        if (next) onChange(next);
+      }}
+    />
   );
 }
 
@@ -345,189 +265,25 @@ type ChartTableColorGridCellProps = {
   onChange: (value: string | undefined) => void;
 };
 
-function normalizeTableColorSwatches(
-  swatches: readonly ColorSwatch[] | readonly string[] | undefined,
-): ColorSwatch[] {
-  if (!swatches || swatches.length === 0) return [];
-  if (typeof swatches[0] === "string") {
-    return (swatches as readonly string[]).map((color) => ({ color, label: color }));
-  }
-  return swatches as ColorSwatch[];
-}
-
-/** DE 表格配色：紧凑色块 + Hex/默认 + 标签，两列栅格单元 */
+/** DE 表格配色：pill 取色器 + 底部标签，两列栅格单元 */
 export function ChartTableColorGridCell({
   label,
   value,
   swatches,
   onChange,
 }: ChartTableColorGridCellProps) {
-  const items = normalizeTableColorSwatches(swatches);
-  const [open, setOpen] = useState(false);
-  const [localValue, setLocalValue] = useState(value);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (open || timerRef.current != null) return;
-    setLocalValue(value);
-  }, [value, open]);
-
-  useEffect(
-    () => () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    },
-    [],
-  );
-
-  const commitValue = (raw: string) => {
-    const trimmed = raw.trim();
-    const resolved = trimmed ? normalizeHexColor(trimmed) ?? undefined : undefined;
-    if (trimmed && !resolved) return;
-    onChange(resolved);
-  };
-
-  const scheduleCommit = (raw: string) => {
-    const trimmed = raw.trim();
-    const resolved = trimmed ? normalizeHexColor(trimmed) ?? undefined : undefined;
-    if (trimmed && !resolved) return;
-    setLocalValue(trimmed ? resolved ?? "" : "");
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      timerRef.current = null;
-      onChange(resolved);
-    }, 120);
-  };
-
-  const flushPendingCommit = () => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
-    }
-    const trimmed = localValue.trim();
-    const resolved = trimmed ? normalizeHexColor(trimmed) ?? undefined : undefined;
-    if (trimmed && !resolved) return;
-    onChange(resolved);
-  };
-
-  const handleOpenChange = useCallback((next: boolean) => {
-    if (!next) flushPendingCommit();
-    setOpen(next);
-  }, [localValue, onChange]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as Node;
-      if (triggerRef.current?.contains(target)) return;
-      if (contentRef.current?.contains(target)) return;
-      handleOpenChange(false);
-    };
-    document.addEventListener("pointerdown", onPointerDown, true);
-    return () => document.removeEventListener("pointerdown", onPointerDown, true);
-  }, [open, handleOpenChange]);
-
-  const displayHex = normalizeHexColor(localValue) ?? localValue;
-  const swatchTitle = displayHex
-    ? `${label} · ${displayHex.toUpperCase()}`
-    : `${label} · 默认`;
-
   return (
     <div className="min-w-0">
-      <Popover open={open} onOpenChange={handleOpenChange}>
-        <PopoverTrigger asChild>
-          <button
-            ref={triggerRef}
-            type="button"
-            aria-label={`${label}取色器`}
-            aria-expanded={open}
-            title={swatchTitle}
-            onMouseDown={(event) => event.preventDefault()}
-            className={cn(
-              "flex h-7 w-full min-w-0 items-center gap-1.5 rounded-md border bg-white px-1.5 text-left shadow-theme-xs transition-[border-color,box-shadow] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30 dark:bg-white/[0.03]",
-              open
-                ? "border-brand-300 ring-2 ring-brand-500/20 dark:border-brand-500/50"
-                : "border-gray-200 hover:border-gray-300 dark:border-gray-700 dark:hover:border-gray-600",
-            )}
-          >
-            <ColorSwatchChip color={displayHex || undefined} size="sm" />
-            <span
-              className={cn(
-                "min-w-0 flex-1 truncate text-[10px] leading-none",
-                displayHex
-                  ? "font-mono uppercase tracking-wide text-gray-700 dark:text-gray-200"
-                  : "text-gray-400 dark:text-gray-500",
-              )}
-            >
-              {displayHex ? displayHex.toUpperCase() : "默认"}
-            </span>
-            <ChevronDown
-              className={cn(
-                "size-3 shrink-0 text-gray-400 transition-transform dark:text-gray-500",
-                open && "rotate-180 text-brand-500 dark:text-brand-400",
-              )}
-              aria-hidden
-            />
-          </button>
-        </PopoverTrigger>
-        <PopoverContent
-          ref={contentRef}
-          align="start"
-          sideOffset={6}
-          collisionPadding={12}
-          onOpenAutoFocus={(event) => event.preventDefault()}
-          onCloseAutoFocus={(event) => event.preventDefault()}
-          onPointerDownOutside={(event) => event.preventDefault()}
-          onFocusOutside={(event) => event.preventDefault()}
-          className="w-[228px] max-h-[min(70vh,24rem)] overflow-y-auto overscroll-contain p-2.5"
-        >
-          <p className="mb-2 text-[10px] font-medium text-gray-500 dark:text-gray-400">{label}</p>
-          <ColorPickerPanel value={localValue} onChange={scheduleCommit} />
-          {items.length > 0 ? (
-            <div className="mt-2 border-t border-gray-100 pt-2 dark:border-gray-800">
-              <p className="mb-1.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">推荐</p>
-              <div className="grid grid-cols-6 gap-1" role="listbox" aria-label={`${label}推荐色`}>
-                {items.map((item) => {
-                  const selected = normalizeHexColor(localValue) === normalizeHexColor(item.color);
-                  return (
-                    <button
-                      key={item.color}
-                      type="button"
-                      role="option"
-                      aria-selected={selected}
-                      aria-label={item.label}
-                      title={item.label}
-                      className={cn(
-                        "flex size-7 items-center justify-center rounded-md transition-colors",
-                        "hover:bg-gray-50 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-brand-500/30",
-                        "dark:hover:bg-white/5",
-                        selected &&
-                          "bg-brand-50/80 ring-1 ring-inset ring-brand-500/50 dark:bg-brand-500/10",
-                      )}
-                      onClick={() => scheduleCommit(item.color)}
-                    >
-                      <ColorSwatchChip color={item.color} size="sm" selected={selected} />
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ) : null}
-          {displayHex ? (
-            <button
-              type="button"
-              className="mt-2 w-full rounded-md border border-gray-200 px-2 py-1.5 text-[11px] text-gray-600 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-white/5"
-              onClick={() => {
-                setLocalValue("");
-                commitValue("");
-              }}
-            >
-              清除颜色
-            </button>
-          ) : null}
-        </PopoverContent>
-      </Popover>
+      <ColorField
+        variant="swatch"
+        showLabel={false}
+        showHintTooltip={false}
+        allowClear
+        value={value}
+        swatches={swatches}
+        buttonAriaLabel={`${label}取色器`}
+        onChange={onChange}
+      />
       <p className="mt-0.5 truncate text-[10px] leading-tight text-gray-500 dark:text-gray-400">
         {label}
       </p>

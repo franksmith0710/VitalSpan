@@ -9,7 +9,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useChartInspector } from "@/components/dashboard/chartInspectorContext";
-import { ChartPaletteColorSwatch } from "@/components/dashboard/chartPaletteShared";
 import { InspectorSliderField } from "@/components/dashboard/deAttrSlider";
 import { defaultBasemapPaletteForFlavor } from "@/components/charts/engine/maplibre/gisBasemapPalette";
 import {
@@ -17,6 +16,7 @@ import {
   INSPECTOR_CTRL,
   INSPECTOR_SECTION_GAP,
   InspectorFieldLabel,
+  InspectorInlineColorRow,
   InspectorSwitchRow,
 } from "@/components/dashboard/inspectorCompact";
 import {
@@ -312,27 +312,19 @@ export function ChartGisMapProjectPanel() {
             </Select>
           </div>
 
-          <div className="grid gap-2">
-            <div className="flex min-w-0 items-center gap-2">
-              <ChartPaletteColorSwatch
-                value={project.landColor ?? flavorPalette.landColor}
-                aria-label="陆地颜色"
-                onChange={(landColor) => patchProject({ landColor })}
-              />
-              <InspectorFieldLabel
-                label="陆地底色"
-                hint="覆写 earth 与陆地细节；关闭「陆地细节」时仅保留纯色底。"
-              />
-            </div>
-            <div className="flex min-w-0 items-center gap-2">
-              <ChartPaletteColorSwatch
-                value={project.waterColor ?? flavorPalette.waterColor}
-                aria-label="海洋颜色"
-                onChange={(waterColor) => patchProject({ waterColor })}
-              />
-              <InspectorFieldLabel label="海洋颜色" />
-            </div>
-          </div>
+          <InspectorInlineColorRow
+            label="陆地底色"
+            hint="覆写 earth 与陆地细节；关闭「陆地细节」时仅保留纯色底。"
+            value={project.landColor ?? ""}
+            fallbackValue={flavorPalette.landColor}
+            onChange={(landColor) => patchProject({ landColor })}
+          />
+          <InspectorInlineColorRow
+            label="海洋颜色"
+            value={project.waterColor ?? ""}
+            fallbackValue={flavorPalette.waterColor}
+            onChange={(waterColor) => patchProject({ waterColor })}
+          />
           {project.landColor || project.waterColor ? (
             <button
               type="button"

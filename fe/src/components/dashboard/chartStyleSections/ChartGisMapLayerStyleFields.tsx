@@ -1,9 +1,9 @@
-import { ChartPaletteColorSwatch } from "@/components/dashboard/chartPaletteShared";
 import { InspectorSliderField } from "@/components/dashboard/deAttrSlider";
 import {
   INSPECTOR_CTRL,
   INSPECTOR_SECTION_GAP,
   InspectorFieldLabel,
+  InspectorInlineColorRow,
   InspectorSwitchRow,
 } from "@/components/dashboard/inspectorCompact";
 import type { GisProjectOverlay } from "@/components/charts/engine/maplibre/gisProject";
@@ -23,24 +23,21 @@ export function ChartGisMapLayerStyleFields({
   return (
     <div className={INSPECTOR_SECTION_GAP}>
       {kind === "scatter" ? (
-        <div className="grid gap-2">
-          <div className="flex min-w-0 items-center gap-2">
-            <ChartPaletteColorSwatch
-              value={resolved.color}
-              aria-label="散点颜色"
-              onChange={(color) => onPatch({ color })}
-            />
-            <InspectorFieldLabel label="散点颜色" hint="默认取图表配色首色" />
-          </div>
-          <div className="flex min-w-0 items-center gap-2">
-            <ChartPaletteColorSwatch
-              value={resolved.strokeColor}
-              aria-label="描边颜色"
-              onChange={(strokeColor) => onPatch({ strokeColor })}
-            />
-            <InspectorFieldLabel label="描边颜色" />
-          </div>
-        </div>
+        <>
+          <InspectorInlineColorRow
+            label="散点颜色"
+            hint="默认取图表配色首色"
+            value={resolved.color}
+            allowClear={false}
+            onChange={(color) => color && onPatch({ color })}
+          />
+          <InspectorInlineColorRow
+            label="描边颜色"
+            value={resolved.strokeColor}
+            allowClear={false}
+            onChange={(strokeColor) => strokeColor && onPatch({ strokeColor })}
+          />
+        </>
       ) : (
         <div className="grid gap-1.5">
           <InspectorFieldLabel label="热力色带" hint="Ember 暖色柔光；Night 冷色；Scientific 跟随图表配色" />

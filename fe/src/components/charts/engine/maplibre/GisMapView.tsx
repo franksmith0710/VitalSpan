@@ -15,6 +15,7 @@ import { applyBasemapRuntimePatch } from "@/components/charts/engine/maplibre/gi
 import { buildPmtilesStyle } from "@/components/charts/engine/maplibre/gisMapStyle";
 import {
   appendGisProjectLayersToStyle,
+  buildGisLayersStructuralKey,
   buildGisLayersStyleKey,
   gisScatterInteractionLayerIds,
   syncGisProjectLayers,
@@ -283,6 +284,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const layerEntriesRef = useRef(layerEntries);
   layerEntriesRef.current = layerEntries;
   const layersStyleKey = useMemo(() => buildGisLayersStyleKey(layerEntries), [layerEntries]);
+  const layersStructuralKey = useMemo(
+    () => buildGisLayersStructuralKey(layerEntries),
+    [layerEntries],
+  );
 
   const syncLayersRuntime = useCallback((map: MapLibreMap) => {
     syncGisProjectLayers(map, layerEntriesRef.current);
@@ -302,8 +307,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     } else if (!layerEntriesRef.current.some((entry) => entry.geoJson)) {
       overlayFitKeyRef.current = null;
     }
-    ensureSunEngine(map);
-  }, [ensureSunEngine]);
+  }, []);
 
   const mapStyleKey = useMemo(
     () =>
@@ -314,11 +318,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         landColor: project.landColor,
         waterColor: project.waterColor,
         projection: project.projection,
-        layersStyleKey,
+        layersStructuralKey,
       }),
     [
       flavor,
-      layersStyleKey,
+      layersStructuralKey,
       project.labelLang,
       project.landColor,
       project.projection,
@@ -653,7 +657,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       effectsEngineRef.current?.destroy();
       effectsEngineRef.current = null;
     };
-  }, [effectsSettings.enabled, ensureSunEngine, gisPaintState, mapRuntimeEpoch, project.projection, renderBasemap, styleKey]);
+  }, [atmosphereKey, effectsSettings.enabled, ensureSunEngine, gisPaintState, mapRuntimeEpoch, project.projection, renderBasemap]);
 
   useEffect(() => {
     applyGisGeolibreEffectsSettings(effectsEngineRef.current, effectsSettings);
