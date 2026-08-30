@@ -69,7 +69,7 @@ describe("ChartMountScheduler", () => {
     expect(scheduler.getGate("ready")).toEqual({ canQuery: false, canRender: false });
   });
 
-  it("allows selected widget query during interaction freeze", () => {
+  it("keeps in-view ready peers querying during interaction freeze", () => {
     const scheduler = new ChartMountScheduler(2);
     scheduler.register("selected", 0, true);
     scheduler.register("peer", 1, true);
@@ -77,7 +77,7 @@ describe("ChartMountScheduler", () => {
     scheduler.markReady("peer");
     const release = scheduler.acquireInteractionFreeze();
     expect(scheduler.getGate("selected")).toEqual({ canQuery: true, canRender: true });
-    expect(scheduler.getGate("peer")).toEqual({ canQuery: false, canRender: true });
+    expect(scheduler.getGate("peer")).toEqual({ canQuery: true, canRender: true });
     release();
     expect(scheduler.getGate("peer")).toEqual({ canQuery: true, canRender: true });
   });

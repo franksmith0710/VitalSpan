@@ -12,6 +12,7 @@ import {
   placeClonedPixelWidget,
 } from "./createPixelWidget";
 import { layoutsOverlap } from "./collisionLayout";
+import { PIXEL_LAYOUT_GEOMETRY_COMMITTED } from "./pixelShapeLiveResize";
 import { usePixelLayoutHistory } from "./usePixelLayoutHistory";
 
 const widget: PixelLayoutWidget = {
@@ -729,6 +730,67 @@ describe("PixelCanvas", () => {
 
     expect(onChange).toHaveBeenCalledTimes(1);
     expect(onChange.mock.calls[0][0].widgets[0]).toMatchObject({ x: 200, y: 130 });
+  });
+
+  it("does not broadcast geometry committed on move-only commit", async () => {
+    const committed = vi.fn();
+    document.addEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, committed);
+    await renderCanvas("edit");
+    fireEvent.pointerDown(screen.getByLabelText("拖动组件"), {
+      pointerId: 21,
+      clientX: 10,
+      clientY: 10,
+      button: 0,
+    });
+    fireEvent.pointerMove(screen.getByTestId("pixel-shape-w1"), {
+      pointerId: 21,
+      clientX: 110,
+      clientY: 60,
+    });
+    fireEvent.pointerUp(screen.getByTestId("pixel-shape-w1"), {
+      pointerId: 21,
+      clientX: 110,
+      clientY: 60,
+    });
+    await act(async () => {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    });
+    document.removeEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, committed);
+    expect(committed).not.toHaveBeenCalled();
+  });
+
+  it("broadcasts geometry committed only for the resized widget", async () => {
+    const committed = vi.fn();
+    document.addEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, committed);
+    await renderCanvas("edit");
+    const handle = screen.getByTestId("pixel-resize-se");
+    fireEvent.pointerDown(handle, {
+      pointerId: 22,
+      clientX: 400,
+      clientY: 280,
+      button: 0,
+    });
+    fireEvent.pointerMove(document, {
+      pointerId: 22,
+      clientX: 460,
+      clientY: 320,
+    });
+    fireEvent.pointerUp(document, {
+      pointerId: 22,
+      clientX: 460,
+      clientY: 320,
+    });
+    await act(async () => {
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    });
+    document.removeEventListener(PIXEL_LAYOUT_GEOMETRY_COMMITTED, committed);
+    expect(committed).toHaveBeenCalledTimes(1);
+    const detail = (committed.mock.calls[0][0] as CustomEvent).detail as {
+      widgetIds?: string[];
+    };
+    expect(detail.widgetIds).toEqual(["w1"]);
   });
 
   it("clamps move to canvas bounds on document pointerup", async () => {

@@ -96,7 +96,8 @@ export class ChartMountScheduler {
     }
     if (this.interactionFrozen && entry.state === "ready") {
       return {
-        canQuery: entry.priority === 0,
+        // 已就绪图表保持查数开关，避免松手时 queryEnabled 翻转触发整图重绘闪一下
+        canQuery: entry.inView,
         canRender: true,
       };
     }

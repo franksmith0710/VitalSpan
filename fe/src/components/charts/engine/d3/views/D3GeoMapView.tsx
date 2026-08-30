@@ -32,7 +32,6 @@ import { useElementSize } from "@/hooks/useElementSize";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import { useGeoMapLevel, isGeoMapLevelReady } from "@/hooks/useGeoMapLevel";
 import { useChartVisualScale } from "@/hooks/useChartVisualScale";
-import { useDataScreenViewportTransforming } from "@/components/dashboard/screen/dataScreenVisualScaleContext";
 import { capChartPaintSize } from "@/lib/dashboardEditChartPerf";
 import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
 import { readChartDeStyle, readChartGeoStyle, readChartGeo3dStyle } from "@/lib/chartDeStyle";
@@ -161,7 +160,6 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const playingRef = useRef(playing);
   playingRef.current = playing;
   const visualScale = useChartVisualScale();
-  const viewportTransforming = useDataScreenViewportTransforming();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastMeasureRef = useRef({ width: 0, height: 0 });
   const liveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -609,7 +607,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   ]);
 
   useEffect(() => {
-    measureAndRenderRef.current("commit", true);
+    measureAndRenderRef.current("commit", false);
   }, [paintMaxEdge]);
 
   useEffect(() => {
@@ -649,11 +647,6 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     if (!props.layoutFootprint || playingRef.current) return;
     onCommitResizeRef.current();
   }, [props.layoutFootprint?.width, props.layoutFootprint?.height]);
-
-  useEffect(() => {
-    if (!fill || plan.empty || playingRef.current || viewportTransforming) return;
-    onCommitResizeRef.current();
-  }, [visualScale, fill, plan.empty, viewportTransforming]);
 
   useEffect(() => {
     renderGenRef.current += 1;

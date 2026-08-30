@@ -1,4 +1,4 @@
-import { render, waitFor } from "@testing-library/react";
+import { act, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { D3CanvasView } from "@/components/charts/engine/d3/views/D3CanvasView";
 import * as d3RendererSession from "@/components/charts/engine/d3/core/d3RendererSession";
@@ -20,10 +20,6 @@ vi.mock("@/hooks/useEmbeddedChartLiveResize", () => ({
 
 vi.mock("@/hooks/useChartVisualScale", () => ({
   useChartVisualScale: () => 1,
-}));
-
-vi.mock("@/components/dashboard/screen/dataScreenVisualScaleContext", () => ({
-  useDataScreenViewportTransforming: () => false,
 }));
 
 vi.mock("@/components/dashboard/pixelCanvas/pixelShapePlayerContext", () => ({
@@ -102,5 +98,28 @@ describe("D3CanvasView", () => {
     );
 
     await waitFor(() => expect(runSpy.mock.calls.length).toBeGreaterThan(initialCalls));
+  });
+
+  it("does not force-repaint when paintMaxEdge changes but capped size is unchanged", async () => {
+    const props = buildPieProps();
+    const { rerender } = render(
+      <D3CanvasView {...props} fill layoutFootprint={{ width: 320, height: 240 }} paintMaxEdge={720} />,
+    );
+    await waitFor(() => expect(runSpy).toHaveBeenCalled());
+    const afterMount = runSpy.mock.calls.length;
+
+    rerender(
+      <D3CanvasView
+        {...props}
+        fill
+        layoutFootprint={{ width: 320, height: 240 }}
+        paintMaxEdge={undefined}
+      />,
+    );
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(runSpy.mock.calls.length).toBe(afterMount);
   });
 });

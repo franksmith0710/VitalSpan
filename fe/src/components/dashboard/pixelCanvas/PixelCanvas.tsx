@@ -737,7 +737,7 @@ export function PixelCanvas({
         syncShapeGeometryFromLayout(absorbed);
         endCollisionPreview();
         setPlayingWidgetId(null);
-        refreshCanvasMetrics();
+        if (changedIds.length > 0) refreshCanvasMetrics();
         notifyGeometryCommitted(changedIds);
         onSelect?.(absorbHost?.id ?? boundedWidget.id, false);
         return;
@@ -761,7 +761,7 @@ export function PixelCanvas({
       clearPreviewChrome(nextLayout);
       syncShapeGeometryFromLayout(nextLayout);
       setPlayingWidgetId(null);
-      refreshCanvasMetrics();
+      if (changedIds.length > 0) refreshCanvasMetrics();
       notifyGeometryCommitted(changedIds);
     },
     [
@@ -789,13 +789,11 @@ export function PixelCanvas({
     clearPreviewChrome();
     syncShapeGeometryFromLayout(activeLayout);
     setPlayingWidgetId(null);
-    refreshCanvasMetrics();
-    // 取消路径未发生宽高变化，勿广播补测
+    // 取消路径未发生宽高变化，勿广播补测、勿刷新度量（避免 RO 旁路闪一下）
   }, [
     activeLayout,
     clearPreviewChrome,
     endCollisionPreview,
-    refreshCanvasMetrics,
     syncShapeGeometryFromLayout,
   ]);
 

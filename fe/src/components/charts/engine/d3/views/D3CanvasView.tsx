@@ -24,7 +24,6 @@ import { usePixelShapePlayer } from "@/components/dashboard/pixelCanvas/pixelSha
 import { useElementSize } from "@/hooks/useElementSize";
 import { useEmbeddedChartLiveResize } from "@/hooks/useEmbeddedChartLiveResize";
 import { useChartVisualScale } from "@/hooks/useChartVisualScale";
-import { useDataScreenViewportTransforming } from "@/components/dashboard/screen/dataScreenVisualScaleContext";
 import { capChartPaintSize } from "@/lib/dashboardEditChartPerf";
 import { cn } from "@/lib/utils";
 
@@ -62,7 +61,6 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
   const playingRef = useRef(playing);
   playingRef.current = playing;
   const visualScale = useChartVisualScale();
-  const viewportTransforming = useDataScreenViewportTransforming();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const lastMeasureRef = useRef({ width: 0, height: 0 });
   const liveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -206,18 +204,14 @@ function D3CanvasViewInner(props: ChartEngineViewProps) {
   }, [contentKey]);
 
   useEffect(() => {
-    measureAndRenderRef.current("commit", true);
+    // 选区切换只改绘制上限；尺寸 cap 后无差则跳过，避免未缩放组件闪一下
+    measureAndRenderRef.current("commit", false);
   }, [paintMaxEdge]);
 
   useEffect(() => {
     if (!props.layoutFootprint || playingRef.current) return;
     onCommitResizeRef.current();
   }, [props.layoutFootprint?.width, props.layoutFootprint?.height]);
-
-  useEffect(() => {
-    if (!fill || plan.empty || playingRef.current || viewportTransforming) return;
-    onCommitResizeRef.current();
-  }, [visualScale, fill, plan.empty, viewportTransforming]);
 
   useEffect(() => {
     return () => {

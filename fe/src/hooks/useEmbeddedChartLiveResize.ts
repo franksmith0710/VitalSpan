@@ -29,6 +29,7 @@ export function useEmbeddedChartLiveResize(
   const resizeFrameRef = useRef<number | null>(null);
   const flushingRef = useRef(false);
   const commitRetryRef = useRef(0);
+  const lastObservedSizeRef = useRef(new WeakMap<HTMLElement, { width: number; height: number }>());
 
   const runLiveResize = useCallback(() => {
     if (resizeFrameRef.current !== null) return;
@@ -43,8 +44,8 @@ export function useEmbeddedChartLiveResize(
     flushingRef.current = true;
     try {
       const el = containerRef.current;
+      if (!el) return;
       const hasSize =
-        !el ||
         (el.clientWidth > 0 && el.clientHeight > 0) ||
         (el.closest(".pixel-shape-outer")?.clientWidth ?? 0) > 0;
       if (!hasSize && commitRetryRef.current < 2) {
@@ -66,8 +67,26 @@ export function useEmbeddedChartLiveResize(
 
   const runResizeFromObserver = useCallback(() => {
     if (playingRef.current) return;
+    const hosts: HTMLElement[] = [];
+    const el = containerRef.current;
+    if (el) hosts.push(el);
+    const shapeOuter = el?.closest(".shape, .pixel-shape-outer");
+    const shapeInner = el?.closest(".pixel-shape-inner");
+    if (shapeOuter instanceof HTMLElement) hosts.push(shapeOuter);
+    if (shapeInner instanceof HTMLElement) hosts.push(shapeInner);
+    const seen = lastObservedSizeRef.current;
+    let sizeChanged = false;
+    for (const host of hosts) {
+      const next = { width: host.clientWidth, height: host.clientHeight };
+      const prev = seen.get(host);
+      if (!prev || prev.width !== next.width || prev.height !== next.height) {
+        seen.set(host, next);
+        sizeChanged = true;
+      }
+    }
+    if (!sizeChanged) return;
     runLiveResize();
-  }, [runLiveResize]);
+  }, [containerRef, runLiveResize]);
 
   useEffect(() => {
     if (!enabled) return;
