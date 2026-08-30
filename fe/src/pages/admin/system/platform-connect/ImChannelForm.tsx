@@ -15,6 +15,9 @@ import {
   ConnectField,
   ConnectFormSection,
   SOURCE_LABEL,
+  channelPickerCardClass,
+  channelPickerIconClass,
+  IM_CHANNEL_ICON,
 } from "./platformConnectUi";
 
 type ImConfig = ImConfigSummary;
@@ -339,34 +342,21 @@ export function ImChannelPickerCard({
   active: boolean;
   onSelect: () => void;
 }) {
+  const token = IM_CHANNEL_ICON[config.channel];
+
   return (
     <button
       type="button"
       onClick={onSelect}
-      className={`group relative flex w-full flex-col gap-3 rounded-2xl border p-4 text-left transition-all ${
-        active
-          ? "border-brand-300 bg-brand-50/50 shadow-theme-sm ring-1 ring-brand-500/15 dark:border-brand-500/35 dark:bg-brand-500/10"
-          : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02] dark:hover:border-gray-700"
-      }`}
+      className={channelPickerCardClass(token, active)}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-theme-sm font-semibold text-gray-900 dark:text-white">{config.label}</p>
-          <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">工作通知 · 按人投递</p>
-        </div>
-        <Badge variant="light" color={config.configured ? "success" : "warning"} size="sm">
-          {config.configured ? "已就绪" : "未配置"}
-        </Badge>
+      <div className="flex min-w-0 items-center gap-2.5">
+        <span className={channelPickerIconClass(token, active)}>{token.label}</span>
+        <p className="truncate text-theme-sm font-semibold text-gray-900 dark:text-white">{config.label}</p>
       </div>
-      <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-        {config.configured
-          ? `${SOURCE_LABEL[config.source] ?? config.source}${
-              config.channel === "feishu" && config.deliveryMode === "user_delegated" ? " · 用户委托" : ""
-            }`
-          : config.channel === "feishu"
-            ? "推荐用户委托：仅需 AppId/Secret，无需回调域名"
-            : "配置后用户可在个人中心授权绑定"}
-      </p>
+      <Badge variant="light" color={config.configured ? "success" : "warning"} size="sm" className="shrink-0">
+        {config.configured ? "已就绪" : "未配置"}
+      </Badge>
     </button>
   );
 }

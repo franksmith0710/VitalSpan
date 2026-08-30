@@ -4,6 +4,18 @@ import { Badge } from "@/components/ui/badge";
 import { EMAIL_SMTP_SLOTS, type EmailSmtpSlot } from "@/lib/emailSmtpSlots";
 import { cn } from "@/lib/utils";
 import {
+  EMAIL_SLOT_ICON,
+  channelPickerCardClass,
+  channelPickerIconClass,
+} from "./channelPickerTokens";
+
+export {
+  EMAIL_SLOT_ICON,
+  IM_CHANNEL_ICON,
+  channelPickerCardClass,
+  channelPickerIconClass,
+} from "./channelPickerTokens";
+import {
   SCHEDULE_SECTION_BODY_CLASS,
   SCHEDULE_SECTION_CARD_CLASS,
   SCHEDULE_SECTION_FOOTER_CLASS,
@@ -130,46 +142,28 @@ export function ChannelPickerCard({
   onSelect: () => void;
 }) {
   const preset = EMAIL_SMTP_SLOTS.find((item) => item.slot === config.slot)!;
+  const token = EMAIL_SLOT_ICON[config.slot];
 
   return (
     <button
       type="button"
       onClick={onSelect}
-      className={cn(
-        "group relative flex w-full flex-col gap-3 rounded-2xl border p-4 text-left transition-all",
-        active
-          ? "border-brand-300 bg-brand-50/50 shadow-theme-sm ring-1 ring-brand-500/15 dark:border-brand-500/35 dark:bg-brand-500/10"
-          : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02] dark:hover:border-gray-700",
-      )}
+      className={channelPickerCardClass(token, active)}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-3">
-          <span
-            className={cn(
-              "flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors",
-              active
-                ? "bg-brand-500 text-white shadow-theme-xs"
-                : "bg-gray-100 text-gray-500 group-hover:bg-gray-200/80 dark:bg-white/10 dark:text-gray-300",
-            )}
-          >
-            <span className="text-theme-sm font-semibold">{config.slot === "qq" ? "QQ" : "163"}</span>
-          </span>
-          <div className="min-w-0">
-            <p className="text-theme-sm font-semibold text-gray-900 dark:text-white">{config.label}</p>
-            <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-              {preset.host}:{preset.port}
-            </p>
-          </div>
+      <div className="flex min-w-0 items-start gap-2.5">
+        <span className={channelPickerIconClass(token, active)}>{token.label}</span>
+        <div className="min-w-0">
+          <p className="truncate text-theme-sm font-semibold text-gray-900 dark:text-white">{config.label}</p>
+          <p className="mt-0.5 truncate text-theme-xs text-gray-500 dark:text-gray-400">
+            {config.configured && config.from
+              ? config.from
+              : `${preset.host}:${preset.port}`}
+          </p>
         </div>
-        <Badge variant="light" color={config.configured ? "success" : "warning"} size="sm">
-          {config.configured ? "已就绪" : "未配置"}
-        </Badge>
       </div>
-      <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-        {config.configured
-          ? `${SOURCE_LABEL[config.source] ?? config.source}${config.from ? ` · ${config.from}` : ""}`
-          : "保存后将自动探测 SMTP 连通性"}
-      </p>
+      <Badge variant="light" color={config.configured ? "success" : "warning"} size="sm" className="shrink-0">
+        {config.configured ? "已就绪" : "未配置"}
+      </Badge>
     </button>
   );
 }

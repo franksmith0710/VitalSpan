@@ -4,26 +4,27 @@
 > **legacy 成品模板** → [COMPOSE-TEMPLATES-DE.md](./COMPOSE-TEMPLATES-DE.md)（参考金样，非 wf3 默认）  
 > **插件工具**：`vitalspan_list_layout_rhythms` · `vitalspan_compose_dashboard` ·（按需）`get` → patch → `upload`
 
-## wf3 默认：rhythm + blocks（LRC）
+## wf3 默认：rhythm + blocks（LRC 骨架 → Agent 审美）
 
-模板 **不是**抄 DataEase 成品；**节律契约**定义分区语法，**blocks** 定义本屏放什么。
+模板 **不是**抄 DataEase 成品；**rhythm** 只定 band 拓扑，**视觉由 DeepTalk patch**。
 
 | 步骤 | Agent 须想清 |
 |------|----------------|
-| 故事线 | 看谁 · 一屏答哪 3～5 问 · 上→下节奏 |
-| blocks | 每个块：`band` + `kind`（chart/customViz）+ `artifactId`/`chartType` |
-| rhythm | `list_layout_rhythms` → 2 个 cv → `rhythm-cv-stage`（**0 KPI**） |
-| 绑数 | 默认 `manual`；演示/预览才 `demo` |
+| 故事线 | 看谁 · 一屏答哪 3～5 问 |
+| blocks | 每个块：`band` + `kind` + `artifactId`/`chartType`；**先对照 band maxItems** |
+| rhythm | `list_layout_rhythms` 选型 |
+| 绑数 | **始终 `manual`**（customViz 不自动 demo） |
+| 审美 | compose 后 **get → patch styleConfig + x/y/w/h → upload** |
 
-**禁止** wf3 默认 `template=de-*`（会复制 KPI×4 等 preset 槽）。legacy 仍可用但 gate 会拦。
+**禁止** wf3 默认 `template=de-*`。compose 失败会自动删 orphan 空屏；重试用 `dashboard_id=`。
 
 ## 三条路径
 
 | 路径 | 何时 | 步骤 |
 |------|------|------|
-| **快路径（默认）** | blocks 与故事一致；**未**要求改视觉/布局 | `list_layout_rhythms` → `compose(rhythm,blocks)` → `completion_gate` |
-| **慢路径 A（样式）** | 用户要改风格/配色/边框/标题/品牌 | compose → `get` → patch 样式 → `upload` → gate |
-| **慢路径 B（叙事/布局）** | 须删 widget / 改业务标题 / 挪位置才合逻辑 | compose → `get` → patch 标题·删 widget·x/y → `upload` → gate |
+| **标准路径（wf3 默认）** | rhythm 拼屏 | `compose` 骨架 → **`get` → patch 审美/几何 → `upload`** → gate |
+| **仅骨架交付** | 用户只要占位 | `compose` → gate（不得声称配色/布局已定） |
+| **legacy template** | 兼容旧脚本 | `template=` → gate **拒绝** |
 
 ## 原则
 
