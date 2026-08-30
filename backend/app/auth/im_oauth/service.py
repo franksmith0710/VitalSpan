@@ -92,7 +92,12 @@ class AuthorizeUrlOut(BaseModel):
 def _app_ready(session: Session, channel: str, creds) -> tuple[bool, str | None]:
     mode = resolve_im_delivery_mode(session, channel)
     if mode == "user_delegated":
-        return creds.is_configured, None
+        if channel == "feishu":
+            return creds.is_configured, None
+        if not creds.is_configured:
+            return False, None
+        probe = probe_im_credentials_bundle(creds)
+        return bool(probe.get("ok")), probe.get("error")
     if not creds.is_configured:
         return False, None
     probe = probe_im_credentials_bundle(creds)
@@ -168,12 +173,15 @@ def complete_callback(
 ) -> tuple[uuid.UUID, str]:
     oauth_state = consume_state(session, state, channel)
     account_id = exchange_code_for_account(session, channel, code)
+    mode = resolve_im_delivery_mode(session, channel)
+    bind_source = "scan" if mode == "user_delegated" and channel in {"wecom", "dingtalk"} else "oauth"
     try:
         upsert_oauth_binding(
             session,
             user_id=oauth_state.user_id,
             channel=channel,
             account_id=account_id,
+            source=bind_source,
         )
     except ImBindingError as exc:
         raise ImOAuthError(exc.code, exc.message, exc.status) from exc
@@ -266,3 +274,113 @@ def complete_feishu_device_auth_session(
     session.delete(row)
     session.commit()
     return DeviceAuthCompleteOut(status="success", message="绑定成功")
+
+
+class ScanBindStartOut(BaseModel):
+    session_id: str = Field(alias="sessionId")
+    redirect_uri: str = Field(alias="redirectUri")
+    state: str
+    embed_kind: str = Field(alias="embedKind")
+    client_id: str | None = Field(default=None, alias="clientId")
+    corp_id: str | None = Field(default=None, alias="corpId")
+    agent_id: str | None = Field(default=None, alias="agentId")
+
+    model_config = {"populate_by_name": True}
+
+
+class ScanBindCompleteIn(BaseModel):
+    session_id: str = Field(alias="sessionId")
+    auth_code: str = Field(alias="authCode")
+
+    model_config = {"populate_by_name": True}
+
+
+class ScanBindCompleteOut(BaseModel):
+    status: str
+    message: str | None = None
+
+    model_config = {"populate_by_name": True}
+
+
+def start_scan_bind_session(
+    session: Session,
+    *,
+    user_id: uuid.UUID,
+    channel: str,
+    redirect_after: str | None = None,
+) -> ScanBindStartOut:
+    from app.auth.im_oauth.callback_uri import resolve_im_oauth_callback_url
+
+    normalized = channel if channel in {"dingtalk", "wecom"} else ""
+    if normalized not in {"dingtalk", "wecom"}:
+        raise ImOAuthError("IM_BIND_USE_DEVICE", "该通道请使用对应绑定方式", 422)
+    mode = resolve_im_delivery_mode(session, normalized)
+    if mode != "user_delegated":
+        raise ImOAuthError("IM_BIND_USE_OAUTH", "当前为企业应用模式，请使用网页授权绑定", 422)
+    creds = resolve_im_credentials(session, channel=normalized)
+    if not creds.is_configured:
+        raise ImOAuthError("IM_APP_NOT_CONFIGURED", "应用未配置，请联系管理员完成平台对接", 422)
+    probe = probe_im_credentials_bundle(creds)
+    if not probe.get("ok"):
+        raise ImOAuthError(
+            "IM_APP_PROBE_FAILED",
+            probe.get("error") or "应用探测未通过，暂不可绑定",
+            422,
+        )
+    purge_expired_states(session)
+    state = create_state(
+        session,
+        user_id=user_id,
+        channel=normalized,
+        redirect_after=sanitize_redirect_after(redirect_after),
+    )
+    redirect_uri = resolve_im_oauth_callback_url(normalized, creds)
+    session.commit()
+    embed_kind = "ww_login" if normalized == "wecom" else "dt_frame"
+    return ScanBindStartOut(
+        session_id=state,
+        redirect_uri=redirect_uri,
+        state=state,
+        embed_kind=embed_kind,
+        client_id=creds.app_key if normalized == "dingtalk" else None,
+        corp_id=creds.corp_id if normalized == "wecom" else None,
+        agent_id=creds.agent_id,
+    )
+
+
+def complete_scan_bind_session(
+    session: Session,
+    *,
+    user_id: uuid.UUID,
+    channel: str,
+    session_id: str,
+    auth_code: str,
+) -> ScanBindCompleteOut:
+    from app.auth.im_oauth.oauth import exchange_dingtalk_auth_code
+
+    normalized = channel if channel == "dingtalk" else ""
+    if normalized != "dingtalk":
+        raise ImOAuthError("IM_SCAN_BIND_UNSUPPORTED", "该通道不支持扫码完成绑定", 422)
+    mode = resolve_im_delivery_mode(session, normalized)
+    if mode != "user_delegated":
+        raise ImOAuthError("IM_BIND_USE_OAUTH", "当前为企业应用模式，请使用网页授权绑定", 422)
+    oauth_state = consume_state(session, session_id, normalized)
+    if oauth_state.user_id != user_id:
+        raise ImOAuthError("IM_DEVICE_SESSION_INVALID", "绑定会话无效或已过期", 400)
+    creds = resolve_im_credentials(session, channel=normalized)
+    userid, access_token, refresh_token, expires_in = exchange_dingtalk_auth_code(creds, auth_code)
+    try:
+        upsert_device_binding(
+            session,
+            user_id=user_id,
+            channel=normalized,
+            account_id=userid,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            expires_in=expires_in,
+            source="scan",
+        )
+    except ImBindingError as exc:
+        raise ImOAuthError(exc.code, exc.message, exc.status) from exc
+    session.commit()
+    return ScanBindCompleteOut(status="success", message="绑定成功")

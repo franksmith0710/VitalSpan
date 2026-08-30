@@ -107,6 +107,8 @@ redoc: /redoc
 | DELETE | `/api/v1/me/im-bindings/{channel}` | 解绑指定 IM 通道 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | POST | `/api/v1/me/im-bindings/feishu/device-auth/start` | 飞书 device-code 绑定启动（user_delegated） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | POST | `/api/v1/me/im-bindings/feishu/device-auth/complete` | 飞书 device-code 轮询完成 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
+| POST | `/api/v1/me/im-bindings/{channel}/scan-bind/start` | 企微/钉钉 user_delegated 内嵌扫码参数 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
+| POST | `/api/v1/me/im-bindings/{channel}/scan-bind/complete` | 钉钉内嵌扫码完成（企微走 OAuth 回调） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | GET | `/api/v1/auth/im/{channel}/callback` | IM OAuth 回调（公开路径，state 校验） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/im_auth.py` |
 | GET/POST | `/api/v1/resource-grants` | AUTH-004 资源授权列表/创建 | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
 | DELETE | `/api/v1/resource-grants/{grant_id}` | 删除单条资源授权（204） | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |

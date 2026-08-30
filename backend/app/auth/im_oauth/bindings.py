@@ -37,6 +37,7 @@ def upsert_oauth_binding(
     user_id: uuid.UUID,
     channel: str,
     account_id: str,
+    source: str = "oauth",
 ) -> UserImBinding:
     conflict = session.scalar(
         select(UserImBinding).where(
@@ -58,11 +59,11 @@ def upsert_oauth_binding(
         )
     )
     if row is None:
-        row = UserImBinding(user_id=user_id, channel=channel, account_id=account_id, source="oauth")
+        row = UserImBinding(user_id=user_id, channel=channel, account_id=account_id, source=source)
         session.add(row)
     else:
         row.account_id = account_id
-        row.source = "oauth"
+        row.source = source
     session.flush()
     return row
 
@@ -76,6 +77,7 @@ def upsert_device_binding(
     access_token: str,
     refresh_token: str | None,
     expires_in: int,
+    source: str = "device",
 ) -> UserImBinding:
     expires_at = datetime.now(UTC) + timedelta(seconds=max(expires_in, 60))
     token_payload = {
@@ -108,14 +110,14 @@ def upsert_device_binding(
             user_id=user_id,
             channel=channel,
             account_id=account_id,
-            source="device",
+            source=source,
             token_encrypted=token_encrypted,
             token_expires_at=expires_at,
         )
         session.add(row)
     else:
         row.account_id = account_id
-        row.source = "device"
+        row.source = source
         row.token_encrypted = token_encrypted
         row.token_expires_at = expires_at
     session.flush()

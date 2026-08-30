@@ -35,9 +35,10 @@
 | 模式 | 适用通道 | 平台配置 | 绑定方式 | 发信身份 |
 |------|----------|----------|----------|----------|
 | `corporate_app` | 企微 / 钉钉 / 飞书 | App 凭证 + **回调域名**（OAuth） | 浏览器 OAuth 跳转 | 应用 `tenant_access_token` / gettoken |
-| `user_delegated` | **仅飞书**（M1） | AppId + Secret，**无回调域名** | RFC 8628 **device-code** 扫码 | **调度 owner** 的 `user_access_token` |
+| `user_delegated` | 企微 / 钉钉 / 飞书 | App 凭证，**无管理面回调域名** | 飞书 device-code；企微/钉钉内嵌扫码 | 飞书：owner `user_access_token`；企微/钉钉：应用 gettoken + owner 须已绑定 |
 
-- `user_delegated` 探测：**不调** gettoken；凭证字段齐全即 `configured: true`。
+- `user_delegated` 探测：飞书仅校验凭证字段；企微/钉钉仍调 gettoken。
+- 企微/钉钉扫码绑定 OAuth 回调由部署环境 `API_PUBLIC_BASE_URL` 提供（须在厂商控制台登记一次），管理面无需手填回调域名。
 - 收件人仅需 `user_im_bindings.account_id`；**不需**各自 user token。
 - 调度预检：`GET /api/v1/reports/schedules/delivery-health` 返回 `imOwner`，校验当前用户（调度 owner）是否已绑定且 token 可用。
 - SPA 绑定 OAuth：`POST /me/im-bindings/{channel}/authorize-url` 带 Bearer 取 URL 后跳转（避免直链 GET 无鉴权）。

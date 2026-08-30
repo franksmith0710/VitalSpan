@@ -15,10 +15,15 @@ from app.auth.im_oauth.service import (
     DeviceAuthCompleteOut,
     DeviceAuthStartOut,
     ImBindingsOut,
+    ScanBindCompleteIn,
+    ScanBindCompleteOut,
+    ScanBindStartOut,
     complete_feishu_device_auth_session,
+    complete_scan_bind_session,
     list_user_im_bindings,
     start_authorize,
     start_feishu_device_auth_session,
+    start_scan_bind_session,
 )
 from app.auth.models import get_meta_session
 from app.auth.profile import service as profile_service
@@ -128,6 +133,45 @@ def complete_feishu_device_binding(
             db,
             user_id=user_id,
             session_id=payload.session_id,
+        )
+    except ImOAuthError as exc:
+        return _oauth_error(exc)
+
+
+@router.post("/me/im-bindings/{channel}/scan-bind/start", response_model=ScanBindStartOut)
+def start_scan_im_binding(
+    channel: ImChannelPath,
+    current_user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    redirect_after: str | None = Query(default=None, alias="redirectAfter"),
+) -> ScanBindStartOut | JSONResponse:
+    try:
+        user_id = profile_service.resolve_actor_user_id(db, current_user.id, current_user.username)
+        return start_scan_bind_session(
+            db,
+            user_id=user_id,
+            channel=channel,
+            redirect_after=redirect_after,
+        )
+    except ImOAuthError as exc:
+        return _oauth_error(exc)
+
+
+@router.post("/me/im-bindings/{channel}/scan-bind/complete", response_model=ScanBindCompleteOut)
+def complete_scan_im_binding(
+    channel: ImChannelPath,
+    payload: ScanBindCompleteIn,
+    current_user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> ScanBindCompleteOut | JSONResponse:
+    try:
+        user_id = profile_service.resolve_actor_user_id(db, current_user.id, current_user.username)
+        return complete_scan_bind_session(
+            db,
+            user_id=user_id,
+            channel=channel,
+            session_id=payload.session_id,
+            auth_code=payload.auth_code,
         )
     except ImOAuthError as exc:
         return _oauth_error(exc)

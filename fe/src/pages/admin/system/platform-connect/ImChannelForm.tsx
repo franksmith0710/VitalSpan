@@ -60,9 +60,7 @@ export function ImChannelForm({
 
   useEffect(() => {
     const defaultMode =
-      config.channel === "feishu" && !config.configured
-        ? "user_delegated"
-        : (config.deliveryMode ?? "corporate_app");
+      !config.configured ? "user_delegated" : (config.deliveryMode ?? "corporate_app");
     setForm({
       deliveryMode: defaultMode,
       callbackDomain: config.callbackDomain ?? "",
@@ -136,7 +134,7 @@ export function ImChannelForm({
 
   const pending = saveMutation.isPending || clearMutation.isPending;
   const userDelegated = form.deliveryMode === "user_delegated";
-  const userDelegatedSupported = config.channel === "feishu";
+  const userDelegatedSupported = true;
 
   return (
     <div className="flex flex-col gap-5">
@@ -156,7 +154,7 @@ export function ImChannelForm({
       </Alert>
 
       {userDelegatedSupported ? (
-        <ConnectFormSection title="投递模式" description="方案 2 无需备案回调域名，首期仅飞书支持。" icon={Server}>
+        <ConnectFormSection title="投递模式" description="用户委托无需在管理面填写回调域名；同事在个人中心扫码绑定。" icon={Server}>
           <div className="flex flex-wrap gap-3">
             <label className="flex cursor-pointer items-center gap-2 text-theme-sm">
               <input
@@ -307,7 +305,9 @@ export function ImChannelForm({
       <ConnectActionBar
         hint={
           userDelegated
-            ? "用户委托模式无需回调域名，不发起 gettoken；保存 AppId/Secret 后同事可在个人中心扫码绑定。"
+            ? config.channel === "feishu"
+              ? "用户委托模式无需回调域名；保存 AppId/Secret 后同事可在个人中心扫码绑定。"
+              : "用户委托模式无需回调域名；保存应用凭证后同事可在个人中心扫码绑定（须在厂商控制台登记 API 回调地址）。"
             : "保存后将立即探测应用凭证；个人中心绑定依赖本配置。"
         }
       >

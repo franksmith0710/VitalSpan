@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, MessageSquare } from "lucide-react";
 import { useSearchParams } from "react-router";
@@ -9,6 +9,11 @@ import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { IM_CHANNEL_LABELS, type ImChannel } from "@/lib/imChannels";
 import { queryKeys } from "@/lib/queryKeys";
+import {
+  embedDingtalkQr,
+  embedWecomQr,
+  type ScanBindStart,
+} from "./imScanBind";
 
 type ImBindingItem = {
   channel: ImChannel;
@@ -43,15 +48,21 @@ type DeviceAuthComplete = {
 const SOURCE_LABEL: Record<string, string> = {
   oauth: "网页授权",
   device: "扫码绑定",
+  scan: "扫码绑定",
   admin: "管理员修改",
 };
+
+const SCAN_CONTAINER_ID = "im-scan-bind-qr";
 
 export function ImBindingsCard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const qc = useQueryClient();
   const pollTimer = useRef<number | null>(null);
+  const scanContainerId = useId().replace(/:/g, "");
   const [deviceSession, setDeviceSession] = useState<DeviceAuthStart | null>(null);
   const [devicePolling, setDevicePolling] = useState(false);
+  const [scanSession, setScanSession] = useState<ScanBindStart | null>(null);
+  const [scanChannel, setScanChannel] = useState<ImChannel | null>(null);
 
   const bindingsQuery = useQuery({
     queryKey: queryKeys.meImBindings,
@@ -72,6 +83,8 @@ export function ImBindingsCard() {
     searchParams.delete("message");
     setSearchParams(searchParams, { replace: true });
     void qc.invalidateQueries({ queryKey: queryKeys.meImBindings });
+    setScanSession(null);
+    setScanChannel(null);
   }, [qc, searchParams, setSearchParams]);
 
   useEffect(() => {
@@ -82,12 +95,59 @@ export function ImBindingsCard() {
     };
   }, []);
 
+  const scanCompleteMutation = useMutation({
+    mutationFn: (payload: { channel: ImChannel; sessionId: string; authCode: string }) =>
+      apiFetch<{ status: string; message?: string }>(
+        `/api/v1/me/im-bindings/${payload.channel}/scan-bind/complete`,
+        {
+          method: "POST",
+          body: JSON.stringify({ sessionId: payload.sessionId, authCode: payload.authCode }),
+        },
+      ),
+    onSuccess: async (data, variables) => {
+      if (data.status === "success") {
+        toast.success(`${IM_CHANNEL_LABELS[variables.channel]} 绑定成功`);
+        setScanSession(null);
+        setScanChannel(null);
+        await qc.invalidateQueries({ queryKey: queryKeys.meImBindings });
+      }
+    },
+    onError: (err) => toast.error(mapApiError(err)),
+  });
+
+  useEffect(() => {
+    if (!scanSession || !scanChannel) return;
+    const containerId = `${SCAN_CONTAINER_ID}-${scanContainerId}`;
+    let cancelled = false;
+    const mount = async () => {
+      try {
+        if (scanChannel === "wecom") {
+          await embedWecomQr(containerId, scanSession);
+        } else if (scanChannel === "dingtalk") {
+          await embedDingtalkQr(containerId, scanSession, (authCode) => {
+            scanCompleteMutation.mutate({ channel: scanChannel, sessionId: scanSession.sessionId, authCode });
+          });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          toast.error(mapApiError(err));
+        }
+      }
+    };
+    void mount();
+    return () => {
+      cancelled = true;
+    };
+  }, [scanSession, scanChannel, scanContainerId, scanCompleteMutation]);
+
   const unbindMutation = useMutation({
     mutationFn: (channel: ImChannel) =>
       apiFetch<void>(`/api/v1/me/im-bindings/${channel}`, { method: "DELETE" }),
     onSuccess: async () => {
       toast.success("已解绑");
       setDeviceSession(null);
+      setScanSession(null);
+      setScanChannel(null);
       await qc.invalidateQueries({ queryKey: queryKeys.meImBindings });
     },
     onError: (err) => toast.error(mapApiError(err)),
@@ -103,6 +163,22 @@ export function ImBindingsCard() {
     },
     onSuccess: (data) => {
       window.location.href = data.authorizeUrl;
+    },
+    onError: (err) => toast.error(mapApiError(err)),
+  });
+
+  const scanStartMutation = useMutation({
+    mutationFn: (channel: ImChannel) => {
+      const redirect = encodeURIComponent("/admin/account/profile");
+      return apiFetch<ScanBindStart>(
+        `/api/v1/me/im-bindings/${channel}/scan-bind/start?redirectAfter=${redirect}`,
+        { method: "POST" },
+      );
+    },
+    onSuccess: (data, channel) => {
+      setDeviceSession(null);
+      setScanChannel(channel);
+      setScanSession(data);
     },
     onError: (err) => toast.error(mapApiError(err)),
   });
@@ -138,6 +214,8 @@ export function ImBindingsCard() {
     mutationFn: () =>
       apiFetch<DeviceAuthStart>("/api/v1/me/im-bindings/feishu/device-auth/start", { method: "POST" }),
     onSuccess: (data) => {
+      setScanSession(null);
+      setScanChannel(null);
       setDeviceSession(data);
       setDevicePolling(true);
       void pollDeviceComplete(data.sessionId, data.interval);
@@ -150,8 +228,18 @@ export function ImBindingsCard() {
       deviceStartMutation.mutate();
       return;
     }
+    if (item.deliveryMode === "user_delegated" && (item.channel === "wecom" || item.channel === "dingtalk")) {
+      scanStartMutation.mutate(item.channel);
+      return;
+    }
     startOAuthBind(item.channel);
   };
+
+  const bindPending =
+    deviceStartMutation.isPending ||
+    oauthBindMutation.isPending ||
+    scanStartMutation.isPending ||
+    scanCompleteMutation.isPending;
 
   const items = bindingsQuery.data?.items ?? [];
 
@@ -190,6 +278,23 @@ export function ImBindingsCard() {
         </div>
       ) : null}
 
+      {scanSession && scanChannel ? (
+        <div className="mb-4 rounded-xl border border-brand-200 bg-brand-50/60 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
+          <p className="text-theme-sm font-medium text-gray-900 dark:text-white">
+            {IM_CHANNEL_LABELS[scanChannel]} 扫码绑定
+          </p>
+          <p className="mt-1 text-theme-xs text-gray-600 dark:text-gray-300">
+            {scanChannel === "wecom"
+              ? "请使用企业微信扫描下方二维码，完成后将自动返回本页。"
+              : "请使用钉钉扫描下方二维码完成授权。"}
+          </p>
+          <div
+            id={`${SCAN_CONTAINER_ID}-${scanContainerId}`}
+            className="mt-3 flex min-h-[280px] items-center justify-center"
+          />
+        </div>
+      ) : null}
+
       {bindingsQuery.isLoading ? (
         <p className="text-theme-sm text-gray-500">加载中…</p>
       ) : bindingsQuery.isError ? (
@@ -223,7 +328,7 @@ export function ImBindingsCard() {
                     ? `账号 ${item.maskedAccount ?? "—"}${item.source ? ` · ${SOURCE_LABEL[item.source] ?? item.source}` : ""}`
                     : item.appConfigured
                       ? item.deliveryMode === "user_delegated"
-                        ? "点击绑定后将展示飞书扫码链接"
+                        ? "点击绑定后将展示扫码区域"
                         : "点击绑定后将在厂商页面确认身份"
                       : item.probeError || "请管理员在平台对接中配置并探测通过"}
                 </p>
@@ -244,7 +349,7 @@ export function ImBindingsCard() {
                     type="button"
                     variant="primary"
                     size="sm"
-                    disabled={!item.appConfigured || deviceStartMutation.isPending || oauthBindMutation.isPending}
+                    disabled={!item.appConfigured || bindPending}
                     onClick={() => startBind(item)}
                   >
                     绑定{item.label}

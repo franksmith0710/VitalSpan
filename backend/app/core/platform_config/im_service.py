@@ -102,12 +102,18 @@ def list_im_configs(session: Session, *, probe: bool = True) -> ImDeliverySlotsO
 
 def _validate_put(channel: str, payload: ImDeliveryConfigPut, mode: str) -> dict[str, str]:
     if mode == "user_delegated":
-        if channel != "feishu":
-            raise PlatformConfigError(
-                "PLATFORM_IM_MODE_UNSUPPORTED",
-                "用户委托模式首期仅支持飞书",
-                422,
-            )
+        if channel == "dingtalk":
+            app_key = (payload.app_key or "").strip()
+            agent_id = (payload.agent_id or "").strip()
+            if not app_key or not agent_id:
+                raise PlatformConfigError("PLATFORM_IM_FIELDS_REQUIRED", "钉钉 AppKey 与 AgentId 不能为空", 422)
+            return {"app_key": app_key, "agent_id": agent_id}
+        if channel == "wecom":
+            corp_id = (payload.corp_id or "").strip()
+            agent_id = (payload.agent_id or "").strip()
+            if not corp_id or not agent_id:
+                raise PlatformConfigError("PLATFORM_IM_FIELDS_REQUIRED", "企业微信 CorpId 与 AgentId 不能为空", 422)
+            return {"corp_id": corp_id, "agent_id": agent_id}
         app_id = (payload.app_id or "").strip()
         if not app_id:
             raise PlatformConfigError("PLATFORM_IM_FIELDS_REQUIRED", "飞书 AppId 不能为空", 422)
@@ -252,7 +258,27 @@ def probe_im_credentials_bundle_from_payload(
             if creds.is_configured:
                 return {"channel": channel, "skipped": False, "ok": True, "error": None}
             return {"channel": channel, "skipped": False, "ok": False, "error": "飞书 AppId/Secret 不完整"}
-        return {"channel": channel, "skipped": False, "ok": False, "error": "用户委托模式暂不支持该通道"}
+        if channel == "dingtalk":
+            creds = ImCredentials(
+                channel=channel,
+                source="db",
+                delivery_mode=delivery_mode,
+                app_key=payload.get("app_key"),
+                app_secret=payload.get("app_secret"),
+                agent_id=payload.get("agent_id"),
+            )
+        elif channel == "wecom":
+            creds = ImCredentials(
+                channel=channel,
+                source="db",
+                delivery_mode=delivery_mode,
+                corp_id=payload.get("corp_id"),
+                secret=payload.get("secret"),
+                agent_id=payload.get("agent_id"),
+            )
+        else:
+            return {"channel": channel, "skipped": False, "ok": False, "error": "未知通道"}
+        return probe_im_credentials_bundle(creds)
     if channel == "dingtalk":
         creds = ImCredentials(
             channel=channel,

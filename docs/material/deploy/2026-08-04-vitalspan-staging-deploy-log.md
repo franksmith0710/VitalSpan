@@ -161,6 +161,8 @@ curl http://127.0.0.1:8088/admin -o /dev/null -w '%{http_code}\n'
 
 ## 报表中心 P3 staging（本地 / 演示机）
 
+> DeepTalk × VitalSpan 测试环境联调：见 [staging-deeptalk-quickstart.md](./staging-deeptalk-quickstart.md)（`vitalspan-v*-staging.zip` + 工作区模板「VitalSpan BI（测试环境）」）。
+
 报表元数据、调度与产物在 **staging/production** 须启用 DB + 文件产物。可复制模板：
 
 ```bash

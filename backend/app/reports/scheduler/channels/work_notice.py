@@ -8,7 +8,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.auth.im_oauth.im_user_token import get_user_access_token
+from app.auth.im_oauth.im_user_token import get_user_access_token, owner_has_send_token
 from app.core.config import Settings, get_settings
 from app.core.platform_config.im_credentials import ImCredentials
 from app.core.platform_config.im_resolve import resolve_im_credentials
@@ -71,34 +71,85 @@ def send_work_notices(
             "to": account_ids,
         }
     if resolved.delivery_mode == "user_delegated":
-        if channel != "feishu":
-            return {
-                "channel": channel,
-                "status": "failed",
-                "mode": "user_delegated",
-                "error": f"{label}用户委托模式暂不支持该通道",
-                "to": account_ids,
-            }
         if session is None or owner_id is None:
             return {
                 "channel": channel,
                 "status": "failed",
                 "mode": "user_delegated",
-                "error": "调度 owner 未指定，无法以用户身份发信",
+                "error": "调度 owner 未指定，无法发信",
                 "to": account_ids,
             }
-        access_token = get_user_access_token(session, owner_id, channel)
-        if not access_token:
+        ready, owner_error = owner_has_send_token(session, owner_id, channel)
+        if not ready:
             return {
                 "channel": channel,
                 "status": "failed",
                 "mode": "user_delegated",
-                "error": "调度 owner 未绑定飞书或未授权，请在个人中心完成扫码绑定",
+                "error": owner_error or f"调度 owner 未完成{label}绑定",
                 "to": account_ids,
             }
         text = f"{summary}\n引用：{artifact_ref}"
+        if channel == "feishu":
+            access_token = get_user_access_token(session, owner_id, channel)
+            if not access_token:
+                return {
+                    "channel": channel,
+                    "status": "failed",
+                    "mode": "user_delegated",
+                    "error": "调度 owner 飞书授权已失效，请重新绑定",
+                    "to": account_ids,
+                }
+            try:
+                send_feishu_text_as_user(access_token=access_token, account_ids=account_ids, text=text)
+            except Exception as exc:
+                logger.warning("%s user-delegated notice failed: %s", label, exc)
+                return {
+                    "channel": channel,
+                    "status": "failed",
+                    "mode": "user_delegated",
+                    "error": str(exc),
+                    "to": account_ids,
+                }
+            return {
+                "channel": channel,
+                "status": "delivered",
+                "mode": "user_delegated",
+                "to": account_ids,
+            }
+        probe = probe_im_credentials_bundle(resolved)
+        if not probe.get("ok"):
+            return {
+                "channel": channel,
+                "status": "failed",
+                "mode": "user_delegated",
+                "error": probe.get("error") or f"{label}应用探测失败",
+                "to": account_ids,
+            }
         try:
-            send_feishu_text_as_user(access_token=access_token, account_ids=account_ids, text=text)
+            if channel == "dingtalk":
+                send_dingtalk_text(
+                    app_key=resolved.app_key or "",
+                    app_secret=resolved.app_secret or "",
+                    agent_id=resolved.agent_id or "",
+                    account_ids=account_ids,
+                    text=text,
+                )
+            elif channel == "wecom":
+                send_wecom_text(
+                    corp_id=resolved.corp_id or "",
+                    secret=resolved.secret or "",
+                    agent_id=resolved.agent_id or "",
+                    account_ids=account_ids,
+                    text=text,
+                )
+            else:
+                return {
+                    "channel": channel,
+                    "status": "failed",
+                    "mode": "user_delegated",
+                    "error": f"{label}用户委托模式暂不支持",
+                    "to": account_ids,
+                }
         except Exception as exc:
             logger.warning("%s user-delegated notice failed: %s", label, exc)
             return {

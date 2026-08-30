@@ -18,6 +18,11 @@ from app.core.platform_config.im_resolve import resolve_im_credentials
 _TOKEN_URL = "https://open.feishu.cn/open-apis/authen/v2/oauth/token"
 _TIMEOUT = 8.0
 _REFRESH_SKEW = timedelta(minutes=2)
+_OWNER_BIND_HINT = {
+    "feishu": "您尚未绑定飞书，请在个人中心完成扫码绑定",
+    "dingtalk": "您尚未绑定钉钉，请在个人中心完成扫码绑定",
+    "wecom": "您尚未绑定企业微信，请在个人中心完成扫码绑定",
+}
 
 
 def _load_token_blob(row: UserImBinding) -> dict[str, str]:
@@ -81,8 +86,6 @@ def owner_has_send_token(session: Session, user_id: uuid.UUID | str, channel: st
     creds = resolve_im_credentials(session, channel=normalized)
     if creds.delivery_mode != "user_delegated":
         return True, None
-    if normalized != "feishu":
-        return False, "用户委托模式暂不支持该通道"
     if not creds.is_configured:
         return False, "应用未配置"
     uid = _coerce_user_id(user_id)
@@ -93,12 +96,13 @@ def owner_has_send_token(session: Session, user_id: uuid.UUID | str, channel: st
         )
     )
     if row is None:
-        return False, "您尚未绑定飞书，请在个人中心完成扫码绑定"
-    blob = _load_token_blob(row)
-    access_token = (blob.get("access_token") or "").strip()
-    refresh_token = (blob.get("refresh_token") or "").strip()
-    if not access_token and not refresh_token:
-        return False, "飞书授权已失效，请重新绑定"
+        return False, _OWNER_BIND_HINT.get(normalized, "您尚未绑定 IM，请在个人中心完成扫码绑定")
+    if normalized == "feishu":
+        blob = _load_token_blob(row)
+        access_token = (blob.get("access_token") or "").strip()
+        refresh_token = (blob.get("refresh_token") or "").strip()
+        if not access_token and not refresh_token:
+            return False, "飞书授权已失效，请重新绑定"
     return True, None
 
 

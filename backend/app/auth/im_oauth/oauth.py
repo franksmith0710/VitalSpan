@@ -26,14 +26,9 @@ class ImOAuthError(Exception):
 
 
 def _callback_url(creds: ImCredentials, channel: str) -> str:
-    domain = (creds.callback_domain or "").strip().rstrip("/")
-    if not domain:
-        raise ImOAuthError("IM_CALLBACK_DOMAIN_MISSING", "平台对接未配置回调域名", 422)
-    if domain.startswith("http://") or domain.startswith("https://"):
-        base = domain
-    else:
-        base = f"https://{domain}"
-    return f"{base}/api/v1/auth/im/{channel}/callback"
+    from app.auth.im_oauth.callback_uri import resolve_im_oauth_callback_url
+
+    return resolve_im_oauth_callback_url(channel, creds)
 
 
 def create_state(
@@ -133,8 +128,7 @@ def _wecom_userid(creds: ImCredentials, code: str) -> str:
         return str(userid)
 
 
-def _dingtalk_userid(creds: ImCredentials, code: str) -> str:
-    redirect_uri = _callback_url(creds, "dingtalk")
+def _dingtalk_oauth_tokens(creds: ImCredentials, code: str) -> tuple[str, str, str | None, int]:
     with httpx.Client(timeout=_TIMEOUT) as client:
         token_resp = client.post(
             "https://api.dingtalk.com/v1.0/oauth2/userAccessToken",
@@ -154,6 +148,8 @@ def _dingtalk_userid(creds: ImCredentials, code: str) -> str:
                 token_body.get("message") or "钉钉换取用户令牌失败",
                 422,
             )
+        refresh_token = token_body.get("refreshToken")
+        expires_in = int(token_body.get("expireIn") or token_body.get("expiresIn") or 7200)
         user_resp = client.get(
             "https://api.dingtalk.com/v1.0/contact/users/me",
             headers={"x-acs-dingtalk-access-token": access_token},
@@ -163,7 +159,12 @@ def _dingtalk_userid(creds: ImCredentials, code: str) -> str:
         userid = user_body.get("unionId") or user_body.get("userid") or user_body.get("openId")
         if not userid:
             raise ImOAuthError("IM_OAUTH_USER_MISSING", "钉钉未返回成员账号", 422)
-        return str(userid)
+        return str(userid), str(access_token), (str(refresh_token) if refresh_token else None), expires_in
+
+
+def _dingtalk_userid(creds: ImCredentials, code: str) -> str:
+    userid, _, _, _ = _dingtalk_oauth_tokens(creds, code)
+    return userid
 
 
 def _feishu_userid(creds: ImCredentials, code: str) -> str:
@@ -207,6 +208,10 @@ def _feishu_userid(creds: ImCredentials, code: str) -> str:
         if not userid:
             raise ImOAuthError("IM_OAUTH_USER_MISSING", "飞书未返回 user_id", 422)
         return str(userid)
+
+
+def exchange_dingtalk_auth_code(creds: ImCredentials, code: str) -> tuple[str, str, str | None, int]:
+    return _dingtalk_oauth_tokens(creds, code)
 
 
 def exchange_code_for_account(session: Session, channel: str, code: str) -> str:

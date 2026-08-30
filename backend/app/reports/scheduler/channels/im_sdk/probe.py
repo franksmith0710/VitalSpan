@@ -102,6 +102,16 @@ def probe_im_credentials_bundle(creds: ImCredentials) -> dict[str, Any]:
     if creds.delivery_mode == "user_delegated":
         if channel == "feishu":
             return {"channel": channel, "skipped": False, "ok": True, "error": None}
+        if channel in {"dingtalk", "wecom"}:
+            try:
+                if channel == "wecom":
+                    probe_wecom_token(corp_id=creds.corp_id or "", secret=creds.secret or "")
+                else:
+                    probe_dingtalk_token(app_key=creds.app_key or "", app_secret=creds.app_secret or "")
+            except Exception as exc:
+                logger.warning("IM probe failed (%s user_delegated): %s", channel, exc)
+                return {"channel": channel, "skipped": False, "ok": False, "error": str(exc)}
+            return {"channel": channel, "skipped": False, "ok": True, "error": None}
         return {
             "channel": channel,
             "skipped": False,
