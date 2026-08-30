@@ -140,14 +140,15 @@ describe("readGisProject overlay", () => {
 });
 
 describe("buildGisOverlayCirclePaint", () => {
-  it("includes emissive stroke on core circles", () => {
+  it("uses resolved stroke and blur on core circles", () => {
     const paint = buildGisOverlayCirclePaint(
-      resolveGisOverlayStyle({ strokeColor: "#000000", strokeWidth: 2 }),
+      resolveGisOverlayStyle({ strokeColor: "#ff00aa", strokeWidth: 2, circleBlur: 0.35 }),
       undefined,
       "dark",
     );
-    expect(paint["circle-stroke-color"]).toBe("rgba(255, 255, 255, 0.82)");
-    expect(paint["circle-stroke-width"]).toBe(0.55);
+    expect(paint["circle-stroke-color"]).toBe("#ff00aa");
+    expect(paint["circle-stroke-width"]).toBe(2);
+    expect(paint["circle-blur"]).toBe(0.35);
   });
 });
 

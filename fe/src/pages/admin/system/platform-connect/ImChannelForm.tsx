@@ -56,8 +56,12 @@ export function ImChannelForm({
   const [form, setForm] = useState<FormState>(emptyForm);
 
   useEffect(() => {
+    const defaultMode =
+      config.channel === "feishu" && !config.configured
+        ? "user_delegated"
+        : (config.deliveryMode ?? "corporate_app");
     setForm({
-      deliveryMode: config.deliveryMode ?? "corporate_app",
+      deliveryMode: defaultMode,
       callbackDomain: config.callbackDomain ?? "",
       corpId: config.corpId ?? "",
       secret: "",
@@ -92,13 +96,24 @@ export function ImChannelForm({
       });
     },
     onSuccess: async (data) => {
-      toast.success(`${config.label} 应用已保存并通过探测`);
+      const savedDelegated = data.deliveryMode === "user_delegated";
+      toast.success(
+        savedDelegated
+          ? `${config.label} 用户委托配置已保存`
+          : `${config.label} 应用已保存并通过探测`,
+      );
       setForm((prev) => ({ ...prev, secret: "", appSecret: "" }));
       await qc.invalidateQueries({ queryKey: queryKeys.platformConnect.imSlots });
       await qc.invalidateQueries({ queryKey: queryKeys.platformConnect.imChannel(config.channel) });
       await qc.invalidateQueries({ queryKey: ["reports", "schedules", "delivery-health"] });
       onSaved();
-      if (!data.configured) toast.warning("保存成功但探测未通过，请检查凭证");
+      if (!data.configured) {
+        toast.warning(
+          savedDelegated
+            ? "保存成功但 AppId/Secret 不完整，请补全后重试"
+            : "保存成功但探测未通过，请检查凭证",
+        );
+      }
     },
     onError: (err) => toast.error(mapApiError(err)),
   });
@@ -286,9 +301,21 @@ export function ImChannelForm({
         </div>
       </ConnectFormSection>
 
-      <ConnectActionBar hint="保存后将立即探测应用凭证；个人中心绑定依赖本配置。">
+      <ConnectActionBar
+        hint={
+          userDelegated
+            ? "用户委托模式无需回调域名，不发起 gettoken；保存 AppId/Secret 后同事可在个人中心扫码绑定。"
+            : "保存后将立即探测应用凭证；个人中心绑定依赖本配置。"
+        }
+      >
         <Button type="button" variant="primary" disabled={disabled || pending} onClick={() => saveMutation.mutate()}>
-          {saveMutation.isPending ? "保存并探测…" : "保存并探测"}
+          {saveMutation.isPending
+            ? userDelegated
+              ? "保存中…"
+              : "保存并探测…"
+            : userDelegated
+              ? "保存配置"
+              : "保存并探测"}
         </Button>
         <Button
           type="button"
@@ -333,8 +360,12 @@ export function ImChannelPickerCard({
       </div>
       <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
         {config.configured
-          ? `${SOURCE_LABEL[config.source] ?? config.source}`
-          : "配置后用户可在个人中心授权绑定"}
+          ? `${SOURCE_LABEL[config.source] ?? config.source}${
+              config.channel === "feishu" && config.deliveryMode === "user_delegated" ? " · 用户委托" : ""
+            }`
+          : config.channel === "feishu"
+            ? "推荐用户委托：仅需 AppId/Secret，无需回调域名"
+            : "配置后用户可在个人中心授权绑定"}
       </p>
     </button>
   );

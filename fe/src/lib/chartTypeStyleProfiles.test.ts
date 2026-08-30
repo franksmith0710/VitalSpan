@@ -111,4 +111,8 @@ describe("chartTypeStyleProfiles", () => {
     expect(chartStyleSectionsFromProfile("circle-packing")).toContain("tooltip");
     expect(chartStyleSectionsFromProfile("gauge")).toContain("tooltip");
   });
+
+  it("gis-map excludes tooltip section", () => {
+    expect(chartStyleSectionsFromProfile("gis-map")).not.toContain("tooltip");
+  });
 });

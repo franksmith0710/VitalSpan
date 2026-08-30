@@ -18,7 +18,7 @@ import {
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { mapApiError } from "@/lib/apiError";
 import { summarizeRecipients } from "@/lib/scheduleSourceMeta";
-import { scheduleRowToForm, deliveryPayloadFromForm, toEmailOnlyRecipients } from "../scheduleFormUtils";
+import { scheduleRowToForm, deliveryPayloadFromForm } from "../scheduleFormUtils";
 import {
   localizeScheduleStatus,
   SCHEDULE_ACTION_LABELS,
@@ -30,12 +30,13 @@ import {
 import { describeCron } from "./ScheduleWizard";
 import {
   DEFAULT_SCHEDULE_FORM,
+  getScheduleFormValidation,
   isScheduleFormSubmittable,
   resolveScheduleCron,
   ScheduleFormFields,
   type ScheduleFormValue,
 } from "./ScheduleFormFields";
-import { DEFAULT_EMAIL_RECIPIENTS } from "./ScheduleRecipientsField";
+import { DEFAULT_RECIPIENTS } from "./ScheduleRecipientsField";
 import { isLayoutInventoryArtifact } from "@/lib/scheduleArtifactMeta";
 import { ScheduleArtifactNotice } from "./ScheduleArtifactNotice";
 import { ScheduleHistoryTable } from "./ScheduleHistoryTable";
@@ -102,8 +103,9 @@ export function DashboardSchedulePanel({
 
   const [form, setForm] = useState<ScheduleFormValue>({
     ...DEFAULT_SCHEDULE_FORM,
-    recipients: DEFAULT_EMAIL_RECIPIENTS,
+    recipients: DEFAULT_RECIPIENTS,
     attachmentFormats: ["pdf"],
+    deliveryChannels: ["email"],
   });
   const [showCreate, setShowCreate] = useState(false);
   const [pendingActivateId, setPendingActivateId] = useState<string | null>(null);
@@ -120,7 +122,7 @@ export function DashboardSchedulePanel({
       setForm({
         ...next,
         attachmentFormats: ["pdf"],
-        recipients: toEmailOnlyRecipients(next.recipients),
+        recipients: next.recipients,
       });
     }
   }, [selected?.id, draftSelected, selected]);
@@ -147,9 +149,10 @@ export function DashboardSchedulePanel({
   const deliveryWarning =
     precheck.items.find((item) => item.id === "delivery" && !item.ok)?.detail ?? null;
 
+  const formValidation = getScheduleFormValidation(form);
   const createBlockedReason = !canCreate
     ? precheck.items.find((item) => item.blocking && !item.ok)?.detail ??
-      (!isScheduleFormSubmittable(form) ? "请填写至少一个有效收件邮箱" : "前置检查未通过")
+      (!formValidation.ok ? formValidation.message ?? "请完善投递配置" : "前置检查未通过")
     : null;
 
   const requestDeliveryConfirm = (onConfirm: () => void) => {
@@ -161,8 +164,8 @@ export function DashboardSchedulePanel({
   };
 
   const handleCreate = async () => {
-    if (!isScheduleFormSubmittable(form)) {
-      toast.error("请填写至少一个有效收件邮箱");
+    if (!formValidation.ok) {
+      toast.error(formValidation.message ?? "请完善投递配置");
       return;
     }
     if (!canCreate) {
@@ -269,7 +272,6 @@ export function DashboardSchedulePanel({
     hideStandaloneHealthAlerts: true as const,
     embeddedLayout: embedded,
     showDeliveryChannels: true,
-    recipientsMode: "email-only" as const,
   };
 
   const activationBannerSchedule = resolveActivationBannerSchedule(

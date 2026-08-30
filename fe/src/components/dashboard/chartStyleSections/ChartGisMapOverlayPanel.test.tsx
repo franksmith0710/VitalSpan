@@ -9,6 +9,7 @@ import { ChartGisMapOverlayPanel } from "./ChartGisMapOverlayPanel";
 
 vi.mock("@/components/charts/engine/maplibre/gisMapViewBridge", () => ({
   syncGisMapViewLayers: vi.fn(() => true),
+  applyGisMapViewOverlayPatch: vi.fn(() => true),
 }));
 
 function gisWidget(): LayoutWidget {

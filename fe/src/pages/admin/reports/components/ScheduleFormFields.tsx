@@ -12,11 +12,11 @@ import { cronFromWizard, ScheduleWizard } from "./ScheduleWizard";
 import {
   DEFAULT_EMAIL_RECIPIENTS,
   DEFAULT_RECIPIENTS,
-  hasValidRecipients,
   ScheduleRecipientsField,
 } from "./ScheduleRecipientsField";
 import { ScheduleDeliveryHealthAlert } from "./ScheduleDeliveryHealthAlert";
 import { ScheduleExportHealthAlert } from "./ScheduleExportHealthAlert";
+import { ScheduleImBindingBanner } from "./ScheduleImBindingBanner";
 import { VISUAL_SNAPSHOT_CREATE_NOTICE } from "@/lib/scheduleArtifactMeta";
 import { ScheduleFormSection } from "./scheduleDialogUi";
 import type { ScheduleRecipient } from "../useReportSchedules";
@@ -27,6 +27,13 @@ import {
   ScheduleDeliveryChannelsField,
   type DeliveryChannel,
 } from "./ScheduleDeliveryChannelsField";
+import {
+  getScheduleFormValidation,
+  imChannelsFromDelivery,
+  isScheduleFormSubmittable,
+} from "../scheduleDeliveryValidation";
+
+export { isScheduleFormSubmittable, getScheduleFormValidation };
 
 export type { DeliveryChannel };
 export type AttachmentFormat = "pdf" | "excel";
@@ -101,6 +108,27 @@ export function ScheduleFormFields({
 }: ScheduleFormFieldsProps) {
   const patch = (partial: Partial<ScheduleFormValue>) => onChange({ ...value, ...partial });
   const emailOnlyRecipients = recipientsMode === "email-only";
+  const emailSelected = value.deliveryChannels.includes("email");
+  const imSelected = imChannelsFromDelivery(value.deliveryChannels);
+  const validation = getScheduleFormValidation(value);
+
+  const handleDeliveryChannelsChange = (deliveryChannels: DeliveryChannel[]) => {
+    const nextEmail = deliveryChannels.includes("email");
+    const nextIm = imChannelsFromDelivery(deliveryChannels);
+    let recipients = value.recipients;
+
+    if (nextIm.length > 0 && !recipients.some((row) => row.type === "role" || row.type === "user")) {
+      recipients = DEFAULT_RECIPIENTS;
+    }
+    if (!nextEmail) {
+      recipients = recipients.filter((row) => row.type !== "email");
+    }
+    if (nextEmail && nextIm.length === 0 && !recipients.some((row) => row.type === "email")) {
+      recipients = DEFAULT_EMAIL_RECIPIENTS;
+    }
+
+    patch({ deliveryChannels, recipients });
+  };
 
   const setAttachmentFormat = (format: AttachmentFormat) => {
     patch({ attachmentFormats: [format] });
@@ -170,7 +198,7 @@ export function ScheduleFormFields({
     <ScheduleDeliveryChannelsField
       disabled={disabled}
       deliveryChannels={value.deliveryChannels}
-      onDeliveryChannelsChange={(deliveryChannels) => patch({ deliveryChannels })}
+      onDeliveryChannelsChange={handleDeliveryChannelsChange}
       emailSmtpSlot={value.emailSmtpSlot}
       onEmailSmtpSlotChange={(emailSmtpSlot) => patch({ emailSmtpSlot })}
       embedded={embeddedLayout}
@@ -178,8 +206,21 @@ export function ScheduleFormFields({
     />
   ) : null;
 
-  const mergedEmailDelivery =
-    embeddedLayout && showDeliveryChannels && emailOnlyRecipients;
+  const showCombinedDelivery = embeddedLayout && showDeliveryChannels;
+  const deliverySectionTitle =
+    imSelected.length > 0 && !emailSelected
+      ? "工作通知投递"
+      : imSelected.length > 0
+        ? "投递配置"
+        : "邮件投递";
+  const deliverySectionDescription =
+    imSelected.length > 0 && !emailSelected
+      ? "选择 IM 通道并指定平台用户或角色；各位须在个人中心完成 IM 绑定。"
+      : imSelected.length > 0
+        ? "可同时选择邮件与 IM；邮件与 IM 接收人可分别填写。"
+        : emailOnlyRecipients
+          ? "选择发信通道并填写收件邮箱，定时 PDF 将一次发往所列地址"
+          : "按角色、用户或邮箱指定；收件人邮箱在系统管理 → 用户里填写";
 
   const advancedCronButton = (
     <Button
@@ -225,17 +266,17 @@ export function ScheduleFormFields({
           </ScheduleFormSection>
 
           <ScheduleFormSection
-            title={mergedEmailDelivery ? "邮件投递" : emailOnlyRecipients ? "收件邮箱" : "接收人"}
+            title={showCombinedDelivery ? deliverySectionTitle : emailOnlyRecipients ? "收件邮箱" : "接收人"}
             description={
-              mergedEmailDelivery
-                ? "选择发信通道并填写收件邮箱，定时 PDF 将一次发往所列地址"
+              showCombinedDelivery
+                ? deliverySectionDescription
                 : emailOnlyRecipients
                   ? "填写一个或多个邮箱地址，定时 PDF 将直接发送到这些邮箱"
                   : "按角色、用户或邮箱指定；收件人邮箱在系统管理 → 用户里填写"
             }
             icon={Mail}
             action={
-              !disabled ? (
+              !disabled && !showCombinedDelivery ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -251,14 +292,38 @@ export function ScheduleFormFields({
                   <Plus className="size-3.5" aria-hidden />
                   {emailOnlyRecipients ? "添加邮箱" : "添加"}
                 </Button>
+              ) : !disabled && showCombinedDelivery ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (emailSelected && imSelected.length === 0) {
+                      patch({
+                        recipients: [...value.recipients.filter((r) => r.type === "email"), { type: "email", value: "" }],
+                      });
+                      return;
+                    }
+                    if (imSelected.length > 0 && !emailSelected) {
+                      patch({
+                        recipients: [...value.recipients.filter((r) => r.type !== "email"), { type: "role", value: "admin" }],
+                      });
+                      return;
+                    }
+                    patch({ recipients: [...value.recipients, ...DEFAULT_RECIPIENTS] });
+                  }}
+                >
+                  <Plus className="size-3.5" aria-hidden />
+                  {emailSelected && imSelected.length === 0 ? "添加邮箱" : "添加接收人"}
+                </Button>
               ) : undefined
             }
             footer={
               <div className="flex items-start gap-2.5">
                 <Mail className="mt-0.5 size-4 shrink-0 text-gray-400" aria-hidden />
                 <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                  {mergedEmailDelivery
-                    ? "同一任务可配置多个收件邮箱；发信通道在平台对接中配置 SMTP 后即可切换。"
+                  {showCombinedDelivery
+                    ? "仅选 IM 时无需填写邮箱；IM 收件人须为平台用户/角色且已在个人中心绑定对应账号。"
                     : emailOnlyRecipients
                       ? "无需绑定平台角色；请确保邮箱地址可正常收信。"
                       : "定时报告将发到收件人在用户资料中填写的邮箱。"}
@@ -266,21 +331,58 @@ export function ScheduleFormFields({
               </div>
             }
           >
-            {mergedEmailDelivery ? (
+            {showCombinedDelivery ? (
               <div className="space-y-5">
                 {deliveryChannelsField}
-                <div className="space-y-2 border-t border-gray-100 pt-5 dark:border-gray-800">
-                  <Label className="text-theme-sm text-gray-700 dark:text-gray-300">收件邮箱</Label>
-                  <ScheduleRecipientsField
-                    value={value.recipients}
-                    onChange={(recipients) => patch({ recipients })}
-                    disabled={disabled}
-                    idPrefix={`${idPrefix}-recipient`}
-                    embedded
-                    hideAddButton
-                    mode={recipientsMode}
-                  />
-                </div>
+                {imSelected.length > 0 ? <ScheduleImBindingBanner channels={imSelected} /> : null}
+                {emailSelected && imSelected.length === 0 ? (
+                  <div className="space-y-2 border-t border-gray-100 pt-5 dark:border-gray-800">
+                    <Label className="text-theme-sm text-gray-700 dark:text-gray-300">收件邮箱</Label>
+                    <ScheduleRecipientsField
+                      value={value.recipients}
+                      onChange={(recipients) => patch({ recipients })}
+                      disabled={disabled}
+                      idPrefix={`${idPrefix}-recipient`}
+                      embedded
+                      hideAddButton
+                      mode="email-only"
+                      showValidationError={false}
+                    />
+                  </div>
+                ) : null}
+                {imSelected.length > 0 && !emailSelected ? (
+                  <div className="space-y-2 border-t border-gray-100 pt-5 dark:border-gray-800">
+                    <Label className="text-theme-sm text-gray-700 dark:text-gray-300">IM 接收人</Label>
+                    <ScheduleRecipientsField
+                      value={value.recipients}
+                      onChange={(recipients) => patch({ recipients })}
+                      disabled={disabled}
+                      idPrefix={`${idPrefix}-im-recipient`}
+                      embedded
+                      hideAddButton
+                      mode="platform-only"
+                      showValidationError={false}
+                    />
+                  </div>
+                ) : null}
+                {emailSelected && imSelected.length > 0 ? (
+                  <div className="space-y-2 border-t border-gray-100 pt-5 dark:border-gray-800">
+                    <Label className="text-theme-sm text-gray-700 dark:text-gray-300">接收人</Label>
+                    <ScheduleRecipientsField
+                      value={value.recipients}
+                      onChange={(recipients) => patch({ recipients })}
+                      disabled={disabled}
+                      idPrefix={`${idPrefix}-recipient`}
+                      embedded
+                      hideAddButton
+                      mode="full"
+                      showValidationError={false}
+                    />
+                  </div>
+                ) : null}
+                {!validation.ok ? (
+                  <p className="text-theme-xs text-error-500">{validation.message}</p>
+                ) : null}
               </div>
             ) : (
               <ScheduleRecipientsField
@@ -295,7 +397,7 @@ export function ScheduleFormFields({
             )}
           </ScheduleFormSection>
 
-          {!mergedEmailDelivery ? deliveryChannelsField : null}
+          {!showCombinedDelivery ? deliveryChannelsField : null}
 
           {showAttachments && attachmentFormatMode === "pdf-only" ? (
             <ScheduleFormSection title="报告附件" description="PDF 可视化快照" icon={FileText}>
@@ -332,8 +434,4 @@ export function ScheduleFormFields({
       )}
     </div>
   );
-}
-
-export function isScheduleFormSubmittable(form: ScheduleFormValue): boolean {
-  return hasValidRecipients(form.recipients);
 }

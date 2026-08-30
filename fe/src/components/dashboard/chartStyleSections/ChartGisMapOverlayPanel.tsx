@@ -17,7 +17,7 @@ import {
   patchGisProjectLayer,
   writeGisProjectLayers,
 } from "@/components/charts/engine/maplibre/gisProjectLayers";
-import { syncGisMapViewLayers } from "@/components/charts/engine/maplibre/gisMapViewBridge";
+import { applyGisMapViewOverlayPatch, syncGisMapViewLayers } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 import { resolveGisChartColors } from "@/lib/resolveGisChartColors";
 
 const OVERLAY_HINT =
@@ -46,9 +46,9 @@ export function ChartGisMapOverlayPanel() {
         });
         return writeGisProject(current, writeGisProjectLayers(currentProject, nextLayers));
       });
-      syncGisMapViewLayers(widget.id);
+      applyGisMapViewOverlayPatch(widget.id, activeLayer.id, patch);
     },
-    [mutateChartConfig, widget.id],
+    [activeLayer.id, mutateChartConfig, widget.id],
   );
 
   const resetOverlay = () => {

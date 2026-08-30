@@ -70,10 +70,31 @@ describe("gisOverlayVisual", () => {
     expect(paint["text-halo-color"]).toBe("#3b82f6");
   });
 
-  it("builds glassy cluster core without hard stroke", () => {
-    const resolved = resolveGisOverlayStyle({ opacity: 0.9 });
+  it("builds valid cluster radius step expression", () => {
+    const resolved = resolveGisOverlayStyle({ radiusMin: 8, radiusMax: 24 });
+    const paint = buildClusterCirclePaint(resolved, ["#3b82f6"]);
+    const radius = paint["circle-radius"] as unknown[];
+    expect(radius[0]).toBe("step");
+    // default + 3 stop/output pairs
+    expect(radius.length).toBe(2 + 1 + 6);
+    expect(radius[2]).toBe(8);
+    expect(radius[4]).toBe(8);
+    expect(radius[8]).toBe(24);
+  });
+
+  it("builds glassy cluster core with configurable stroke and radius", () => {
+    const resolved = resolveGisOverlayStyle({
+      opacity: 0.9,
+      strokeColor: "#ff00aa",
+      strokeWidth: 1.5,
+      circleBlur: 0.4,
+      radiusMin: 8,
+      radiusMax: 24,
+    });
     const paint = buildClusterCirclePaint(resolved, ["#3b82f6", "#22d3ee", "#f59e0b", "#e11d48"]);
-    expect(paint["circle-stroke-width"]).toBe(0);
-    expect(paint["circle-blur"]).toBeGreaterThan(0.2);
+    expect(paint["circle-stroke-color"]).toBe("#ff00aa");
+    expect(paint["circle-stroke-width"]).toBe(1.5);
+    expect(paint["circle-blur"]).toBe(0.4);
+    expect((paint["circle-radius"] as unknown[])[8]).toBe(24);
   });
 });

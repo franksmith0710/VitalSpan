@@ -1,4 +1,4 @@
-import type { GisProjectFog, GisProjectView, GisProjection, GisAtmospherePreset, ResolvedGisMapControls } from "@/components/charts/engine/maplibre/gisProject";
+import type { GisProjectFog, GisProjectView, GisProjection, GisAtmospherePreset, ResolvedGisMapControls, GisProjectOverlay } from "@/components/charts/engine/maplibre/gisProject";
 import type { GisBasemapLayerVisibility } from "@/components/charts/engine/maplibre/gisProject";
 import type { GisProjectHalo } from "@/components/charts/engine/maplibre/gisProjectHalo";
 import type { GisProjectSun } from "@/components/charts/engine/maplibre/gisProjectSun";
@@ -26,6 +26,7 @@ export type GisMapViewLiveControl = {
   applyBasemapPatch?: (patch: GisMapBasemapPatch) => boolean;
   applyMapControls?: (controls: ResolvedGisMapControls) => boolean;
   syncLayers?: () => boolean;
+  applyOverlayPatch?: (layerId: string, patch: GisProjectOverlay) => boolean;
   applySun?: (sun: GisProjectSun | undefined, patch?: Partial<GisProjectSun>) => boolean;
   getSunSettings?: () => GisSunSettings | null;
 };
@@ -71,6 +72,15 @@ export function applyGisMapControls(widgetId: string, controls: ResolvedGisMapCo
 
 export function syncGisMapViewLayers(widgetId: string): boolean {
   return liveControlByWidgetId.get(widgetId)?.syncLayers?.() ?? false;
+}
+
+/** 样式栏即时预览：合并 overlay patch 并 runtime setPaintProperty，不等待 React 重渲染。 */
+export function applyGisMapViewOverlayPatch(
+  widgetId: string,
+  layerId: string,
+  patch: GisProjectOverlay,
+): boolean {
+  return liveControlByWidgetId.get(widgetId)?.applyOverlayPatch?.(layerId, patch) ?? false;
 }
 
 export function applyGisMapSun(

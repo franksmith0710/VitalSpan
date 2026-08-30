@@ -95,6 +95,7 @@ export function ScheduleDeliveryChannelsField({
           className="mt-1"
           checked={emailSelected}
           disabled={disabled}
+          aria-label="邮件"
           onChange={toggleEmail}
         />
         <span>
@@ -109,6 +110,7 @@ export function ScheduleDeliveryChannelsField({
             className="mt-1"
             checked={imSelected.includes(channel)}
             disabled={disabled}
+            aria-label={IM_CHANNEL_LABELS[channel]}
             onChange={() => toggleIm(channel)}
           />
           <span>

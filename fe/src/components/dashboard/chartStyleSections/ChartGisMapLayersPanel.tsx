@@ -34,7 +34,7 @@ import {
   type GisLayerKind,
   type GisProjectLayer,
 } from "@/components/charts/engine/maplibre/gisProjectLayers";
-import { syncGisMapViewLayers } from "@/components/charts/engine/maplibre/gisMapViewBridge";
+import { applyGisMapViewOverlayPatch, syncGisMapViewLayers } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 import { resolveGisChartColors } from "@/lib/resolveGisChartColors";
 
 const LAYERS_HINT =
@@ -110,8 +110,9 @@ export function ChartGisMapLayersPanel() {
     (stylePatch: GisProjectOverlay) => {
       if (!selectedLayer) return;
       patchSelectedLayer({ style: { ...selectedLayer.style, ...stylePatch } });
+      applyGisMapViewOverlayPatch(widget.id, selectedLayer.id, stylePatch);
     },
-    [patchSelectedLayer, selectedLayer],
+    [patchSelectedLayer, selectedLayer, widget.id],
   );
 
   const addLayer = (kind: GisLayerKind) => {

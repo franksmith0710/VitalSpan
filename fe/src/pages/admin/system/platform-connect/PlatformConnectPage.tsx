@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Info, Link2, Mail, MessageSquare } from "lucide-react";
+import { Info, Link2 } from "lucide-react";
 import { useState } from "react";
 import {
   AdminPageHeaderIcon,
@@ -36,9 +36,15 @@ type EmailConfig = {
 type EmailSlotsResponse = { items: EmailConfig[] };
 type ImSlotsResponse = { items: ImConfigSummary[] };
 
+type ActiveTarget =
+  | { type: "email"; slot: EmailSmtpSlot }
+  | { type: "im"; channel: ImChannel };
+
 export function PlatformConnectPage() {
-  const [activeSlot, setActiveSlot] = useState<EmailSmtpSlot>(DEFAULT_EMAIL_SMTP_SLOT);
-  const [activeIm, setActiveIm] = useState<ImChannel>("wecom");
+  const [activeTarget, setActiveTarget] = useState<ActiveTarget>({
+    type: "email",
+    slot: DEFAULT_EMAIL_SMTP_SLOT,
+  });
   const configQuery = useQuery({
     queryKey: queryKeys.platformConnect.emailSlots,
     queryFn: () => apiFetch<EmailSlotsResponse>("/api/v1/platform/delivery/email/slots"),
@@ -49,9 +55,22 @@ export function PlatformConnectPage() {
   });
 
   const items = configQuery.data?.items ?? [];
-  const imItems = imQuery.data?.items ?? [];
-  const activeConfig = items.find((item) => item.slot === activeSlot) ?? items[0];
-  const activeImConfig = imItems.find((item) => item.channel === activeIm) ?? imItems[0];
+  const imItems =
+    imQuery.data?.items ??
+    IM_CHANNELS.map(
+      (channel) =>
+        ({
+          channel,
+          label: channel,
+          configured: false,
+          source: "none",
+          hasSecret: false,
+        }) satisfies ImConfigSummary,
+    );
+  const activeEmailConfig = items.find((item) => item.slot === activeTarget.slot && activeTarget.type === "email");
+  const activeImConfig = imItems.find(
+    (item) => item.channel === activeTarget.channel && activeTarget.type === "im",
+  );
   const pending = configQuery.isLoading || imQuery.isLoading;
 
   return (
@@ -74,91 +93,71 @@ export function PlatformConnectPage() {
         />
       ) : null}
 
-      <div className="mx-auto w-full max-w-4xl px-1">
+      <div className="mx-auto w-full max-w-6xl px-1">
         <SystemAdminScopeHint scope="platform-connect" />
       </div>
 
-      <ListPageSection className="mx-auto w-full max-w-4xl">
+      <ListPageSection className="mx-auto w-full max-w-6xl">
         {pending ? (
           <div className="space-y-5 p-5 md:p-6">
             <Skeleton className="h-24 w-full rounded-2xl" />
             <Skeleton className="h-64 w-full rounded-2xl" />
           </div>
         ) : (
-          <div className="flex flex-col divide-y divide-gray-100 dark:divide-white/[0.06]">
-            {items.length > 0 ? (
-              <div className="px-5 py-5 md:px-6">
-                <div className="mb-4 flex items-start gap-3">
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 shadow-theme-xs dark:bg-brand-500/10 dark:text-brand-400">
-                    <Mail className="size-4" aria-hidden />
-                  </span>
-                  <div>
-                    <h2 className="text-theme-sm font-semibold text-gray-900 dark:text-white">邮件发信</h2>
-                    <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                      选择通道后配置 SMTP。定时任务创建时可指定发信通道。
-                    </p>
-                  </div>
-                </div>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {items.map((config) => (
-                    <ChannelPickerCard
-                      key={config.slot}
-                      config={config}
-                      active={activeSlot === config.slot}
-                      onSelect={() => setActiveSlot(config.slot)}
-                    />
-                  ))}
-                </div>
-                {activeConfig ? (
-                  <div className="mt-5">
-                    <EmailSmtpSlotForm
-                      key={activeConfig.slot}
-                      config={activeConfig}
-                      disabled={pending}
-                      onSaved={() => void configQuery.refetch()}
-                    />
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-
+          <div className="flex flex-col">
             <div className="px-5 py-5 md:px-6">
               <div className="mb-4 flex items-start gap-3">
                 <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600 shadow-theme-xs dark:bg-brand-500/10 dark:text-brand-400">
-                  <MessageSquare className="size-4" aria-hidden />
+                  <Link2 className="size-4" aria-hidden />
                 </span>
                 <div>
-                  <h2 className="text-theme-sm font-semibold text-gray-900 dark:text-white">工作通知</h2>
+                  <h2 className="text-theme-sm font-semibold text-gray-900 dark:text-white">投递通道</h2>
                   <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                    配置公司应用凭证后，用户可在个人中心授权绑定，定时报告将发到各人自己的 IM 账号。
+                    邮件 SMTP 与 IM 工作通知并列配置；定时任务创建时可勾选对应通道。
                   </p>
                 </div>
               </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                {(imItems.length > 0 ? imItems : IM_CHANNELS.map((ch) => ({ channel: ch, label: ch, configured: false, source: "none" as const, hasSecret: false }))).map(
-                  (config) => (
-                    <ImChannelPickerCard
-                      key={config.channel}
-                      config={config as ImConfigSummary}
-                      active={activeIm === config.channel}
-                      onSelect={() => setActiveIm(config.channel as ImChannel)}
-                    />
-                  ),
-                )}
+
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
+                {items.map((config) => (
+                  <ChannelPickerCard
+                    key={config.slot}
+                    config={config}
+                    active={activeTarget.type === "email" && activeTarget.slot === config.slot}
+                    onSelect={() => setActiveTarget({ type: "email", slot: config.slot })}
+                  />
+                ))}
+                {imItems.map((config) => (
+                  <ImChannelPickerCard
+                    key={config.channel}
+                    config={config}
+                    active={activeTarget.type === "im" && activeTarget.channel === config.channel}
+                    onSelect={() => setActiveTarget({ type: "im", channel: config.channel })}
+                  />
+                ))}
               </div>
-              {activeImConfig ? (
-                <div className="mt-5">
+
+              <div className="mt-5">
+                {activeTarget.type === "email" && activeEmailConfig ? (
+                  <EmailSmtpSlotForm
+                    key={activeEmailConfig.slot}
+                    config={activeEmailConfig}
+                    disabled={pending}
+                    onSaved={() => void configQuery.refetch()}
+                  />
+                ) : null}
+                {activeTarget.type === "im" && activeImConfig ? (
                   <ImChannelForm
                     key={activeImConfig.channel}
                     config={activeImConfig}
                     disabled={pending}
                     onSaved={() => void imQuery.refetch()}
                   />
-                </div>
-              ) : null}
+                ) : null}
+              </div>
             </div>
 
-            <div className="flex items-start gap-2.5 px-5 py-4 md:px-6">
+            <div className="flex items-start gap-2.5 border-t border-gray-100 px-5 py-4 dark:border-white/[0.06] md:px-6">
               <Info className="mt-0.5 size-4 shrink-0 text-gray-400" aria-hidden />
               <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
                 邮件收件人在用户管理维护；IM 账号由用户在个人中心自助绑定。清空某通道后即使环境变量仍有旧值，该通道也不会再发信。

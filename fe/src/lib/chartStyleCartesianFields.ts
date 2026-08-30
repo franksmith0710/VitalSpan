@@ -26,6 +26,7 @@ export function resolveCartesianShapeFields(chartType: ChartType): string[] | un
 export function chartTypeHasTooltipSection(chartType: ChartType): boolean {
   if (chartType.startsWith("table")) return false;
   if (chartType === "t-heatmap" || chartType === "kpi") return false;
+  if (chartType === "gis-map") return false;
   return true;
 }
 

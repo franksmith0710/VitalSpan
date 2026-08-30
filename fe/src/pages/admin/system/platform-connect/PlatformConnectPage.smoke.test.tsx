@@ -58,9 +58,12 @@ describe("PlatformConnectPage smoke", () => {
     expect(hint).toHaveTextContent("个人中心");
   });
 
-  it("renders work notice section", async () => {
+  it("renders email and IM channel pickers in one row", async () => {
     renderPage();
-    expect(await screen.findByText("工作通知")).toBeInTheDocument();
-    expect(await screen.findByText("企业微信")).toBeInTheDocument();
+    expect(await screen.findByText("投递通道")).toBeInTheDocument();
+    expect(screen.getByText("QQ 邮箱")).toBeInTheDocument();
+    expect(screen.getByText("企业微信")).toBeInTheDocument();
+    expect(screen.getByText("飞书")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "工作通知" })).not.toBeInTheDocument();
   });
 });

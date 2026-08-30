@@ -400,14 +400,44 @@ export function buildScatterCorePaint(
   chartColors?: string[],
   _flavor?: GisBasemapFlavor,
 ): Record<string, unknown> {
+  const strokeWidth = resolved.strokeWidth;
   return {
     "circle-radius": buildScatterRadiusExpression(resolved),
     "circle-color": buildMetricColorExpression(resolved, chartColors),
     "circle-opacity": buildScatterOpacityExpression(resolved, layerOpacity),
-    "circle-stroke-color": "rgba(255, 255, 255, 0.82)",
-    "circle-stroke-width": 0.55,
-    "circle-stroke-opacity": 0.92,
-    "circle-blur": 0.08,
+    "circle-stroke-color": resolved.strokeColor,
+    "circle-stroke-width": strokeWidth,
+    "circle-stroke-opacity": strokeWidth > 0 ? 0.92 : 0,
+    "circle-blur": resolved.circleBlur,
+  };
+}
+
+function buildClusterRadiusStep(
+  resolved: ResolvedGisOverlayStyle,
+  outputs: { default: number; at10: number; at50: number; at200: number },
+): ExpressionSpecification {
+  return [
+    "step",
+    ["get", "point_count"],
+    outputs.default,
+    10,
+    outputs.at10,
+    50,
+    outputs.at50,
+    200,
+    outputs.at200,
+  ];
+}
+
+function clusterRadiusOutputs(resolved: ResolvedGisOverlayStyle) {
+  const rMin = resolved.radiusMin;
+  const rMid = rMin + (resolved.radiusMax - rMin) * 0.45;
+  const rMax = resolved.radiusMax;
+  return {
+    default: rMin,
+    at10: rMin,
+    at50: rMid,
+    at200: rMax,
   };
 }
 
@@ -427,17 +457,12 @@ export function buildClusterHaloPaint(
       40,
       warm,
     ],
-    "circle-radius": [
-      "step",
-      ["get", "point_count"],
-      26,
-      10,
-      32,
-      50,
-      40,
-      200,
-      48,
-    ],
+    "circle-radius": buildClusterRadiusStep(resolved, {
+      default: 26,
+      at10: 32,
+      at50: 40,
+      at200: 48,
+    }),
     "circle-opacity": resolved.opacity * resolved.glowStrength * 0.38,
     "circle-blur": 1,
     "circle-stroke-width": 0,
@@ -460,17 +485,12 @@ export function buildClusterGlowPaint(
       40,
       warm,
     ],
-    "circle-radius": [
-      "step",
-      ["get", "point_count"],
-      18,
-      10,
-      22,
-      50,
-      28,
-      200,
-      34,
-    ],
+    "circle-radius": buildClusterRadiusStep(resolved, {
+      default: 18,
+      at10: 22,
+      at50: 28,
+      at200: 34,
+    }),
     "circle-opacity": resolved.opacity * resolved.glowStrength * 0.58,
     "circle-blur": 0.82,
     "circle-stroke-width": 0,
@@ -484,6 +504,8 @@ export function buildClusterCirclePaint(
   const accent = chartColors?.[0] ?? resolved.color;
   const warm = chartColors?.[2] ?? "#fbbf24";
   const hot = chartColors?.[3] ?? "#fb7185";
+  const strokeWidth = resolved.strokeWidth;
+  const radius = clusterRadiusOutputs(resolved);
   return {
     "circle-color": [
       "interpolate",
@@ -497,19 +519,11 @@ export function buildClusterCirclePaint(
       hot,
     ],
     "circle-opacity": Math.min(1, resolved.opacity * 0.72),
-    "circle-stroke-width": 0,
-    "circle-blur": 0.28,
-    "circle-radius": [
-      "step",
-      ["get", "point_count"],
-      10,
-      10,
-      12,
-      50,
-      15,
-      200,
-      18,
-    ],
+    "circle-stroke-color": resolved.strokeColor,
+    "circle-stroke-width": strokeWidth > 0 ? strokeWidth : 0,
+    "circle-stroke-opacity": strokeWidth > 0 ? 0.88 : 0,
+    "circle-blur": resolved.circleBlur,
+    "circle-radius": buildClusterRadiusStep(resolved, radius),
   };
 }
 

@@ -9,6 +9,7 @@ import {
   resolveGisRenderableBasemap,
   DEFAULT_GIS_GLOBE_VIEW,
   type ResolvedGisMapControls,
+  type GisProjectOverlay,
 } from "@/components/charts/engine/maplibre/gisProject";
 import { applyGisGraticule } from "@/components/charts/engine/maplibre/gisGraticule";
 import { applyBasemapRuntimePatch } from "@/components/charts/engine/maplibre/gisBasemapPalette";
@@ -18,6 +19,7 @@ import {
   buildGisLayersStructuralKey,
   buildGisLayersStyleKey,
   gisScatterInteractionLayerIds,
+  syncGisProjectLayerStyle,
   syncGisProjectLayers,
   type GisLayerRuntimeEntry,
 } from "@/components/charts/engine/maplibre/gisMapLayerStyle";
@@ -288,6 +290,27 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     () => buildGisLayersStructuralKey(layerEntries),
     [layerEntries],
   );
+
+  const applyOverlayPatch = useCallback((layerId: string, patch: GisProjectOverlay) => {
+    const map = mapRef.current;
+    if (!map) return false;
+    const entries = layerEntriesRef.current;
+    const index = entries.findIndex((entry) => entry.layer.id === layerId);
+    if (index < 0) return false;
+    const entry = entries[index]!;
+    const mergedStyle = { ...(entry.layer.style ?? {}), ...patch };
+    const patched: GisLayerRuntimeEntry = {
+      ...entry,
+      layer: { ...entry.layer, style: mergedStyle },
+      options: { ...entry.options, overlay: mergedStyle },
+    };
+    const nextEntries = [...entries];
+    nextEntries[index] = patched;
+    layerEntriesRef.current = nextEntries;
+    syncGisProjectLayerStyle(map, patched);
+    map.triggerRepaint();
+    return true;
+  }, []);
 
   const syncLayersRuntime = useCallback((map: MapLibreMap) => {
     syncGisProjectLayers(map, layerEntriesRef.current);
@@ -825,6 +848,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         syncLayersRuntime(map);
         return true;
       },
+      applyOverlayPatch,
       applySun: (sun, patch) => {
         const map = mapRef.current;
         if (!map) return false;
@@ -842,7 +866,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       },
       getSunSettings: () => sunEngineRef.current?.getSettings() ?? null,
     });
-  }, [ensureSunEngine, instanceKey, remountMapControls, syncLayersRuntime]);
+  }, [applyOverlayPatch, ensureSunEngine, instanceKey, remountMapControls, syncLayersRuntime]);
 
   const statusHint = pmtilesErrorHint ?? mapErrorHint;
   const dataHint = useMemo(

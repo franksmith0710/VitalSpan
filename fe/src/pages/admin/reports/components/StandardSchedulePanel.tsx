@@ -18,16 +18,17 @@ import {
 import { PageErrorBanner } from "@/components/ui/page-error-banner";
 import { mapApiError } from "@/lib/apiError";
 import { summarizeRecipients } from "@/lib/scheduleSourceMeta";
-import { pickActiveSchedule, scheduleRowToForm, deliveryPayloadFromForm, toEmailOnlyRecipients } from "../scheduleFormUtils";
+import { pickActiveSchedule, scheduleRowToForm, deliveryPayloadFromForm } from "../scheduleFormUtils";
 import { describeCron } from "./ScheduleWizard";
 import {
   DEFAULT_SCHEDULE_FORM,
+  getScheduleFormValidation,
   isScheduleFormSubmittable,
   resolveScheduleCron,
   ScheduleFormFields,
   type ScheduleFormValue,
 } from "./ScheduleFormFields";
-import { DEFAULT_EMAIL_RECIPIENTS } from "./ScheduleRecipientsField";
+import { DEFAULT_RECIPIENTS } from "./ScheduleRecipientsField";
 import { ScheduleActivationBanner } from "./ScheduleActivationBanner";
 import { ScheduleDeliveryHealthAlert } from "./ScheduleDeliveryHealthAlert";
 import { ScheduleHistoryTable } from "./ScheduleHistoryTable";
@@ -62,7 +63,7 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
 
   const [form, setForm] = useState<ScheduleFormValue>({
     ...DEFAULT_SCHEDULE_FORM,
-    recipients: DEFAULT_EMAIL_RECIPIENTS,
+    recipients: DEFAULT_RECIPIENTS,
     attachmentFormats: ["pdf"],
   });
   const [pendingActivateId, setPendingActivateId] = useState<string | null>(null);
@@ -77,15 +78,16 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
       const loaded = scheduleRowToForm(schedule);
       setForm({
         ...loaded,
-        recipients: toEmailOnlyRecipients(loaded.recipients),
+        recipients: loaded.recipients,
         attachmentFormats: ["pdf"],
       });
     }
   }, [schedule?.id, draftSelected, schedule]);
 
   const handleCreate = async () => {
-    if (!isScheduleFormSubmittable(form)) {
-      toast.error("请填写至少一个有效邮箱地址");
+    const validation = getScheduleFormValidation(form);
+    if (!validation.ok) {
+      toast.error(validation.message ?? "请完善投递配置");
       return;
     }
     try {
@@ -200,7 +202,6 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
             showDeliveryChannels
             hideStandaloneHealthAlerts
             embeddedLayout
-            recipientsMode="email-only"
             idPrefix={`std-schedule-${sourceKey}`}
           />
         </ScheduleFormSection>
@@ -263,7 +264,6 @@ export function StandardSchedulePanel({ sourceKey, packName, disabled = false }:
                   showDeliveryChannels
                   hideStandaloneHealthAlerts
                   embeddedLayout
-                  recipientsMode="email-only"
                   idPrefix={`std-schedule-edit-${sourceKey}`}
                 />
                 {!disabled ? (
