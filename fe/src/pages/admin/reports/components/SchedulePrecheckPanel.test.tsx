@@ -55,4 +55,26 @@ describe("SchedulePrecheckPanel", () => {
     expect(await screen.findByText(/Playwright 未安装/)).toBeInTheDocument();
     expect(screen.getByText(/pip install/)).toBeInTheDocument();
   });
+
+  it("warns when feishu user_delegated owner not ready", async () => {
+    mockApiFetch.mockImplementation(async (path: string) => {
+      if (path.includes("delivery-health")) {
+        return {
+          status: "reachable",
+          im: {
+            feishu: { configured: true, deliveryMode: "user_delegated" },
+          },
+          imOwner: {
+            feishu: { ready: false, error: "您尚未绑定飞书，请在个人中心完成扫码绑定" },
+          },
+        };
+      }
+      if (path.includes("export-health")) {
+        return { status: "available", error: null };
+      }
+      return {};
+    });
+    renderPanel();
+    expect(await screen.findByText(/您尚未绑定飞书/)).toBeInTheDocument();
+  });
 });

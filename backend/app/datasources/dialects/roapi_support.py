@@ -78,6 +78,12 @@ def table_names(payload: object) -> list[str]:
     return []
 
 
+def columns_for_table(payload: object, table: str) -> list[ColumnInfo]:
+    if isinstance(payload, dict) and table in payload:
+        return columns_from_schema(payload[table])
+    return []
+
+
 def columns_from_schema(payload: object) -> list[ColumnInfo]:
     fields: list[object] = []
     if isinstance(payload, dict):

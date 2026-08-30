@@ -80,10 +80,12 @@ class RoapiConnector:
         return [TableInfo(name=name, type="TABLE") for name in support.table_names(payload)]
 
     def list_columns(self, connection: httpx.Client, schema: str, table: str) -> list[ColumnInfo]:
-        base = support.schema_path_from_client(connection).rstrip("/")
-        path = f"{base}/{quote(table, safe='')}"
-        payload = support.request_json(connection, "GET", path)
-        return support.columns_from_schema(payload)
+        schema_path = support.schema_path_from_client(connection)
+        payload = support.request_json(connection, "GET", schema_path)
+        columns = support.columns_for_table(payload, table)
+        if columns:
+            return columns
+        raise QueryError(ROAPI_TABLE_NOT_FOUND, f"Table not found: {table}", 404)
 
     def execute_native_query(
         self,

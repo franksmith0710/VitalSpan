@@ -25,7 +25,6 @@ export function useInViewport<T extends Element>(
       setInView(true);
       return undefined;
     }
-    setInView(false);
     if (!node) return undefined;
     if (typeof IntersectionObserver === "undefined") {
       setInView(true);

@@ -15,7 +15,11 @@ import {
 type DeliveryHealth = {
   status: "reachable" | "unreachable" | "unconfigured";
   error?: string | null;
-  im?: Record<string, { configured?: boolean; error?: string | null }>;
+  im?: Record<
+    string,
+    { configured?: boolean; deliveryMode?: string; error?: string | null }
+  >;
+  imOwner?: Record<string, { ready?: boolean; error?: string | null }>;
 };
 
 type PrecheckItem = {
@@ -150,19 +154,32 @@ export function useSchedulePrecheckItems(input: {
   });
 
   const imHealth = delivery?.im;
+  const imOwner = delivery?.imOwner;
   if (imHealth) {
     for (const channel of ["wecom", "dingtalk", "feishu"] as const) {
       const row = imHealth[channel];
       const ok = Boolean(row?.configured);
+      const userDelegated = row?.deliveryMode === "user_delegated";
+      const ownerRow = imOwner?.[channel];
+      const ownerReady = !userDelegated || Boolean(ownerRow?.ready);
       items.push({
         id: `im-${channel}`,
         label: `${IM_CHANNEL_LABELS[channel]}工作通知`,
-        ok,
-        detail: ok
-          ? "应用已配置且探测通过；收件人须在个人中心绑定自己的账号。"
-          : row?.error || "应用未配置或探测未通过，请联系管理员在平台对接中配置。",
+        ok: ok && ownerReady,
+        detail: !ok
+          ? row?.error || "应用未配置或探测未通过，请联系管理员在平台对接中配置。"
+          : userDelegated && !ownerReady
+            ? ownerRow?.error || "您尚未完成飞书扫码绑定，定时 IM 投递将以您的身份发信。"
+            : userDelegated
+              ? "用户委托模式：应用已配置；发信将使用您绑定的飞书身份。"
+              : "应用已配置且探测通过；收件人须在个人中心绑定自己的账号。",
         blocking: false,
-        fixHint: ok ? undefined : "系统管理 → 平台对接 → 工作通知",
+        fixHint:
+          !ok
+            ? "系统管理 → 平台对接 → 工作通知"
+            : userDelegated && !ownerReady
+              ? "个人中心 → 工作通知绑定 → 飞书扫码"
+              : undefined,
       });
     }
   }

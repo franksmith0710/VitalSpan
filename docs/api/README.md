@@ -102,7 +102,8 @@ redoc: /redoc
 | PUT | `/api/v1/platform/delivery/im/{channel}` | 保存 IM 应用凭证并探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
 | DELETE | `/api/v1/platform/delivery/im/{channel}` | 清空 IM 通道（清空后忽略 env） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
 | GET | `/api/v1/me/im-bindings` | 当前用户三通道绑定状态 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
-| GET | `/api/v1/me/im-bindings/{channel}/authorize` | 发起 OAuth 授权跳转 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
+| GET | `/api/v1/me/im-bindings/{channel}/authorize` | 发起 OAuth 授权跳转（浏览器直链，须 Cookie/Bearer） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
+| POST | `/api/v1/me/im-bindings/{channel}/authorize-url` | 返回 OAuth 授权 URL（SPA 带 Bearer 后跳转） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | DELETE | `/api/v1/me/im-bindings/{channel}` | 解绑指定 IM 通道 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | POST | `/api/v1/me/im-bindings/feishu/device-auth/start` | 飞书 device-code 绑定启动（user_delegated） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | POST | `/api/v1/me/im-bindings/feishu/device-auth/complete` | 飞书 device-code 轮询完成 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |

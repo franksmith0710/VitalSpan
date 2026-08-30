@@ -7,6 +7,7 @@ import {
   sunPositionAt,
   type GisSunSettings,
 } from "@/components/charts/engine/maplibre/gisSunPosition";
+import { whenGisMapStyleReady } from "@/components/charts/engine/maplibre/gisMapRuntime";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
@@ -112,24 +113,33 @@ export class GisSunEngine {
 
   private handleStyleData(): void {
     if (this.destroyed) return;
-    if (!this.map.getSource(NIGHT_SOURCE_ID)) {
-      this.ensureLayers();
-      this.render();
-    }
-    try {
-      const sky = this.map.getSky();
-      if (sky && sky["atmosphere-blend"] !== 0) {
-        this.map.setSky({ ...sky, "atmosphere-blend": 0 });
+    whenGisMapStyleReady(this.map, () => {
+      if (this.destroyed) return;
+      if (!this.map.getSource(NIGHT_SOURCE_ID) || !this.map.getLayer(NIGHT_LAYER_ID)) {
+        this.invalidateNightMask();
+        this.ensureLayers();
+        this.render();
       }
-    } catch {
-      /* style without sky */
-    }
+      try {
+        const sky = this.map.getSky();
+        if (sky && sky["atmosphere-blend"] !== 0) {
+          this.map.setSky({ ...sky, "atmosphere-blend": 0 });
+        }
+      } catch {
+        /* style without sky */
+      }
+    });
+  }
+
+  private invalidateNightMask(): void {
+    this.maskDrawn = false;
   }
 
   private ensureLayers(): void {
     if (!this.map.isStyleLoaded()) return;
     this.removeLegacyBandLayers();
     if (this.map.getSource(NIGHT_SOURCE_ID)) return;
+    this.invalidateNightMask();
     this.drawNightMask();
     this.map.addSource(NIGHT_SOURCE_ID, {
       type: "canvas",
@@ -169,6 +179,7 @@ export class GisSunEngine {
     if (this.map.getLayer(NIGHT_LAYER_ID)) this.map.removeLayer(NIGHT_LAYER_ID);
     this.removeLegacyBandLayers();
     if (this.map.getSource(NIGHT_SOURCE_ID)) this.map.removeSource(NIGHT_SOURCE_ID);
+    this.invalidateNightMask();
   }
 
   private removeLegacyBandLayers(): void {
@@ -180,14 +191,23 @@ export class GisSunEngine {
 
   render(): void {
     if (this.destroyed) return;
-    if (!this.map.getSource(NIGHT_SOURCE_ID)) {
-      this.ensureLayers();
-    }
-    const source = this.map.getSource(NIGHT_SOURCE_ID) as CanvasSource | undefined;
-    if (!source) return;
-    this.drawNightMask();
-    this.applyLight();
-    this.raiseNightLayer();
+    whenGisMapStyleReady(this.map, () => {
+      if (this.destroyed) return;
+      if (!this.map.getSource(NIGHT_SOURCE_ID) || !this.map.getLayer(NIGHT_LAYER_ID)) {
+        this.invalidateNightMask();
+        this.ensureLayers();
+      }
+      const source = this.map.getSource(NIGHT_SOURCE_ID) as CanvasSource | undefined;
+      if (!source) return;
+      this.drawNightMask();
+      this.applyLight();
+      this.raiseNightLayer();
+      try {
+        this.map.triggerRepaint();
+      } catch {
+        /* map tearing down */
+      }
+    });
   }
 
   play(): void {

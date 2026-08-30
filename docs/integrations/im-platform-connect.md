@@ -30,10 +30,22 @@
 
 仓内蓝图术语表已裁定「绑定 ≠ 登录」；本表不覆盖。
 
+## 1.2 投递模式（`deliveryMode`）
+
+| 模式 | 适用通道 | 平台配置 | 绑定方式 | 发信身份 |
+|------|----------|----------|----------|----------|
+| `corporate_app` | 企微 / 钉钉 / 飞书 | App 凭证 + **回调域名**（OAuth） | 浏览器 OAuth 跳转 | 应用 `tenant_access_token` / gettoken |
+| `user_delegated` | **仅飞书**（M1） | AppId + Secret，**无回调域名** | RFC 8628 **device-code** 扫码 | **调度 owner** 的 `user_access_token` |
+
+- `user_delegated` 探测：**不调** gettoken；凭证字段齐全即 `configured: true`。
+- 收件人仅需 `user_im_bindings.account_id`；**不需**各自 user token。
+- 调度预检：`GET /api/v1/reports/schedules/delivery-health` 返回 `imOwner`，校验当前用户（调度 owner）是否已绑定且 token 可用。
+- SPA 绑定 OAuth：`POST /me/im-bindings/{channel}/authorize-url` 带 Bearer 取 URL 后跳转（避免直链 GET 无鉴权）。
+
 ## 2. Integration Card（摘要）
 
 - 仓内实现（2026-08-28）：`backend/app/reports/scheduler/channels/im_sdk/` — 飞书 **`lark-oapi`**、钉钉 **`dingtalk-sdk`**（oapi `asyncsend_v2`）、企微 **`wechatpy`**（官方 REST 封装；腾讯无统一 PyPI 官方包）。按人发信：`work_notice.py` → `im_sdk/*`；群 webhook 仍为 httpx POST（厂商固定 URL，无 SDK）。
-- 探测：`probe_im_apps` / `im_sdk/probe.py` 与发信同栈调 gettoken（`tenant_access_token`），成功才 `configured: true`；失败带 `error`；60s 内存缓存。
+- 探测：`probe_im_apps` / `im_sdk/probe.py` — `corporate_app` 调 gettoken；`user_delegated`（飞书）仅校验凭证字段；60s 内存缓存；响应含 `deliveryMode`。
 - smoke：`contracts/im-platform-connect.smoke.py` 复用 `probe_channel_credentials`（SDK 路径，非裸 httpx）。
 - 仍未闭合：无凭据时 smoke 真打；authorize+callback 须在真实应用与回调域名下验收。
 - 已闭合（2026-08-28）：管理面 IM 凭证 DB SoR（`platform_im_connect_configs`）；三通道 OAuth 绑定 API + 个人中心/平台对接 UI。

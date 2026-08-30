@@ -132,8 +132,11 @@ services:
       - 0.0.0.0:8080
       - --table
       - demo_orders=/data/demo_orders.csv
+      - --table
+      - demo_products=/data/demo_products.csv
     volumes:
       - ./docker/roapi/demo_orders.csv:/data/demo_orders.csv:ro
+      - ./docker/roapi/demo_products.csv:/data/demo_products.csv:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8080/api/schema || exit 1"]
       interval: 10s

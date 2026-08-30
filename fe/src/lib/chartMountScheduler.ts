@@ -58,10 +58,6 @@ export class ChartMountScheduler {
     if (existing) {
       existing.priority = priority;
       existing.inView = inView;
-      if (!inView && existing.state === "mounting") {
-        this.mounting.delete(widgetId);
-        existing.state = "waiting";
-      }
     } else {
       this.entries.set(widgetId, { widgetId, priority, inView, state: "waiting" });
     }
@@ -94,17 +90,14 @@ export class ChartMountScheduler {
     if (!entry) {
       return { canQuery: false, canRender: false };
     }
-    if (this.interactionFrozen && entry.state === "ready") {
-      return {
-        // 已就绪图表保持查数开关，避免松手时 queryEnabled 翻转触发整图重绘闪一下
-        canQuery: entry.inView,
-        canRender: true,
-      };
+    // 已画完的图保留最后一帧：视口抖动/点选不要卸成灰色骨架
+    if (entry.state === "ready") {
+      return { canQuery: entry.inView, canRender: true };
     }
     if (!entry.inView) {
       return { canQuery: false, canRender: false };
     }
-    if (entry.state === "ready" || entry.state === "mounting") {
+    if (entry.state === "mounting") {
       return { canQuery: true, canRender: true };
     }
     return { canQuery: false, canRender: false };
@@ -163,11 +156,19 @@ export class ChartMountScheduler {
     if (waiting.length === 0) return;
 
     const bestWaitingPriority = Math.min(...waiting.map((entry) => entry.priority));
-    for (const entry of this.entries.values()) {
-      if (entry.state === "mounting" && entry.priority > bestWaitingPriority) {
-        entry.state = "waiting";
-        this.mounting.delete(entry.widgetId);
-      }
+    const need = waiting.filter((entry) => entry.priority === bestWaitingPriority).length;
+    const free = this.maxConcurrent - this.mounting.size;
+    let toFree = Math.max(0, Math.min(need, this.maxConcurrent) - free);
+    if (toFree <= 0) return;
+
+    const victims = [...this.entries.values()]
+      .filter((entry) => entry.state === "mounting" && entry.priority > bestWaitingPriority)
+      .sort((a, b) => b.priority - a.priority || b.widgetId.localeCompare(a.widgetId));
+    for (const entry of victims) {
+      if (toFree <= 0) break;
+      entry.state = "waiting";
+      this.mounting.delete(entry.widgetId);
+      toFree -= 1;
     }
   }
 

@@ -69,14 +69,62 @@ def _refresh_feishu_token(creds: ImCredentials, refresh_token: str) -> tuple[str
     return access_token, (str(new_refresh) if new_refresh else refresh_token), expires_in
 
 
-def get_user_access_token(session: Session, user_id: uuid.UUID, channel: str) -> str | None:
+def _coerce_user_id(user_id: uuid.UUID | str) -> uuid.UUID:
+    if isinstance(user_id, uuid.UUID):
+        return user_id
+    return uuid.UUID(str(user_id))
+
+
+def owner_has_send_token(session: Session, user_id: uuid.UUID | str, channel: str) -> tuple[bool, str | None]:
+    """Whether schedule owner can send in user_delegated mode (no network refresh)."""
+    normalized = normalize_im_channel(channel)
+    creds = resolve_im_credentials(session, channel=normalized)
+    if creds.delivery_mode != "user_delegated":
+        return True, None
+    if normalized != "feishu":
+        return False, "用户委托模式暂不支持该通道"
+    if not creds.is_configured:
+        return False, "应用未配置"
+    uid = _coerce_user_id(user_id)
+    row = session.scalar(
+        select(UserImBinding).where(
+            UserImBinding.user_id == uid,
+            UserImBinding.channel == normalized,
+        )
+    )
+    if row is None:
+        return False, "您尚未绑定飞书，请在个人中心完成扫码绑定"
+    blob = _load_token_blob(row)
+    access_token = (blob.get("access_token") or "").strip()
+    refresh_token = (blob.get("refresh_token") or "").strip()
+    if not access_token and not refresh_token:
+        return False, "飞书授权已失效，请重新绑定"
+    return True, None
+
+
+def check_im_owner_sender_ready(session: Session, user_id: uuid.UUID | str) -> dict[str, dict[str, object]]:
+    from app.core.platform_config.im_connect_model import IM_CHANNELS
+    from app.core.platform_config.im_resolve import resolve_im_delivery_mode
+
+    out: dict[str, dict[str, object]] = {}
+    for channel in IM_CHANNELS:
+        mode = resolve_im_delivery_mode(session, channel)
+        if mode != "user_delegated":
+            continue
+        ready, error = owner_has_send_token(session, user_id, channel)
+        out[channel] = {"ready": ready, "error": error}
+    return out
+
+
+def get_user_access_token(session: Session, user_id: uuid.UUID | str, channel: str) -> str | None:
+    uid = _coerce_user_id(user_id)
     normalized = normalize_im_channel(channel)
     creds = resolve_im_credentials(session, channel=normalized)
     if creds.delivery_mode != "user_delegated":
         return None
     row = session.scalar(
         select(UserImBinding).where(
-            UserImBinding.user_id == user_id,
+            UserImBinding.user_id == uid,
             UserImBinding.channel == normalized,
         )
     )
@@ -112,5 +160,5 @@ def get_user_access_token(session: Session, user_id: uuid.UUID, channel: str) ->
         refresh_token=new_refresh,
         expires_in=expires_in,
     )
-    session.commit()
+    session.flush()
     return new_access

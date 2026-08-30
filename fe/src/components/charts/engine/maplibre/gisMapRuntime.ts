@@ -138,9 +138,13 @@ export function whenGisMapStyleReady(map: MapLibreMap, run: () => void) {
     return;
   }
   const onReady = () => {
-    if (!map.isStyleLoaded()) return;
+    if (!map.isStyleLoaded()) {
+      map.once("idle", onReady);
+      return;
+    }
     map.off("load", onReady);
     map.off("style.load", onReady);
+    map.off("idle", onReady);
     run();
   };
   // setStyle 后 load 不再触发；仅 style.load 会到。已 loaded 时勿挂 once("load") 以免永不回调。

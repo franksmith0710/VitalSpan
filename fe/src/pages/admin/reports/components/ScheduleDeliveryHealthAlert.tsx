@@ -8,6 +8,7 @@ type DeliveryHealth = {
   host?: string | null;
   port?: number;
   error?: string | null;
+  imOwner?: Record<string, { ready?: boolean; error?: string | null }>;
 };
 
 export function ScheduleDeliveryHealthAlert({ className }: { className?: string }) {
@@ -18,7 +19,25 @@ export function ScheduleDeliveryHealthAlert({ className }: { className?: string 
   });
 
   const health = healthQuery.data;
-  if (!health || health.status === "reachable") return null;
+  const imOwnerIssue = health?.imOwner?.feishu;
+  const showImOwner = Boolean(imOwnerIssue && imOwnerIssue.ready === false);
+
+  if (!health) return null;
+  if (health.status === "reachable" && !showImOwner) return null;
+
+  if (showImOwner && health.status === "reachable") {
+    return (
+      <Alert variant="warning" className={className}>
+        <AlertTriangle className="size-4" aria-hidden />
+        <AlertTitle>飞书发信身份未就绪</AlertTitle>
+        <AlertDescription>
+          {imOwnerIssue?.error ??
+            "当前为飞书用户委托模式，调度人将使用您的飞书身份发信。请先在个人中心完成飞书扫码绑定。"}
+          调度仍可创建，但激活后 IM 投递可能失败。
+        </AlertDescription>
+      </Alert>
+    );
+  }
 
   return (
     <Alert variant="warning" className={className}>

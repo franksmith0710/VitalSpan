@@ -29,9 +29,9 @@ describe("PlatformConnectPage smoke", () => {
       if (path.includes("/im/slots")) {
         return Promise.resolve({
           items: [
-            { channel: "wecom", label: "企业微信", configured: false, source: "none", hasSecret: false },
-            { channel: "dingtalk", label: "钉钉", configured: false, source: "none", hasSecret: false },
-            { channel: "feishu", label: "飞书", configured: false, source: "none", hasSecret: false },
+            { channel: "wecom", label: "企业微信", configured: false, source: "none", hasSecret: false, deliveryMode: "corporate_app" },
+            { channel: "dingtalk", label: "钉钉", configured: false, source: "none", hasSecret: false, deliveryMode: "corporate_app" },
+            { channel: "feishu", label: "飞书", configured: false, source: "none", hasSecret: false, deliveryMode: "corporate_app" },
           ],
         });
       }

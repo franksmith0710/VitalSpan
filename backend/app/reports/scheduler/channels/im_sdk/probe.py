@@ -154,11 +154,17 @@ def probe_im_channels(
     for channel in _CHANNELS:
         creds = creds_map[channel]
         if not creds.is_configured:
-            out[channel] = {"configured": False, "groupWebhook": _group_webhook(cfg, channel), "error": None}
+            out[channel] = {
+                "configured": False,
+                "deliveryMode": creds.delivery_mode,
+                "groupWebhook": _group_webhook(cfg, channel),
+                "error": None,
+            }
             continue
         result = probe_im_credentials_bundle(creds)
         out[channel] = {
             "configured": bool(result.get("ok")),
+            "deliveryMode": creds.delivery_mode,
             "groupWebhook": _group_webhook(cfg, channel),
             "error": result.get("error"),
         }

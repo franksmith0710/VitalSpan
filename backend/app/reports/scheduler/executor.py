@@ -463,6 +463,7 @@ def semi_real_execute_schedule(
             email_smtp_slot=row.get("email_smtp_slot") or "qq",
             owner_id=owner_id,
         )
+        delivery_session.commit()
     finally:
         delivery_session.close()
     error_message: str | None = None

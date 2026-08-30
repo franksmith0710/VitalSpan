@@ -40,6 +40,7 @@ import {
   restoreGisMapCamera,
   startGisGlobeAutoRotate,
   syncGisMapView,
+  whenGisMapStyleReady,
   type GisMapCamera,
 } from "@/components/charts/engine/maplibre/gisMapRuntime";
 import { resolveGisProjectSun } from "@/components/charts/engine/maplibre/gisProjectSun";
@@ -119,20 +120,26 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const sunEnabled = resolveGisProjectSun(project.sun).enabled;
 
   const ensureSunEngine = useCallback((map: MapLibreMap | null = mapRef.current) => {
-    if (!map?.isStyleLoaded()) return;
-    const resolved = resolveGisProjectSun(projectRef.current.sun);
-    if (!resolved.enabled) {
-      sunEngineRef.current?.destroy();
-      sunEngineRef.current = null;
-      return;
-    }
-    const { enabled: _enabled, ...settings } = resolved;
-    if (!sunEngineRef.current) {
-      sunEngineRef.current = createGisSunEngine(map, projectRef.current.sun);
-    } else {
-      sunEngineRef.current.applySettings(settings);
-    }
-    sunEngineRef.current.render();
+    if (!map) return;
+    const mountSun = () => {
+      const resolved = resolveGisProjectSun(projectRef.current.sun);
+      if (!resolved.enabled) {
+        sunEngineRef.current?.destroy();
+        sunEngineRef.current = null;
+        return;
+      }
+      const { enabled: _enabled, ...settings } = resolved;
+      if (!sunEngineRef.current) {
+        sunEngineRef.current = createGisSunEngine(map, projectRef.current.sun);
+      } else {
+        sunEngineRef.current.applySettings(settings);
+      }
+      sunEngineRef.current?.render();
+      map.once("idle", () => {
+        sunEngineRef.current?.render();
+      });
+    };
+    whenGisMapStyleReady(map, mountSun);
   }, []);
   const [pmtilesStyle, setPmtilesStyle] = useState<StyleSpecification | null>(null);
   const [pmtilesLoading, setPmtilesLoading] = useState(false);
@@ -376,6 +383,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     let cancelled = false;
     let map: MapLibreMap | null = null;
     let resyncDataLayers: (() => void) | undefined;
+    let resyncSun: (() => void) | undefined;
     let disposeLiveCamera: (() => void) | undefined;
     setGisPaintState("loading");
 
@@ -410,7 +418,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         if (cancelled || !map) return;
         syncLayersRuntime(map);
       };
+      resyncSun = () => {
+        if (cancelled || !map) return;
+        ensureSunEngine(map);
+      };
       map.on("style.load", resyncDataLayers);
+      map.on("style.load", resyncSun);
 
       map.on("error", (event) => {
         if (cancelled) return;
@@ -452,6 +465,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           applyConfiguredView(map);
         }
         syncLayersRuntime(map);
+        map.once("idle", () => {
+          if (!cancelled && map) syncLayersRuntime(map);
+        });
         setMapRuntimeEpoch((epoch) => epoch + 1);
         map.resize();
         setGisPaintState("ready");
@@ -476,6 +492,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       if (map && resyncDataLayers) {
         map.off("style.load", resyncDataLayers);
       }
+      if (map && resyncSun) {
+        map.off("style.load", resyncSun);
+      }
       sunEngineRef.current?.destroy();
       sunEngineRef.current = null;
       mapRef.current?.remove();
@@ -483,7 +502,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       appliedStyleKeyRef.current = null;
       syncedViewKeyRef.current = null;
     };
-  }, [applyConfiguredView, mapBootstrapKey, renderBasemap, resolveInitialView]);
+  }, [applyConfiguredView, ensureSunEngine, mapBootstrapKey, renderBasemap, resolveInitialView]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -539,6 +558,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           { preserveCamera: true },
         );
         syncLayersRuntime(map);
+        map.once("idle", () => syncLayersRuntime(map));
         setMapRuntimeEpoch((epoch) => epoch + 1);
         map.resize();
         setGisPaintState("ready");
@@ -590,9 +610,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   useEffect(() => {
     const map = mapRef.current;
     if (!map || gisPaintState !== "ready") return;
-    const mountSun = () => ensureSunEngine(map);
-    if (map.isStyleLoaded()) mountSun();
-    else map.once("style.load", mountSun);
+    ensureSunEngine(map);
   }, [ensureSunEngine, gisPaintState, mapRuntimeEpoch, sunEnabled, sunKey]);
 
   useEffect(() => {
@@ -627,6 +645,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         map,
         resolveGisEffectsSettings(projectRef.current),
       );
+      ensureSunEngine(map);
     };
     if (map.isStyleLoaded()) mount();
     else map.once("load", mount);
@@ -634,7 +653,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       effectsEngineRef.current?.destroy();
       effectsEngineRef.current = null;
     };
-  }, [effectsSettings.enabled, gisPaintState, mapRuntimeEpoch, project.projection, renderBasemap, styleKey]);
+  }, [effectsSettings.enabled, ensureSunEngine, gisPaintState, mapRuntimeEpoch, project.projection, renderBasemap, styleKey]);
 
   useEffect(() => {
     applyGisGeolibreEffectsSettings(effectsEngineRef.current, effectsSettings);

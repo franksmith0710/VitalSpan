@@ -13,6 +13,19 @@ _USER_INFO_URL = "https://open.feishu.cn/open-apis/authen/v1/user_info"
 _DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code"
 _DEFAULT_SCOPE = "offline_access"
 _TIMEOUT = 8.0
+_PENDING_ERRORS = frozenset({"authorization_pending", "slow_down"})
+_PENDING_FEISHU_CODES = frozenset({20094})
+
+
+def _is_device_auth_pending(data: dict) -> bool:
+    error = str(data.get("error") or "").lower()
+    if error in _PENDING_ERRORS:
+        return True
+    code = data.get("code")
+    if code in _PENDING_FEISHU_CODES:
+        return True
+    msg = str(data.get("msg") or data.get("error_description") or "").lower()
+    return "authorization_pending" in msg or "slow_down" in msg
 
 
 @dataclass(frozen=True)
@@ -113,7 +126,7 @@ def poll_feishu_device_token(
             user_id=user_id,
         )
     error = str(data.get("error") or "")
-    if error in {"authorization_pending", "slow_down"}:
+    if _is_device_auth_pending(data):
         interval = int(data.get("interval") or 5)
         return DeviceAuthPending(interval=interval)
     if error in {"access_denied", "expired_token"}:

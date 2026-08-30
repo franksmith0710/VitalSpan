@@ -66,7 +66,7 @@ describe("ChartMountScheduler", () => {
     scheduler.register("ready", 1, false);
     expect(scheduler.getGate("ready")).toEqual({ canQuery: false, canRender: true });
     release();
-    expect(scheduler.getGate("ready")).toEqual({ canQuery: false, canRender: false });
+    expect(scheduler.getGate("ready")).toEqual({ canQuery: false, canRender: true });
   });
 
   it("keeps in-view ready peers querying during interaction freeze", () => {
@@ -90,6 +90,25 @@ describe("ChartMountScheduler", () => {
     scheduler.register("a", 1, false);
     expect(scheduler.getGate("a").canRender).toBe(true);
     release();
-    expect(scheduler.getGate("a")).toEqual({ canQuery: false, canRender: false });
+    expect(scheduler.getGate("a")).toEqual({ canQuery: false, canRender: true });
+  });
+
+  it("does not evict in-flight mounts when a higher-priority widget has a free slot", () => {
+    const scheduler = new ChartMountScheduler(3);
+    scheduler.register("a", 1, true);
+    scheduler.register("b", 1, true);
+    scheduler.register("selected", 0, true);
+
+    expect(scheduler.getGate("a")).toEqual({ canQuery: true, canRender: true });
+    expect(scheduler.getGate("b")).toEqual({ canQuery: true, canRender: true });
+    expect(scheduler.getGate("selected")).toEqual({ canQuery: true, canRender: true });
+  });
+
+  it("preempts only enough slots for a higher-priority waiter", () => {
+    const scheduler = new ChartMountScheduler(1);
+    scheduler.register("slow", 1, true);
+    scheduler.register("fast", 0, true);
+    expect(scheduler.getGate("fast")).toEqual({ canQuery: true, canRender: true });
+    expect(scheduler.getGate("slow")).toEqual({ canQuery: false, canRender: false });
   });
 });

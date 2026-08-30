@@ -93,9 +93,22 @@ export function ImBindingsCard() {
     onError: (err) => toast.error(mapApiError(err)),
   });
 
+  const oauthBindMutation = useMutation({
+    mutationFn: async (channel: ImChannel) => {
+      const redirect = encodeURIComponent("/admin/account/profile");
+      return apiFetch<{ authorizeUrl: string }>(
+        `/api/v1/me/im-bindings/${channel}/authorize-url?redirectAfter=${redirect}`,
+        { method: "POST" },
+      );
+    },
+    onSuccess: (data) => {
+      window.location.href = data.authorizeUrl;
+    },
+    onError: (err) => toast.error(mapApiError(err)),
+  });
+
   const startOAuthBind = (channel: ImChannel) => {
-    const redirect = encodeURIComponent("/admin/account/profile");
-    window.location.href = `/api/v1/me/im-bindings/${channel}/authorize?redirectAfter=${redirect}`;
+    oauthBindMutation.mutate(channel);
   };
 
   const pollDeviceComplete = async (sessionId: string, intervalMs: number) => {
@@ -231,7 +244,7 @@ export function ImBindingsCard() {
                     type="button"
                     variant="primary"
                     size="sm"
-                    disabled={!item.appConfigured || deviceStartMutation.isPending}
+                    disabled={!item.appConfigured || deviceStartMutation.isPending || oauthBindMutation.isPending}
                     onClick={() => startBind(item)}
                   >
                     绑定{item.label}

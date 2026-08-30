@@ -8,9 +8,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.auth.im_oauth.device_code.feishu import DeviceAuthPending, DeviceAuthTokens
+from app.auth.im_oauth.device_code.feishu import DeviceAuthPending, DeviceAuthTokens, poll_feishu_device_token
+from app.auth.im_oauth.im_user_token import check_im_owner_sender_ready, get_user_access_token
 from app.auth.im_oauth.service import complete_feishu_device_auth_session, start_feishu_device_auth_session
-from app.auth.im_oauth.im_user_token import get_user_access_token
 from app.core.crypto.credentials import encrypt_credential
 from app.core.platform_config import im_service
 from app.core.platform_config.im_credentials import ImCredentials
@@ -91,7 +91,8 @@ def test_get_user_access_token_refresh():
             refresh.return_value = ("new_access", "rt_2", 7200)
             token = get_user_access_token(session, user_id, "feishu")
     assert token == "new_access"
-    session.commit.assert_called_once()
+    assert session.flush.call_count >= 1
+    session.commit.assert_not_called()
 
 
 def test_send_work_notices_user_delegated():
@@ -219,3 +220,63 @@ def test_start_feishu_device_auth_session():
     assert out.user_code == "ABCD"
     session.add.assert_called_once()
     session.commit.assert_called_once()
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"error": "authorization_pending", "interval": 3},
+        {"code": 20094, "msg": "authorization pending"},
+        {"msg": "slow_down please wait"},
+    ],
+)
+def test_poll_feishu_device_token_pending_variants(payload):
+    mock_resp = MagicMock()
+    mock_resp.json.return_value = payload
+    with patch("app.auth.im_oauth.device_code.feishu.httpx.Client") as client_cls:
+        client_cls.return_value.__enter__.return_value.post.return_value = mock_resp
+        result = poll_feishu_device_token(app_id="cli", app_secret="sec", device_code="dc")
+    assert isinstance(result, DeviceAuthPending)
+
+
+def test_check_im_owner_sender_ready_unbound():
+    user_id = uuid.uuid4()
+    session = MagicMock()
+    session.scalar.return_value = None
+    creds = ImCredentials(
+        channel="feishu",
+        source="db",
+        delivery_mode="user_delegated",
+        app_id="cli",
+        app_secret="sec",
+    )
+    with patch("app.auth.im_oauth.im_user_token.resolve_im_credentials", return_value=creds):
+        from app.auth.im_oauth.im_user_token import owner_has_send_token
+
+        ready, error = owner_has_send_token(session, user_id, "feishu")
+    assert ready is False
+    assert "绑定" in (error or "")
+
+
+def test_check_im_owner_sender_ready_map():
+    user_id = uuid.uuid4()
+    session = MagicMock()
+    row = MagicMock()
+    row.token_encrypted = encrypt_credential(
+        json.dumps({"access_token": "tok", "refresh_token": "rt", "expires_at": ""}, ensure_ascii=False)
+    )
+    session.scalar.return_value = row
+    creds = ImCredentials(
+        channel="feishu",
+        source="db",
+        delivery_mode="user_delegated",
+        app_id="cli",
+        app_secret="sec",
+    )
+    with patch("app.auth.im_oauth.im_user_token.resolve_im_credentials", return_value=creds):
+        with patch(
+            "app.core.platform_config.im_resolve.resolve_im_delivery_mode",
+            return_value="user_delegated",
+        ):
+            out = check_im_owner_sender_ready(session, user_id)
+    assert out["feishu"]["ready"] is True

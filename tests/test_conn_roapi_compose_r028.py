@@ -52,6 +52,9 @@ def test_conn_r028_compose_02_list_tables_and_sql(roapi_compose_env):
         tables = connector.list_tables(conn, "roapi")
         names = {t.name for t in tables}
         assert "demo_orders" in names
+        column_infos = connector.list_columns(conn, "roapi", "demo_orders")
+        col_names = [c.name for c in column_infos]
+        assert "id" in col_names and "region" in col_names
         cols, rows, truncated = connector.execute_native_query(
             conn,
             body={"sql": "SELECT id, name FROM demo_orders"},

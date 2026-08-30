@@ -83,6 +83,12 @@ class DeviceAuthCompleteOut(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class AuthorizeUrlOut(BaseModel):
+    authorize_url: str = Field(alias="authorizeUrl")
+
+    model_config = {"populate_by_name": True}
+
+
 def _app_ready(session: Session, channel: str, creds) -> tuple[bool, str | None]:
     mode = resolve_im_delivery_mode(session, channel)
     if mode == "user_delegated":

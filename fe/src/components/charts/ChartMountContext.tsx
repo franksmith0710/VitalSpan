@@ -12,7 +12,7 @@ import { registerActiveChartMountScheduler } from "@/lib/chartMountDrain";
 
 const ChartMountContext = createContext<ChartMountScheduler | null>(null);
 
-export const CHART_MOUNT_MAX_EDIT = 2;
+export const CHART_MOUNT_MAX_EDIT = 6;
 export const CHART_MOUNT_MAX_VIEW = 3;
 export const CHART_MOUNT_MAX_LIST = 1;
 

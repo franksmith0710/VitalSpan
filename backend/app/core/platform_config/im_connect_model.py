@@ -37,6 +37,10 @@ class PlatformImConnectConfig(Base):
             "channel IN ('dingtalk', 'wecom', 'feishu')",
             name="ck_platform_im_connect_configs_channel",
         ),
+        CheckConstraint(
+            "delivery_mode IN ('corporate_app', 'user_delegated')",
+            name="ck_platform_im_connect_configs_delivery_mode",
+        ),
     )
 
     channel: Mapped[str] = mapped_column(String(16), primary_key=True)

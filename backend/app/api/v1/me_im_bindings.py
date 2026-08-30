@@ -10,6 +10,7 @@ from app.auth.deps import UserContext, get_current_user
 from app.auth.im_oauth.bindings import delete_binding
 from app.auth.im_oauth.oauth import ImOAuthError
 from app.auth.im_oauth.service import (
+    AuthorizeUrlOut,
     DeviceAuthCompleteIn,
     DeviceAuthCompleteOut,
     DeviceAuthStartOut,
@@ -49,6 +50,26 @@ def read_my_im_bindings(
 ) -> ImBindingsOut:
     user_id = profile_service.resolve_actor_user_id(db, current_user.id, current_user.username)
     return list_user_im_bindings(db, user_id)
+
+
+@router.post("/me/im-bindings/{channel}/authorize-url", response_model=AuthorizeUrlOut)
+def authorize_url_my_im_binding(
+    channel: ImChannelPath,
+    current_user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+    redirect_after: str | None = Query(default=None, alias="redirectAfter"),
+) -> AuthorizeUrlOut | JSONResponse:
+    try:
+        user_id = profile_service.resolve_actor_user_id(db, current_user.id, current_user.username)
+        url = start_authorize(
+            db,
+            user_id=user_id,
+            channel=channel,
+            redirect_after=redirect_after,
+        )
+        return AuthorizeUrlOut(authorize_url=url)
+    except ImOAuthError as exc:
+        return _oauth_error(exc)
 
 
 @router.get("/me/im-bindings/{channel}/authorize", response_model=None)

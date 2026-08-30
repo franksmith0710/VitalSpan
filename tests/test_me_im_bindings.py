@@ -56,6 +56,21 @@ def test_me_im_bindings_authorize_requires_config(client, admin_auth_headers):
     assert resp.json()["code"] == "IM_APP_NOT_CONFIGURED"
 
 
+def test_me_im_bindings_authorize_url_returns_json(client, admin_auth_headers):
+    with patch(
+        "app.api.v1.me_im_bindings.start_authorize",
+        return_value="https://open.weixin.qq.com/connect/oauth2/authorize?state=abc",
+    ):
+        resp = client.post(
+            "/api/v1/me/im-bindings/wecom/authorize-url",
+            headers=admin_auth_headers,
+        )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert "authorizeUrl" in body
+    assert body["authorizeUrl"].startswith("https://")
+
+
 def test_im_oauth_callback_rejects_bad_state(client):
     resp = client.get(
         "/api/v1/auth/im/wecom/callback?code=abc&state=bad",

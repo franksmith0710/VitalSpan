@@ -217,6 +217,25 @@ def test_conn_r028_14_rejects_write_prefix_sql():
     assert exc.value.code == "QUERY_NOT_READONLY"
 
 
+def test_conn_r028_15_list_columns_from_full_schema():
+    """T-CONN-R028-15: list_columns 从 /api/schema 全量响应解析表字段。"""
+    mock_resp = MagicMock(status_code=200, is_success=True, content=b"{}")
+    mock_resp.json.return_value = {
+        "demo_orders": {
+            "fields": [
+                {"name": "id", "data_type": "Int64"},
+                {"name": "region", "data_type": "Utf8"},
+            ],
+        },
+    }
+    client = MagicMock()
+    client._vs_roapi_schema_path = "/api/schema"
+    client.request.return_value = mock_resp
+    cols = RoapiConnector().list_columns(client, "roapi", "demo_orders")
+    assert [c.name for c in cols] == ["id", "region"]
+    client.request.assert_called_with("GET", "/api/schema")
+
+
 def test_resolve_schema_path_defaults():
     assert support.resolve_schema_path(None) == "/api/schema"
     assert support.resolve_schema_path("api/schema") == "/api/schema"
