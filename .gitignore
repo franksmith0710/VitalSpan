@@ -25,3 +25,5 @@ data/backups/
 data/artifacts/
 backend/data/artifacts/
 fe/.env.production.local
+
+.worktrees/
