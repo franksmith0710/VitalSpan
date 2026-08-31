@@ -1,7 +1,7 @@
 # 平台元数据 · 迁移与表域索引
 
 > **定位**：Alembic revision → 主要表 → 后端域的导航图；**不是**列级 DDL 真理源。  
-> **DDL 真源**：`backend/migrations/versions/` · 运行时 `alembic current` / `alembic history`。  
+> **DDL 真源**：`backend/migrations/versions/` · 运行时 `alembic current` / `alembic history`；架构登记见 [arch.md](../arch.md) §4 目录与迁移节。  
 > **域边界**：各表业务语义见 [services/README.md](../services/README.md)。
 
 ```yaml

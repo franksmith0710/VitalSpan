@@ -29,6 +29,10 @@ alwaysApply: true
 | 鉴权 | `app/auth/` + `main.py` 注册 `AuthMiddleware` |
 | 地图 | 仅离线中国 — @.cursor/rules/geo-map-offline-china.mdc |
 
+## 数据源选型
+
+改连接器 / 新增 dialect 前必读 `docs/services/datasources.md` 选型表（RoAPI sidecar HTTP · csv/excel 文件路径 · SQL 原生 · rest_api 通用 JSON · trino 湖仓联邦）；禁止混用分工（如把 RoAPI 当文件上传器）。
+
 ## 实现纪律
 
 - 修 bug 前：`.agents/skills/bug-case-library/cases/`
