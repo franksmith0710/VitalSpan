@@ -50,6 +50,9 @@
 |------|------|
 | 后端 FastAPI | `.agents/skills/fastapi/SKILL.md` |
 | 前端视觉 | `.agents/skills/b-design-system-tailadmin-radix/SKILL.md` |
+| 代码审查（生产就绪） | `.agents/skills/code-reviewer/SKILL.md` |
+| 批量修复（CR 后） | `.agents/skills/go-fast/SKILL.md` |
+| 打包装 / 上传制品 | `.agents/skills/release-package/SKILL.md` |
 | 代码审查（OCR） | `.agents/skills/ocr-code-review/SKILL.md` |
 | Bug 案例库 | `.agents/skills/bug-case-library/` |
 | 演化 SOP（只读） | `.cursor/automate/skills/` |
@@ -65,5 +68,5 @@
 
 - `goal.md` 仅经 **create-evolution-goal** 人工修订
 - 代码变更后按 `prd-sync.mdc` 评估文档同步
-- 一至三期图表直连 `dataSourceId` + SQL/表，不经 Dataset（四期 M13）
+- 内置图出数走**数据集绑定**（`POST /api/v1/query/dataset/execute`，`dataSourceId` + `configId` + 维/指 encoding）；管理探针可用 `/query/execute`（sql/table/native），非看板主路径
 - BI 运行时 **零** Superset/DataEase 依赖（NFR-08）
