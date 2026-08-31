@@ -6,6 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <title>VitalSpan</title>
+    <script>
+      (function () {
+        try {
+          var saved = localStorage.getItem("theme");
+          var valid = ["light", "dark", "auto"];
+          var selected = saved && valid.indexOf(saved) >= 0 ? saved : "light";
+          var dark =
+            selected === "dark" ||
+            (selected === "auto" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("dark");
+        } catch (e) {
+          /* ignore storage errors */
+        }
+      })();
+    </script>
     <style>
       :root {
         color-scheme: light dark;
@@ -22,8 +38,18 @@
         --vs-shadow-md: 0 4px 8px -2px rgb(16 24 40 / 10%), 0 2px 4px -2px rgb(16 24 40 / 6%);
       }
 
+      html.dark {
+        --vs-gray-50: #101828;
+        --vs-gray-100: #1a2231;
+        --vs-gray-200: #344054;
+        --vs-gray-400: #98a2b3;
+        --vs-gray-500: #98a2b3;
+        --vs-gray-700: #e4e7ec;
+        --vs-gray-900: #f9fafb;
+      }
+
       @media (prefers-color-scheme: dark) {
-        :root {
+        :root:not(.dark):not(.light) {
           --vs-gray-50: #101828;
           --vs-gray-100: #1a2231;
           --vs-gray-200: #344054;
@@ -54,7 +80,9 @@
       }
 
       #vs-boot-splash {
-        position: relative;
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
         display: flex;
         min-height: 100vh;
         align-items: center;
@@ -93,8 +121,12 @@
         backdrop-filter: blur(8px);
       }
 
+      html.dark .vs-boot-card {
+        background: color-mix(in srgb, var(--vs-gray-100) 92%, transparent);
+      }
+
       @media (prefers-color-scheme: dark) {
-        .vs-boot-card {
+        :root:not(.dark):not(.light) .vs-boot-card {
           background: color-mix(in srgb, var(--vs-gray-100) 92%, transparent);
         }
       }
@@ -164,32 +196,81 @@
     </style>
   </head>
   <body>
-    <div id="root">
-      <div id="vs-boot-splash" role="status" aria-live="polite" aria-busy="true">
-        <div class="vs-boot-card">
-          <div class="vs-boot-brand" aria-hidden="true">
-            <span class="vs-boot-mark">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2.25"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              >
-                <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" />
-              </svg>
-            </span>
-            <span class="vs-boot-name">VitalSpan</span>
-          </div>
-          <div class="vs-boot-status">
-            <span class="vs-boot-spinner" aria-hidden="true"></span>
-            <span>正在加载，请稍候…</span>
-          </div>
+    <div id="vs-boot-splash" role="status" aria-live="polite" aria-busy="true">
+      <div class="vs-boot-card">
+        <div class="vs-boot-brand" aria-hidden="true">
+          <span class="vs-boot-mark">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.25"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2" />
+            </svg>
+          </span>
+          <span class="vs-boot-name">VitalSpan</span>
+        </div>
+        <div class="vs-boot-status">
+          <span class="vs-boot-spinner" aria-hidden="true"></span>
+          <span id="vs-boot-status-text">正在加载，请稍候…</span>
         </div>
       </div>
     </div>
+    <div id="root"></div>
+    <script>
+      window.__VS_BOOT__ = { mounted: false };
+
+      function vsBootFailureMessage(reason) {
+        if (!reason) return "未知错误";
+        if (typeof reason === "string") return reason;
+        if (reason.message) return String(reason.message);
+        return String(reason);
+      }
+
+      function vsBootSetStatus(message) {
+        if (window.__VS_BOOT__ && window.__VS_BOOT__.mounted) return;
+        var status = document.getElementById("vs-boot-status-text");
+        var splash = document.getElementById("vs-boot-splash");
+        if (status) status.textContent = message;
+        if (splash) splash.setAttribute("aria-busy", "false");
+      }
+
+      window.addEventListener(
+        "error",
+        function (event) {
+          if (window.__VS_BOOT__ && window.__VS_BOOT__.mounted) return;
+          var target = event.target;
+          if (
+            target &&
+            target.tagName === "SCRIPT" &&
+            target.src &&
+            target.src.indexOf("/src/main") !== -1
+          ) {
+            vsBootSetStatus("前端脚本加载失败，请确认已在 fe 目录运行 pnpm dev");
+            return;
+          }
+          if (event.message) {
+            vsBootSetStatus("应用加载失败：" + event.message);
+          }
+        },
+        true,
+      );
+
+      window.addEventListener("unhandledrejection", function (event) {
+        if (window.__VS_BOOT__ && window.__VS_BOOT__.mounted) return;
+        vsBootSetStatus("应用加载失败：" + vsBootFailureMessage(event.reason));
+      });
+
+      window.setTimeout(function () {
+        if (window.__VS_BOOT__ && !window.__VS_BOOT__.mounted) {
+          vsBootSetStatus("加载超时，请打开控制台查看错误后刷新页面");
+        }
+      }, 15000);
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
