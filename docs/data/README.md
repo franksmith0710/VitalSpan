@@ -5,8 +5,8 @@
 > **域边界**：各表业务语义见 [services/README.md](../services/README.md)。
 
 ```yaml
-alembic_head: 0050
-revision_count: 50
+alembic_head: 0061
+revision_count: 61
 migrations_path: backend/migrations/versions/
 ```
 
@@ -22,16 +22,16 @@ migrations_path: backend/migrations/versions/
 
 | 项 | 值 |
 |----|-----|
-| **Head revision** | `0050`（`0050_standard_pack_dataset_retention.py`） |
-| **上一版** | `0049`（`0049_email_smtp_dual_slots.py`） |
-| **主要新增** | 标准分析包 `dataset_id` / `bound_config_id` / `snapshot_retention_periods` |
+| **Head revision** | `0061`（`0061_model_reviewer_auth_fixes.py`） |
+| **上一版** | `0060`（`0060_im_user_delegated_delivery.py`） |
+| **主要新增** | auth 索引/CHECK；列脱敏 scope 清理；审计保留脚本配套 |
 
 升级命令（本地）：
 
 ```bash
 cd backend
 alembic upgrade head
-alembic current   # 应显示 0050
+alembic current   # 应显示 0061
 ```
 
 ## 修订一览（按域分组）
@@ -79,6 +79,8 @@ alembic current   # 应显示 0050
 | 0048 | `platform_delivery_configs` | integration | 平台投递配置 |
 | 0049 | `email_smtp_dual_slots` | integration | 双 SMTP 槽位 |
 | 0050 | `standard_pack_dataset_retention` | reports | 分析包 dataset 绑定 + 快照保留期数 |
+| 0051–0060 | `viz_tile_services` … `im_user_delegated_delivery` | viz/auth/integration | 瓦片服务 · RLS 列绑定 · Phase C · IM OAuth/投递 |
+| 0061 | `model_reviewer_auth_fixes` | auth | org path / audit / user_roles 索引；resource_type CHECK；IM source CHECK |
 
 ## 域 ↔ 主要表（导航）
 

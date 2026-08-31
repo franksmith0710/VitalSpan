@@ -69,6 +69,9 @@ def delete_node(node_id: uuid.UUID) -> None:
         memory_stores.catalog_owners.pop(node_id, None)
         return
     with Session(bind=get_meta_engine()) as db:
+        from app.auth.cleanup import purge_grants_for_resource
+
+        purge_grants_for_resource(db, resource_type="report", resource_id=node_id)
         model = db.get(ReportCatalogNode, node_id)
         if model is not None:
             db.delete(model)

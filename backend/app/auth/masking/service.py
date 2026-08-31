@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from app.auth.audit.write_hooks import record_platform_event
 from app.auth.models import AuthColumnMask
+from app.auth.rls.scope import datasource_or_dataset_scope_ok
 
 MASK_STRATEGIES = frozenset({"hide", "partial", "hash"})
 
@@ -52,6 +53,12 @@ def create_mask(
 ) -> AuthColumnMask:
     if mask_strategy not in MASK_STRATEGIES:
         raise MaskError("MASK_STRATEGY_INVALID", "mask_strategy must be hide, partial, or hash", 422)
+    if not datasource_or_dataset_scope_ok(datasource_id, dataset_id):
+        raise MaskError(
+            "MASK_SCOPE_REQUIRED",
+            "datasourceId or datasetId is required",
+            422,
+        )
     row = AuthColumnMask(
         datasource_id=datasource_id,
         dataset_id=dataset_id,

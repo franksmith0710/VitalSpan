@@ -213,6 +213,13 @@ def delete_class(db: Session, node_id: uuid.UUID) -> None:
     row = db.get(GovClassificationNode, node_id)
     if row is None:
         raise KeyError(node_id)
+    from app.auth.cleanup import purge_grants_for_resource
+
+    purge_grants_for_resource(
+        db,
+        resource_type="gov_catalog_entry",
+        resource_id=node_id,
+    )
     db.delete(row)
     db.commit()
 

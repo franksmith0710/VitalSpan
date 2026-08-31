@@ -91,4 +91,12 @@
 | 列脱敏 | `masking/service.py` · `dataset:mask.manage` · 查询 API 后处理 · `RlsAdminPage`「列脱敏」Tab |
 | 域删除/发布审计 | `audit/write_hooks.py` `record_domain_delete/publish` · datasource/dashboard/dataset/report |
 | LDAP/OIDC 规格门禁 | `docs/specs/auth-ldap-oidc-integration.md` · `login/oidc.py` 占位 |
-| 测试 | `test_auth_user_override_enforcement.py` · `test_auth_security_e2e.py` · `test_auth_org_scoped_admin.py` · `test_auth_user_overrides.py` · `test_auth_column_masks.py` |
+| 测试 | `test_auth_user_override_enforcement.py` · `test_auth_security_e2e.py` · `test_auth_org_scoped_admin.py` · `test_auth_user_overrides.py` · `test_auth_column_masks.py` · `test_auth_model_cleanup.py` |
+
+## 模型维护（2026-08-31 model-reviewer 选项 2）
+
+- **资源删除清理**：`auth/cleanup.py` — 删除 datasource/dashboard/report/gov 节点时清理 grant；删除 datasource 时清理 masks/bindings；删除 org 节点时清理 org 维度值
+- **列脱敏 scope**：`masking/service.py` 与 RLS 列绑定一致，要求 `datasourceId` 或 `datasetId`
+- **grant 写路径**：`create_grant` 校验 `resource_type`；库 CHECK（`0061`）
+- **`permission_version` / `rls_version`**：仅保护角色权限矩阵与 RLS 维度绑定 API 的乐观锁，不含资源 grant / 用户例外
+- **审计保留**：`scripts/purge-auth-audit-events.py`（默认 365 天，`AUTH_AUDIT_RETENTION_DAYS` 可覆盖）

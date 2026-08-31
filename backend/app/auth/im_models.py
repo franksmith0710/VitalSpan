@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, UniqueConstraint, Uuid, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, String, Text, UniqueConstraint, Uuid, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.auth.models import Base
@@ -16,6 +16,14 @@ class UserImBinding(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "channel", name="uq_user_im_bindings_user_channel"),
         UniqueConstraint("channel", "account_id", name="uq_user_im_bindings_channel_account"),
+        CheckConstraint(
+            "channel IN ('dingtalk', 'wecom', 'feishu')",
+            name="ck_user_im_bindings_channel",
+        ),
+        CheckConstraint(
+            "source IN ('oauth', 'admin')",
+            name="ck_user_im_bindings_source",
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)

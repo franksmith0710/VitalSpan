@@ -59,6 +59,12 @@ def create_grant(
     role = session.get(AuthRole, payload.role_id)
     if role is None:
         raise GrantError("ROLE_NOT_FOUND", "Role not found", 404)
+    if payload.resource_type not in VALID_RESOURCE_TYPES:
+        raise GrantError(
+            "INVALID_RESOURCE_TYPE",
+            f"resource_type must be one of {sorted(VALID_RESOURCE_TYPES)}",
+            422,
+        )
     grant = AuthResourceGrant(
         role_id=payload.role_id,
         resource_type=payload.resource_type,

@@ -176,6 +176,9 @@ def delete_org_node(
         raise OrgError("ORG_HAS_USERS", "Cannot delete org node with assigned users", 409)
     node_uuid = node.id
     node_name = node.name
+    from app.auth.cleanup import purge_org_dimension_references
+
+    purge_org_dimension_references(session, node_uuid)
     session.delete(node)
     record_platform_event(
         session,

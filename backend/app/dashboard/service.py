@@ -314,6 +314,13 @@ def delete_dashboard(db: Session, dashboard_id: uuid.UUID) -> None:
     row = db.scalar(_active(select(Dashboard).where(Dashboard.id == dashboard_id)))
     if row is None:
         raise DashboardError("DASH_NOT_FOUND", "Dashboard not found", 404)
+    from app.auth.cleanup import purge_grants_for_resource
+
+    purge_grants_for_resource(
+        db,
+        resource_type="dashboard",
+        resource_id=dashboard_id,
+    )
     row.deleted_at = datetime.now(UTC)
     db.commit()
 

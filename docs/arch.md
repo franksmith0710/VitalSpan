@@ -253,7 +253,7 @@ backend/
 │   ├── governance/     # M8 catalog, workflow, publish, bus
 │   ├── ingestion/      # FR-DATA/FR-ETL：同步、清洗、调度（M1B）
 │   └── designer/       # M2 四期
-├── migrations/         # Alembic（当前 head **0047**，见 docs/data/README.md）
+├── migrations/         # Alembic（当前 head **0061**，见 docs/data/README.md）
 └── pyproject.toml      # （待建）依赖与工具配置
 ```
 

@@ -7,6 +7,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth.models import AuthDimensionType, AuthRlsColumnBinding
+from app.auth.rls.scope import datasource_or_dataset_scope_ok
 from app.auth.rls.predicate import (
     build_multi_dimension_rls_fragment,
     build_org_rls_fragment,
@@ -23,7 +24,7 @@ class ColumnBindingError(Exception):
 
 
 def _validate_scope(datasource_id: uuid.UUID | None, dataset_id: str | None) -> None:
-    if datasource_id is None and not dataset_id:
+    if not datasource_or_dataset_scope_ok(datasource_id, dataset_id):
         raise ColumnBindingError(
             "RLS_BINDING_SCOPE_REQUIRED",
             "datasourceId or datasetId is required",

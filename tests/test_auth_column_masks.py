@@ -84,6 +84,26 @@ def test_apply_masks_hide_partial_hash():
         session.close()
 
 
+def test_create_mask_requires_scope():
+    session = get_meta_session()
+    try:
+        with pytest.raises(mask_service.MaskError) as exc:
+            mask_service.create_mask(
+                session,
+                datasource_id=None,
+                dataset_id=None,
+                table_name="customers",
+                column_name="phone",
+                mask_strategy="hide",
+                actor_id="admin",
+                actor_username="admin",
+                trace_id="t-scope",
+            )
+        assert exc.value.code == "MASK_SCOPE_REQUIRED"
+    finally:
+        session.close()
+
+
 def test_mask_strategy_hash_is_stable():
     session = get_meta_session()
     try:

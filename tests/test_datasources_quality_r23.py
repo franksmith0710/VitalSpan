@@ -176,7 +176,7 @@ import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 from fastapi.testclient import TestClient
-from sqlalchemy import text
+from sqlalchemy import select, text
 
 from app.datasources.credentials import CredentialDecryptError, decrypt_credential, encrypt_credential
 from app.datasources.models import Base, DataSource, get_meta_engine, get_meta_session
@@ -309,8 +309,15 @@ from app.auth.models import AuthResourceGrant, AuthRole, Base as AuthBase
 
 @pytest.fixture(scope="module", autouse=True)
 def ensure_auth_tables():
+    from app.ingestion.models import Base as IngestionBase
+    from app.metadata.dataset.models import Base as DatasetBase
+    from app.query.config_store.models import Base as QueryConfigBase
+
     engine = get_meta_engine()
     AuthBase.metadata.create_all(engine)
+    IngestionBase.metadata.create_all(engine)
+    DatasetBase.metadata.create_all(engine)
+    QueryConfigBase.metadata.create_all(engine)
     yield
 
 
@@ -410,8 +417,9 @@ def test_patch_name_conflict(client, auth_headers):
     assert resp.json()["code"] == "DATASOURCE_NAME_CONFLICT"
 
 
-def test_delete_blocked_when_grant_exists(client, auth_headers):
-    """T-DS-C13: AuthResourceGrant 引用 → 409 DATASOURCE_IN_USE。"""
+def test_delete_cleans_grants_when_no_other_refs(client, auth_headers, monkeypatch):
+    """T-DS-C13: 删除成功时清理关联 grant（不再因 grant 单独 409）。"""
+    monkeypatch.setattr("app.datasources.service.pool_manager.evict_pool", lambda _id: None)
     created = client.post("/api/v1/datasources", json=_payload(), headers=auth_headers)
     ds_id = uuid.UUID(created.json()["id"])
     session = get_meta_session()
@@ -422,8 +430,16 @@ def test_delete_blocked_when_grant_exists(client, auth_headers):
     session.commit()
     session.close()
     resp = client.delete(f"/api/v1/datasources/{ds_id}", headers=auth_headers)
-    assert resp.status_code == 409
-    assert resp.json()["code"] == "DATASOURCE_IN_USE"
+    assert resp.status_code == 204
+    session = get_meta_session()
+    remaining = session.scalar(
+        select(AuthResourceGrant).where(
+            AuthResourceGrant.resource_type == "datasource",
+            AuthResourceGrant.resource_id == ds_id,
+        )
+    )
+    session.close()
+    assert remaining is None
 
 
 def test_soft_delete_then_get_404(client, auth_headers):

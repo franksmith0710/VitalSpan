@@ -456,16 +456,6 @@ def delete_data_source(
             "托管分析库连接不可修改或删除",
             409,
         )
-    grant = session.scalar(
-        select(AuthResourceGrant)
-        .where(
-            AuthResourceGrant.resource_type == "datasource",
-            AuthResourceGrant.resource_id == data_source_id,
-        )
-        .limit(1)
-    )
-    if grant is not None:
-        raise DataSourceError("DATASOURCE_IN_USE", "Data source is referenced by grants", 409)
     from app.ingestion.models import SyncJob
     from app.metadata.dataset.models import DatasetRecord
     from app.query.config_store.models import QueryConfigRecord
@@ -505,6 +495,14 @@ def delete_data_source(
             "Data source is referenced by dataset query bindings",
             409,
         )
+    from app.auth.cleanup import purge_datasource_scope_metadata, purge_grants_for_resource
+
+    purge_grants_for_resource(
+        session,
+        resource_type="datasource",
+        resource_id=data_source_id,
+    )
+    purge_datasource_scope_metadata(session, data_source_id)
     row.deleted_at = datetime.now(UTC)
     session.commit()
     pool_manager.evict_pool(data_source_id)
