@@ -32,14 +32,6 @@ export const EMAIL_SLOT_ICON: Record<EmailSmtpSlot, ChannelPickerToken> = {
 };
 
 export const IM_CHANNEL_ICON: Record<ImChannel, ChannelPickerToken> = {
-  wecom: {
-    label: "微",
-    iconIdle:
-      "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200/80 group-hover:bg-emerald-200/90 dark:bg-emerald-500/15 dark:text-emerald-300 dark:ring-emerald-500/25",
-    iconActive: "bg-emerald-500 text-white shadow-theme-xs",
-    cardActive:
-      "border-emerald-300 bg-emerald-50/60 shadow-theme-sm ring-1 ring-emerald-500/15 dark:border-emerald-500/35 dark:bg-emerald-500/10",
-  },
   dingtalk: {
     label: "钉",
     iconIdle:

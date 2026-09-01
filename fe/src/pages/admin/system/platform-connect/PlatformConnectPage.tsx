@@ -77,7 +77,7 @@ export function PlatformConnectPage() {
   return (
     <AdminPageShell
       title="平台对接"
-      description="配置邮件 SMTP、企微/飞书工作通知，以及钉钉群机器人。企微与飞书需个人中心绑定；钉钉发到已配置的群。"
+      description="配置邮件 SMTP、飞书工作通知，以及钉钉群机器人。飞书需个人中心绑定；钉钉发到已配置的群。"
       headerIcon={
         <AdminPageHeaderIcon>
           <Link2 className="size-5" aria-hidden />
@@ -114,7 +114,7 @@ export function PlatformConnectPage() {
                 <div>
                   <h2 className="text-theme-sm font-semibold text-gray-900 dark:text-white">投递通道</h2>
                   <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                    邮件 SMTP、企微/飞书工作通知与钉钉群机器人并列配置；定时任务可勾选对应通道。
+                    邮件 SMTP、飞书工作通知与钉钉群机器人并列配置；定时任务可勾选对应通道。
                   </p>
                 </div>
               </div>
@@ -170,7 +170,7 @@ export function PlatformConnectPage() {
             <div className="flex items-start gap-2.5 border-t border-gray-100 px-5 py-4 dark:border-white/[0.06] md:px-6">
               <Info className="mt-0.5 size-4 shrink-0 text-gray-400" aria-hidden />
               <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                IM 账号由用户在个人中心自助绑定（企微/飞书）；钉钉走群机器人，无需个人绑定。清空某通道后即使环境变量仍有旧值，该通道也不会再发信。
+                IM 账号由用户在个人中心自助绑定（飞书）；钉钉走群机器人，无需个人绑定。清空某通道后即使环境变量仍有旧值，该通道也不会再发信。
               </p>
             </div>
           </div>

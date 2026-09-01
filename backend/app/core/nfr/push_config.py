@@ -28,7 +28,6 @@ def _is_valid_webhook(url: str | None) -> bool:
 
 def validate_push_settings(settings: Settings) -> None:
     for label, url in (
-        ("wecom", settings.push_wecom_webhook),
         ("dingtalk", settings.push_dingtalk_webhook),
     ):
         if url and not url.startswith("https://"):
@@ -41,7 +40,7 @@ def validate_push_settings(settings: Settings) -> None:
 def resolve_push_mode(settings: Settings | None = None) -> PushConfigOut:
     settings = settings or get_settings()
     validate_push_settings(settings)
-    wecom_ok = _is_valid_webhook(settings.push_wecom_webhook)
+    wecom_ok = False
     ding_ok = _is_valid_webhook(settings.push_dingtalk_webhook)
     if not wecom_ok and not ding_ok:
         return PushConfigOut(False, False, False, "disabled", "push channels not configured")

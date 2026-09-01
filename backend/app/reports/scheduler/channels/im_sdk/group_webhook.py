@@ -1,4 +1,4 @@
-"""IM group-robot webhook POST (DingTalk / WeCom / Feishu)."""
+"""IM group-robot webhook POST (DingTalk / Feishu)."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from app.core.config import Settings
 
 logger = logging.getLogger(__name__)
 
-_LABELS = {"wecom": "企业微信", "dingtalk": "钉钉", "feishu": "飞书"}
+_LABELS = {"dingtalk": "钉钉", "feishu": "飞书"}
 _TIMEOUT_SECONDS = 5.0
 _MAX_ATTEMPTS = 3
 _BACKOFF_SECONDS = (0.2, 0.5)
@@ -81,7 +81,6 @@ def post_group_webhook(
     max_attempts: int = _MAX_ATTEMPTS,
 ) -> dict[str, Any]:
     url = webhook_url or {
-        "wecom": settings.push_wecom_webhook,
         "dingtalk": settings.push_dingtalk_webhook,
         "feishu": settings.push_feishu_webhook,
     }.get(channel)

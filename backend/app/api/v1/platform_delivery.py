@@ -23,7 +23,7 @@ from app.core.platform_config.slots import EMAIL_SLOT_QQ, normalize_email_slot
 router = APIRouter(prefix="/platform/delivery", tags=["platform"])
 
 EmailSlotPath = Literal["qq", "163"]
-ImChannelPath = Literal["dingtalk", "wecom", "feishu"]
+ImChannelPath = Literal["dingtalk", "feishu"]
 
 
 def _db() -> Session:

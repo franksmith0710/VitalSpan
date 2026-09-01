@@ -74,7 +74,7 @@ redoc: /redoc
 | GET | `/api/v1/roles/{id}/permissions` | 角色权限绑定（`RolePermissionsOut`；root 返回 `allPermissions=true`；`system:role.read`） | 内部 | M7 | AUTH-001 | 已实现 | `backend/app/api/v1/roles.py` |
 | PUT | `/api/v1/roles/{id}/permissions` | 角色权限全量替换（`expectedVersion` 乐观锁；冲突 409 `ROLE_PERMISSION_VERSION_CONFLICT`；root 禁改 409 `AUTH_ROOT_ROLE_IMMUTABLE`；`system:role.manage`） | 内部 | M7 | AUTH-001 | 已实现 | `backend/app/api/v1/roles.py` |
 | GET/POST | `/api/v1/users` | 用户列表/创建（POST body `{username, displayName?, email?, orgId?, roleIds, initialPassword}`；列表项含 `imAccounts`；保存 SM3 hash（`$sm3$`），不返回密码；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
-| PATCH | `/api/v1/users/{id}` | 用户信息/角色更新（`{displayName?, email?, orgId?, roleIds?, imAccounts?}`；`imAccounts` 为 `{dingtalk?, wecom?, feishu?}`，空串解绑；根管理员保护；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
+| PATCH | `/api/v1/users/{id}` | 用户信息/角色更新（`{displayName?, email?, orgId?, roleIds?, imAccounts?}`；`imAccounts` 为 `{dingtalk?, feishu?}`，空串解绑；根管理员保护；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | DELETE | `/api/v1/users/{id}` | 删除用户（204；不可删当前登录账号；最后一个 root 管理员保护 409 `AUTH_ROOT_ADMIN_REQUIRED`；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | POST | `/api/v1/users/{id}/disable` · `/enable` · `/unlock` | 用户启停/解锁（解锁清零失败计数与 `lockedUntil`；`system:user.manage`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
 | POST | `/api/v1/users/{id}/reset-password` | 管理员重置密码（返回 `{temporaryPassword, passwordChangedAt}`；`Cache-Control: no-store`；`token_version+1`；审计无明文；`system:user.password.reset`） | 内部 | M7 | AUTH-003 | 已实现 | `backend/app/api/v1/users.py` |
@@ -97,18 +97,18 @@ redoc: /redoc
 | PUT | `/api/v1/platform/delivery/email/{slot}` | 保存指定槽位 SMTP 并探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
 | DELETE | `/api/v1/platform/delivery/email` | 清空 QQ 槽位 SMTP | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
 | DELETE | `/api/v1/platform/delivery/email/{slot}` | 清空指定槽位 SMTP（清空后忽略 env 回落） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
-| GET | `/api/v1/platform/delivery/im/slots` | 企微/钉钉/飞书 IM 应用摘要 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
+| GET | `/api/v1/platform/delivery/im/slots` | 钉钉/飞书 IM 应用摘要 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
 | GET | `/api/v1/platform/delivery/im/{channel}` | 单通道 IM 应用摘要 + 探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
 | PUT | `/api/v1/platform/delivery/im/{channel}` | 保存 IM 配置并探测；钉钉为 `group_webhook` + `webhookUrl`（可选 `webhookSecret` 加签），探测真 POST `robot/send` | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
 | DELETE | `/api/v1/platform/delivery/im/{channel}` | 清空 IM 通道（清空后忽略 env） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
-| GET | `/api/v1/me/im-bindings` | 当前用户三通道绑定状态 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
+| GET | `/api/v1/me/im-bindings` | 当前用户钉钉/飞书绑定状态 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | GET | `/api/v1/me/im-bindings/{channel}/authorize` | 发起 OAuth 授权跳转（浏览器直链，须 Cookie/Bearer） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | POST | `/api/v1/me/im-bindings/{channel}/authorize-url` | 返回 OAuth 授权 URL（SPA 带 Bearer 后跳转） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | DELETE | `/api/v1/me/im-bindings/{channel}` | 解绑指定 IM 通道 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | POST | `/api/v1/me/im-bindings/feishu/device-auth/start` | 飞书 device-code 绑定启动（user_delegated） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | POST | `/api/v1/me/im-bindings/feishu/device-auth/complete` | 飞书 device-code 轮询完成 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
-| POST | `/api/v1/me/im-bindings/{channel}/scan-bind/start` | 企微/钉钉 user_delegated 内嵌扫码参数 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
-| POST | `/api/v1/me/im-bindings/{channel}/scan-bind/complete` | 钉钉内嵌扫码完成（企微走 OAuth 回调） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
+| POST | `/api/v1/me/im-bindings/{channel}/scan-bind/start` | 钉钉 user_delegated 内嵌扫码参数（主路径钉钉为群发，通常 422） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
+| POST | `/api/v1/me/im-bindings/{channel}/scan-bind/complete` | 钉钉内嵌扫码完成 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | GET | `/api/v1/auth/im/{channel}/callback` | IM OAuth 回调（公开路径，state 校验） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/im_auth.py` |
 | GET/POST | `/api/v1/resource-grants` | AUTH-004 资源授权列表/创建 | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |
 | DELETE | `/api/v1/resource-grants/{grant_id}` | 删除单条资源授权（204） | 内部 | 一期 | AUTH-004 | 已实现 | `backend/app/api/v1/resource_grants.py` |

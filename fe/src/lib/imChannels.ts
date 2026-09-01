@@ -1,9 +1,8 @@
-export const IM_CHANNELS = ["wecom", "dingtalk", "feishu"] as const;
+export const IM_CHANNELS = ["dingtalk", "feishu"] as const;
 
 export type ImChannel = (typeof IM_CHANNELS)[number];
 
 export const IM_CHANNEL_LABELS: Record<ImChannel, string> = {
-  wecom: "企业微信",
   dingtalk: "钉钉",
   feishu: "飞书",
 };

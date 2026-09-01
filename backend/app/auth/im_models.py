@@ -8,7 +8,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.auth.models import Base
 
-IM_CHANNELS = ("dingtalk", "wecom", "feishu")
+IM_CHANNELS = ("dingtalk", "feishu")
 
 
 class UserImBinding(Base):
@@ -17,7 +17,7 @@ class UserImBinding(Base):
         UniqueConstraint("user_id", "channel", name="uq_user_im_bindings_user_channel"),
         UniqueConstraint("channel", "account_id", name="uq_user_im_bindings_channel_account"),
         CheckConstraint(
-            "channel IN ('dingtalk', 'wecom', 'feishu')",
+            "channel IN ('dingtalk', 'feishu')",
             name="ck_user_im_bindings_channel",
         ),
         CheckConstraint(

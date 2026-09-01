@@ -1,4 +1,4 @@
-"""Report schedule delivery channels: email, WeCom, DingTalk, Feishu."""
+"""Report schedule delivery channels: email, DingTalk, Feishu."""
 
 from __future__ import annotations
 
@@ -11,8 +11,8 @@ from app.reports.scheduler.channels import work_notice
 from app.reports.scheduler.channels.im_sdk.group_webhook import post_group_webhook
 from app.reports.scheduler.delivery_adapter import _deliver_explicit_mock, _send_smtp
 
-_IM_CHANNELS = ("wecom", "dingtalk", "feishu")
-_IM_LABELS = {"wecom": "企业微信", "dingtalk": "钉钉", "feishu": "飞书"}
+_IM_CHANNELS = ("dingtalk", "feishu")
+_IM_LABELS = {"dingtalk": "钉钉", "feishu": "飞书"}
 
 
 def _send_group_webhook(
@@ -133,6 +133,12 @@ def deliver_to_channels(
                 artifact_kind=artifact_kind,
                 attachments=attachments,
             ))
+        elif channel == "wecom":
+            steps.append({
+                "channel": "wecom",
+                "status": "skipped",
+                "error": "企业微信投递已下线",
+            })
         elif channel in _IM_CHANNELS:
             if _channel_uses_group_webhook(channel, session):
                 hook_url, hook_secret = _dingtalk_group_target(settings, session)

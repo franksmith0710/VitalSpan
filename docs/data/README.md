@@ -5,8 +5,8 @@
 > **域边界**：各表业务语义见 [services/README.md](../services/README.md)。
 
 ```yaml
-alembic_head: 0061
-revision_count: 61
+alembic_head: 0063
+revision_count: 63
 migrations_path: backend/migrations/versions/
 ```
 
@@ -22,16 +22,16 @@ migrations_path: backend/migrations/versions/
 
 | 项 | 值 |
 |----|-----|
-| **Head revision** | `0061`（`0061_model_reviewer_auth_fixes.py`） |
-| **上一版** | `0060`（`0060_im_user_delegated_delivery.py`） |
-| **主要新增** | auth 索引/CHECK；列脱敏 scope 清理；审计保留脚本配套 |
+| **Head revision** | `0063`（`0063_drop_wecom_im_channel.py`） |
+| **上一版** | `0062`（`0062_im_dingtalk_group_webhook.py`） |
+| **主要新增** | 删除企业微信 IM 通道（绑定/平台对接 CHECK + 清数据） |
 
 升级命令（本地）：
 
 ```bash
 cd backend
 alembic upgrade head
-alembic current   # 应显示 0061
+alembic current   # 应显示 0063
 ```
 
 ## 修订一览（按域分组）
@@ -81,6 +81,8 @@ alembic current   # 应显示 0061
 | 0050 | `standard_pack_dataset_retention` | reports | 分析包 dataset 绑定 + 快照保留期数 |
 | 0051–0060 | `viz_tile_services` … `im_user_delegated_delivery` | viz/auth/integration | 瓦片服务 · RLS 列绑定 · Phase C · IM OAuth/投递 |
 | 0061 | `model_reviewer_auth_fixes` | auth | org path / audit / user_roles 索引；resource_type CHECK；IM source CHECK |
+| 0062 | `im_dingtalk_group_webhook` | reports | 钉钉 `delivery_mode=group_webhook` |
+| 0063 | `drop_wecom_im_channel` | auth / reports | 删除企业微信绑定与平台对接通道 |
 
 ## 域 ↔ 主要表（导航）
 
@@ -104,6 +106,6 @@ alembic current   # 应显示 0061
 
 | 版本 | 日期 | 说明 |
 |------|------|------|
-| 0.1.2 | 2026-08-13 | head 升至 0047；`user_im_bindings` + 调度 `notify_group` |
+| 0.1.3 | 2026-09-01 | head 升至 0063；删除企业微信 IM |
 | 0.1.1 | 2026-08-12 | head 升至 0046；补 0042–0046 修订行 |
 | 0.1.0 | 2026-08-09 | 初版：head 0041、修订一览、域表导航 |

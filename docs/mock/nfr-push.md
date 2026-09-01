@@ -8,7 +8,7 @@
 
 ## 行为
 
-- `dispatch_push_mock`：配置 `PUSH_WECOM_WEBHOOK` / `PUSH_DINGTALK_WEBHOOK` 后仅校验 URL 格式、写 `_PUSH_MOCK_LOG`，**不发起 HTTP**，仍返回 `delivered`。
+- `dispatch_push_mock`：配置 `PUSH_DINGTALK_WEBHOOK` 后仅校验 URL 格式、写 `_PUSH_MOCK_LOG`，**不发起 HTTP**，仍返回 `delivered`。
 - 治理发布通知（`governance/publish/notifications.py`）走同 mock 路径，审计可显示「已投递」但无外发。
 
 ## 双轨推送（勿混淆）
@@ -16,7 +16,7 @@
 | 路径 | 行为 | 代码锚点 |
 |------|------|----------|
 | **NFR / 治理 mock** | 配置 webhook 仍不发 HTTP | `core/nfr/push_channels.py` |
-| **报表调度真实投递** | 企微/钉钉 `httpx.post`（timeout=5） | `reports/scheduler/channels/dispatch.py` |
+| **报表调度真实投递** | 钉钉群机器人 / 飞书工作通知 | `reports/scheduler/channels/dispatch.py` |
 
 同一环境变量名在两路径语义不同；联调与验收须区分调用面。
 

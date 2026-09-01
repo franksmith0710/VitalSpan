@@ -2,7 +2,7 @@ export type ScanBindStart = {
   sessionId: string;
   redirectUri: string;
   state: string;
-  embedKind: "ww_login" | "dt_frame";
+  embedKind: "dt_frame";
   clientId?: string | null;
   corpId?: string | null;
   agentId?: string | null;
@@ -10,7 +10,6 @@ export type ScanBindStart = {
 
 declare global {
   interface Window {
-    WwLogin?: new (opts: Record<string, string>) => void;
     DTFrameLogin?: (
       frameOpts: { id: string; width: number; height: number },
       authOpts: Record<string, string>,
@@ -20,7 +19,6 @@ declare global {
 }
 
 const SCRIPT_URLS = {
-  wecom: "https://res.wx.qq.com/connect/zh_CN/htmledition/js/wxLogin.js",
   dingtalk: "https://g.alicdn.com/dingding/h5-dingtalk-login/0.21.0/ddlogin.js",
 } as const;
 
@@ -36,25 +34,6 @@ function loadScript(src: string): Promise<void> {
     script.onload = () => resolve();
     script.onerror = () => reject(new Error(`无法加载脚本：${src}`));
     document.head.appendChild(script);
-  });
-}
-
-export async function embedWecomQr(containerId: string, params: ScanBindStart): Promise<void> {
-  await loadScript(SCRIPT_URLS.wecom);
-  if (!window.WwLogin) {
-    throw new Error("企业微信扫码组件未就绪");
-  }
-  const el = document.getElementById(containerId);
-  if (el) {
-    el.innerHTML = "";
-  }
-  new window.WwLogin({
-    id: containerId,
-    appid: params.corpId ?? "",
-    agentid: params.agentId ?? "",
-    redirect_uri: encodeURIComponent(params.redirectUri),
-    state: params.state,
-    href: "",
   });
 }
 

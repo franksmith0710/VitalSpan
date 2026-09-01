@@ -293,7 +293,7 @@ export function SystemAdminHomePage() {
               平台对接说明
             </div>
             <p className="mt-2 text-theme-xs leading-relaxed text-gray-600 dark:text-gray-400">
-              当前仅支持邮件 SMTP。企微/钉钉/飞书将在下一迭代并入同一入口，无需新增侧栏菜单。
+              当前支持邮件 SMTP、飞书工作通知与钉钉群机器人，入口均在本页「平台对接」。
             </p>
           </div>
 

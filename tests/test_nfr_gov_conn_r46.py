@@ -322,9 +322,9 @@ def test_nfr006_default_disabled(monkeypatch):
     assert out.degraded_reason
 
 
-def test_nfr006_active_when_wecom(monkeypatch):
-    """T-R46-006-02: 合法企微 webhook → active。"""
-    monkeypatch.setenv("PUSH_WECOM_WEBHOOK", "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=x")
+def test_nfr006_active_when_dingtalk(monkeypatch):
+    """T-R46-006-02: 合法钉钉 webhook → active。"""
+    monkeypatch.setenv("PUSH_DINGTALK_WEBHOOK", "https://oapi.dingtalk.com/robot/send?access_token=x")
     get_settings.cache_clear()
     out = resolve_push_mode()
     assert out.delivery_mode == "active"
@@ -343,8 +343,7 @@ def test_nfr006_disabled_without_channels(monkeypatch):
 def test_nfr006_invalid_webhook_raises():
     """T-R46-006-04: 非 https webhook → PUSH_CONFIG_INVALID。"""
     class _S:
-        push_wecom_webhook = "http://insecure.example/hook"
-        push_dingtalk_webhook = None
+        push_dingtalk_webhook = "http://insecure.example/hook"
 
     with pytest.raises(PushConfigValidationError) as exc:
         validate_push_settings(_S())  # type: ignore[arg-type]

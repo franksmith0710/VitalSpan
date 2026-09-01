@@ -178,7 +178,7 @@ def complete_callback(
     oauth_state = consume_state(session, state, channel)
     account_id = exchange_code_for_account(session, channel, code)
     mode = resolve_im_delivery_mode(session, channel)
-    bind_source = "scan" if mode == "user_delegated" and channel in {"wecom", "dingtalk"} else "oauth"
+    bind_source = "scan" if mode == "user_delegated" and channel == "dingtalk" else "oauth"
     try:
         upsert_oauth_binding(
             session,
@@ -315,8 +315,8 @@ def start_scan_bind_session(
 ) -> ScanBindStartOut:
     from app.auth.im_oauth.callback_uri import resolve_im_oauth_callback_url
 
-    normalized = channel if channel in {"dingtalk", "wecom"} else ""
-    if normalized not in {"dingtalk", "wecom"}:
+    normalized = channel if channel == "dingtalk" else ""
+    if normalized != "dingtalk":
         raise ImOAuthError("IM_BIND_USE_DEVICE", "该通道请使用对应绑定方式", 422)
     mode = resolve_im_delivery_mode(session, normalized)
     if mode == "group_webhook":
@@ -342,14 +342,14 @@ def start_scan_bind_session(
     )
     redirect_uri = resolve_im_oauth_callback_url(normalized, creds)
     session.commit()
-    embed_kind = "ww_login" if normalized == "wecom" else "dt_frame"
+    embed_kind = "dt_frame"
     return ScanBindStartOut(
         session_id=state,
         redirect_uri=redirect_uri,
         state=state,
         embed_kind=embed_kind,
-        client_id=creds.app_key if normalized == "dingtalk" else None,
-        corp_id=creds.corp_id if normalized == "wecom" else None,
+        client_id=creds.app_key,
+        corp_id=None,
         agent_id=creds.agent_id,
     )
 

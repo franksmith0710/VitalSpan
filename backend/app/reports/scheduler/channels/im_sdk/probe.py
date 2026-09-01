@@ -10,7 +10,6 @@ import lark_oapi as lark
 from dingtalk.client import AppKeyClient
 from lark_oapi.api.auth.v3 import InternalTenantAccessTokenRequest, InternalTenantAccessTokenRequestBody
 from sqlalchemy.orm import Session
-from wechatpy.enterprise import WeChatClient
 
 from app.core.config import Settings, get_settings
 from app.core.platform_config.im_credentials import ImCredentials
@@ -20,7 +19,7 @@ logger = logging.getLogger(__name__)
 _TIMEOUT_SECONDS = 8
 _PROBE_CACHE_SECONDS = 60
 _DINGTALK_PLACEHOLDER_CORP_ID = "dingtalk"
-_CHANNELS = ("dingtalk", "wecom", "feishu")
+_CHANNELS = ("dingtalk", "feishu")
 
 _probe_cache: dict[str, dict[str, Any]] | None = None
 _probe_cache_at: float = 0.0
@@ -37,7 +36,6 @@ def reset_im_probe_cache_for_tests() -> None:
 def _group_webhook(settings: Settings, channel: str) -> bool:
     return {
         "dingtalk": bool(settings.push_dingtalk_webhook),
-        "wecom": bool(settings.push_wecom_webhook),
         "feishu": bool(settings.push_feishu_webhook),
     }.get(channel, False)
 
@@ -45,18 +43,9 @@ def _group_webhook(settings: Settings, channel: str) -> bool:
 def has_im_credentials(settings: Settings, channel: str) -> bool:
     if channel == "dingtalk":
         return bool(settings.dingtalk_app_key and settings.dingtalk_app_secret and settings.dingtalk_agent_id)
-    if channel == "wecom":
-        return bool(settings.wecom_corp_id and settings.wecom_secret and settings.wecom_agent_id)
     if channel == "feishu":
         return bool(settings.feishu_app_id and settings.feishu_app_secret)
     return False
-
-
-def probe_wecom_token(*, corp_id: str, secret: str) -> None:
-    client = WeChatClient(corp_id, secret, timeout=_TIMEOUT_SECONDS)
-    token = client.fetch_access_token()
-    if not token:
-        raise RuntimeError("企业微信 gettoken 未返回 access_token")
 
 
 def probe_dingtalk_token(*, app_key: str, app_secret: str) -> None:
@@ -140,12 +129,9 @@ def probe_im_credentials_bundle(creds: ImCredentials) -> dict[str, Any]:
     if creds.delivery_mode == "user_delegated":
         if channel == "feishu":
             return {"channel": channel, "skipped": False, "ok": True, "error": None}
-        if channel in {"dingtalk", "wecom"}:
+        if channel == "dingtalk":
             try:
-                if channel == "wecom":
-                    probe_wecom_token(corp_id=creds.corp_id or "", secret=creds.secret or "")
-                else:
-                    probe_dingtalk_token(app_key=creds.app_key or "", app_secret=creds.app_secret or "")
+                probe_dingtalk_token(app_key=creds.app_key or "", app_secret=creds.app_secret or "")
             except Exception as exc:
                 logger.warning("IM probe failed (%s user_delegated): %s", channel, exc)
                 return {"channel": channel, "skipped": False, "ok": False, "error": str(exc)}
@@ -157,9 +143,7 @@ def probe_im_credentials_bundle(creds: ImCredentials) -> dict[str, Any]:
             "error": "用户委托模式暂不支持该通道",
         }
     try:
-        if channel == "wecom":
-            probe_wecom_token(corp_id=creds.corp_id or "", secret=creds.secret or "")
-        elif channel == "dingtalk":
+        if channel == "dingtalk":
             probe_dingtalk_token(app_key=creds.app_key or "", app_secret=creds.app_secret or "")
         elif channel == "feishu":
             probe_feishu_token(app_id=creds.app_id or "", app_secret=creds.app_secret or "")

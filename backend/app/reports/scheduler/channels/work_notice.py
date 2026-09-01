@@ -1,4 +1,4 @@
-"""DingTalk / WeCom / Feishu work-notice (person) delivery."""
+"""Feishu (person) / DingTalk leftover work-notice helpers."""
 
 from __future__ import annotations
 
@@ -16,14 +16,13 @@ from app.reports.scheduler.channels.im_sdk import (
     probe_im_channels,
     send_dingtalk_text,
     send_feishu_text,
-    send_wecom_text,
 )
 from app.reports.scheduler.channels.im_sdk.feishu_user import send_feishu_text_as_user
 from app.reports.scheduler.channels.im_sdk.probe import probe_im_credentials_bundle
 
 logger = logging.getLogger(__name__)
 
-_CHANNEL_LABELS = {"dingtalk": "钉钉", "wecom": "企业微信", "feishu": "飞书"}
+_CHANNEL_LABELS = {"dingtalk": "钉钉", "feishu": "飞书"}
 
 
 def app_configured(
@@ -134,14 +133,6 @@ def send_work_notices(
                     account_ids=account_ids,
                     text=text,
                 )
-            elif channel == "wecom":
-                send_wecom_text(
-                    corp_id=resolved.corp_id or "",
-                    secret=resolved.secret or "",
-                    agent_id=resolved.agent_id or "",
-                    account_ids=account_ids,
-                    text=text,
-                )
             else:
                 return {
                     "channel": channel,
@@ -180,14 +171,6 @@ def send_work_notices(
             send_dingtalk_text(
                 app_key=resolved.app_key or "",
                 app_secret=resolved.app_secret or "",
-                agent_id=resolved.agent_id or "",
-                account_ids=account_ids,
-                text=text,
-            )
-        elif channel == "wecom":
-            send_wecom_text(
-                corp_id=resolved.corp_id or "",
-                secret=resolved.secret or "",
                 agent_id=resolved.agent_id or "",
                 account_ids=account_ids,
                 text=text,

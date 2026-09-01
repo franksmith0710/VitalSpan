@@ -5,7 +5,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.reports.scheduler.channels.im_sdk import dingtalk, feishu, wecom
+from app.reports.scheduler.channels.im_sdk import dingtalk, feishu
 
 
 def test_send_feishu_text_calls_lark_sdk():
@@ -59,31 +59,3 @@ def test_send_dingtalk_text_calls_asyncsend_v2():
     mock_client.message.asyncsend_v2.assert_called_once()
     args, kwargs = mock_client.message.asyncsend_v2.call_args
     assert kwargs.get("userid_list") == ["d1"] or args[2] == ["d1"]
-
-
-def test_send_wecom_text_calls_wechatpy():
-    mock_client = MagicMock()
-    mock_client.message.send_text.return_value = {"errcode": 0}
-    with patch("app.reports.scheduler.channels.im_sdk.wecom.WeChatClient", return_value=mock_client):
-        wecom.send_wecom_text(
-            corp_id="corp",
-            secret="sec",
-            agent_id="100",
-            account_ids=["wx1", "wx2"],
-            text="hello",
-        )
-    mock_client.message.send_text.assert_called_once_with(100, ["wx1", "wx2"], "hello")
-
-
-def test_send_wecom_text_raises_when_all_invalid():
-    mock_client = MagicMock()
-    mock_client.message.send_text.return_value = {"errcode": 0, "invaliduser": "wx1|wx2"}
-    with patch("app.reports.scheduler.channels.im_sdk.wecom.WeChatClient", return_value=mock_client):
-        with pytest.raises(RuntimeError, match="接收人无效"):
-            wecom.send_wecom_text(
-                corp_id="corp",
-                secret="sec",
-                agent_id="100",
-                account_ids=["wx1", "wx2"],
-                text="hello",
-            )

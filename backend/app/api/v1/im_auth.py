@@ -13,7 +13,7 @@ from app.auth.models import get_meta_session
 
 router = APIRouter(prefix="/auth/im", tags=["auth"])
 
-ImChannelPath = Literal["dingtalk", "wecom", "feishu"]
+ImChannelPath = Literal["dingtalk", "feishu"]
 
 
 def _db() -> Session:

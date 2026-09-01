@@ -175,29 +175,27 @@ def test_nfr006_dispatch_all_failed_when_disabled(monkeypatch):
     assert result.code == PUSH_CHANNEL_ALL_FAILED
 
 
-def test_nfr006_dispatch_degraded_when_wecom_mock_fails(monkeypatch):
-    """T-NFR-R51-006-06: browser+wecom 配置 + mock wecom 失败 → degraded。"""
-    monkeypatch.setenv("PUSH_BROWSER_ENABLED", "true")
-    monkeypatch.setenv("PUSH_WECOM_WEBHOOK", "https://example.com/wecom")
-    monkeypatch.setenv("PUSH_MOCK_FORCE_FAIL", "wecom")
+def test_nfr006_dispatch_degraded_when_dingtalk_mock_fails(monkeypatch):
+    """T-NFR-R51-006-06: 钉钉 webhook 配置 + mock 失败 → degraded。"""
+    monkeypatch.setenv("PUSH_DINGTALK_WEBHOOK", "https://example.com/dingtalk")
+    monkeypatch.setenv("PUSH_MOCK_FORCE_FAIL", "dingtalk")
     get_settings.cache_clear()
     clear_push_mock_log()
     result = dispatch_push_mock({"text": "hi"})
     assert result.status == "degraded"
     assert result.code == PUSH_CHANNEL_DEGRADED
-    assert "wecom" in result.attempted_channels
+    assert "dingtalk" in result.attempted_channels
 
 
 def test_nfr006_dispatch_delivered_when_channels_ok(monkeypatch):
-    """T-NFR-R51-006-07: browser+wecom 正常 → delivered。"""
-    monkeypatch.setenv("PUSH_BROWSER_ENABLED", "true")
-    monkeypatch.setenv("PUSH_WECOM_WEBHOOK", "https://example.com/wecom")
+    """T-NFR-R51-006-07: 钉钉 webhook 正常 → delivered。"""
+    monkeypatch.setenv("PUSH_DINGTALK_WEBHOOK", "https://example.com/dingtalk")
     monkeypatch.delenv("PUSH_MOCK_FORCE_FAIL", raising=False)
     get_settings.cache_clear()
     clear_push_mock_log()
     result = dispatch_push_mock({"text": "hi"})
     assert result.status == "delivered"
-    assert result.channel in {"browser", "wecom"}
+    assert result.channel == "dingtalk"
 
 
 def test_nfr006_dispatch_budget_smoke():

@@ -83,7 +83,7 @@ flowchart TB
 | ADR-14 | **组织组件库 `componentRef` 引用模式** | 单 widget 级复用；layout 仅存引用，payload 在 `viz_components`；保存时剥离内联配置 | 已定 |
 | ADR-15 | **designer / gov query-design 双 API 收敛策略** | 短期保持双路由；中期抽取 `designer/translator` 公共模块；gov 委托 validate/preview | 已定 |
 | ADR-18 | **看板定时 PDF 可视化导出（Playwright）** | G5 交付：BE 无头 Chromium 打开 FE `/export/*?token=` → `page.pdf()`；`artifactKind=visual_snapshot`；Playwright 为 optional 运行时依赖，非 Superset/DE 运行时 | 已定 |
-| ADR-19 | **报表调度持久化与多通道投递** | `report_schedules` 等 ORM（rev 0032）；email 走邮箱；企微/飞书按人工作通知；**钉钉走群机器人 webhook**；企微/飞书 `notifyGroup` 才额外发群 | 已定 |
+| ADR-19 | **报表调度持久化与多通道投递** | `report_schedules` 等 ORM（rev 0032）；email 走邮箱；飞书按人工作通知；**钉钉走群机器人 webhook**；飞书 `notifyGroup` 才额外发群。企业微信通道已下线（Alembic `0063`） | 已定 |
 | ADR-20 | **报表元数据持久化与真导出** | catalog/extension/prefab/templates ORM（rev 0034）；RenderSpec 真 PDF/Excel/Word | 已定 |
 
 ### ADR-15 · 查询设计器内核收敛（DESIGN-001 F-D）
@@ -128,7 +128,7 @@ flowchart TB
 - 存储切换：`RPT_SCHEDULE_STORE=memory|db`（**默认 `db`**；`memory` 仅测试显式注入；production/staging 启动时拒绝 `memory`）。
 - 产物：`ARTIFACT_STORAGE_BACKEND=fs|memory`；`ARTIFACT_STORAGE_PATH` 本地卷。
 - 权限：新增 `dashboard:schedule`；看板 owner + ACL `owner_id` 可管理本人定时计划。
-- 投递：`delivery_channels` 支持 `email` · `wecom` · `dingtalk` · `feishu`。邮件发给用户邮箱；**钉钉**发到平台对接保存的自定义机器人 webhook（`deliveryMode=group_webhook`，Alembic `0062`）；企微/飞书发给 `user_im_bindings` 中该用户绑的账号（未绑号该通道失败，**禁止**回落到群 webhook）。企微/飞书 `notify_group` 为真时才额外发 `PUSH_*_WEBHOOK`。Alembic `0047`。
+- 投递：`delivery_channels` 支持 `email` · `dingtalk` · `feishu`（历史 `wecom` 调度执行时记 `skipped`）。邮件发给用户邮箱；**钉钉**发到平台对接保存的自定义机器人 webhook（`deliveryMode=group_webhook`，Alembic `0062`）；飞书发给 `user_im_bindings` 中该用户绑的账号（未绑号该通道失败，**禁止**回落到群 webhook）。飞书 `notify_group` 为真时才额外发 `PUSH_FEISHU_WEBHOOK`。Alembic `0047`；企业微信已删除（`0063`）。
 - API：`PATCH /api/v1/reports/schedules/{id}`（仅 draft）。
 
 **代码锚点**：`backend/app/reports/models.py` · `scheduler/store.py` · `artifact_store.py` · `scheduler/channels/`
@@ -253,7 +253,7 @@ backend/
 │   ├── governance/     # M8 catalog, workflow, publish, bus
 │   ├── ingestion/      # FR-DATA/FR-ETL：同步、清洗、调度（M1B）
 │   └── designer/       # M2 四期
-├── migrations/         # Alembic（当前 head **0061**，见 docs/data/README.md）
+├── migrations/         # Alembic（当前 head **0063**，见 docs/data/README.md）
 └── pyproject.toml      # （待建）依赖与工具配置
 ```
 
@@ -406,11 +406,9 @@ Dataset CRUD（ORM `datasets` 表）
 | `RPT_SMTP_FROM` | ✅* | 发件人地址（生产必填） | `reports@vitalspan.local` |
 | `RPT_SMTP_USER` | | SMTP 用户名（可选） | — |
 | `RPT_SMTP_PASSWORD` | | SMTP 密码（可选） | — |
-| `PUSH_WECOM_WEBHOOK` | | 企业微信**群** webhook（仅调度勾选「同时发到群」） | — |
-| `PUSH_DINGTALK_WEBHOOK` | | 钉钉**群** webhook（仅调度勾选「同时发到群」） | — |
+| `PUSH_DINGTALK_WEBHOOK` | | 钉钉**群** webhook（调度勾选钉钉，或 NFR mock 推送） | — |
 | `PUSH_FEISHU_WEBHOOK` | | 飞书**群** webhook（仅调度勾选「同时发到群」） | — |
-| `DINGTALK_APP_KEY` / `DINGTALK_APP_SECRET` / `DINGTALK_AGENT_ID` | | 钉钉工作通知（按人投递） | — |
-| `WECOM_CORP_ID` / `WECOM_SECRET` / `WECOM_AGENT_ID` | | 企微应用消息（按人投递） | — |
+| `DINGTALK_APP_KEY` / `DINGTALK_APP_SECRET` / `DINGTALK_AGENT_ID` | | 遗留钉钉应用凭证（主路径已改为群机器人 webhook） | — |
 | `FEISHU_APP_ID` / `FEISHU_APP_SECRET` | | 飞书应用消息（按人投递） | — |
 
 ### 7.3 前端环境变量

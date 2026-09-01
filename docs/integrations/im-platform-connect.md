@@ -1,4 +1,4 @@
-# 集成简报：IM 平台对接（企微 / 钉钉 / 飞书）
+# 集成简报：IM 平台对接（钉钉 / 飞书）
 
 | 字段 | 值 |
 |------|-----|
@@ -14,8 +14,8 @@
 ## 1. 目标与边界
 
 - **要对齐的产品能力**：后台保存公司应用后可探测；已登录用户授权跳转后自动记住账号；定时工作通知发到该账号。
-- **In Scope（首版真实路径）**：三通道 **gettoken/探测**、**浏览器授权拿账号**、**工作通知发送**（文字 + 产物链接）。
-- **Out of Scope**：用 IM 登录 VitalSpan（替代 JWT）；通讯录同步；企微/飞书用群 webhook 当按人投递；stub/mock 标已配置或已送达；IM 内嵌 PDF。钉钉主路径为群机器人。
+- **In Scope（首版真实路径）**：钉钉群机器人探测与投递；飞书 **gettoken/探测**、**浏览器/device 授权拿账号**、**工作通知发送**（文字 + 产物链接）。
+- **Out of Scope**：用 IM 登录 VitalSpan（替代 JWT）；通讯录同步；飞书用群 webhook 当按人投递；stub/mock 标已配置或已送达；IM 内嵌 PDF；**企业微信（已下线）**。钉钉主路径为群机器人。
 
 ## 1.1 术语对齐
 
@@ -24,7 +24,7 @@
 | 平台对接 | 管理员配置公司应用凭证与回调域名 | 群机器人 webhook |
 | 授权跳转 | 已登录 VitalSpan 的用户去公司应用确认身份，回传账号 | 扫码登录本系统、免登进 VitalSpan |
 | 应用 access_token | 用 CorpId/Secret 等换的应用凭证，用于探测与发信 | 用户 JWT、授权码 code |
-| 成员账号 | 投递用的企微 UserId / 钉钉 userid / 飞书 user_id | 手机号、显示名、open_id（飞书发信须与 receive_id_type 一致） |
+| 成员账号 | 投递用的钉钉 userid / 飞书 user_id | 手机号、显示名、open_id（飞书发信须与 receive_id_type 一致） |
 | 探测 | 调 gettoken（或飞书 tenant_access_token）且厂商成功码 | 消息已送达 |
 | 已送达 | 发信接口成功且无「全部接收人无效」 | 钉钉任务仅受理、入队、mock |
 
@@ -34,23 +34,23 @@
 
 | 模式 | 适用通道 | 平台配置 | 绑定方式 | 发信身份 |
 |------|----------|----------|----------|----------|
-| `corporate_app` | 企微 / 飞书 | App 凭证 + **回调域名**（OAuth） | 浏览器 OAuth 跳转 | 应用 `tenant_access_token` / gettoken |
-| `user_delegated` | 企微 / 飞书 | App 凭证，**无管理面回调域名** | 飞书 device-code；企微内嵌扫码 | 飞书：owner `user_access_token`；企微：应用 gettoken + owner 须已绑定 |
+| `corporate_app` | 飞书 | App 凭证 + **回调域名**（OAuth） | 浏览器 OAuth 跳转 | 应用 `tenant_access_token` |
+| `user_delegated` | 飞书 | App 凭证，**无管理面回调域名** | 飞书 device-code | 飞书：owner `user_access_token` |
 | `group_webhook` | **钉钉** | 自定义机器人 webhook | 无需个人绑定 | POST 群 webhook（摘要 + 产物链接） |
 
-- `user_delegated` 探测：飞书仅校验凭证字段；企微仍调 gettoken。钉钉 `group_webhook` 探测为真实 POST `robot/send`（群内会出现「VitalSpan 连通性探测」）。
-- 企微/钉钉扫码绑定 OAuth 回调由部署环境 `API_PUBLIC_BASE_URL` 提供（须在厂商控制台登记一次），管理面无需手填回调域名。
+- `user_delegated` 探测：飞书仅校验凭证字段。钉钉 `group_webhook` 探测为真实 POST `robot/send`（群内会出现「VitalSpan 连通性探测」）。
+- 钉钉扫码绑定 OAuth 回调由部署环境 `API_PUBLIC_BASE_URL` 提供（须在厂商控制台登记一次），管理面无需手填回调域名。主路径钉钉为群发，通常无需扫码。
 - 收件人仅需 `user_im_bindings.account_id`；**不需**各自 user token。
 - 调度预检：`GET /api/v1/reports/schedules/delivery-health` 返回 `imOwner`，校验当前用户（调度 owner）是否已绑定且 token 可用。
 - SPA 绑定 OAuth：`POST /me/im-bindings/{channel}/authorize-url` 带 Bearer 取 URL 后跳转（避免直链 GET 无鉴权）。
 
 ## 2. Integration Card（摘要）
 
-- 仓内实现（2026-08-28）：`backend/app/reports/scheduler/channels/im_sdk/` — 飞书 **`lark-oapi`**、钉钉 **`dingtalk-sdk`**（oapi `asyncsend_v2`）、企微 **`wechatpy`**（官方 REST 封装；腾讯无统一 PyPI 官方包）。按人发信：`work_notice.py` → `im_sdk/*`；群 webhook 仍为 httpx POST（厂商固定 URL，无 SDK）。
+- 仓内实现（2026-09-01）：`backend/app/reports/scheduler/channels/im_sdk/` — 飞书 **`lark-oapi`**、钉钉 **`dingtalk-sdk`**（遗留按人 API）+ 群 webhook `httpx`。企业微信适配器已删除。按人发信：`work_notice.py` → 飞书 SDK。
 - 探测：`probe_im_apps` / `im_sdk/probe.py` — `corporate_app` 调 gettoken；`user_delegated`（飞书）仅校验凭证字段；60s 内存缓存；响应含 `deliveryMode`。
 - smoke：`contracts/im-platform-connect.smoke.py` 复用 `probe_channel_credentials`（SDK 路径，非裸 httpx）。
 - 仍未闭合：无凭据时 smoke 真打；authorize+callback 须在真实应用与回调域名下验收。
-- 已闭合（2026-08-28）：管理面 IM 凭证 DB SoR（`platform_im_connect_configs`）；三通道 OAuth 绑定 API + 个人中心/平台对接 UI。
+- 已闭合（2026-08-28）：管理面 IM 凭证 DB SoR（`platform_im_connect_configs`）；飞书/钉钉 OAuth 绑定 API + 个人中心/平台对接 UI。2026-09-01 删除企业微信通道（Alembic `0063`）。
 - 环境：env 名见 `backend/.env.example`；真打 smoke 需应用 Secret（§9）。
 
 ## 3. 可行性结论
@@ -62,9 +62,8 @@
 | 通道 | 探测 + 按人发信 | 说明 |
 |------|-----------------|------|
 | 飞书 | `lark-oapi` | 官方 OpenAPI SDK |
-| 钉钉 | `dingtalk-sdk` | 封装 oapi `gettoken` + `asyncsend_v2`；新版 `alibabacloud-dingtalk` 暂无 agent 工作通知等价 API |
-| 企微 | `wechatpy` | 封装官方 REST；示范库 `weworkapi_python` 未上 PyPI |
-| 群 webhook | `httpx` | 厂商 webhook URL，直 POST JSON |
+| 钉钉 | `dingtalk-sdk` + 群 webhook `httpx` | 主路径 `robot/send`；SDK 仅遗留按人路径 |
+| 群 webhook | `httpx` | 钉钉/飞书群机器人 URL，直 POST JSON |
 
 历史八维表（§4.1）为 2026-08-13 调研记录；**现行以本表为准**。
 

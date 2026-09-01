@@ -67,7 +67,7 @@ def test_email_only_cannot_use_im():
         targets, missing = resolve_im_targets(
             session,
             [ScheduleRecipientIn(type="email", value="a@example.com")],
-            "wecom",
+            "feishu",
         )
         assert targets == []
         assert any("邮箱" in item or "纯邮箱" in item for item in missing)
@@ -82,15 +82,15 @@ def test_unbound_im_fails_and_skips_group_webhook(monkeypatch):
         lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not send person notice")),
     )
     result = deliver_to_channels(
-        ["wecom"],
+        ["feishu"],
         artifact_ref="storage://x",
         artifact_kind="standard_render",
         recipient_emails=[],
         attachments=[],
         mock_mode=None,
         settings=get_settings(),
-        im_targets={"wecom": []},
-        im_missing={"wecom": ["alice"]},
+        im_targets={"feishu": []},
+        im_missing={"feishu": ["alice"]},
         notify_group=False,
     )
     step = result["deliverySteps"][0]
@@ -110,18 +110,18 @@ def test_bound_account_sent_to_that_id(monkeypatch):
 
     monkeypatch.setattr(work_notice, "send_work_notices", fake_send)
     result = deliver_to_channels(
-        ["wecom"],
+        ["feishu"],
         artifact_ref="storage://x",
         artifact_kind="standard_render",
         recipient_emails=[],
         attachments=[],
         mock_mode=None,
         settings=get_settings(),
-        im_targets={"wecom": [("alice", "wx-1")]},
-        im_missing={"wecom": []},
+        im_targets={"feishu": [("alice", "ou-1")]},
+        im_missing={"feishu": []},
         notify_group=False,
     )
-    assert seen["ids"] == ["wx-1"]
+    assert seen["ids"] == ["ou-1"]
     assert result["deliverySteps"][0]["status"] == "delivered"
     assert result["status"] == "delivered"
 
@@ -148,18 +148,18 @@ def test_notify_group_true_adds_webhook_step(monkeypatch):
         fake_hook,
     )
     result = deliver_to_channels(
-        ["wecom"],
+        ["feishu"],
         artifact_ref="storage://x",
         artifact_kind="standard_render",
         recipient_emails=[],
         attachments=[],
         mock_mode=None,
         settings=get_settings(),
-        im_targets={"wecom": [("alice", "wx-1")]},
-        im_missing={"wecom": []},
+        im_targets={"feishu": [("alice", "ou-1")]},
+        im_missing={"feishu": []},
         notify_group=True,
     )
-    assert hooks == ["wecom"]
+    assert hooks == ["feishu"]
     modes = [s.get("mode") for s in result["deliverySteps"]]
     assert "work_notice" in modes
     assert "group_webhook" in modes
@@ -180,15 +180,15 @@ def test_group_webhook_does_not_replace_missing_person(monkeypatch):
         fake_hook,
     )
     result = deliver_to_channels(
-        ["wecom"],
+        ["feishu"],
         artifact_ref="storage://x",
         artifact_kind="standard_render",
         recipient_emails=[],
         attachments=[],
         mock_mode=None,
         settings=get_settings(),
-        im_targets={"wecom": []},
-        im_missing={"wecom": ["bob"]},
+        im_targets={"feishu": []},
+        im_missing={"feishu": ["bob"]},
         notify_group=True,
     )
     person = next(s for s in result["deliverySteps"] if s.get("mode") == "work_notice")
@@ -203,12 +203,12 @@ def test_update_user_im_accounts_roundtrip():
         updated = user_service.update_user(
             session,
             user.id,
-            UserUpdate(imAccounts={"dingtalk": "ding-9", "wecom": "wx-9"}),
+            UserUpdate(imAccounts={"dingtalk": "ding-9", "feishu": "ou-9"}),
             **_AUDIT,
         )
         accounts = im_bindings.list_accounts(session, updated.id)
         assert accounts["dingtalk"] == "ding-9"
-        assert accounts["wecom"] == "wx-9"
+        assert accounts["feishu"] == "ou-9"
         user_service.update_user(
             session,
             user.id,
@@ -217,7 +217,7 @@ def test_update_user_im_accounts_roundtrip():
         )
         accounts = im_bindings.list_accounts(session, user.id)
         assert "dingtalk" not in accounts
-        assert accounts["wecom"] == "wx-9"
+        assert accounts["feishu"] == "ou-9"
     finally:
         session.close()
 

@@ -9,7 +9,7 @@ export type UserRow = {
   id: string;
   username: string;
   email?: string | null;
-  imAccounts?: { dingtalk?: string; wecom?: string; feishu?: string };
+  imAccounts?: { dingtalk?: string; feishu?: string };
   isActive?: boolean;
   lockedUntil?: string | null;
   roles?: { id: string; code: string; name: string }[];

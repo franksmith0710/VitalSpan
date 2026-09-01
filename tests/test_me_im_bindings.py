@@ -9,14 +9,6 @@ from app.auth.im_oauth.service import ImBindingsOut, ImBindingItemOut
 def test_me_im_bindings_lists_channels(client, admin_auth_headers):
     items = [
         ImBindingItemOut(
-            channel="wecom",
-            label="企业微信",
-            deliveryMode="corporate_app",
-            appConfigured=False,
-            bound=False,
-            deliverable=False,
-        ),
-        ImBindingItemOut(
             channel="dingtalk",
             label="钉钉",
             deliveryMode="corporate_app",
@@ -37,7 +29,7 @@ def test_me_im_bindings_lists_channels(client, admin_auth_headers):
         resp = client.get("/api/v1/me/im-bindings", headers=admin_auth_headers)
     assert resp.status_code == 200
     body = resp.json()
-    assert len(body["items"]) == 3
+    assert len(body["items"]) == 2
 
 
 def test_me_im_bindings_authorize_requires_config(client, admin_auth_headers):
@@ -48,7 +40,7 @@ def test_me_im_bindings_authorize_requires_config(client, admin_auth_headers):
         ).ImOAuthError("IM_APP_NOT_CONFIGURED", "应用未配置", 422),
     ):
         resp = client.get(
-            "/api/v1/me/im-bindings/wecom/authorize",
+            "/api/v1/me/im-bindings/feishu/authorize",
             headers=admin_auth_headers,
             follow_redirects=False,
         )
@@ -62,7 +54,7 @@ def test_me_im_bindings_authorize_url_returns_json(client, admin_auth_headers):
         return_value="https://open.weixin.qq.com/connect/oauth2/authorize?state=abc",
     ):
         resp = client.post(
-            "/api/v1/me/im-bindings/wecom/authorize-url",
+            "/api/v1/me/im-bindings/feishu/authorize-url",
             headers=admin_auth_headers,
         )
     assert resp.status_code == 200
@@ -73,7 +65,7 @@ def test_me_im_bindings_authorize_url_returns_json(client, admin_auth_headers):
 
 def test_im_oauth_callback_rejects_bad_state(client):
     resp = client.get(
-        "/api/v1/auth/im/wecom/callback?code=abc&state=bad",
+        "/api/v1/auth/im/feishu/callback?code=abc&state=bad",
         follow_redirects=False,
     )
     assert resp.status_code == 302

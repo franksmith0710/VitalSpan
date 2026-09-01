@@ -1,6 +1,6 @@
 # 开工规格 · IM 后台配置 + 自助绑定
 
-> **状态（2026-08-31）**：邮件 + 企微/飞书按人投递与自助绑定已实现。**钉钉按群发**（平台对接粘贴自定义机器人 webhook，`deliveryMode=group_webhook`，无需个人绑定）。企微/飞书仍支持 `user_delegated` 与 `corporate_app`。契约见 [docs/integrations/im-platform-connect.md](../integrations/im-platform-connect.md)。  
+> **状态（2026-09-01）**：邮件 + 飞书按人投递与自助绑定已实现。**钉钉按群发**（平台对接粘贴自定义机器人 webhook，`deliveryMode=group_webhook`，无需个人绑定）。**企业微信已下线**。契约见 [docs/integrations/im-platform-connect.md](../integrations/im-platform-connect.md)。  
 > **邮件 SMTP**：不得长期依赖 `.env`；见 [email-smtp-platform-config.md](./email-smtp-platform-config.md)（与本文共用「平台对接」页与 `system:platform_connect.manage`）。
 
 ## 问题陈述

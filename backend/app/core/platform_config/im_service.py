@@ -81,12 +81,6 @@ def _out_fields(channel: str, creds, row: PlatformImConnectConfig | None, source
                 agent_id=creds.agent_id if source != "none" else None,
                 has_secret=bool(creds.app_secret),
             )
-    elif channel == "wecom":
-        base.update(
-            corp_id=creds.corp_id if source != "none" else None,
-            agent_id=creds.agent_id if source != "none" else None,
-            has_secret=bool(creds.secret),
-        )
     else:
         base.update(
             app_id=creds.app_id if source != "none" else None,
@@ -144,12 +138,6 @@ def _validate_put(
             if not app_key or not agent_id:
                 raise PlatformConfigError("PLATFORM_IM_FIELDS_REQUIRED", "钉钉 AppKey 与 AgentId 不能为空", 422)
             return {"app_key": app_key, "agent_id": agent_id}
-        if channel == "wecom":
-            corp_id = (payload.corp_id or "").strip()
-            agent_id = (payload.agent_id or "").strip()
-            if not corp_id or not agent_id:
-                raise PlatformConfigError("PLATFORM_IM_FIELDS_REQUIRED", "企业微信 CorpId 与 AgentId 不能为空", 422)
-            return {"corp_id": corp_id, "agent_id": agent_id}
         app_id = (payload.app_id or "").strip()
         if not app_id:
             raise PlatformConfigError("PLATFORM_IM_FIELDS_REQUIRED", "飞书 AppId 不能为空", 422)
@@ -163,12 +151,6 @@ def _validate_put(
         if not app_key or not agent_id:
             raise PlatformConfigError("PLATFORM_IM_FIELDS_REQUIRED", "钉钉 AppKey 与 AgentId 不能为空", 422)
         return {"app_key": app_key, "agent_id": agent_id}
-    if channel == "wecom":
-        corp_id = (payload.corp_id or "").strip()
-        agent_id = (payload.agent_id or "").strip()
-        if not corp_id or not agent_id:
-            raise PlatformConfigError("PLATFORM_IM_FIELDS_REQUIRED", "企业微信 CorpId 与 AgentId 不能为空", 422)
-        return {"corp_id": corp_id, "agent_id": agent_id}
     app_id = (payload.app_id or "").strip()
     if not app_id:
         raise PlatformConfigError("PLATFORM_IM_FIELDS_REQUIRED", "飞书 AppId 不能为空", 422)
@@ -180,7 +162,7 @@ def _resolve_secret(
     payload: ImDeliveryConfigPut,
     existing_cipher: str | None,
 ) -> str:
-    secret_key = {"dingtalk": "app_secret", "wecom": "secret", "feishu": "app_secret"}[channel]
+    secret_key = {"dingtalk": "app_secret", "feishu": "app_secret"}[channel]
     incoming = getattr(payload, secret_key, None)
     if incoming:
         return incoming
@@ -219,7 +201,7 @@ def save_im_config(
         secret = _resolve_secret(normalized, payload, existing_cipher)
         if not secret:
             raise PlatformConfigError("PLATFORM_IM_SECRET_REQUIRED", "应用 Secret 不能为空", 422)
-        secret_key = {"dingtalk": "app_secret", "wecom": "secret", "feishu": "app_secret"}[normalized]
+        secret_key = {"dingtalk": "app_secret", "feishu": "app_secret"}[normalized]
         cred_payload = {**fields, secret_key: secret}
         callback = (payload.callback_domain or "").strip() or None
     probe_result = probe_im_credentials_bundle_from_payload(
@@ -351,15 +333,6 @@ def probe_im_credentials_bundle_from_payload(
                 app_secret=payload.get("app_secret"),
                 agent_id=payload.get("agent_id"),
             )
-        elif channel == "wecom":
-            creds = ImCredentials(
-                channel=channel,
-                source="db",
-                delivery_mode=delivery_mode,
-                corp_id=payload.get("corp_id"),
-                secret=payload.get("secret"),
-                agent_id=payload.get("agent_id"),
-            )
         else:
             return {"channel": channel, "skipped": False, "ok": False, "error": "未知通道"}
         return probe_im_credentials_bundle(creds)
@@ -370,15 +343,6 @@ def probe_im_credentials_bundle_from_payload(
             callback_domain=callback_domain,
             app_key=payload.get("app_key"),
             app_secret=payload.get("app_secret"),
-            agent_id=payload.get("agent_id"),
-        )
-    elif channel == "wecom":
-        creds = ImCredentials(
-            channel=channel,
-            source="db",
-            callback_domain=callback_domain,
-            corp_id=payload.get("corp_id"),
-            secret=payload.get("secret"),
             agent_id=payload.get("agent_id"),
         )
     else:

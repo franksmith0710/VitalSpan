@@ -16,7 +16,7 @@ describe("scheduleDeliveryValidation", () => {
   it("allows IM-only with platform recipients", () => {
     const form = {
       ...DEFAULT_SCHEDULE_FORM,
-      deliveryChannels: ["wecom"] as const,
+      deliveryChannels: ["feishu"] as const,
       recipients: DEFAULT_RECIPIENTS,
     };
     expect(isScheduleFormSubmittable(form)).toBe(true);

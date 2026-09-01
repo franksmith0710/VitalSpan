@@ -25,10 +25,6 @@ type ImConfig = ImConfigSummary;
 type FormState = {
   deliveryMode: "corporate_app" | "user_delegated";
   callbackDomain: string;
-  corpId: string;
-  secret: string;
-  agentId: string;
-  appKey: string;
   appSecret: string;
   appId: string;
 };
@@ -37,10 +33,6 @@ function emptyForm(): FormState {
   return {
     deliveryMode: "corporate_app",
     callbackDomain: "",
-    corpId: "",
-    secret: "",
-    agentId: "",
-    appKey: "",
     appSecret: "",
     appId: "",
   };
@@ -64,10 +56,6 @@ export function ImChannelForm({
     setForm({
       deliveryMode: defaultMode,
       callbackDomain: config.callbackDomain ?? "",
-      corpId: config.corpId ?? "",
-      secret: "",
-      agentId: config.agentId ?? "",
-      appKey: config.appKey ?? "",
       appSecret: "",
       appId: config.appId ?? "",
     });
@@ -78,15 +66,9 @@ export function ImChannelForm({
       const body: Record<string, string | null> = {
         deliveryMode: form.deliveryMode,
         callbackDomain: form.deliveryMode === "user_delegated" ? null : form.callbackDomain.trim() || null,
+        appId: form.appId.trim(),
+        appSecret: form.appSecret.trim() || null,
       };
-      if (config.channel === "wecom") {
-        body.corpId = form.corpId.trim();
-        body.agentId = form.agentId.trim();
-        body.secret = form.secret.trim() || null;
-      } else {
-        body.appId = form.appId.trim();
-        body.appSecret = form.appSecret.trim() || null;
-      }
       return apiFetch<ImConfig>(`/api/v1/platform/delivery/im/${config.channel}`, {
         method: "PUT",
         body: JSON.stringify(body),
@@ -99,7 +81,7 @@ export function ImChannelForm({
           ? `${config.label} 用户委托配置已保存`
           : `${config.label} 应用已保存并通过探测`,
       );
-      setForm((prev) => ({ ...prev, secret: "", appSecret: "" }));
+      setForm((prev) => ({ ...prev, appSecret: "" }));
       await qc.invalidateQueries({ queryKey: queryKeys.platformConnect.imSlots });
       await qc.invalidateQueries({ queryKey: queryKeys.platformConnect.imChannel(config.channel) });
       await qc.invalidateQueries({ queryKey: ["reports", "schedules", "delivery-health"] });
@@ -196,71 +178,24 @@ export function ImChannelForm({
 
       <ConnectFormSection title="应用凭证" description="Secret 仅写入不回显；留空表示保留已保存值。" icon={KeyRound}>
         <div className="grid gap-4 sm:grid-cols-2">
-          {config.channel === "wecom" ? (
-            <>
-              <ConnectField id={`im-corp-${config.channel}`} label="CorpId">
-                <Input
-                  id={`im-corp-${config.channel}`}
-                  className="h-11"
-                  value={form.corpId}
-                  onChange={(e) => setForm((prev) => ({ ...prev, corpId: e.target.value }))}
-                />
-              </ConnectField>
-              <ConnectField id={`im-agent-${config.channel}`} label="AgentId">
-                <Input
-                  id={`im-agent-${config.channel}`}
-                  className="h-11"
-                  value={form.agentId}
-                  onChange={(e) => setForm((prev) => ({ ...prev, agentId: e.target.value }))}
-                />
-              </ConnectField>
-              <ConnectField
-                id={`im-secret-${config.channel}`}
-                label={
-                  <span className="inline-flex items-center gap-2">
-                    Secret
-                    {config.hasSecret && !form.secret ? (
-                      <Badge variant="light" color="success" size="sm">
-                        已加密保存
-                      </Badge>
-                    ) : null}
-                  </span>
-                }
-                className="sm:col-span-2"
-              >
-                <Input
-                  id={`im-secret-${config.channel}`}
-                  className="h-11"
-                  type="password"
-                  value={form.secret}
-                  onChange={(e) => setForm((prev) => ({ ...prev, secret: e.target.value }))}
-                  placeholder={config.hasSecret ? "留空保留已保存 Secret" : "应用 Secret"}
-                />
-              </ConnectField>
-            </>
-          ) : null}
-          {config.channel === "feishu" ? (
-            <>
-              <ConnectField id={`im-appid-${config.channel}`} label="AppId">
-                <Input
-                  id={`im-appid-${config.channel}`}
-                  className="h-11"
-                  value={form.appId}
-                  onChange={(e) => setForm((prev) => ({ ...prev, appId: e.target.value }))}
-                />
-              </ConnectField>
-              <ConnectField id={`im-appsecret-${config.channel}`} label="AppSecret" className="sm:col-span-2">
-                <Input
-                  id={`im-appsecret-${config.channel}`}
-                  className="h-11"
-                  type="password"
-                  value={form.appSecret}
-                  onChange={(e) => setForm((prev) => ({ ...prev, appSecret: e.target.value }))}
-                  placeholder={config.hasSecret ? "留空保留已保存 AppSecret" : "应用 AppSecret"}
-                />
-              </ConnectField>
-            </>
-          ) : null}
+          <ConnectField id={`im-appid-${config.channel}`} label="AppId">
+            <Input
+              id={`im-appid-${config.channel}`}
+              className="h-11"
+              value={form.appId}
+              onChange={(e) => setForm((prev) => ({ ...prev, appId: e.target.value }))}
+            />
+          </ConnectField>
+          <ConnectField id={`im-appsecret-${config.channel}`} label="AppSecret" className="sm:col-span-2">
+            <Input
+              id={`im-appsecret-${config.channel}`}
+              className="h-11"
+              type="password"
+              value={form.appSecret}
+              onChange={(e) => setForm((prev) => ({ ...prev, appSecret: e.target.value }))}
+              placeholder={config.hasSecret ? "留空保留已保存 AppSecret" : "应用 AppSecret"}
+            />
+          </ConnectField>
         </div>
       </ConnectFormSection>
 

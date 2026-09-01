@@ -30,7 +30,7 @@ from app.auth.profile import service as profile_service
 
 router = APIRouter(tags=["auth"])
 
-ImChannelPath = Literal["dingtalk", "wecom", "feishu"]
+ImChannelPath = Literal["dingtalk", "feishu"]
 
 
 def _db() -> Session:

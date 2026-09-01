@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""IM platform-connect smoke: WeCom/Feishu gettoken; DingTalk robot/send. No mock."""
+"""IM platform-connect smoke: Feishu gettoken; DingTalk robot/send. No mock."""
 
 from __future__ import annotations
 
@@ -24,7 +24,7 @@ def _fail(msg: str, code: int = 2) -> None:
 def main() -> None:
     settings = get_settings()
     ran = 0
-    for channel in ("wecom", "dingtalk", "feishu"):
+    for channel in ("dingtalk", "feishu"):
         result = probe_channel_credentials(settings, channel)
         if result.get("skipped"):
             print(f"SKIP {channel} (env not set)")
@@ -39,7 +39,6 @@ def main() -> None:
     if ran == 0:
         _fail(
             "missing credentials: set at least one of "
-            "WECOM_CORP_ID+WECOM_SECRET+WECOM_AGENT_ID, "
             "PUSH_DINGTALK_WEBHOOK (optional PUSH_DINGTALK_ROBOT_SECRET), "
             "FEISHU_APP_ID+FEISHU_APP_SECRET",
             2,

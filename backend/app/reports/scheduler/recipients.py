@@ -13,7 +13,7 @@ from app.reports.scheduler.errors import ScheduleError
 from app.reports.scheduler.schemas import ScheduleRecipientIn
 
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
-_IM_LABELS = {"dingtalk": "钉钉", "wecom": "企业微信", "feishu": "飞书"}
+_IM_LABELS = {"dingtalk": "钉钉", "feishu": "飞书"}
 
 
 def _normalize_recipients(raw: list[dict] | list[ScheduleRecipientIn]) -> list[ScheduleRecipientIn]:

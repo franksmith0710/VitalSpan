@@ -11,7 +11,6 @@ import { IM_CHANNEL_LABELS, type ImChannel } from "@/lib/imChannels";
 import { queryKeys } from "@/lib/queryKeys";
 import {
   embedDingtalkQr,
-  embedWecomQr,
   type ScanBindStart,
 } from "./imScanBind";
 
@@ -121,9 +120,7 @@ export function ImBindingsCard() {
     let cancelled = false;
     const mount = async () => {
       try {
-        if (scanChannel === "wecom") {
-          await embedWecomQr(containerId, scanSession);
-        } else if (scanChannel === "dingtalk") {
+        if (scanChannel === "dingtalk") {
           await embedDingtalkQr(containerId, scanSession, (authCode) => {
             scanCompleteMutation.mutate({ channel: scanChannel, sessionId: scanSession.sessionId, authCode });
           });
@@ -228,7 +225,7 @@ export function ImBindingsCard() {
       deviceStartMutation.mutate();
       return;
     }
-    if (item.deliveryMode === "user_delegated" && (item.channel === "wecom" || item.channel === "dingtalk")) {
+    if (item.deliveryMode === "user_delegated" && item.channel === "dingtalk") {
       scanStartMutation.mutate(item.channel);
       return;
     }
@@ -252,7 +249,7 @@ export function ImBindingsCard() {
         <div>
           <h2 className="text-theme-sm font-semibold text-gray-900 dark:text-white">工作通知绑定</h2>
           <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-            绑定后定时报告可发到您的企微 / 飞书个人账号。钉钉为群发，无需在此绑定。
+            绑定后定时报告可发到您的飞书个人账号。钉钉为群发，无需在此绑定。
           </p>
         </div>
       </div>
@@ -284,9 +281,7 @@ export function ImBindingsCard() {
             {IM_CHANNEL_LABELS[scanChannel]} 扫码绑定
           </p>
           <p className="mt-1 text-theme-xs text-gray-600 dark:text-gray-300">
-            {scanChannel === "wecom"
-              ? "请使用企业微信扫描下方二维码，完成后将自动返回本页。"
-              : "请使用钉钉扫描下方二维码完成授权。"}
+            请使用钉钉扫描下方二维码完成授权。
           </p>
           <div
             id={`${SCAN_CONTAINER_ID}-${scanContainerId}`}

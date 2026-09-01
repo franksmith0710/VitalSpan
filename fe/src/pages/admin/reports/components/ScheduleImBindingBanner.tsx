@@ -46,7 +46,7 @@ export function ScheduleImBindingBanner({ channels, className }: Props) {
         <div className="min-w-0">
           <p className="text-theme-sm font-medium text-gray-900 dark:text-white">IM 绑定与发信身份</p>
           <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-            企微/飞书收件人须在个人中心绑定；飞书用户委托模式下，<strong className="font-medium">您（调度创建人）</strong>
+            飞书收件人须在个人中心绑定；飞书用户委托模式下，<strong className="font-medium">您（调度创建人）</strong>
             也需绑定。钉钉发到群机器人，无需个人绑定。
           </p>
         </div>

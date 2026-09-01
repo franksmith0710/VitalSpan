@@ -13,7 +13,6 @@ import { UserSheetSection } from "./UserSheetSection";
 
 export type ImAccounts = {
   dingtalk?: string;
-  wecom?: string;
   feishu?: string;
 };
 
@@ -54,7 +53,6 @@ export function UserImAccountsPanel({
     mutationFn: async () => {
       const imPayload: Record<string, string> = {
         dingtalk: imValues.dingtalk?.trim() ?? "",
-        wecom: imValues.wecom?.trim() ?? "",
         feishu: imValues.feishu?.trim() ?? "",
       };
       return apiFetch<{ email?: string | null; imAccounts?: ImAccounts }>(
@@ -108,7 +106,7 @@ export function UserImAccountsPanel({
             autoComplete="off"
           />
         </div>
-        {(["wecom", "dingtalk", "feishu"] as const).map((channel) => (
+        {(["dingtalk", "feishu"] as const).map((channel) => (
           <div key={channel} className="grid gap-1.5">
             <Label htmlFor={`user-im-${channel}-${userId}`}>
               {IM_CHANNEL_LABELS[channel]}

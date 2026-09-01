@@ -15,7 +15,7 @@ import {
 
 export type DeliveryChannel = "email" | ImChannel;
 
-const IM_OPTIONS: ImChannel[] = ["wecom", "dingtalk", "feishu"];
+const IM_OPTIONS: ImChannel[] = ["dingtalk", "feishu"];
 
 type Props = {
   disabled?: boolean;
@@ -140,7 +140,7 @@ export function ScheduleDeliveryChannelsField({
         <div className="flex items-start gap-2.5">
           <MessageSquare className="mt-0.5 size-4 shrink-0 text-gray-400" aria-hidden />
           <p className="text-theme-sm text-gray-700 dark:text-gray-300">
-            可同时选择邮件与 IM 通道；企微/飞书按人投递不会改发到群；钉钉发到已配置的群机器人。
+            可同时选择邮件与 IM 通道；飞书按人投递不会改发到群；钉钉发到已配置的群机器人。
           </p>
         </div>
         {channelToggles}

@@ -64,47 +64,6 @@ def test_validate_put_user_delegated_feishu_no_callback():
     assert fields == {"app_id": "cli_test"}
 
 
-def test_validate_put_user_delegated_wecom_no_callback():
-    payload = ImDeliveryConfigPut(
-        deliveryMode="user_delegated",
-        corpId="ww_test",
-        agentId="1000001",
-    )
-    fields = im_service._validate_put("wecom", payload, "user_delegated")
-    assert fields == {"corp_id": "ww_test", "agent_id": "1000001"}
-
-
-def test_send_work_notices_user_delegated_wecom():
-    owner_id = uuid.uuid4()
-    creds = ImCredentials(
-        channel="wecom",
-        source="db",
-        delivery_mode="user_delegated",
-        corp_id="ww",
-        secret="sec",
-        agent_id="1",
-    )
-    session = MagicMock()
-    with patch("app.reports.scheduler.channels.work_notice.resolve_im_credentials", return_value=creds):
-        with patch(
-            "app.reports.scheduler.channels.work_notice.owner_has_send_token",
-            return_value=(True, None),
-        ):
-            with patch("app.reports.scheduler.channels.work_notice.probe_im_credentials_bundle", return_value={"ok": True}):
-                with patch("app.reports.scheduler.channels.work_notice.send_wecom_text") as send_wecom:
-                    result = work_notice.send_work_notices(
-                    "wecom",
-                    account_ids=["user1"],
-                    summary="报告",
-                    artifact_ref="storage://x",
-                    owner_id=owner_id,
-                    session=session,
-                )
-    send_wecom.assert_called_once()
-    assert result["status"] == "delivered"
-    assert result["mode"] == "user_delegated"
-
-
 def test_get_user_access_token_refresh():
     user_id = uuid.uuid4()
     creds = ImCredentials(

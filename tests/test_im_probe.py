@@ -26,9 +26,6 @@ def test_probe_im_apps_marks_configured_when_sdk_probe_ok(monkeypatch):
     monkeypatch.setattr(settings, "dingtalk_app_key", None)
     monkeypatch.setattr(settings, "dingtalk_app_secret", None)
     monkeypatch.setattr(settings, "dingtalk_agent_id", None)
-    monkeypatch.setattr(settings, "wecom_corp_id", None)
-    monkeypatch.setattr(settings, "wecom_secret", None)
-    monkeypatch.setattr(settings, "wecom_agent_id", None)
     probe.reset_im_probe_cache_for_tests()
     with patch("app.reports.scheduler.channels.im_sdk.probe.probe_im_credentials_bundle", return_value={"ok": True}):
         result = probe_im_apps(settings, force_refresh=True)
@@ -38,33 +35,19 @@ def test_probe_im_apps_marks_configured_when_sdk_probe_ok(monkeypatch):
 
 def test_probe_im_apps_surfaces_sdk_error(monkeypatch):
     settings = get_settings()
-    monkeypatch.setattr(settings, "wecom_corp_id", "corp")
-    monkeypatch.setattr(settings, "wecom_secret", "sec")
-    monkeypatch.setattr(settings, "wecom_agent_id", "100")
+    monkeypatch.setattr(settings, "feishu_app_id", "cli")
+    monkeypatch.setattr(settings, "feishu_app_secret", "sec")
     monkeypatch.setattr(settings, "dingtalk_app_key", None)
     monkeypatch.setattr(settings, "dingtalk_app_secret", None)
     monkeypatch.setattr(settings, "dingtalk_agent_id", None)
-    monkeypatch.setattr(settings, "feishu_app_id", None)
-    monkeypatch.setattr(settings, "feishu_app_secret", None)
     probe.reset_im_probe_cache_for_tests()
     with patch(
-        "app.core.platform_config.im_resolve.resolve_im_credentials",
-        return_value=__import__(
-            "app.core.platform_config.im_credentials", fromlist=["ImCredentials"]
-        ).ImCredentials(
-            channel="wecom",
-            source="env",
-            corp_id="corp",
-            secret="sec",
-            agent_id="100",
-        ),
-    ), patch(
         "app.reports.scheduler.channels.im_sdk.probe.probe_im_credentials_bundle",
-        return_value={"ok": False, "error": "invalid corpsecret"},
+        return_value={"ok": False, "error": "invalid app secret"},
     ):
         result = probe_im_apps(settings, force_refresh=True)
-    assert result["wecom"]["configured"] is False
-    assert "invalid corpsecret" in (result["wecom"]["error"] or "")
+    assert result["feishu"]["configured"] is False
+    assert "invalid app secret" in (result["feishu"]["error"] or "")
 
 
 def test_probe_dingtalk_group_webhook_posts_live():
@@ -94,9 +77,6 @@ def test_probe_im_apps_uses_cache(monkeypatch):
     monkeypatch.setattr(settings, "dingtalk_app_key", None)
     monkeypatch.setattr(settings, "dingtalk_app_secret", None)
     monkeypatch.setattr(settings, "dingtalk_agent_id", None)
-    monkeypatch.setattr(settings, "wecom_corp_id", None)
-    monkeypatch.setattr(settings, "wecom_secret", None)
-    monkeypatch.setattr(settings, "wecom_agent_id", None)
     probe.reset_im_probe_cache_for_tests()
     mock_probe = MagicMock(return_value={"ok": True})
     with patch("app.reports.scheduler.channels.im_sdk.probe.probe_im_credentials_bundle", mock_probe):

@@ -21,7 +21,6 @@ _REFRESH_SKEW = timedelta(minutes=2)
 _OWNER_BIND_HINT = {
     "feishu": "您尚未绑定飞书，请在个人中心完成扫码绑定",
     "dingtalk": "您尚未绑定钉钉，请在个人中心完成扫码绑定",
-    "wecom": "您尚未绑定企业微信，请在个人中心完成扫码绑定",
 }
 
 

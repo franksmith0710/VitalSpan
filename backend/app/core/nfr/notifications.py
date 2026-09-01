@@ -14,7 +14,7 @@ _store: dict[uuid.UUID, dict] = {}
 class NotificationRecord(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
     id: uuid.UUID
-    channel: Literal["browser", "wecom", "dingtalk"] = "browser"
+    channel: Literal["browser", "dingtalk"] = "browser"
     message: str
     status: Literal["pending", "delivered", "degraded", "failed"] = "pending"
     created_at: str = Field(alias="createdAt")

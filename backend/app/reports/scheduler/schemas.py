@@ -25,7 +25,7 @@ class ScheduleCreate(BaseModel):
     attachment_formats: list[Literal["pdf", "excel"]] = Field(
         default_factory=lambda: ["pdf"], alias="attachmentFormats",
     )
-    delivery_channels: list[Literal["email", "wecom", "dingtalk", "feishu"]] = Field(
+    delivery_channels: list[Literal["email", "dingtalk", "feishu"]] = Field(
         default_factory=lambda: ["email"], alias="deliveryChannels",
     )
     notify_group: bool = Field(default=False, alias="notifyGroup")
@@ -64,7 +64,7 @@ class ScheduleUpdate(BaseModel):
     timezone: str | None = Field(default=None, max_length=64)
     recipients: list[ScheduleRecipientIn] | None = None
     attachment_formats: list[Literal["pdf", "excel"]] | None = Field(default=None, alias="attachmentFormats")
-    delivery_channels: list[Literal["email", "wecom", "dingtalk", "feishu"]] | None = Field(
+    delivery_channels: list[Literal["email", "dingtalk", "feishu"]] | None = Field(
         default=None, alias="deliveryChannels",
     )
     notify_group: bool | None = Field(default=None, alias="notifyGroup")

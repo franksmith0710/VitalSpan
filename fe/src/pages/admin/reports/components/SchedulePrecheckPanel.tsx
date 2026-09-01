@@ -156,7 +156,7 @@ export function useSchedulePrecheckItems(input: {
   const imHealth = delivery?.im;
   const imOwner = delivery?.imOwner;
   if (imHealth) {
-    for (const channel of ["wecom", "dingtalk", "feishu"] as const) {
+    for (const channel of ["dingtalk", "feishu"] as const) {
       const row = imHealth[channel];
       const ok = Boolean(row?.configured);
       const groupWebhook = row?.deliveryMode === "group_webhook";

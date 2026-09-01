@@ -20,7 +20,7 @@
 |----|-----|
 | 扩展点元数据、推送/信创 env 配置面、合规报告 domain 逻辑 | HTTP 路由（→ `api/v1/nfr.py` entry） |
 | `register_connector_plugin` 薄包装 `register_dialect` | 修改 `ConnectorRegistry` 核心（零侵入） |
-| `browser_matrix` / `push_channels` mock 降级链 / `probe_compliance_non_blocking` | 真实 WebPush/企微 SDK HTTP 发送 |
+| `browser_matrix` / `push_channels` mock 降级链 / `probe_compliance_non_blocking` | 真实 WebPush SDK HTTP 发送 |
 | `describe_registration_path` / `probe_registry` companion | Admin UI 配置界面 |
 
 ## 依赖

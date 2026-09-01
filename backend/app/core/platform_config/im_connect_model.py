@@ -8,20 +8,17 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.auth.models import Base
 
-IM_CHANNELS = ("dingtalk", "wecom", "feishu")
+IM_CHANNELS = ("dingtalk", "feishu")
 IM_DELIVERY_MODES = ("corporate_app", "user_delegated", "group_webhook")
 IM_LABELS = {
     "dingtalk": "钉钉",
-    "wecom": "企业微信",
     "feishu": "飞书",
 }
 
 AUDIT_TARGET_IM_DINGTALK = uuid.UUID("00000000-0000-4000-8000-0000000000f1")
-AUDIT_TARGET_IM_WECOM = uuid.UUID("00000000-0000-4000-8000-0000000000f2")
 AUDIT_TARGET_IM_FEISHU = uuid.UUID("00000000-0000-4000-8000-0000000000f3")
 AUDIT_TARGET_BY_IM_CHANNEL = {
     "dingtalk": AUDIT_TARGET_IM_DINGTALK,
-    "wecom": AUDIT_TARGET_IM_WECOM,
     "feishu": AUDIT_TARGET_IM_FEISHU,
 }
 
@@ -34,7 +31,7 @@ class PlatformImConnectConfig(Base):
             name="ck_platform_im_connect_configs_state",
         ),
         CheckConstraint(
-            "channel IN ('dingtalk', 'wecom', 'feishu')",
+            "channel IN ('dingtalk', 'feishu')",
             name="ck_platform_im_connect_configs_channel",
         ),
         CheckConstraint(

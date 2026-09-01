@@ -86,7 +86,7 @@
 - **描述**：NFR-05 浏览器与消息推送（SRS 追溯项）。
 - **验收标准**：
   - [x] 主流浏览器兼容矩阵（`browser_matrix` ≥4 浏览器 + probe budget，r51 companion）
-  - [x] 企微/钉钉推送配置契约 + 降级路径（`push_config` + `push_channels` mock/降级，r46 L1 + r51 companion）
+  - [x] 钉钉推送配置契约 + 降级路径（`push_config` + `push_channels` mock/降级，r46 L1 + r51 companion；企业微信 mock 通道已下线）
   - [x] 消息推送 API 骨架（r238：`POST/GET /api/v1/nfr/notifications` + 状态流转 + 404）
   - [x] 浏览器兼容矩阵文档（r238：`docs/nfr/browser-compatibility.md`）
   - [x] FE browserCompat smoke（r238：`browserCompat.ts` + `browserCompat.test.ts`）

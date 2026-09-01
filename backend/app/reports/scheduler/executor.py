@@ -410,7 +410,7 @@ def semi_real_execute_schedule(
             for channel in channels:
                 if channel == "dingtalk":
                     continue
-                if channel in {"wecom", "feishu"}:
+                if channel == "feishu":
                     targets, missing = resolve_im_targets(session, parsed, channel)
                     im_targets[channel] = targets
                     im_missing[channel] = missing

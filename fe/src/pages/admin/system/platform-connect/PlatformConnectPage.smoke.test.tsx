@@ -29,7 +29,6 @@ describe("PlatformConnectPage smoke", () => {
       if (path.includes("/im/slots")) {
         return Promise.resolve({
           items: [
-            { channel: "wecom", label: "企业微信", configured: false, source: "none", hasSecret: false, deliveryMode: "corporate_app" },
             { channel: "dingtalk", label: "钉钉", configured: false, source: "none", hasSecret: false, deliveryMode: "corporate_app" },
             { channel: "feishu", label: "飞书", configured: false, source: "none", hasSecret: false, deliveryMode: "corporate_app" },
           ],
@@ -62,7 +61,7 @@ describe("PlatformConnectPage smoke", () => {
     renderPage();
     expect(await screen.findByText("投递通道")).toBeInTheDocument();
     expect(screen.getByText("QQ 邮箱")).toBeInTheDocument();
-    expect(screen.getByText("企业微信")).toBeInTheDocument();
+    expect(screen.queryByText("企业微信")).not.toBeInTheDocument();
     expect(screen.getByText("飞书")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "工作通知" })).not.toBeInTheDocument();
   });

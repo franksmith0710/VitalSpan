@@ -30,25 +30,22 @@ def test_clear_im_config_ignores_env(monkeypatch, meta_session: Session):
             "S",
             (),
             {
-                "wecom_corp_id": "corp",
-                "wecom_secret": "sec",
-                "wecom_agent_id": "1",
+                "feishu_app_id": "cli",
+                "feishu_app_secret": "sec",
                 "dingtalk_app_key": None,
                 "dingtalk_app_secret": None,
                 "dingtalk_agent_id": None,
-                "feishu_app_id": None,
-                "feishu_app_secret": None,
             },
         )(),
     )
-    row = meta_session.get(PlatformImConnectConfig, "wecom")
+    row = meta_session.get(PlatformImConnectConfig, "feishu")
     if row is None:
-        row = PlatformImConnectConfig(channel="wecom", state="cleared")
+        row = PlatformImConnectConfig(channel="feishu", state="cleared")
         meta_session.add(row)
     else:
         row.state = "cleared"
     meta_session.commit()
-    out = im_service.get_im_config(meta_session, "wecom", probe=False)
+    out = im_service.get_im_config(meta_session, "feishu", probe=False)
     assert out.source == "none"
     assert out.configured is False
 
@@ -56,13 +53,12 @@ def test_clear_im_config_ignores_env(monkeypatch, meta_session: Session):
 def test_save_im_config_requires_secret(meta_session: Session):
     payload = ImDeliveryConfigPut(
         callbackDomain="example.com",
-        corpId="corp",
-        agentId="100",
+        appId="cli",
     )
     with pytest.raises(PlatformConfigError) as exc:
         im_service.save_im_config(
             meta_session,
-            "wecom",
+            "feishu",
             payload,
             actor_id=str(uuid.uuid4()),
             actor_username="admin",
@@ -74,9 +70,8 @@ def test_save_im_config_requires_secret(meta_session: Session):
 def test_save_im_config_probe_failure(meta_session: Session):
     payload = ImDeliveryConfigPut(
         callbackDomain="example.com",
-        corpId="corp",
-        agentId="100",
-        secret="sec",
+        appId="cli",
+        appSecret="sec",
     )
     with patch(
         "app.core.platform_config.im_service.probe_im_credentials_bundle_from_payload",
@@ -85,7 +80,7 @@ def test_save_im_config_probe_failure(meta_session: Session):
         with pytest.raises(PlatformConfigError) as exc:
             im_service.save_im_config(
                 meta_session,
-                "wecom",
+                "feishu",
                 payload,
                 actor_id=str(uuid.uuid4()),
                 actor_username="admin",

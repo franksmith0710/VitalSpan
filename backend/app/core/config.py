@@ -25,16 +25,12 @@ class Settings(BaseSettings):
     query_timeout_seconds: int = 30
     analytics_database_url: str | None = None
     api_openapi_version: str = "0.1.0"
-    push_wecom_webhook: str | None = None
     push_dingtalk_webhook: str | None = None
     push_dingtalk_robot_secret: str | None = None
     push_feishu_webhook: str | None = None
     dingtalk_app_key: str | None = None
     dingtalk_app_secret: str | None = None
     dingtalk_agent_id: str | None = None
-    wecom_corp_id: str | None = None
-    wecom_secret: str | None = None
-    wecom_agent_id: str | None = None
     feishu_app_id: str | None = None
     feishu_app_secret: str | None = None
     vitalspan_dev_admin_password: str = "changeme"
@@ -75,16 +71,12 @@ class Settings(BaseSettings):
     _DEV_SM4_EXAMPLE: ClassVar[str] = "0123456789abcdef0123456789abcdef"
 
     @field_validator(
-        "push_wecom_webhook",
         "push_dingtalk_webhook",
         "push_dingtalk_robot_secret",
         "push_feishu_webhook",
         "dingtalk_app_key",
         "dingtalk_app_secret",
         "dingtalk_agent_id",
-        "wecom_corp_id",
-        "wecom_secret",
-        "wecom_agent_id",
         "feishu_app_id",
         "feishu_app_secret",
         mode="before",

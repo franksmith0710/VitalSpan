@@ -25,14 +25,6 @@ def _from_env(settings: Settings, channel: str) -> ImCredentials:
             webhook_url=webhook,
             webhook_secret=(settings.push_dingtalk_robot_secret or "").strip() or None,
         )
-    if channel == "wecom":
-        return ImCredentials(
-            channel=channel,
-            source="env",
-            corp_id=(settings.wecom_corp_id or "").strip() or None,
-            secret=settings.wecom_secret,
-            agent_id=(settings.wecom_agent_id or "").strip() or None,
-        )
     if channel == "feishu":
         return ImCredentials(
             channel=channel,
@@ -55,16 +47,6 @@ def _from_row(row: PlatformImConnectConfig) -> ImCredentials:
             delivery_mode="group_webhook",
             webhook_url=payload.get("webhook_url") or None,
             webhook_secret=payload.get("webhook_secret") or None,
-        )
-    if channel == "wecom":
-        return ImCredentials(
-            channel=channel,
-            source="db",
-            delivery_mode=mode,
-            callback_domain=callback,
-            corp_id=payload.get("corp_id") or None,
-            secret=payload.get("secret") or None,
-            agent_id=payload.get("agent_id") or None,
         )
     return ImCredentials(
         channel=channel,

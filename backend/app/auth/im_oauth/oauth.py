@@ -81,14 +81,6 @@ def build_authorize_url(creds: ImCredentials, *, state: str) -> str:
     channel = creds.channel
     redirect_uri = quote(_callback_url(creds, channel), safe="")
     state_q = quote(state, safe="")
-    if channel == "wecom":
-        corp_id = creds.corp_id or ""
-        agent_id = creds.agent_id or ""
-        return (
-            "https://login.work.weixin.qq.com/wwlogin/sso/login?"
-            f"login_type=CorpApp&appid={corp_id}&agentid={agent_id}"
-            f"&redirect_uri={redirect_uri}&state={state_q}"
-        )
     if channel == "dingtalk":
         app_key = creds.app_key or ""
         return (
@@ -101,31 +93,6 @@ def build_authorize_url(creds: ImCredentials, *, state: str) -> str:
         "https://accounts.feishu.cn/open-apis/authen/v1/authorize?"
         f"app_id={app_id}&redirect_uri={redirect_uri}&state={state_q}"
     )
-
-
-def _wecom_userid(creds: ImCredentials, code: str) -> str:
-    with httpx.Client(timeout=_TIMEOUT) as client:
-        token_resp = client.get(
-            "https://qyapi.weixin.qq.com/cgi-bin/gettoken",
-            params={"corpid": creds.corp_id, "corpsecret": creds.secret},
-        )
-        token_resp.raise_for_status()
-        token_body = token_resp.json()
-        if token_body.get("errcode") != 0:
-            raise ImOAuthError("IM_OAUTH_TOKEN_FAILED", token_body.get("errmsg") or "企微 gettoken 失败", 422)
-        access_token = token_body.get("access_token")
-        user_resp = client.get(
-            "https://qyapi.weixin.qq.com/cgi-bin/auth/getuserinfo",
-            params={"access_token": access_token, "code": code},
-        )
-        user_resp.raise_for_status()
-        user_body = user_resp.json()
-        if user_body.get("errcode") != 0:
-            raise ImOAuthError("IM_OAUTH_USER_FAILED", user_body.get("errmsg") or "企微获取用户失败", 422)
-        userid = user_body.get("userid") or user_body.get("UserId")
-        if not userid:
-            raise ImOAuthError("IM_OAUTH_USER_MISSING", "企微未返回成员账号", 422)
-        return str(userid)
 
 
 def _dingtalk_oauth_tokens(creds: ImCredentials, code: str) -> tuple[str, str, str | None, int]:
@@ -219,8 +186,6 @@ def exchange_code_for_account(session: Session, channel: str, code: str) -> str:
     creds = resolve_im_credentials(session, channel=normalized)
     if not creds.is_configured:
         raise ImOAuthError("IM_APP_NOT_CONFIGURED", "应用未配置，请联系管理员完成平台对接", 422)
-    if normalized == "wecom":
-        return _wecom_userid(creds, code)
     if normalized == "dingtalk":
         return _dingtalk_userid(creds, code)
     if normalized == "feishu":
