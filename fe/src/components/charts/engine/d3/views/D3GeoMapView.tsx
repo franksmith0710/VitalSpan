@@ -169,6 +169,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const threePendingGenRef = useRef(0);
   const threeApiRef = useRef<ThreeMapApi | null>(null);
   const lastVisualSigRef = useRef("");
+  const lastFootprintRef = useRef(props.layoutFootprint);
   const [renderError, setRenderError] = useState<string | null>(null);
   const [renderEngine, setRenderEngine] = useState<GeoMapRenderEngine | null>(null);
   const [fallbackReason, setFallbackReason] = useState<string | null>(null);
@@ -565,9 +566,19 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       measureAndRender("commit", false);
       return;
     }
-    // 2D：live 未重绘；仅尺寸变化时静默 commit（压制动画）
-    measureAndRender("commit", false);
-  }, [isThreeMap, tryThreeResize, measureAndRender]);
+    if (!isThreeMap) {
+      const footprint = props.layoutFootprint;
+      const prevFootprint = lastFootprintRef.current;
+      const footprintChanged = Boolean(
+        footprint
+        && prevFootprint
+        && (footprint.width !== prevFootprint.width || footprint.height !== prevFootprint.height),
+      );
+      if (footprint) lastFootprintRef.current = footprint;
+      measureAndRender("commit", footprintChanged);
+      return;
+    }
+  }, [isThreeMap, tryThreeResize, measureAndRender, props.layoutFootprint]);
 
   const onCommitResizeRef = useRef(onCommitResize);
   onCommitResizeRef.current = onCommitResize;

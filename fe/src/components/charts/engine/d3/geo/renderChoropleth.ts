@@ -30,6 +30,7 @@ import { chartTransition, prefersReducedMotion } from "@/components/charts/engin
 import type { D3GeoRenderConfig } from "@/components/charts/engine/d3/types";
 import {
   isIdentityGeoViewTransform,
+  isValidGeoViewTransform,
   type ChartGeoViewTransform,
 } from "@/lib/chartGeoViewState";
 
@@ -148,6 +149,8 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   const root = d3
     .select(container)
     .append("svg")
+    .attr("class", "vs-chart-svg")
+    .attr("data-vs-embedded-fit", "viewport")
     .attr("width", "100%")
     .attr("height", "100%")
     .attr("viewBox", `0 0 ${width} ${height}`)
@@ -359,14 +362,24 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
   let detachZoomControls = () => undefined;
   if (roam || showZoomControl) {
     const savedTransform = geoStyle.viewTransform;
-    const initialTransform = savedTransform && !isIdentityGeoViewTransform(savedTransform)
-      ? toZoomTransform(savedTransform)
+    const resolvedTransform =
+      savedTransform
+      && !isIdentityGeoViewTransform(savedTransform)
+      && isValidGeoViewTransform(savedTransform, width, height)
+        ? savedTransform
+        : undefined;
+    if (savedTransform && !resolvedTransform && onViewTransformChange) {
+      queueMicrotask(() => onViewTransformChange(undefined));
+    }
+    const initialTransform = resolvedTransform
+      ? toZoomTransform(resolvedTransform)
       : d3.zoomIdentity;
     let persistTimer: ReturnType<typeof setTimeout> | null = null;
 
     const notifyViewTransform = (transform: d3.ZoomTransform) => {
       if (!onViewTransformChange) return;
       const next = fromZoomTransform(transform);
+      if (!isValidGeoViewTransform(next, width, height)) return;
       onViewTransformChange(isIdentityGeoViewTransform(next) ? undefined : next);
     };
 
@@ -399,7 +412,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
         schedulePersistViewTransform(event.transform);
       });
     root.call(zoom);
-    if (roam || savedTransform) {
+    if (roam || resolvedTransform) {
       try {
         root.call(zoom.transform, initialTransform);
         g.attr("transform", initialTransform.toString());

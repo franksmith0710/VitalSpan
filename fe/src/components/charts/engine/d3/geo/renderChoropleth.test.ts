@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { finalizeEmbeddedChartSvgs } from "@/components/charts/engine/d3/core/sceneGraph";
 import { renderD3ChoroplethChart } from "@/components/charts/engine/d3/geo/renderChoropleth";
 import { resolveD3Theme } from "@/components/charts/engine/d3/core/themeEngine";
 
@@ -378,5 +379,69 @@ describe("renderD3ChoroplethChart", () => {
     dispose();
     document.body.removeChild(container);
     vi.useRealTimers();
+  });
+
+  it("keeps viewport viewBox after finalize even with zoom transform", () => {
+    const container = document.createElement("div");
+    container.style.width = "720px";
+    container.style.height = "333px";
+    document.body.appendChild(container);
+
+    const dispose = renderD3ChoroplethChart(container, {
+      width: 720,
+      height: 333,
+      rows: [["广东省", 320]],
+      columns: ["province", "value"],
+      regionField: "province",
+      metricField: "value",
+      theme: resolveD3Theme("light"),
+      showTooltip: false,
+      colors: ["#1653a9"],
+      geoStyle: {
+        showZoomControl: true,
+        viewTransform: { x: 20, y: 10, k: 1.5 },
+      },
+    });
+
+    finalizeEmbeddedChartSvgs(container);
+    const svg = container.querySelector("svg");
+    expect(svg?.getAttribute("data-vs-embedded-fit")).toBe("viewport");
+    expect(svg?.getAttribute("viewBox")).toBe("0 0 720 333");
+
+    dispose();
+    document.body.removeChild(container);
+  });
+
+  it("drops corrupted view transform and resets zoom root", async () => {
+    const container = document.createElement("div");
+    container.style.width = "720px";
+    container.style.height = "333px";
+    document.body.appendChild(container);
+    const onViewTransformChange = vi.fn();
+
+    const dispose = renderD3ChoroplethChart(container, {
+      width: 720,
+      height: 333,
+      rows: [["广东省", 320]],
+      columns: ["province", "value"],
+      regionField: "province",
+      metricField: "value",
+      theme: resolveD3Theme("light"),
+      showTooltip: false,
+      colors: ["#1653a9"],
+      geoStyle: {
+        showZoomControl: true,
+        viewTransform: { x: -4725.6, y: -4386.55, k: 4 },
+      },
+      onViewTransformChange,
+    });
+
+    await Promise.resolve();
+    const zoomRoot = container.querySelector("g.map-zoom-root");
+    expect(zoomRoot?.getAttribute("transform")).toBe("translate(0,0) scale(1)");
+    expect(onViewTransformChange).toHaveBeenCalledWith(undefined);
+
+    dispose();
+    document.body.removeChild(container);
   });
 });

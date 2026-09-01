@@ -1,3 +1,4 @@
+import { GEO_MAP_SCALE_LIMIT } from "@/components/charts/engine/geo/geoConstants";
 import {
   patchChartDeStyleNested,
   readChartDeStyle,
@@ -24,6 +25,37 @@ export function isIdentityGeoViewTransform(transform: ChartGeoViewTransform): bo
     Math.abs(transform.k - 1) < TRANSFORM_EPS
     && Math.abs(transform.x) < TRANSFORM_EPS
     && Math.abs(transform.y) < TRANSFORM_EPS
+  );
+}
+
+/** 拒绝看板缩放/拖拽后落盘的极端平移（会导致地图缩在角落） */
+export function isValidGeoViewTransform(
+  transform: ChartGeoViewTransform,
+  width: number,
+  height: number,
+): boolean {
+  if (
+    !Number.isFinite(transform.x)
+    || !Number.isFinite(transform.y)
+    || !Number.isFinite(transform.k)
+  ) {
+    return false;
+  }
+  if (
+    transform.k < GEO_MAP_SCALE_LIMIT.min - TRANSFORM_EPS
+    || transform.k > GEO_MAP_SCALE_LIMIT.max + TRANSFORM_EPS
+  ) {
+    return false;
+  }
+  if (width <= 0 || height <= 0) return false;
+  const sx = (width / 2) * transform.k + transform.x;
+  const sy = (height / 2) * transform.k + transform.y;
+  const slack = Math.max(width, height) * 0.25;
+  return (
+    sx >= -slack
+    && sx <= width + slack
+    && sy >= -slack
+    && sy <= height + slack
   );
 }
 

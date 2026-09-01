@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import {
   isIdentityGeoViewTransform,
+  isValidGeoViewTransform,
   patchChartGeo3dOrbitView,
   patchChartGeoViewTransform,
 } from "@/lib/chartGeoViewState";
@@ -17,6 +18,12 @@ describe("chartGeoViewState", () => {
   it("detects identity transform", () => {
     expect(isIdentityGeoViewTransform({ x: 0, y: 0, k: 1 })).toBe(true);
     expect(isIdentityGeoViewTransform({ x: 12, y: 0, k: 1 })).toBe(false);
+  });
+
+  it("rejects extreme pan that pushes map off canvas", () => {
+    expect(isValidGeoViewTransform({ x: 20, y: 10, k: 1.5 }, 720, 333)).toBe(true);
+    expect(isValidGeoViewTransform({ x: -4725.6, y: -4386.55, k: 4 }, 720, 333)).toBe(false);
+    expect(isValidGeoViewTransform({ x: 0, y: 0, k: 8 }, 400, 320)).toBe(false);
   });
 
   it("patches 2D view transform by mapId", () => {
