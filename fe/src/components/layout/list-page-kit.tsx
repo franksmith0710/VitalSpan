@@ -91,7 +91,7 @@ export function ListPageTableFrame({
   return (
     <div
       className={cn(
-        "min-h-0 flex-1 overflow-x-hidden overflow-y-auto",
+        "custom-scrollbar min-h-0 flex-1 overflow-x-hidden overflow-y-auto",
         LIST_PAGE_CONTENT_PAD_CLASS,
         className,
       )}
@@ -252,7 +252,7 @@ export function DataTable({
 
   return (
     <div
-      className={cn("overflow-x-only", maxBodyHeight && "overflow-y-auto")}
+      className={cn("overflow-x-only", maxBodyHeight && "custom-scrollbar overflow-y-auto")}
       style={maxBodyHeight ? { maxHeight: maxBodyHeight } : undefined}
     >
       <Table

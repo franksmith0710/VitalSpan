@@ -39,6 +39,12 @@ vi.mock("@/lib/aiVizArtifacts", async (importOriginal) => {
   };
 });
 
+vi.mock("@/context/auth-context", () => ({
+  useAuth: () => ({
+    user: { username: "editor", roles: ["admin"], permissions: ["dashboard:edit"] },
+  }),
+}));
+
 vi.stubGlobal(
   "IntersectionObserver",
   vi.fn(() => ({
@@ -76,6 +82,7 @@ describe("CreateVizComponentDialog", () => {
     renderDialog();
     const popover = await screen.findByTestId("chart-picker-popover");
 
+    await user.click(within(popover).getByRole("button", { name: "自定义" }));
     await user.click(await within(popover).findByTestId("custom-viz-tile-art-hub-1"));
     expect(await screen.findByText(/已选：Hub 排名条/)).toBeInTheDocument();
     expect(await within(popover).findByTestId("custom-viz-tile-art-hub-1")).toHaveAttribute(

@@ -127,7 +127,7 @@ function AdminFormDialogBody({ scrollable = false, className, ...props }: AdminF
     <div
       className={cn(
         "grid gap-3.5 px-5 py-4",
-        scrollable && "min-h-0 flex-1 overflow-y-auto",
+        scrollable && "custom-scrollbar min-h-0 flex-1 overflow-y-auto",
         className,
       )}
       {...props}

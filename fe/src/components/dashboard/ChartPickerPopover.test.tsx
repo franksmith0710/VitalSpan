@@ -82,6 +82,22 @@ afterEach(() => {
   cleanup();
 });
 
+describe("ChartPickerPopover isolated layout", () => {
+  it("shows only the active section when layout is isolated", async () => {
+    const user = userEvent.setup();
+    renderPicker({ onInsertCustomViz: vi.fn(), layout: "isolated" });
+    const popover = await screen.findByTestId("chart-picker-popover");
+
+    expect(await within(popover).findByRole("button", { name: /基础折线图/i })).toBeInTheDocument();
+    expect(within(popover).queryByRole("button", { name: "自定义" })).toBeInTheDocument();
+    expect(within(popover).queryByTestId("custom-viz-tile-art-custom-1")).not.toBeInTheDocument();
+
+    await user.click(within(popover).getByRole("button", { name: "自定义" }));
+    expect(within(popover).queryByRole("button", { name: /基础折线图/i })).not.toBeInTheDocument();
+    expect(await within(popover).findByTestId("custom-viz-tile-art-custom-1")).toBeInTheDocument();
+  });
+});
+
 describe("ChartPickerPopover drag", () => {
   it("keeps drag payload and notifies drag session callbacks", async () => {
     const onDragStart = vi.fn();
