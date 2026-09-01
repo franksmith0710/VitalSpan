@@ -24,12 +24,14 @@ _CHANNELS = ("dingtalk", "wecom", "feishu")
 
 _probe_cache: dict[str, dict[str, Any]] | None = None
 _probe_cache_at: float = 0.0
+_group_live_cache: dict[str, tuple[float, dict[str, Any]]] = {}
 
 
 def reset_im_probe_cache_for_tests() -> None:
-    global _probe_cache, _probe_cache_at
+    global _probe_cache, _probe_cache_at, _group_live_cache
     _probe_cache = None
     _probe_cache_at = 0.0
+    _group_live_cache = {}
 
 
 def _group_webhook(settings: Settings, channel: str) -> bool:
@@ -100,14 +102,41 @@ def probe_im_credentials_bundle(creds: ImCredentials) -> dict[str, Any]:
     if not creds.is_configured:
         return {"channel": channel, "skipped": True, "ok": False, "error": None}
     if creds.delivery_mode == "group_webhook":
-        if creds.is_configured:
-            return {"channel": channel, "skipped": False, "ok": True, "error": None}
-        return {
-            "channel": channel,
-            "skipped": False,
-            "ok": False,
-            "error": "钉钉群机器人 webhook 未配置或格式无效",
-        }
+        if not creds.is_configured:
+            return {
+                "channel": channel,
+                "skipped": False,
+                "ok": False,
+                "error": "钉钉群机器人 webhook 未配置或格式无效",
+            }
+        from app.core.config import get_settings
+        from app.reports.scheduler.channels.im_sdk.group_webhook import post_group_webhook
+
+        cache_key = f"{creds.webhook_url}|{bool(creds.webhook_secret)}"
+        now = time.monotonic()
+        cached = _group_live_cache.get(cache_key)
+        if cached and now - cached[0] < _PROBE_CACHE_SECONDS:
+            return cached[1]
+        step = post_group_webhook(
+            channel,
+            get_settings(),
+            summary="VitalSpan 连通性探测",
+            artifact_ref="probe",
+            webhook_url=creds.webhook_url,
+            webhook_secret=creds.webhook_secret,
+            max_attempts=2,
+        )
+        if step.get("status") == "delivered":
+            result = {"channel": channel, "skipped": False, "ok": True, "error": None}
+        else:
+            result = {
+                "channel": channel,
+                "skipped": False,
+                "ok": False,
+                "error": step.get("error") or "钉钉群机器人探测失败",
+            }
+        _group_live_cache[cache_key] = (now, result)
+        return result
     if creds.delivery_mode == "user_delegated":
         if channel == "feishu":
             return {"channel": channel, "skipped": False, "ok": True, "error": None}

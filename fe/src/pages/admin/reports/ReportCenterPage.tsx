@@ -94,7 +94,7 @@ export function ReportCenterPage() {
             </div>
           ) : null}
 
-          <div className={cn(LIST_PAGE_CONTENT_PAD_CLASS, "min-h-0 flex-1 space-y-3 overflow-y-auto")}>
+          <div className={cn(LIST_PAGE_CONTENT_PAD_CLASS, "custom-scrollbar min-h-0 flex-1 space-y-3 overflow-y-auto")}>
             <ReportCenterDashboardScheduleHint canManageSchedules={canManage} />
 
             <ReportCenterHubEntryCards

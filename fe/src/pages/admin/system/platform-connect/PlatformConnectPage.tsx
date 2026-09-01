@@ -77,7 +77,7 @@ export function PlatformConnectPage() {
   return (
     <AdminPageShell
       title="平台对接"
-      description="配置邮件 SMTP 与企微 / 钉钉 / 飞书工作通知应用。用户可在个人中心绑定后接收定时报告。"
+      description="配置邮件 SMTP、企微/飞书工作通知，以及钉钉群机器人。企微与飞书需个人中心绑定；钉钉发到已配置的群。"
       headerIcon={
         <AdminPageHeaderIcon>
           <Link2 className="size-5" aria-hidden />
@@ -114,7 +114,7 @@ export function PlatformConnectPage() {
                 <div>
                   <h2 className="text-theme-sm font-semibold text-gray-900 dark:text-white">投递通道</h2>
                   <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                    邮件 SMTP 与 IM 工作通知并列配置；定时任务创建时可勾选对应通道。
+                    邮件 SMTP、企微/飞书工作通知与钉钉群机器人并列配置；定时任务可勾选对应通道。
                   </p>
                 </div>
               </div>

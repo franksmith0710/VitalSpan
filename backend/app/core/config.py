@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     api_openapi_version: str = "0.1.0"
     push_wecom_webhook: str | None = None
     push_dingtalk_webhook: str | None = None
+    push_dingtalk_robot_secret: str | None = None
     push_feishu_webhook: str | None = None
     dingtalk_app_key: str | None = None
     dingtalk_app_secret: str | None = None
@@ -76,6 +77,7 @@ class Settings(BaseSettings):
     @field_validator(
         "push_wecom_webhook",
         "push_dingtalk_webhook",
+        "push_dingtalk_robot_secret",
         "push_feishu_webhook",
         "dingtalk_app_key",
         "dingtalk_app_secret",

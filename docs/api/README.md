@@ -99,7 +99,7 @@ redoc: /redoc
 | DELETE | `/api/v1/platform/delivery/email/{slot}` | 清空指定槽位 SMTP（清空后忽略 env 回落） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
 | GET | `/api/v1/platform/delivery/im/slots` | 企微/钉钉/飞书 IM 应用摘要 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
 | GET | `/api/v1/platform/delivery/im/{channel}` | 单通道 IM 应用摘要 + 探测 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
-| PUT | `/api/v1/platform/delivery/im/{channel}` | 保存 IM 配置并探测；钉钉为 `deliveryMode=group_webhook` + `webhookUrl` | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
+| PUT | `/api/v1/platform/delivery/im/{channel}` | 保存 IM 配置并探测；钉钉为 `group_webhook` + `webhookUrl`（可选 `webhookSecret` 加签），探测真 POST `robot/send` | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
 | DELETE | `/api/v1/platform/delivery/im/{channel}` | 清空 IM 通道（清空后忽略 env） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/platform_delivery.py` |
 | GET | `/api/v1/me/im-bindings` | 当前用户三通道绑定状态 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | GET | `/api/v1/me/im-bindings/{channel}/authorize` | 发起 OAuth 授权跳转（浏览器直链，须 Cookie/Bearer） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |

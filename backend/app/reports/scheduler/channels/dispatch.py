@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 from typing import Any
 
 from app.core.config import Settings, get_settings
@@ -11,8 +10,6 @@ from app.core.platform_config.slots import EMAIL_SLOT_QQ, normalize_email_slot
 from app.reports.scheduler.channels import work_notice
 from app.reports.scheduler.channels.im_sdk.group_webhook import post_group_webhook
 from app.reports.scheduler.delivery_adapter import _deliver_explicit_mock, _send_smtp
-
-logger = logging.getLogger(__name__)
 
 _IM_CHANNELS = ("wecom", "dingtalk", "feishu")
 _IM_LABELS = {"wecom": "企业微信", "dingtalk": "钉钉", "feishu": "飞书"}
@@ -25,6 +22,7 @@ def _send_group_webhook(
     summary: str,
     artifact_ref: str,
     webhook_url: str | None = None,
+    webhook_secret: str | None = None,
 ) -> dict[str, Any]:
     return post_group_webhook(
         channel,
@@ -32,16 +30,23 @@ def _send_group_webhook(
         summary=summary,
         artifact_ref=artifact_ref,
         webhook_url=webhook_url,
+        webhook_secret=webhook_secret,
     )
 
 
-def _dingtalk_group_webhook_url(settings: Settings, session) -> str | None:
+def _dingtalk_group_target(settings: Settings, session) -> tuple[str | None, str | None]:
     from app.core.platform_config.im_resolve import resolve_im_credentials
 
     creds = resolve_im_credentials(session, channel="dingtalk", settings=settings)
-    if creds.delivery_mode == "group_webhook" and creds.webhook_url:
-        return creds.webhook_url
-    return settings.push_dingtalk_webhook
+    if creds.source == "none":
+        return None, None
+    url = creds.webhook_url
+    if not url and creds.source == "env":
+        url = settings.push_dingtalk_webhook
+    secret = creds.webhook_secret
+    if not secret and creds.source == "env":
+        secret = getattr(settings, "push_dingtalk_robot_secret", None)
+    return url, secret
 
 
 def _channel_uses_group_webhook(channel: str, session) -> bool:
@@ -130,13 +135,15 @@ def deliver_to_channels(
             ))
         elif channel in _IM_CHANNELS:
             if _channel_uses_group_webhook(channel, session):
+                hook_url, hook_secret = _dingtalk_group_target(settings, session)
                 steps.append(
                     _send_group_webhook(
                         channel,
                         settings,
                         summary=summary,
                         artifact_ref=artifact_ref,
-                        webhook_url=_dingtalk_group_webhook_url(settings, session),
+                        webhook_url=hook_url,
+                        webhook_secret=hook_secret,
                     )
                 )
             else:
@@ -163,8 +170,10 @@ def deliver_to_channels(
         overall = "delivered"
     elif delivered:
         overall = "degraded"
+    elif any(s.get("status") == "failed" for s in steps):
+        overall = "failed"
     else:
-        overall = "degraded" if any(s.get("status") != "skipped" for s in steps) else "unconfigured"
+        overall = "unconfigured"
     error = next((s.get("error") for s in steps if s.get("error")), None)
     return {
         "status": overall,

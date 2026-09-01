@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""IM platform-connect smoke: real gettoken via production SDK adapters. No mock."""
+"""IM platform-connect smoke: WeCom/Feishu gettoken; DingTalk robot/send. No mock."""
 
 from __future__ import annotations
 
@@ -30,19 +30,21 @@ def main() -> None:
             print(f"SKIP {channel} (env not set)")
             continue
         if result.get("ok"):
-            print(f"PASS {channel} gettoken (sdk)")
+            kind = "robot/send" if channel == "dingtalk" else "gettoken (sdk)"
+            print(f"PASS {channel} {kind}")
             ran += 1
             continue
-        _fail(f"{channel} gettoken failed: {result.get('error')}", 1)
+        action = "robot/send" if channel == "dingtalk" else "gettoken"
+        _fail(f"{channel} {action} failed: {result.get('error')}", 1)
     if ran == 0:
         _fail(
             "missing credentials: set at least one of "
             "WECOM_CORP_ID+WECOM_SECRET+WECOM_AGENT_ID, "
-            "DINGTALK_APP_KEY+DINGTALK_APP_SECRET+DINGTALK_AGENT_ID, "
+            "PUSH_DINGTALK_WEBHOOK (optional PUSH_DINGTALK_ROBOT_SECRET), "
             "FEISHU_APP_ID+FEISHU_APP_SECRET",
             2,
         )
-    print(json.dumps({"ok": True, "channels": ran, "transport": "sdk"}))
+    print(json.dumps({"ok": True, "channels": ran, "transport": "sdk+webhook"}))
 
 
 if __name__ == "__main__":

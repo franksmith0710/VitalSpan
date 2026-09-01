@@ -38,7 +38,7 @@
 | `user_delegated` | 企微 / 飞书 | App 凭证，**无管理面回调域名** | 飞书 device-code；企微内嵌扫码 | 飞书：owner `user_access_token`；企微：应用 gettoken + owner 须已绑定 |
 | `group_webhook` | **钉钉** | 自定义机器人 webhook | 无需个人绑定 | POST 群 webhook（摘要 + 产物链接） |
 
-- `user_delegated` 探测：飞书仅校验凭证字段；企微/钉钉仍调 gettoken。
+- `user_delegated` 探测：飞书仅校验凭证字段；企微仍调 gettoken。钉钉 `group_webhook` 探测为真实 POST `robot/send`（群内会出现「VitalSpan 连通性探测」）。
 - 企微/钉钉扫码绑定 OAuth 回调由部署环境 `API_PUBLIC_BASE_URL` 提供（须在厂商控制台登记一次），管理面无需手填回调域名。
 - 收件人仅需 `user_im_bindings.account_id`；**不需**各自 user token。
 - 调度预检：`GET /api/v1/reports/schedules/delivery-health` 返回 `imOwner`，校验当前用户（调度 owner）是否已绑定且 token 可用。

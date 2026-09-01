@@ -2,7 +2,7 @@
 
 ```yaml
 version: 1.2.126
-last_updated: 2026-08-31
+last_updated: 2026-09-01
 truth_source: true
 evolution_hub: true
 goal_ref: docs/automate/goal.md

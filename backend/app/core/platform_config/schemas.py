@@ -48,6 +48,7 @@ class ImDeliveryConfigOut(BaseModel):
     app_id: str | None = Field(default=None, alias="appId")
     webhook_url: str | None = Field(default=None, alias="webhookUrl")
     has_secret: bool = Field(alias="hasSecret")
+    has_webhook_sign: bool = Field(default=False, alias="hasWebhookSign")
     probe_error: str | None = Field(default=None, alias="probeError")
 
     model_config = {"populate_by_name": True}
@@ -69,5 +70,6 @@ class ImDeliveryConfigPut(BaseModel):
     app_secret: str | None = Field(default=None, max_length=256, alias="appSecret")
     app_id: str | None = Field(default=None, max_length=128, alias="appId")
     webhook_url: str | None = Field(default=None, max_length=1024, alias="webhookUrl")
+    webhook_secret: str | None = Field(default=None, max_length=256, alias="webhookSecret")
 
     model_config = {"populate_by_name": True}

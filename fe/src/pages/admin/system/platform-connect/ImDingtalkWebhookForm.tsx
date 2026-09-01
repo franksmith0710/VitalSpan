@@ -23,11 +23,14 @@ export function ImDingtalkWebhookForm({
 }) {
   const qc = useQueryClient();
   const [webhookUrl, setWebhookUrl] = useState("");
+  const [webhookSecret, setWebhookSecret] = useState("");
 
   useEffect(() => {
     setWebhookUrl("");
+    setWebhookSecret("");
   }, [config.channel, config.configured, config.webhookUrl]);
 
+  const canSave = Boolean(webhookUrl.trim()) || config.hasSecret;
   const saveMutation = useMutation({
     mutationFn: () =>
       apiFetch<ImConfigSummary>(`/api/v1/platform/delivery/im/${config.channel}`, {
@@ -35,17 +38,19 @@ export function ImDingtalkWebhookForm({
         body: JSON.stringify({
           deliveryMode: "group_webhook",
           webhookUrl: webhookUrl.trim() || null,
+          webhookSecret: webhookSecret.trim() || null,
         }),
       }),
     onSuccess: async (data) => {
-      toast.success("钉钉群机器人已保存");
+      toast.success("钉钉群机器人已保存（已向该群发送探测消息）");
       setWebhookUrl("");
+      setWebhookSecret("");
       await qc.invalidateQueries({ queryKey: queryKeys.platformConnect.imSlots });
       await qc.invalidateQueries({ queryKey: queryKeys.platformConnect.imChannel(config.channel) });
       await qc.invalidateQueries({ queryKey: ["reports", "schedules", "delivery-health"] });
       onSaved();
       if (!data.configured) {
-        toast.warning("保存成功但 webhook 未通过校验，请检查地址");
+        toast.warning("保存成功但探测未通过，请检查 webhook 或加签");
       }
     },
     onError: (err) => toast.error(mapApiError(err)),
@@ -73,7 +78,9 @@ export function ImDingtalkWebhookForm({
         <AlertDescription className="space-y-1">
           <span className="block">来源：{SOURCE_LABEL[config.source] ?? config.source}</span>
           {config.probeError ? <span className="block">{config.probeError}</span> : null}
-          <span className="block">钉钉按群发：把自定义机器人 webhook 贴到下方即可。不需要企业应用、个人绑定或回调域名。</span>
+          <span className="block">
+            钉钉按群发：粘贴自定义机器人 webhook。保存时会向该群发送一条「VitalSpan 连通性探测」。群若开启加签，须同时填写加签密钥。
+          </span>
         </AlertDescription>
       </Alert>
 
@@ -86,7 +93,7 @@ export function ImDingtalkWebhookForm({
           id="im-dingtalk-webhook"
           label={
             <span className="inline-flex items-center gap-2">
-              Webhook 地址
+              Webhook 地址（必填）
               {config.hasSecret && !webhookUrl ? (
                 <Badge variant="light" color="success" size="sm">
                   已保存
@@ -102,15 +109,48 @@ export function ImDingtalkWebhookForm({
             type="password"
             value={webhookUrl}
             onChange={(e) => setWebhookUrl(e.target.value)}
-            placeholder={config.hasSecret ? "留空表示不改已保存地址；填新地址则覆盖" : config.webhookUrl ?? "https://oapi.dingtalk.com/robot/send?access_token="}
+            placeholder={
+              config.hasSecret
+                ? "留空表示不改已保存地址；填新地址则覆盖"
+                : "https://oapi.dingtalk.com/robot/send?access_token="
+            }
+            disabled={disabled || pending}
+          />
+        </ConnectField>
+        <ConnectField
+          id="im-dingtalk-sign"
+          label={
+            <span className="inline-flex items-center gap-2">
+              加签密钥（可选）
+              {config.hasWebhookSign && !webhookSecret ? (
+                <Badge variant="light" color="success" size="sm">
+                  已保存
+                </Badge>
+              ) : null}
+            </span>
+          }
+          hint="机器人安全设置选择「加签」时必填；关键词安全请确保消息含 VitalSpan。"
+        >
+          <Input
+            id="im-dingtalk-sign"
+            className="h-11"
+            type="password"
+            value={webhookSecret}
+            onChange={(e) => setWebhookSecret(e.target.value)}
+            placeholder={config.hasWebhookSign ? "留空保留已保存加签密钥" : "SEC 开头的加签密钥"}
             disabled={disabled || pending}
           />
         </ConnectField>
       </ConnectFormSection>
 
-      <ConnectActionBar hint="保存后定时勾选钉钉会把摘要和产物链接发到该群，不按人投递。">
-        <Button type="button" variant="primary" disabled={disabled || pending} onClick={() => saveMutation.mutate()}>
-          {saveMutation.isPending ? "保存中…" : "保存 webhook"}
+      <ConnectActionBar hint="首次保存必须填写 webhook；保存并探测通过后，定时勾选钉钉会发到该群。">
+        <Button
+          type="button"
+          variant="primary"
+          disabled={disabled || pending || !canSave}
+          onClick={() => saveMutation.mutate()}
+        >
+          {saveMutation.isPending ? "保存并探测…" : "保存并探测"}
         </Button>
         <Button
           type="button"

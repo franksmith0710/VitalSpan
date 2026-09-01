@@ -77,7 +77,7 @@ export function TemplatePickerDialog({
           aria-label="搜索模板"
         />
 
-        <div className="max-h-[min(50vh,360px)] overflow-y-auto">
+        <div className="custom-scrollbar max-h-[min(50vh,360px)] overflow-y-auto">
           {listQuery.isLoading ? (
             <div className="grid gap-2">
               {Array.from({ length: 4 }).map((_, i) => (

@@ -108,10 +108,10 @@ const HINTS: Record<SystemAdminScope, HintConfig> = {
     testId: "platform-connect-scope-hint",
     body: (
       <>
-        本页支持邮件 SMTP（QQ / 163）与企微、钉钉、飞书<strong className="font-medium">工作通知</strong>
-        应用配置。IM 配置并探测通过后，同事可在
+        本页支持邮件 SMTP（QQ / 163）、企微与飞书<strong className="font-medium">工作通知</strong>
+        ，以及钉钉<strong className="font-medium">群机器人</strong>。企微/飞书探测通过后，同事可在
         <strong className="font-medium">个人中心</strong>
-        授权绑定自己的账号以接收定时报告。
+        绑定账号；钉钉将报告发到已配置的群。
       </>
     ),
   },

@@ -104,6 +104,21 @@ def test_dingtalk_delivery_mode_forced_to_group_webhook():
     assert fields["webhook_url"].startswith("https://oapi.dingtalk.com/robot/send")
 
 
+def test_probe_from_payload_group_webhook_posts():
+    with patch(
+        "app.reports.scheduler.channels.im_sdk.group_webhook.post_group_webhook",
+        return_value={"status": "delivered"},
+    ) as post:
+        result = im_service.probe_im_credentials_bundle_from_payload(
+            "dingtalk",
+            "",
+            {"webhook_url": "https://oapi.dingtalk.com/robot/send?access_token=abc"},
+            delivery_mode="group_webhook",
+        )
+    post.assert_called_once()
+    assert result["ok"] is True
+
+
 def test_validate_put_dingtalk_rejects_bad_webhook():
     payload = ImDeliveryConfigPut(webhookUrl="https://example.com/hook")
     with pytest.raises(PlatformConfigError) as exc:

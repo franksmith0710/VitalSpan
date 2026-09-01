@@ -127,7 +127,7 @@ export function ChartTypeDetail({ chart }: { chart: ChartTypeCatalogEntry }) {
         </div>
       </div>
 
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:p-6">
+      <div className="custom-scrollbar min-h-0 flex-1 space-y-5 overflow-y-auto p-5 sm:p-6">
         <div>
           <h3 className="mb-2 text-theme-sm font-semibold text-gray-800 dark:text-white/90">
             标准夹具预览
@@ -265,7 +265,7 @@ export function CatalogSectionNav({
 }) {
   return (
     <nav
-      className="flex w-[92px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-gray-100 py-2 pr-1 dark:border-white/[0.06]"
+      className="flex w-[92px] shrink-0 flex-col gap-0.5 overflow-y-auto border-r border-gray-100 py-2 pr-1 custom-scrollbar dark:border-white/[0.06]"
       aria-label="图表组件分区"
     >
       <button

@@ -139,7 +139,7 @@ def test_notify_group_true_adds_webhook_step(monkeypatch):
     )
     hooks: list[str] = []
 
-    def fake_hook(channel, settings, *, summary, artifact_ref, webhook_url=None):
+    def fake_hook(channel, settings, *, summary, artifact_ref, **kwargs):
         hooks.append(channel)
         return {"channel": f"{channel}_group", "status": "delivered", "mode": "group_webhook"}
 
@@ -172,7 +172,7 @@ def test_group_webhook_does_not_replace_missing_person(monkeypatch):
         lambda *a, **k: (_ for _ in ()).throw(AssertionError("no person send")),
     )
 
-    def fake_hook(channel, settings, *, summary, artifact_ref, webhook_url=None):
+    def fake_hook(channel, settings, *, summary, artifact_ref, **kwargs):
         return {"channel": f"{channel}_group", "status": "delivered", "mode": "group_webhook"}
 
     monkeypatch.setattr(
@@ -231,9 +231,9 @@ def test_dingtalk_uses_group_webhook_not_person(monkeypatch):
     seen: dict = {}
     webhook = "https://oapi.dingtalk.com/robot/send?access_token=unit-test"
 
-    def fake_hook(channel, settings, *, summary, artifact_ref, webhook_url=None):
+    def fake_hook(channel, settings, *, summary, artifact_ref, **kwargs):
         seen["channel"] = channel
-        seen["webhook_url"] = webhook_url
+        seen["webhook_url"] = kwargs.get("webhook_url")
         return {"channel": "dingtalk_group", "status": "delivered", "mode": "group_webhook"}
 
     monkeypatch.setattr(
@@ -241,8 +241,8 @@ def test_dingtalk_uses_group_webhook_not_person(monkeypatch):
         fake_hook,
     )
     monkeypatch.setattr(
-        "app.reports.scheduler.channels.dispatch._dingtalk_group_webhook_url",
-        lambda settings, session: webhook,
+        "app.reports.scheduler.channels.dispatch._dingtalk_group_target",
+        lambda settings, session: (webhook, None),
     )
     result = deliver_to_channels(
         ["dingtalk"],
@@ -269,8 +269,8 @@ def test_dingtalk_group_webhook_missing_fails(monkeypatch):
         lambda *a, **k: (_ for _ in ()).throw(AssertionError("钉钉不应走按人工作通知")),
     )
     monkeypatch.setattr(
-        "app.reports.scheduler.channels.dispatch._dingtalk_group_webhook_url",
-        lambda settings, session: None,
+        "app.reports.scheduler.channels.dispatch._dingtalk_group_target",
+        lambda settings, session: (None, None),
     )
     result = deliver_to_channels(
         ["dingtalk"],
@@ -286,3 +286,4 @@ def test_dingtalk_group_webhook_missing_fails(monkeypatch):
     assert step["mode"] == "group_webhook"
     assert step["status"] == "failed"
     assert "webhook" in (step.get("error") or "")
+    assert result["status"] == "failed"

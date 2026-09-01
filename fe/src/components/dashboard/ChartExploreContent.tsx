@@ -214,7 +214,7 @@ export function ChartExploreContent({ embedded: _embedded = false }: ChartExplor
           />
 
           <aside className="hidden min-h-0 w-[min(280px,30%)] shrink-0 flex-col border-r border-gray-100 dark:border-white/[0.06] lg:flex">
-            <div className="min-h-0 flex-1 overflow-y-auto p-2">
+            <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-2">
               {isLoading
                 ? Array.from({ length: 6 }).map((_, index) => (
                     <Skeleton key={index} className="mb-1 h-11 w-full rounded-lg" />

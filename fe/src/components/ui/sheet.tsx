@@ -135,6 +135,7 @@ const SheetContent = React.forwardRef<
         {showOverlay ? <SheetOverlay blur={overlayBlur} /> : null}
         <SheetPrimitive.Content
           ref={ref}
+          data-slot="sheet-content"
           data-stack-index={push ? stackIndex : undefined}
           className={cn(
             sheetVariants({ side, size: isMini ? undefined : size, variant: isMini ? "mini" : variant }),

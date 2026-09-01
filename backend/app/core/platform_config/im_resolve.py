@@ -23,6 +23,7 @@ def _from_env(settings: Settings, channel: str) -> ImCredentials:
             source="env",
             delivery_mode="group_webhook",
             webhook_url=webhook,
+            webhook_secret=(settings.push_dingtalk_robot_secret or "").strip() or None,
         )
     if channel == "wecom":
         return ImCredentials(
@@ -53,6 +54,7 @@ def _from_row(row: PlatformImConnectConfig) -> ImCredentials:
             source="db",
             delivery_mode="group_webhook",
             webhook_url=payload.get("webhook_url") or None,
+            webhook_secret=payload.get("webhook_secret") or None,
         )
     if channel == "wecom":
         return ImCredentials(

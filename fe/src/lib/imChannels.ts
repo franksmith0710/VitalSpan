@@ -21,5 +21,6 @@ export type ImConfigSummary = {
   appId?: string | null;
   webhookUrl?: string | null;
   hasSecret: boolean;
+  hasWebhookSign?: boolean;
   probeError?: string | null;
 };

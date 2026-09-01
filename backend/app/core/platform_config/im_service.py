@@ -65,6 +65,7 @@ def _out_fields(channel: str, creds, row: PlatformImConnectConfig | None, source
         "delivery_mode": mode,
         "callback_domain": row.callback_domain if row and row.state == "active" else creds.callback_domain,
         "has_secret": False,
+        "has_webhook_sign": False,
         "webhook_url": None,
     }
     if channel == "dingtalk":
@@ -72,6 +73,7 @@ def _out_fields(channel: str, creds, row: PlatformImConnectConfig | None, source
             base.update(
                 webhook_url=mask_webhook_url(creds.webhook_url) if source != "none" else None,
                 has_secret=bool(creds.webhook_url),
+                has_webhook_sign=bool(creds.webhook_secret),
             )
         else:
             base.update(
@@ -205,7 +207,13 @@ def save_im_config(
         existing_webhook = decrypt_credentials_payload(existing_cipher).get("webhook_url")
     fields = _validate_put(normalized, payload, mode, existing_webhook=existing_webhook)
     if mode == "group_webhook":
-        cred_payload = fields
+        existing_sign = ""
+        if existing_cipher:
+            existing_sign = decrypt_credentials_payload(existing_cipher).get("webhook_secret") or ""
+        sign = (payload.webhook_secret or "").strip() or existing_sign
+        cred_payload = dict(fields)
+        if sign:
+            cred_payload["webhook_secret"] = sign
         callback = None
     else:
         secret = _resolve_secret(normalized, payload, existing_cipher)
@@ -288,19 +296,39 @@ def probe_im_credentials_bundle_from_payload(
     from app.core.platform_config.im_credentials import ImCredentials
 
     if delivery_mode == "group_webhook":
+        from app.core.config import get_settings
+        from app.reports.scheduler.channels.im_sdk.group_webhook import post_group_webhook
+
         creds = ImCredentials(
             channel=channel,
             source="db",
             delivery_mode=delivery_mode,
             webhook_url=payload.get("webhook_url"),
+            webhook_secret=payload.get("webhook_secret") or None,
         )
-        if creds.is_configured:
+        if not creds.is_configured:
+            return {
+                "channel": channel,
+                "skipped": False,
+                "ok": False,
+                "error": "钉钉群机器人 webhook 无效",
+            }
+        step = post_group_webhook(
+            channel,
+            get_settings(),
+            summary="VitalSpan 连通性探测",
+            artifact_ref="probe",
+            webhook_url=creds.webhook_url,
+            webhook_secret=creds.webhook_secret,
+            max_attempts=2,
+        )
+        if step.get("status") == "delivered":
             return {"channel": channel, "skipped": False, "ok": True, "error": None}
         return {
             "channel": channel,
             "skipped": False,
             "ok": False,
-            "error": "钉钉群机器人 webhook 无效",
+            "error": step.get("error") or "钉钉群机器人探测失败",
         }
     if delivery_mode == "user_delegated":
         if channel == "feishu":

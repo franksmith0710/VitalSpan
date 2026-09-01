@@ -208,6 +208,127 @@ html.dark .custom-scrollbar:hover::-webkit-scrollbar-thumb {
   background-color: rgb(71 84 103);
 }
 
+/**
+ * Admin 弹层内滚动条：Dialog / Sheet / Popover / Dropdown / Select 挂载在 body，
+ * 不在 [data-admin-layout] 子树内，须单独对齐 custom-scrollbar，避免系统粗黑滚动条。
+ */
+:is(
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"],
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="dropdown-menu-sub-content"],
+  [data-slot="select-content"]
+) {
+  --admin-scroll-thumb: rgb(228 231 236);
+  --admin-scroll-thumb-hover: rgb(208 213 221);
+}
+
+html.dark :is(
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"],
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="dropdown-menu-sub-content"],
+  [data-slot="select-content"]
+) {
+  --admin-scroll-thumb: rgb(52 64 84);
+  --admin-scroll-thumb-hover: rgb(71 84 103);
+}
+
+:is(
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"],
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="dropdown-menu-sub-content"],
+  [data-slot="select-content"]
+) :where(
+  .overflow-auto,
+  .overflow-y-auto,
+  .overflow-x-auto,
+  .overflow-scroll,
+  .overflow-x-only,
+  .custom-scrollbar
+):not(.no-scrollbar) {
+  scrollbar-width: thin;
+  scrollbar-color: var(--admin-scroll-thumb) transparent;
+}
+
+:is(
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"],
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="dropdown-menu-sub-content"],
+  [data-slot="select-content"]
+) :where(
+  .overflow-auto,
+  .overflow-y-auto,
+  .overflow-x-auto,
+  .overflow-scroll,
+  .overflow-x-only,
+  .custom-scrollbar
+):not(.no-scrollbar)::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+:is(
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"],
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="dropdown-menu-sub-content"],
+  [data-slot="select-content"]
+) :where(
+  .overflow-auto,
+  .overflow-y-auto,
+  .overflow-x-auto,
+  .overflow-scroll,
+  .overflow-x-only,
+  .custom-scrollbar
+):not(.no-scrollbar)::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+:is(
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"],
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="dropdown-menu-sub-content"],
+  [data-slot="select-content"]
+) :where(
+  .overflow-auto,
+  .overflow-y-auto,
+  .overflow-x-auto,
+  .overflow-scroll,
+  .overflow-x-only,
+  .custom-scrollbar
+):not(.no-scrollbar)::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background-color: var(--admin-scroll-thumb);
+}
+
+:is(
+  [data-slot="dialog-content"],
+  [data-slot="sheet-content"],
+  [data-slot="popover-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="dropdown-menu-sub-content"],
+  [data-slot="select-content"]
+) :where(
+  .overflow-auto,
+  .overflow-y-auto,
+  .overflow-x-auto,
+  .overflow-scroll,
+  .overflow-x-only,
+  .custom-scrollbar
+):not(.no-scrollbar):hover::-webkit-scrollbar-thumb {
+  background-color: var(--admin-scroll-thumb-hover);
+}
+
 /* 看板主题滚动条：跟 data-dashboard-color-scheme，不跟 Admin html.dark（DE 白色半透明） */
 .dashboard-theme-scope[data-dashboard-color-scheme="light"],
 .dashboard-theme-scope[data-dashboard-color-scheme="dark"],

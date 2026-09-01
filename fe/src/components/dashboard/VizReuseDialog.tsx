@@ -107,7 +107,7 @@ function LibraryTab({
           </Button>
         ))}
       </div>
-      <div className="max-h-[min(40vh,280px)] overflow-y-auto">
+      <div className="custom-scrollbar max-h-[min(40vh,280px)] overflow-y-auto">
         {listQuery.isLoading ? (
           <div className="grid gap-2">
             {Array.from({ length: 4 }).map((_, i) => (
