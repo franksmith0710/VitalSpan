@@ -46,12 +46,13 @@ def _delivery_mode(
     *,
     channel: str | None = None,
 ) -> str:
-    if payload and payload.delivery_mode in IM_DELIVERY_MODES:
+    resolved = channel or (row.channel if row else None)
+    if resolved == "dingtalk":
+        return "group_webhook"
+    if payload and payload.delivery_mode in IM_DELIVERY_MODES and payload.delivery_mode != "group_webhook":
         return payload.delivery_mode
     if row and row.delivery_mode in IM_DELIVERY_MODES:
         return row.delivery_mode
-    if channel == "dingtalk":
-        return "group_webhook"
     return "corporate_app"
 
 
@@ -116,11 +117,17 @@ def list_im_configs(session: Session, *, probe: bool = True) -> ImDeliverySlotsO
     return ImDeliverySlotsOut(items=[get_im_config(session, ch, probe=probe) for ch in IM_CHANNELS])
 
 
-def _validate_put(channel: str, payload: ImDeliveryConfigPut, mode: str) -> dict[str, str]:
+def _validate_put(
+    channel: str,
+    payload: ImDeliveryConfigPut,
+    mode: str,
+    *,
+    existing_webhook: str | None = None,
+) -> dict[str, str]:
     if mode == "group_webhook":
         if channel != "dingtalk":
             raise PlatformConfigError("PLATFORM_IM_MODE_UNSUPPORTED", "群发模式目前仅支持钉钉", 422)
-        webhook = (payload.webhook_url or "").strip()
+        webhook = (payload.webhook_url or "").strip() or (existing_webhook or "").strip()
         if not is_dingtalk_group_webhook(webhook):
             raise PlatformConfigError(
                 "PLATFORM_IM_WEBHOOK_INVALID",
@@ -193,7 +200,10 @@ def save_im_config(
     row = _row_or_none(session, normalized)
     existing_cipher = row.credentials_encrypted if row and row.state == "active" else None
     mode = _delivery_mode(row, payload, channel=normalized)
-    fields = _validate_put(normalized, payload, mode)
+    existing_webhook = None
+    if existing_cipher:
+        existing_webhook = decrypt_credentials_payload(existing_cipher).get("webhook_url")
+    fields = _validate_put(normalized, payload, mode, existing_webhook=existing_webhook)
     if mode == "group_webhook":
         cred_payload = fields
         callback = None

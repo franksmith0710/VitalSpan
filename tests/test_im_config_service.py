@@ -92,3 +92,20 @@ def test_save_im_config_probe_failure(meta_session: Session):
                 trace_id="t",
             )
     assert exc.value.code == "PLATFORM_IM_PROBE_FAILED"
+
+
+def test_dingtalk_delivery_mode_forced_to_group_webhook():
+    payload = ImDeliveryConfigPut(
+        deliveryMode="user_delegated",
+        webhookUrl="https://oapi.dingtalk.com/robot/send?access_token=abc",
+    )
+    assert im_service._delivery_mode(None, payload, channel="dingtalk") == "group_webhook"
+    fields = im_service._validate_put("dingtalk", payload, "group_webhook")
+    assert fields["webhook_url"].startswith("https://oapi.dingtalk.com/robot/send")
+
+
+def test_validate_put_dingtalk_rejects_bad_webhook():
+    payload = ImDeliveryConfigPut(webhookUrl="https://example.com/hook")
+    with pytest.raises(PlatformConfigError) as exc:
+        im_service._validate_put("dingtalk", payload, "group_webhook")
+    assert exc.value.code == "PLATFORM_IM_WEBHOOK_INVALID"

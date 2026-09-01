@@ -143,6 +143,8 @@ def start_authorize(
     if not creds.is_configured:
         raise ImOAuthError("IM_APP_NOT_CONFIGURED", "应用未配置，请联系管理员完成平台对接", 422)
     mode = resolve_im_delivery_mode(session, channel)
+    if mode == "group_webhook":
+        raise ImOAuthError("IM_GROUP_WEBHOOK", "钉钉为群机器人投递，无需个人绑定", 422)
     if mode == "user_delegated":
         raise ImOAuthError(
             "IM_BIND_USE_DEVICE",
@@ -317,6 +319,8 @@ def start_scan_bind_session(
     if normalized not in {"dingtalk", "wecom"}:
         raise ImOAuthError("IM_BIND_USE_DEVICE", "该通道请使用对应绑定方式", 422)
     mode = resolve_im_delivery_mode(session, normalized)
+    if mode == "group_webhook":
+        raise ImOAuthError("IM_GROUP_WEBHOOK", "钉钉为群机器人投递，无需扫码绑定", 422)
     if mode != "user_delegated":
         raise ImOAuthError("IM_BIND_USE_OAUTH", "当前为企业应用模式，请使用网页授权绑定", 422)
     creds = resolve_im_credentials(session, channel=normalized)
@@ -364,6 +368,8 @@ def complete_scan_bind_session(
     if normalized != "dingtalk":
         raise ImOAuthError("IM_SCAN_BIND_UNSUPPORTED", "该通道不支持扫码完成绑定", 422)
     mode = resolve_im_delivery_mode(session, normalized)
+    if mode == "group_webhook":
+        raise ImOAuthError("IM_GROUP_WEBHOOK", "钉钉为群机器人投递，无需扫码绑定", 422)
     if mode != "user_delegated":
         raise ImOAuthError("IM_BIND_USE_OAUTH", "当前为企业应用模式，请使用网页授权绑定", 422)
     oauth_state = consume_state(session, session_id, normalized)

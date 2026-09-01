@@ -4,10 +4,19 @@ import { DEFAULT_EMAIL_RECIPIENTS, DEFAULT_RECIPIENTS } from "./components/Sched
 import { getScheduleFormValidation, isScheduleFormSubmittable } from "./scheduleDeliveryValidation";
 
 describe("scheduleDeliveryValidation", () => {
-  it("allows IM-only with platform recipients", () => {
+  it("allows DingTalk-only without platform recipients", () => {
     const form = {
       ...DEFAULT_SCHEDULE_FORM,
       deliveryChannels: ["dingtalk"] as const,
+      recipients: DEFAULT_EMAIL_RECIPIENTS,
+    };
+    expect(isScheduleFormSubmittable(form)).toBe(true);
+  });
+
+  it("allows IM-only with platform recipients", () => {
+    const form = {
+      ...DEFAULT_SCHEDULE_FORM,
+      deliveryChannels: ["wecom"] as const,
       recipients: DEFAULT_RECIPIENTS,
     };
     expect(isScheduleFormSubmittable(form)).toBe(true);

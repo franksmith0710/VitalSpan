@@ -82,15 +82,15 @@ def test_unbound_im_fails_and_skips_group_webhook(monkeypatch):
         lambda *a, **k: (_ for _ in ()).throw(AssertionError("must not send person notice")),
     )
     result = deliver_to_channels(
-        ["dingtalk"],
+        ["wecom"],
         artifact_ref="storage://x",
         artifact_kind="standard_render",
         recipient_emails=[],
         attachments=[],
         mock_mode=None,
         settings=get_settings(),
-        im_targets={"dingtalk": []},
-        im_missing={"dingtalk": ["alice"]},
+        im_targets={"wecom": []},
+        im_missing={"wecom": ["alice"]},
         notify_group=False,
     )
     step = result["deliverySteps"][0]
@@ -110,18 +110,18 @@ def test_bound_account_sent_to_that_id(monkeypatch):
 
     monkeypatch.setattr(work_notice, "send_work_notices", fake_send)
     result = deliver_to_channels(
-        ["dingtalk"],
+        ["wecom"],
         artifact_ref="storage://x",
         artifact_kind="standard_render",
         recipient_emails=[],
         attachments=[],
         mock_mode=None,
         settings=get_settings(),
-        im_targets={"dingtalk": [("alice", "ding-1")]},
-        im_missing={"dingtalk": []},
+        im_targets={"wecom": [("alice", "wx-1")]},
+        im_missing={"wecom": []},
         notify_group=False,
     )
-    assert seen["ids"] == ["ding-1"]
+    assert seen["ids"] == ["wx-1"]
     assert result["deliverySteps"][0]["status"] == "delivered"
     assert result["status"] == "delivered"
 
@@ -139,7 +139,7 @@ def test_notify_group_true_adds_webhook_step(monkeypatch):
     )
     hooks: list[str] = []
 
-    def fake_hook(channel, settings, *, summary, artifact_ref):
+    def fake_hook(channel, settings, *, summary, artifact_ref, webhook_url=None):
         hooks.append(channel)
         return {"channel": f"{channel}_group", "status": "delivered", "mode": "group_webhook"}
 
@@ -148,18 +148,18 @@ def test_notify_group_true_adds_webhook_step(monkeypatch):
         fake_hook,
     )
     result = deliver_to_channels(
-        ["dingtalk"],
+        ["wecom"],
         artifact_ref="storage://x",
         artifact_kind="standard_render",
         recipient_emails=[],
         attachments=[],
         mock_mode=None,
         settings=get_settings(),
-        im_targets={"dingtalk": [("alice", "ding-1")]},
-        im_missing={"dingtalk": []},
+        im_targets={"wecom": [("alice", "wx-1")]},
+        im_missing={"wecom": []},
         notify_group=True,
     )
-    assert hooks == ["dingtalk"]
+    assert hooks == ["wecom"]
     modes = [s.get("mode") for s in result["deliverySteps"]]
     assert "work_notice" in modes
     assert "group_webhook" in modes
@@ -172,7 +172,7 @@ def test_group_webhook_does_not_replace_missing_person(monkeypatch):
         lambda *a, **k: (_ for _ in ()).throw(AssertionError("no person send")),
     )
 
-    def fake_hook(channel, settings, *, summary, artifact_ref):
+    def fake_hook(channel, settings, *, summary, artifact_ref, webhook_url=None):
         return {"channel": f"{channel}_group", "status": "delivered", "mode": "group_webhook"}
 
     monkeypatch.setattr(
@@ -180,15 +180,15 @@ def test_group_webhook_does_not_replace_missing_person(monkeypatch):
         fake_hook,
     )
     result = deliver_to_channels(
-        ["dingtalk"],
+        ["wecom"],
         artifact_ref="storage://x",
         artifact_kind="standard_render",
         recipient_emails=[],
         attachments=[],
         mock_mode=None,
         settings=get_settings(),
-        im_targets={"dingtalk": []},
-        im_missing={"dingtalk": ["bob"]},
+        im_targets={"wecom": []},
+        im_missing={"wecom": ["bob"]},
         notify_group=True,
     )
     person = next(s for s in result["deliverySteps"] if s.get("mode") == "work_notice")
@@ -220,3 +220,69 @@ def test_update_user_im_accounts_roundtrip():
         assert accounts["wecom"] == "wx-9"
     finally:
         session.close()
+
+
+def test_dingtalk_uses_group_webhook_not_person(monkeypatch):
+    monkeypatch.setattr(
+        work_notice,
+        "send_work_notices",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("钉钉不应走按人工作通知")),
+    )
+    seen: dict = {}
+    webhook = "https://oapi.dingtalk.com/robot/send?access_token=unit-test"
+
+    def fake_hook(channel, settings, *, summary, artifact_ref, webhook_url=None):
+        seen["channel"] = channel
+        seen["webhook_url"] = webhook_url
+        return {"channel": "dingtalk_group", "status": "delivered", "mode": "group_webhook"}
+
+    monkeypatch.setattr(
+        "app.reports.scheduler.channels.dispatch._send_group_webhook",
+        fake_hook,
+    )
+    monkeypatch.setattr(
+        "app.reports.scheduler.channels.dispatch._dingtalk_group_webhook_url",
+        lambda settings, session: webhook,
+    )
+    result = deliver_to_channels(
+        ["dingtalk"],
+        artifact_ref="storage://x",
+        artifact_kind="standard_render",
+        recipient_emails=[],
+        attachments=[],
+        mock_mode=None,
+        settings=get_settings(),
+        im_targets={"dingtalk": [("alice", "ding-1")]},
+        im_missing={"dingtalk": []},
+        notify_group=False,
+    )
+    assert seen["channel"] == "dingtalk"
+    assert seen["webhook_url"] == webhook
+    assert result["deliverySteps"][0]["mode"] == "group_webhook"
+    assert result["status"] == "delivered"
+
+
+def test_dingtalk_group_webhook_missing_fails(monkeypatch):
+    monkeypatch.setattr(
+        work_notice,
+        "send_work_notices",
+        lambda *a, **k: (_ for _ in ()).throw(AssertionError("钉钉不应走按人工作通知")),
+    )
+    monkeypatch.setattr(
+        "app.reports.scheduler.channels.dispatch._dingtalk_group_webhook_url",
+        lambda settings, session: None,
+    )
+    result = deliver_to_channels(
+        ["dingtalk"],
+        artifact_ref="storage://x",
+        artifact_kind="standard_render",
+        recipient_emails=[],
+        attachments=[],
+        mock_mode=None,
+        settings=get_settings(),
+        notify_group=False,
+    )
+    step = result["deliverySteps"][0]
+    assert step["mode"] == "group_webhook"
+    assert step["status"] == "failed"
+    assert "webhook" in (step.get("error") or "")

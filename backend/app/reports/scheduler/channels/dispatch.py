@@ -5,12 +5,11 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-import httpx
-
 from app.core.config import Settings, get_settings
 from app.core.platform_config.resolve import resolve_email_smtp
 from app.core.platform_config.slots import EMAIL_SLOT_QQ, normalize_email_slot
 from app.reports.scheduler.channels import work_notice
+from app.reports.scheduler.channels.im_sdk.group_webhook import post_group_webhook
 from app.reports.scheduler.delivery_adapter import _deliver_explicit_mock, _send_smtp
 
 logger = logging.getLogger(__name__)
@@ -27,46 +26,13 @@ def _send_group_webhook(
     artifact_ref: str,
     webhook_url: str | None = None,
 ) -> dict[str, Any]:
-    url = webhook_url or {
-        "wecom": settings.push_wecom_webhook,
-        "dingtalk": settings.push_dingtalk_webhook,
-        "feishu": settings.push_feishu_webhook,
-    }.get(channel)
-    label = _IM_LABELS.get(channel, channel)
-    if not url:
-        return {
-            "channel": f"{channel}_group",
-            "status": "failed",
-            "mode": "group_webhook",
-            "error": f"{label}群 webhook 未配置",
-        }
-    payload: dict[str, Any]
-    if channel == "feishu":
-        payload = {"msg_type": "text", "content": {"text": f"{summary}\n引用：{artifact_ref}"}}
-    else:
-        payload = {"msgtype": "text", "text": {"content": f"{summary}\n引用：{artifact_ref}"}}
-    try:
-        with httpx.Client(timeout=5.0) as client:
-            resp = client.post(url, json=payload)
-            resp.raise_for_status()
-            body = resp.json() if resp.content else {}
-    except Exception as exc:
-        logger.warning("%s group webhook failed: %s", label, exc)
-        return {
-            "channel": f"{channel}_group",
-            "status": "failed",
-            "mode": "group_webhook",
-            "error": str(exc),
-        }
-    errcode = body.get("errcode")
-    if errcode not in (0, None):
-        return {
-            "channel": f"{channel}_group",
-            "status": "failed",
-            "mode": "group_webhook",
-            "error": str(body.get("errmsg") or errcode),
-        }
-    return {"channel": f"{channel}_group", "status": "delivered", "mode": "group_webhook"}
+    return post_group_webhook(
+        channel,
+        settings,
+        summary=summary,
+        artifact_ref=artifact_ref,
+        webhook_url=webhook_url,
+    )
 
 
 def _dingtalk_group_webhook_url(settings: Settings, session) -> str | None:
@@ -79,12 +45,7 @@ def _dingtalk_group_webhook_url(settings: Settings, session) -> str | None:
 
 
 def _channel_uses_group_webhook(channel: str, session) -> bool:
-    if channel != "dingtalk":
-        return False
-    from app.core.platform_config.im_resolve import resolve_im_credentials
-
-    creds = resolve_im_credentials(session, channel="dingtalk")
-    return creds.delivery_mode == "group_webhook"
+    return channel == "dingtalk"
 
 
 def _person_step(

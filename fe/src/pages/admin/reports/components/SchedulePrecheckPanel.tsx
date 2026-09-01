@@ -159,15 +159,20 @@ export function useSchedulePrecheckItems(input: {
     for (const channel of ["wecom", "dingtalk", "feishu"] as const) {
       const row = imHealth[channel];
       const ok = Boolean(row?.configured);
+      const groupWebhook = row?.deliveryMode === "group_webhook";
       const userDelegated = row?.deliveryMode === "user_delegated";
       const ownerRow = imOwner?.[channel];
-      const ownerReady = !userDelegated || Boolean(ownerRow?.ready);
+      const ownerReady = groupWebhook || !userDelegated || Boolean(ownerRow?.ready);
       items.push({
         id: `im-${channel}`,
-        label: `${IM_CHANNEL_LABELS[channel]}工作通知`,
+        label: groupWebhook ? `${IM_CHANNEL_LABELS[channel]}群机器人` : `${IM_CHANNEL_LABELS[channel]}工作通知`,
         ok: ok && ownerReady,
         detail: !ok
-          ? row?.error || "应用未配置或探测未通过，请联系管理员在平台对接中配置。"
+          ? row?.error || (groupWebhook
+            ? "群机器人 webhook 未配置，请在平台对接中粘贴钉钉自定义机器人地址。"
+            : "应用未配置或探测未通过，请联系管理员在平台对接中配置。")
+          : groupWebhook
+            ? "钉钉按群发：将把摘要和产物链接发到已配置的群。"
           : userDelegated && !ownerReady
             ? ownerRow?.error || "您尚未完成飞书扫码绑定，定时 IM 投递将以您的身份发信。"
             : userDelegated

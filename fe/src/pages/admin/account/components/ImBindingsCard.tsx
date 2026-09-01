@@ -18,7 +18,7 @@ import {
 type ImBindingItem = {
   channel: ImChannel;
   label: string;
-  deliveryMode?: "corporate_app" | "user_delegated";
+  deliveryMode?: "corporate_app" | "user_delegated" | "group_webhook";
   appConfigured: boolean;
   bound: boolean;
   maskedAccount?: string | null;
@@ -252,7 +252,7 @@ export function ImBindingsCard() {
         <div>
           <h2 className="text-theme-sm font-semibold text-gray-900 dark:text-white">工作通知绑定</h2>
           <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-            绑定后定时报告可发到您的企微 / 钉钉 / 飞书个人账号（须管理员先完成平台对接）。
+            绑定后定时报告可发到您的企微 / 飞书个人账号。钉钉为群发，无需在此绑定。
           </p>
         </div>
       </div>
@@ -313,6 +313,10 @@ export function ImBindingsCard() {
                     <Badge variant="light" color="success" size="sm">
                       已绑定
                     </Badge>
+                  ) : item.deliveryMode === "group_webhook" && item.appConfigured ? (
+                    <Badge variant="light" color="success" size="sm">
+                      群发已就绪
+                    </Badge>
                   ) : item.appConfigured ? (
                     <Badge variant="light" color="warning" size="sm">
                       未绑定
@@ -324,7 +328,11 @@ export function ImBindingsCard() {
                   )}
                 </div>
                 <p className="mt-1 text-theme-xs text-gray-500 dark:text-gray-400">
-                  {item.bound
+                  {item.deliveryMode === "group_webhook"
+                    ? item.appConfigured
+                      ? "钉钉按群发，无需个人绑定"
+                      : item.probeError || "请管理员在平台对接中粘贴群机器人 webhook"
+                    : item.bound
                     ? `账号 ${item.maskedAccount ?? "—"}${item.source ? ` · ${SOURCE_LABEL[item.source] ?? item.source}` : ""}`
                     : item.appConfigured
                       ? item.deliveryMode === "user_delegated"
@@ -334,7 +342,7 @@ export function ImBindingsCard() {
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">
-                {item.bound ? (
+                {item.deliveryMode === "group_webhook" ? null : item.bound ? (
                   <Button
                     type="button"
                     variant="outline"

@@ -115,7 +115,9 @@ export function ScheduleDeliveryChannelsField({
           />
           <span>
             {IM_CHANNEL_LABELS[channel]}
-            <span className="mt-0.5 block text-theme-xs text-gray-500">按人投递工作通知（须已绑定）</span>
+            <span className="mt-0.5 block text-theme-xs text-gray-500">
+              {channel === "dingtalk" ? "发到钉钉群（自定义机器人）" : "按人投递工作通知（须已绑定）"}
+            </span>
           </span>
         </label>
       ))}
@@ -138,7 +140,7 @@ export function ScheduleDeliveryChannelsField({
         <div className="flex items-start gap-2.5">
           <MessageSquare className="mt-0.5 size-4 shrink-0 text-gray-400" aria-hidden />
           <p className="text-theme-sm text-gray-700 dark:text-gray-300">
-            可同时选择邮件与 IM 通道；IM 投递不会改发到群。
+            可同时选择邮件与 IM 通道；企微/飞书按人投递不会改发到群；钉钉发到已配置的群机器人。
           </p>
         </div>
         {channelToggles}

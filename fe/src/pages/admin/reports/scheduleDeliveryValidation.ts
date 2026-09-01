@@ -31,8 +31,9 @@ export function getScheduleFormValidation(form: ScheduleFormValue): { ok: boolea
 
   const platformOk = hasPlatformRecipients(form.recipients);
   const emailOk = hasEmailRecipients(form.recipients);
+  const personImOn = imChannelsFromDelivery(form.deliveryChannels).some((ch) => ch !== "dingtalk");
 
-  if (imOn && !platformOk) {
+  if (personImOn && !platformOk) {
     return { ok: false, message: "工作通知须指定平台用户或角色作为接收人" };
   }
 

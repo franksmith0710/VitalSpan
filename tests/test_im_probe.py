@@ -12,6 +12,7 @@ def test_probe_im_apps_unconfigured_without_credentials(monkeypatch):
     monkeypatch.setattr(get_settings(), "dingtalk_app_key", None)
     monkeypatch.setattr(get_settings(), "dingtalk_app_secret", None)
     monkeypatch.setattr(get_settings(), "dingtalk_agent_id", None)
+    monkeypatch.setattr(get_settings(), "push_dingtalk_webhook", None)
     probe.reset_im_probe_cache_for_tests()
     result = probe_im_apps(get_settings(), force_refresh=True)
     assert result["dingtalk"]["configured"] is False
@@ -64,6 +65,21 @@ def test_probe_im_apps_surfaces_sdk_error(monkeypatch):
         result = probe_im_apps(settings, force_refresh=True)
     assert result["wecom"]["configured"] is False
     assert "invalid corpsecret" in (result["wecom"]["error"] or "")
+
+
+def test_probe_dingtalk_group_webhook_skips_gettoken():
+    from app.core.platform_config.im_credentials import ImCredentials
+
+    creds = ImCredentials(
+        channel="dingtalk",
+        source="db",
+        delivery_mode="group_webhook",
+        webhook_url="https://oapi.dingtalk.com/robot/send?access_token=abc",
+    )
+    with patch("app.reports.scheduler.channels.im_sdk.probe.probe_dingtalk_token") as probe_token:
+        result = probe.probe_im_credentials_bundle(creds)
+    probe_token.assert_not_called()
+    assert result["ok"] is True
 
 
 def test_probe_im_apps_uses_cache(monkeypatch):

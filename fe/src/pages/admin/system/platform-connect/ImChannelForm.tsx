@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
-import type { ImChannel, ImConfigSummary } from "@/lib/imChannels";
+import type { ImConfigSummary } from "@/lib/imChannels";
 import { queryKeys } from "@/lib/queryKeys";
 import {
   ConnectActionBar,
@@ -83,10 +83,6 @@ export function ImChannelForm({
         body.corpId = form.corpId.trim();
         body.agentId = form.agentId.trim();
         body.secret = form.secret.trim() || null;
-      } else if (config.channel === "dingtalk") {
-        body.appKey = form.appKey.trim();
-        body.agentId = form.agentId.trim();
-        body.appSecret = form.appSecret.trim() || null;
       } else {
         body.appId = form.appId.trim();
         body.appSecret = form.appSecret.trim() || null;
@@ -243,40 +239,6 @@ export function ImChannelForm({
               </ConnectField>
             </>
           ) : null}
-          {config.channel === "dingtalk" ? (
-            <>
-              <ConnectField id={`im-appkey-${config.channel}`} label="AppKey">
-                <Input
-                  id={`im-appkey-${config.channel}`}
-                  className="h-11"
-                  value={form.appKey}
-                  onChange={(e) => setForm((prev) => ({ ...prev, appKey: e.target.value }))}
-                />
-              </ConnectField>
-              <ConnectField id={`im-agent-${config.channel}`} label="AgentId">
-                <Input
-                  id={`im-agent-${config.channel}`}
-                  className="h-11"
-                  value={form.agentId}
-                  onChange={(e) => setForm((prev) => ({ ...prev, agentId: e.target.value }))}
-                />
-              </ConnectField>
-              <ConnectField
-                id={`im-appsecret-${config.channel}`}
-                label="AppSecret"
-                className="sm:col-span-2"
-              >
-                <Input
-                  id={`im-appsecret-${config.channel}`}
-                  className="h-11"
-                  type="password"
-                  value={form.appSecret}
-                  onChange={(e) => setForm((prev) => ({ ...prev, appSecret: e.target.value }))}
-                  placeholder={config.hasSecret ? "留空保留已保存 AppSecret" : "应用 AppSecret"}
-                />
-              </ConnectField>
-            </>
-          ) : null}
           {config.channel === "feishu" ? (
             <>
               <ConnectField id={`im-appid-${config.channel}`} label="AppId">
@@ -305,9 +267,7 @@ export function ImChannelForm({
       <ConnectActionBar
         hint={
           userDelegated
-            ? config.channel === "feishu"
-              ? "用户委托模式无需回调域名；保存 AppId/Secret 后同事可在个人中心扫码绑定。"
-              : "用户委托模式无需回调域名；保存应用凭证后同事可在个人中心扫码绑定（须在厂商控制台登记 API 回调地址）。"
+            ? "用户委托模式无需回调域名；保存 AppId/Secret 后同事可在个人中心扫码绑定。"
             : "保存后将立即探测应用凭证；个人中心绑定依赖本配置。"
         }
       >

@@ -323,7 +323,7 @@ export function ScheduleFormFields({
                 <Mail className="mt-0.5 size-4 shrink-0 text-gray-400" aria-hidden />
                 <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
                   {showCombinedDelivery
-                    ? "仅选 IM 时无需填写邮箱；IM 收件人须为平台用户/角色且已在个人中心绑定对应账号。"
+                    ? "仅选钉钉时无需平台用户；仅选企微/飞书时须为平台用户/角色且已绑定。"
                     : emailOnlyRecipients
                       ? "无需绑定平台角色；请确保邮箱地址可正常收信。"
                       : "定时报告将发到收件人在用户资料中填写的邮箱。"}

@@ -13,12 +13,13 @@ export type ImConfigSummary = {
   label: string;
   configured: boolean;
   source: "db" | "env" | "none";
-  deliveryMode?: "corporate_app" | "user_delegated";
+  deliveryMode?: "corporate_app" | "user_delegated" | "group_webhook";
   callbackDomain?: string | null;
   corpId?: string | null;
   agentId?: string | null;
   appKey?: string | null;
   appId?: string | null;
+  webhookUrl?: string | null;
   hasSecret: boolean;
   probeError?: string | null;
 };

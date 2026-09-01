@@ -15,7 +15,7 @@
 
 - **要对齐的产品能力**：后台保存公司应用后可探测；已登录用户授权跳转后自动记住账号；定时工作通知发到该账号。
 - **In Scope（首版真实路径）**：三通道 **gettoken/探测**、**浏览器授权拿账号**、**工作通知发送**（文字 + 产物链接）。
-- **Out of Scope**：用 IM 登录 VitalSpan（替代 JWT）；通讯录同步；群 webhook 当按人投递；stub/mock 标已配置或已送达；IM 内嵌 PDF。
+- **Out of Scope**：用 IM 登录 VitalSpan（替代 JWT）；通讯录同步；企微/飞书用群 webhook 当按人投递；stub/mock 标已配置或已送达；IM 内嵌 PDF。钉钉主路径为群机器人。
 
 ## 1.1 术语对齐
 
@@ -34,8 +34,9 @@
 
 | 模式 | 适用通道 | 平台配置 | 绑定方式 | 发信身份 |
 |------|----------|----------|----------|----------|
-| `corporate_app` | 企微 / 钉钉 / 飞书 | App 凭证 + **回调域名**（OAuth） | 浏览器 OAuth 跳转 | 应用 `tenant_access_token` / gettoken |
-| `user_delegated` | 企微 / 钉钉 / 飞书 | App 凭证，**无管理面回调域名** | 飞书 device-code；企微/钉钉内嵌扫码 | 飞书：owner `user_access_token`；企微/钉钉：应用 gettoken + owner 须已绑定 |
+| `corporate_app` | 企微 / 飞书 | App 凭证 + **回调域名**（OAuth） | 浏览器 OAuth 跳转 | 应用 `tenant_access_token` / gettoken |
+| `user_delegated` | 企微 / 飞书 | App 凭证，**无管理面回调域名** | 飞书 device-code；企微内嵌扫码 | 飞书：owner `user_access_token`；企微：应用 gettoken + owner 须已绑定 |
+| `group_webhook` | **钉钉** | 自定义机器人 webhook | 无需个人绑定 | POST 群 webhook（摘要 + 产物链接） |
 
 - `user_delegated` 探测：飞书仅校验凭证字段；企微/钉钉仍调 gettoken。
 - 企微/钉钉扫码绑定 OAuth 回调由部署环境 `API_PUBLIC_BASE_URL` 提供（须在厂商控制台登记一次），管理面无需手填回调域名。

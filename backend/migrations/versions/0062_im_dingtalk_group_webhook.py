@@ -19,27 +19,24 @@ _NEW = "delivery_mode IN ('corporate_app', 'user_delegated', 'group_webhook')"
 _OLD = "delivery_mode IN ('corporate_app', 'user_delegated')"
 
 
+def _recreate_delivery_mode_check(expression: str) -> None:
+    with op.batch_alter_table("platform_im_connect_configs") as batch:
+        try:
+            batch.drop_constraint(
+                "ck_platform_im_connect_configs_delivery_mode",
+                type_="check",
+            )
+        except Exception:
+            pass
+        batch.create_check_constraint(
+            "ck_platform_im_connect_configs_delivery_mode",
+            expression,
+        )
+
+
 def upgrade() -> None:
-    op.drop_constraint(
-        "ck_platform_im_connect_configs_delivery_mode",
-        "platform_im_connect_configs",
-        type_="check",
-    )
-    op.create_check_constraint(
-        "ck_platform_im_connect_configs_delivery_mode",
-        "platform_im_connect_configs",
-        _NEW,
-    )
+    _recreate_delivery_mode_check(_NEW)
 
 
 def downgrade() -> None:
-    op.drop_constraint(
-        "ck_platform_im_connect_configs_delivery_mode",
-        "platform_im_connect_configs",
-        type_="check",
-    )
-    op.create_check_constraint(
-        "ck_platform_im_connect_configs_delivery_mode",
-        "platform_im_connect_configs",
-        _OLD,
-    )
+    _recreate_delivery_mode_check(_OLD)

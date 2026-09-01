@@ -16,6 +16,7 @@ import { IM_CHANNELS } from "@/lib/imChannels";
 import { queryKeys } from "@/lib/queryKeys";
 import { EmailSmtpSlotForm } from "./EmailSmtpSlotForm";
 import { ImChannelForm, ImChannelPickerCard } from "./ImChannelForm";
+import { ImDingtalkWebhookForm } from "./ImDingtalkWebhookForm";
 import { ChannelPickerCard } from "./platformConnectUi";
 import { SystemAdminScopeHint } from "../SystemAdminScopeHint";
 
@@ -147,12 +148,21 @@ export function PlatformConnectPage() {
                   />
                 ) : null}
                 {activeTarget.type === "im" && activeImConfig ? (
-                  <ImChannelForm
-                    key={activeImConfig.channel}
-                    config={activeImConfig}
-                    disabled={pending}
-                    onSaved={() => void imQuery.refetch()}
-                  />
+                  activeImConfig.channel === "dingtalk" ? (
+                    <ImDingtalkWebhookForm
+                      key={activeImConfig.channel}
+                      config={activeImConfig}
+                      disabled={pending}
+                      onSaved={() => void imQuery.refetch()}
+                    />
+                  ) : (
+                    <ImChannelForm
+                      key={activeImConfig.channel}
+                      config={activeImConfig}
+                      disabled={pending}
+                      onSaved={() => void imQuery.refetch()}
+                    />
+                  )
                 ) : null}
               </div>
             </div>
@@ -160,7 +170,7 @@ export function PlatformConnectPage() {
             <div className="flex items-start gap-2.5 border-t border-gray-100 px-5 py-4 dark:border-white/[0.06] md:px-6">
               <Info className="mt-0.5 size-4 shrink-0 text-gray-400" aria-hidden />
               <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                邮件收件人在用户管理维护；IM 账号由用户在个人中心自助绑定。清空某通道后即使环境变量仍有旧值，该通道也不会再发信。
+                IM 账号由用户在个人中心自助绑定（企微/飞书）；钉钉走群机器人，无需个人绑定。清空某通道后即使环境变量仍有旧值，该通道也不会再发信。
               </p>
             </div>
           </div>

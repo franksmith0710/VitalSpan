@@ -91,7 +91,8 @@
   - [x] 列表/历史/重试 API（r238：`GET /api/v1/reports/schedules` + `GET .../executions` + `POST .../retry` + failed 错误信息）
   - [x] M12 Admin 调度 UI（r238：`SchedulePanel` + `TemplateDetailPanel` 调度 Tab；`SchedulePanel.smoke.test.tsx`）
   - [x] 真实 SMTP 投递（companion r-e95d：固定 SMTP + MailHog 兼容适配器；测试 mock 仅 header）
-  - [x] **按人 IM 投递**（2026-08-13：钉钉/企微/飞书发给用户资料绑的账号；未绑号该通道失败且不回落群 webhook；`notifyGroup` 才发群机器人；`user_im_bindings` · Alembic `0047`）
+  - [x] **按人 IM 投递**（企微/飞书发给用户资料绑的账号；未绑号该通道失败且不回落群 webhook；`notifyGroup` 才发群机器人）
+  - [x] **钉钉群发**（2026-08-31：平台对接粘贴自定义机器人 webhook；`deliveryMode=group_webhook`；定时勾选钉钉发到该群，无需个人绑定；Alembic `0062`）
   - [x] **M-DEPTH F-C**：调度执行历史 / 重试 UI 增强（接 `GET .../executions` + `POST .../retry`；失败可读、可重试）（完成于 2026-07-29 · `SchedulePanel.tsx` · `SchedulePanel.smoke.test.tsx`）
   - [x] **G5 看板/大屏可视化 PDF**（2026-08-03：`export_render.py` Playwright + FE `/export/*?token=`；`artifactKind=visual_snapshot`；`tests/test_dashboard_visual_export.py`）
   - [x] **定时报告可删除**（2026-08-14：`DELETE /api/v1/reports/schedules/{id}`；列表页「删除」；停 job 并清理执行历史）
