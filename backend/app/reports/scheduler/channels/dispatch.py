@@ -25,8 +25,9 @@ def _send_group_webhook(
     *,
     summary: str,
     artifact_ref: str,
+    webhook_url: str | None = None,
 ) -> dict[str, Any]:
-    url = {
+    url = webhook_url or {
         "wecom": settings.push_wecom_webhook,
         "dingtalk": settings.push_dingtalk_webhook,
         "feishu": settings.push_feishu_webhook,
@@ -35,7 +36,7 @@ def _send_group_webhook(
     if not url:
         return {
             "channel": f"{channel}_group",
-            "status": "skipped",
+            "status": "failed",
             "mode": "group_webhook",
             "error": f"{label}群 webhook 未配置",
         }
@@ -44,11 +45,11 @@ def _send_group_webhook(
         payload = {"msg_type": "text", "content": {"text": f"{summary}\n引用：{artifact_ref}"}}
     else:
         payload = {"msgtype": "text", "text": {"content": f"{summary}\n引用：{artifact_ref}"}}
-    # 群机器人 webhook 为厂商提供的固定 HTTPS URL，无官方 Python SDK，直 POST JSON。
     try:
         with httpx.Client(timeout=5.0) as client:
             resp = client.post(url, json=payload)
             resp.raise_for_status()
+            body = resp.json() if resp.content else {}
     except Exception as exc:
         logger.warning("%s group webhook failed: %s", label, exc)
         return {
@@ -57,7 +58,33 @@ def _send_group_webhook(
             "mode": "group_webhook",
             "error": str(exc),
         }
+    errcode = body.get("errcode")
+    if errcode not in (0, None):
+        return {
+            "channel": f"{channel}_group",
+            "status": "failed",
+            "mode": "group_webhook",
+            "error": str(body.get("errmsg") or errcode),
+        }
     return {"channel": f"{channel}_group", "status": "delivered", "mode": "group_webhook"}
+
+
+def _dingtalk_group_webhook_url(settings: Settings, session) -> str | None:
+    from app.core.platform_config.im_resolve import resolve_im_credentials
+
+    creds = resolve_im_credentials(session, channel="dingtalk", settings=settings)
+    if creds.delivery_mode == "group_webhook" and creds.webhook_url:
+        return creds.webhook_url
+    return settings.push_dingtalk_webhook
+
+
+def _channel_uses_group_webhook(channel: str, session) -> bool:
+    if channel != "dingtalk":
+        return False
+    from app.core.platform_config.im_resolve import resolve_im_credentials
+
+    creds = resolve_im_credentials(session, channel="dingtalk")
+    return creds.delivery_mode == "group_webhook"
 
 
 def _person_step(
@@ -141,20 +168,31 @@ def deliver_to_channels(
                 attachments=attachments,
             ))
         elif channel in _IM_CHANNELS:
-            steps.append(_person_step(
-                channel,
-                targets=targets_by_channel.get(channel, []),
-                missing=missing_by_channel.get(channel, []),
-                summary=summary,
-                artifact_ref=artifact_ref,
-                settings=settings,
-                session=session,
-                owner_id=owner_id,
-            ))
-            if notify_group:
-                steps.append(_send_group_webhook(
-                    channel, settings, summary=summary, artifact_ref=artifact_ref,
+            if _channel_uses_group_webhook(channel, session):
+                steps.append(
+                    _send_group_webhook(
+                        channel,
+                        settings,
+                        summary=summary,
+                        artifact_ref=artifact_ref,
+                        webhook_url=_dingtalk_group_webhook_url(settings, session),
+                    )
+                )
+            else:
+                steps.append(_person_step(
+                    channel,
+                    targets=targets_by_channel.get(channel, []),
+                    missing=missing_by_channel.get(channel, []),
+                    summary=summary,
+                    artifact_ref=artifact_ref,
+                    settings=settings,
+                    session=session,
+                    owner_id=owner_id,
                 ))
+                if notify_group:
+                    steps.append(_send_group_webhook(
+                        channel, settings, summary=summary, artifact_ref=artifact_ref,
+                    ))
         else:
             steps.append({"channel": channel, "status": "skipped", "error": "未知通道"})
 

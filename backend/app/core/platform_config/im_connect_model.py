@@ -9,7 +9,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.auth.models import Base
 
 IM_CHANNELS = ("dingtalk", "wecom", "feishu")
-IM_DELIVERY_MODES = ("corporate_app", "user_delegated")
+IM_DELIVERY_MODES = ("corporate_app", "user_delegated", "group_webhook")
 IM_LABELS = {
     "dingtalk": "钉钉",
     "wecom": "企业微信",
@@ -38,7 +38,7 @@ class PlatformImConnectConfig(Base):
             name="ck_platform_im_connect_configs_channel",
         ),
         CheckConstraint(
-            "delivery_mode IN ('corporate_app', 'user_delegated')",
+            "delivery_mode IN ('corporate_app', 'user_delegated', 'group_webhook')",
             name="ck_platform_im_connect_configs_delivery_mode",
         ),
     )

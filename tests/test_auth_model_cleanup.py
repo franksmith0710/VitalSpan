@@ -4,7 +4,7 @@ import os
 import uuid
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from app.auth import cleanup as auth_cleanup
 from app.auth.audit.retention import purge_audit_events_before
@@ -14,9 +14,13 @@ from app.auth.models import (
     AuthAuditEvent,
     AuthColumnMask,
     AuthDimensionType,
+    AuthOrgNode,
     AuthResourceGrant,
     AuthRlsColumnBinding,
     AuthRole,
+    AuthRoleDimensionValue,
+    AuthUser,
+    AuthUserDimensionOverride,
     AuthUserResourceGrant,
     Base,
     get_meta_engine,
@@ -41,6 +45,28 @@ def cleanup_sqlite_env():
         os.environ["DATABASE_URL"] = previous
     get_settings.cache_clear()
     get_meta_engine.cache_clear()
+
+
+@pytest.fixture(autouse=True)
+def clean_auth_tables_between_tests():
+    yield
+    tables = (
+        "auth_user_resource_grants",
+        "auth_resource_grants",
+        "auth_column_masks",
+        "auth_rls_column_bindings",
+        "auth_role_dimension_values",
+        "auth_user_dimension_overrides",
+        "auth_audit_events",
+        "auth_user_roles",
+        "auth_users",
+        "auth_roles",
+        "auth_dimension_types",
+        "auth_org_nodes",
+    )
+    with get_meta_engine().begin() as conn:
+        for table in tables:
+            conn.execute(text(f"DELETE FROM {table}"))
 
 
 def test_purge_grants_for_resource_removes_role_and_user_rows():
@@ -75,8 +101,20 @@ def test_purge_grants_for_resource_removes_role_and_user_rows():
         )
         session.commit()
         assert deleted == 2
-        assert session.scalar(select(AuthResourceGrant).limit(1)) is None
-        assert session.scalar(select(AuthUserResourceGrant).limit(1)) is None
+        assert (
+            session.scalar(
+                select(AuthResourceGrant).where(AuthResourceGrant.resource_id == resource_id)
+            )
+            is None
+        )
+        assert (
+            session.scalar(
+                select(AuthUserResourceGrant).where(
+                    AuthUserResourceGrant.resource_id == resource_id
+                )
+            )
+            is None
+        )
     finally:
         session.close()
 
@@ -116,8 +154,18 @@ def test_purge_datasource_scope_metadata():
         deleted = auth_cleanup.purge_datasource_scope_metadata(session, ds_id)
         session.commit()
         assert deleted == 2
-        assert session.scalar(select(AuthColumnMask).limit(1)) is None
-        assert session.scalar(select(AuthRlsColumnBinding).limit(1)) is None
+        assert (
+            session.scalar(select(AuthColumnMask).where(AuthColumnMask.datasource_id == ds_id))
+            is None
+        )
+        assert (
+            session.scalar(
+                select(AuthRlsColumnBinding).where(
+                    AuthRlsColumnBinding.datasource_id == ds_id
+                )
+            )
+            is None
+        )
     finally:
         session.close()
 
@@ -152,6 +200,82 @@ def test_purge_audit_events_before():
         remaining = session.scalars(select(AuthAuditEvent)).all()
         assert len(remaining) == 1
         assert remaining[0].action == "test.recent"
+    finally:
+        session.close()
+
+
+def test_purge_org_dimension_references():
+    session = get_meta_session()
+    try:
+        dim = AuthDimensionType(
+            code="org_purge",
+            name="Org Purge",
+            value_type="org_ref",
+            org_dimension=True,
+        )
+        other_dim = AuthDimensionType(
+            code="region_purge",
+            name="Region",
+            value_type="string",
+            org_dimension=False,
+        )
+        session.add_all([dim, other_dim])
+        session.flush()
+        org = AuthOrgNode(name="Leaf", path="/leaf", level=1)
+        session.add(org)
+        session.flush()
+        node_str = str(org.id)
+        role = AuthRole(code="org_purge_role", name="Org Purge Role")
+        session.add(role)
+        session.flush()
+        session.add(
+            AuthRoleDimensionValue(
+                role_id=role.id,
+                dimension_type_id=dim.id,
+                value=node_str,
+            )
+        )
+        session.add(
+            AuthRoleDimensionValue(
+                role_id=role.id,
+                dimension_type_id=other_dim.id,
+                value=node_str,
+            )
+        )
+        user = AuthUser(username="org_purge_user", password_hash="x")
+        session.add(user)
+        session.flush()
+        session.add(
+            AuthUserDimensionOverride(
+                user_id=user.id,
+                dimension_type_id=dim.id,
+                value=node_str,
+                effect="add",
+            )
+        )
+        session.commit()
+
+        deleted = auth_cleanup.purge_org_dimension_references(session, org.id)
+        session.commit()
+        assert deleted == 2
+        assert (
+            session.scalar(
+                select(AuthRoleDimensionValue).where(
+                    AuthRoleDimensionValue.dimension_type_id == dim.id,
+                    AuthRoleDimensionValue.value == node_str,
+                )
+            )
+            is None
+        )
+        assert (
+            session.scalar(
+                select(AuthRoleDimensionValue).where(
+                    AuthRoleDimensionValue.dimension_type_id == other_dim.id,
+                    AuthRoleDimensionValue.value == node_str,
+                )
+            )
+            is not None
+        )
     finally:
         session.close()
 

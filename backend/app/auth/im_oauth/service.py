@@ -91,6 +91,8 @@ class AuthorizeUrlOut(BaseModel):
 
 def _app_ready(session: Session, channel: str, creds) -> tuple[bool, str | None]:
     mode = resolve_im_delivery_mode(session, channel)
+    if mode == "group_webhook":
+        return creds.is_configured, None if creds.is_configured else "钉钉群机器人 webhook 未配置"
     if mode == "user_delegated":
         if channel == "feishu":
             return creds.is_configured, None
@@ -122,7 +124,7 @@ def list_user_im_bindings(session: Session, user_id: uuid.UUID) -> ImBindingsOut
                 bound=bound,
                 masked_account=mask_account_id(row.account_id) if row else None,
                 source=row.source if row else None,
-                deliverable=app_configured and bound,
+                deliverable=app_configured if mode == "group_webhook" else app_configured and bound,
                 probe_error=probe_error,
             )
         )

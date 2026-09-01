@@ -16,6 +16,8 @@ from app.core.platform_config.im_connect_model import (
 from app.core.platform_config.im_credentials import (
     decrypt_credentials_payload,
     encrypt_credentials_payload,
+    is_dingtalk_group_webhook,
+    mask_webhook_url,
     normalize_im_channel,
 )
 from app.core.platform_config.im_resolve import resolve_im_credentials
@@ -38,16 +40,23 @@ def _effective_source(session: Session, channel: str) -> str:
 
 
 
-def _delivery_mode(row: PlatformImConnectConfig | None, payload: ImDeliveryConfigPut | None = None) -> str:
+def _delivery_mode(
+    row: PlatformImConnectConfig | None,
+    payload: ImDeliveryConfigPut | None = None,
+    *,
+    channel: str | None = None,
+) -> str:
     if payload and payload.delivery_mode in IM_DELIVERY_MODES:
         return payload.delivery_mode
     if row and row.delivery_mode in IM_DELIVERY_MODES:
         return row.delivery_mode
+    if channel == "dingtalk":
+        return "group_webhook"
     return "corporate_app"
 
 
 def _out_fields(channel: str, creds, row: PlatformImConnectConfig | None, source: str) -> dict:
-    mode = _delivery_mode(row)
+    mode = _delivery_mode(row, channel=channel)
     base = {
         "channel": channel,
         "label": IM_LABELS[channel],
@@ -55,13 +64,20 @@ def _out_fields(channel: str, creds, row: PlatformImConnectConfig | None, source
         "delivery_mode": mode,
         "callback_domain": row.callback_domain if row and row.state == "active" else creds.callback_domain,
         "has_secret": False,
+        "webhook_url": None,
     }
     if channel == "dingtalk":
-        base.update(
-            app_key=creds.app_key if source != "none" else None,
-            agent_id=creds.agent_id if source != "none" else None,
-            has_secret=bool(creds.app_secret),
-        )
+        if mode == "group_webhook":
+            base.update(
+                webhook_url=mask_webhook_url(creds.webhook_url) if source != "none" else None,
+                has_secret=bool(creds.webhook_url),
+            )
+        else:
+            base.update(
+                app_key=creds.app_key if source != "none" else None,
+                agent_id=creds.agent_id if source != "none" else None,
+                has_secret=bool(creds.app_secret),
+            )
     elif channel == "wecom":
         base.update(
             corp_id=creds.corp_id if source != "none" else None,
@@ -101,6 +117,17 @@ def list_im_configs(session: Session, *, probe: bool = True) -> ImDeliverySlotsO
 
 
 def _validate_put(channel: str, payload: ImDeliveryConfigPut, mode: str) -> dict[str, str]:
+    if mode == "group_webhook":
+        if channel != "dingtalk":
+            raise PlatformConfigError("PLATFORM_IM_MODE_UNSUPPORTED", "群发模式目前仅支持钉钉", 422)
+        webhook = (payload.webhook_url or "").strip()
+        if not is_dingtalk_group_webhook(webhook):
+            raise PlatformConfigError(
+                "PLATFORM_IM_WEBHOOK_INVALID",
+                "请填写钉钉自定义机器人 webhook（https://oapi.dingtalk.com/robot/send?access_token=…）",
+                422,
+            )
+        return {"webhook_url": webhook}
     if mode == "user_delegated":
         if channel == "dingtalk":
             app_key = (payload.app_key or "").strip()
@@ -165,14 +192,18 @@ def save_im_config(
     normalized = normalize_im_channel(channel)
     row = _row_or_none(session, normalized)
     existing_cipher = row.credentials_encrypted if row and row.state == "active" else None
-    mode = _delivery_mode(row, payload)
+    mode = _delivery_mode(row, payload, channel=normalized)
     fields = _validate_put(normalized, payload, mode)
-    secret = _resolve_secret(normalized, payload, existing_cipher)
-    if not secret:
-        raise PlatformConfigError("PLATFORM_IM_SECRET_REQUIRED", "应用 Secret 不能为空", 422)
-    secret_key = {"dingtalk": "app_secret", "wecom": "secret", "feishu": "app_secret"}[normalized]
-    cred_payload = {**fields, secret_key: secret}
-    callback = (payload.callback_domain or "").strip() or None
+    if mode == "group_webhook":
+        cred_payload = fields
+        callback = None
+    else:
+        secret = _resolve_secret(normalized, payload, existing_cipher)
+        if not secret:
+            raise PlatformConfigError("PLATFORM_IM_SECRET_REQUIRED", "应用 Secret 不能为空", 422)
+        secret_key = {"dingtalk": "app_secret", "wecom": "secret", "feishu": "app_secret"}[normalized]
+        cred_payload = {**fields, secret_key: secret}
+        callback = (payload.callback_domain or "").strip() or None
     probe_result = probe_im_credentials_bundle_from_payload(
         normalized, callback or "", cred_payload, delivery_mode=mode
     )
@@ -219,7 +250,7 @@ def clear_im_config(
         row = PlatformImConnectConfig(channel=normalized, state="cleared")
         session.add(row)
     row.state = "cleared"
-    row.delivery_mode = "corporate_app"
+    row.delivery_mode = "group_webhook" if normalized == "dingtalk" else "corporate_app"
     row.callback_domain = None
     row.credentials_encrypted = None
     row.updated_by = uuid.UUID(actor_id)
@@ -246,6 +277,21 @@ def probe_im_credentials_bundle_from_payload(
 ) -> dict:
     from app.core.platform_config.im_credentials import ImCredentials
 
+    if delivery_mode == "group_webhook":
+        creds = ImCredentials(
+            channel=channel,
+            source="db",
+            delivery_mode=delivery_mode,
+            webhook_url=payload.get("webhook_url"),
+        )
+        if creds.is_configured:
+            return {"channel": channel, "skipped": False, "ok": True, "error": None}
+        return {
+            "channel": channel,
+            "skipped": False,
+            "ok": False,
+            "error": "钉钉群机器人 webhook 无效",
+        }
     if delivery_mode == "user_delegated":
         if channel == "feishu":
             creds = ImCredentials(

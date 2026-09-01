@@ -408,6 +408,11 @@ def semi_real_execute_schedule(
             parsed = [ScheduleRecipientIn.model_validate(r) for r in raw_recipients]
             recipient_emails = resolve_recipient_emails(session, parsed)
             for channel in channels:
+                if channel == "dingtalk":
+                    from app.core.platform_config.im_resolve import resolve_im_delivery_mode
+
+                    if resolve_im_delivery_mode(session, "dingtalk") == "group_webhook":
+                        continue
                 if channel in {"wecom", "dingtalk", "feishu"}:
                     targets, missing = resolve_im_targets(session, parsed, channel)
                     im_targets[channel] = targets

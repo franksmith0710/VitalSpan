@@ -99,6 +99,15 @@ def probe_im_credentials_bundle(creds: ImCredentials) -> dict[str, Any]:
     channel = creds.channel
     if not creds.is_configured:
         return {"channel": channel, "skipped": True, "ok": False, "error": None}
+    if creds.delivery_mode == "group_webhook":
+        if creds.is_configured:
+            return {"channel": channel, "skipped": False, "ok": True, "error": None}
+        return {
+            "channel": channel,
+            "skipped": False,
+            "ok": False,
+            "error": "钉钉群机器人 webhook 未配置或格式无效",
+        }
     if creds.delivery_mode == "user_delegated":
         if channel == "feishu":
             return {"channel": channel, "skipped": False, "ok": True, "error": None}

@@ -15,6 +15,14 @@ from app.core.platform_config.im_credentials import (
 
 def _from_env(settings: Settings, channel: str) -> ImCredentials:
     if channel == "dingtalk":
+        webhook = (settings.push_dingtalk_webhook or "").strip() or None
+        if webhook:
+            return ImCredentials(
+                channel=channel,
+                source="env",
+                delivery_mode="group_webhook",
+                webhook_url=webhook,
+            )
         return ImCredentials(
             channel=channel,
             source="env",
@@ -54,6 +62,7 @@ def _from_row(row: PlatformImConnectConfig) -> ImCredentials:
             app_key=payload.get("app_key") or None,
             app_secret=payload.get("app_secret") or None,
             agent_id=payload.get("agent_id") or None,
+            webhook_url=payload.get("webhook_url") or None,
         )
     if channel == "wecom":
         return ImCredentials(
@@ -101,6 +110,10 @@ def resolve_im_delivery_mode(session: Session, channel: str) -> str:
     normalized = normalize_im_channel(channel)
     row = session.get(PlatformImConnectConfig, normalized)
     if row is None or row.state != "active":
+        if normalized == "dingtalk":
+            creds = _from_env(get_settings(), normalized)
+            if creds.delivery_mode == "group_webhook" and creds.is_configured:
+                return "group_webhook"
         return "corporate_app"
     if row.delivery_mode in IM_DELIVERY_MODES:
         return row.delivery_mode
