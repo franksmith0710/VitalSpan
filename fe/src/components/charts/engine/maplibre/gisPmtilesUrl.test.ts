@@ -53,11 +53,30 @@ describe("gisPmtilesUrl", () => {
       id: "planet-z15",
       name: "Planet Z15",
       pmtilesUrl: "http://localhost:8080/planet-z15-20260817.pmtiles",
-      glyphsUrl: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
-      spriteUrl: "https://protomaps.github.io/basemaps-assets/sprites/v4/light",
+      glyphsUrl: "http://localhost:8080/basemaps-assets/fonts/{fontstack}/{range}.pbf",
+      spriteUrl: "http://localhost:8080/basemaps-assets/sprites/v4/light",
     });
     expect(next.pmtilesUrl).toContain("/dev-pmtiles/planet-z15-20260817.pmtiles");
-    expect(next.glyphsUrl).toContain("dev-basemaps-assets");
-    expect(next.spriteUrl).toContain("/sprites/v4/light");
+    expect(next.glyphsUrl).toBe(
+      "http://127.0.0.1:5173/dev-pmtiles/basemaps-assets/fonts/{fontstack}/{range}.pbf",
+    );
+    expect(next.spriteUrl).toBe(
+      "http://127.0.0.1:5173/dev-pmtiles/basemaps-assets/sprites/v4/light",
+    );
+    expect(next.glyphsUrl).not.toContain("jsdelivr");
+    expect(next.glyphsUrl).not.toContain("github.io");
+  });
+
+  it("rewrites leftover public glyph urls onto the local tile proxy", () => {
+    vi.stubEnv("DEV", true);
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { origin: "http://127.0.0.1:5173" },
+    });
+    expect(
+      resolveGisPmtilesArchiveUrl(
+        "https://fastly.jsdelivr.net/gh/protomaps/basemaps-assets@main/fonts/{fontstack}/{range}.pbf",
+      ),
+    ).toBe("http://127.0.0.1:5173/dev-pmtiles/basemaps-assets/fonts/{fontstack}/{range}.pbf");
   });
 });

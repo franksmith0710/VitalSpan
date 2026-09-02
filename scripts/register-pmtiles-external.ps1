@@ -38,7 +38,8 @@ try:
                 pmtilesPath=PMTILES_PATH,
                 enabled=True,
                 description="PMTiles external tile server",
-                spriteUrl="https://fastly.jsdelivr.net/gh/protomaps/basemaps-assets@main/sprites/v4/light",
+                glyphsUrlTemplate=BASE_URL.rstrip("/") + "/basemaps-assets/fonts/{fontstack}/{range}.pbf",
+                spriteUrl=BASE_URL.rstrip("/") + "/basemaps-assets/sprites/v4/light",
             ),
             updated_by=None,
         )
@@ -55,7 +56,8 @@ try:
                 baseUrl=BASE_URL.rstrip("/"),
                 pmtilesPath=PMTILES_PATH,
                 enabled=True,
-                spriteUrl="https://fastly.jsdelivr.net/gh/protomaps/basemaps-assets@main/sprites/v4/light",
+                glyphsUrlTemplate=BASE_URL.rstrip("/") + "/basemaps-assets/fonts/{fontstack}/{range}.pbf",
+                spriteUrl=BASE_URL.rstrip("/") + "/basemaps-assets/sprites/v4/light",
             ),
             updated_by=None,
         )

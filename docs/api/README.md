@@ -241,7 +241,7 @@ redoc: /redoc
 | POST | `/api/v1/charts/sdk/lifecycle` | SDK lifecycle manifest（init/destroy） | 内部 | 一期 | VIZ-007 | 已实现 | `backend/app/api/v1/charts.py` |
 | GET | `/api/v1/charts/sdk/capabilities` | SDK 支持的 targetType/authMode 列表 | 内部 | 一期 | VIZ-007 | 已实现 | `backend/app/api/v1/charts.py` |
 | GET | `/api/v1/tile-services` | 已登记 PMTiles 瓦片服务列表（`gis-map` 底图） | 内部 | 二期 | VIZ-003 | 已实现 | `backend/app/api/v1/tile_services.py` |
-| GET | `/api/v1/tile-services/{serviceId}/resolve` | 解析瓦片服务 URL（PMTiles/glyphs/sprite） | 内部 | 二期 | VIZ-003 | 已实现 | `backend/app/api/v1/tile_services.py` |
+| GET | `/api/v1/tile-services/{serviceId}/resolve` | 解析同机 PMTiles + `/basemaps-assets` glyphs/sprite（无公网 CDN 默认值） | 内部 | 二期 | VIZ-003 | 已实现 | `backend/app/api/v1/tile_services.py` |
 | POST | `/api/v1/tile-services` | 登记瓦片服务（管理员） | 内部 | 二期 | VIZ-003 | 已实现 | `backend/app/api/v1/tile_services.py` |
 | PATCH | `/api/v1/tile-services/{serviceId}` | 更新瓦片服务（管理员） | 内部 | 二期 | VIZ-003 | 已实现 | `backend/app/api/v1/tile_services.py` |
 

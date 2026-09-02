@@ -21,9 +21,10 @@
 脚本会：
 
 1. 停止占用 8080 的临时进程
-2. `docker compose --profile pmtiles-external up -d`
-3. 等待健康检查（Range 206）
-4. 在 VitalSpan 元库幂等登记 `planet-z15`
+2. 若缺少 `basemaps-assets/fonts`，同步到与 `.pmtiles` 同一目录
+3. `docker compose --profile pmtiles-external up -d`
+4. 等待健康检查（Range 206）
+5. 在 VitalSpan 元库幂等登记 `planet-z15`（glyphs/sprite 指向同一 `baseUrl`）
 
 验真：
 
@@ -56,6 +57,8 @@ POST /api/v1/tile-services
   "name": "全球 Planet Z15",
   "baseUrl": "http://127.0.0.1:8080",
   "pmtilesPath": "/planet-z15-20260817.pmtiles",
+  "glyphsUrlTemplate": "http://127.0.0.1:8080/basemaps-assets/fonts/{fontstack}/{range}.pbf",
+  "spriteUrl": "http://127.0.0.1:8080/basemaps-assets/sprites/v4/light",
   "enabled": true
 }
 ```
@@ -65,7 +68,7 @@ POST /api/v1/tile-services
 ## 生产
 
 - 内网 Nginx/Caddy + Range + CORS；或对象存储静态托管 + Range
-- glyphs/sprite 建议一并镜像到内网（默认 resolve 可能指向 protomaps.github.io）
+- glyphs/sprite 必须与 `.pmtiles` 同机提供（`/basemaps-assets/`），**不要**使用 jsDelivr / github.io
 - 详见 [docs/services/pmtiles-tile-server.md](../../docs/services/pmtiles-tile-server.md)
 
 ## 本地临时脚本（已废弃）

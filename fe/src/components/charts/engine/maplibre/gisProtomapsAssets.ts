@@ -1,45 +1,24 @@
-/** Protomaps 官方静态资源（glyphs / sprites）。github.io 在部分网络不可达，运行时改走 jsDelivr 镜像。 */
-export const PROTOMAPS_ASSETS_GITHUB = "https://protomaps.github.io/basemaps-assets";
+import { colocatedSpriteBaseFromPmtilesUrl, TILE_SERVICE_ASSETS_PREFIX } from "@/components/charts/engine/maplibre/gisPmtilesUrl";
 
-/** 与 Protomaps basemaps v4 资源布局对齐；@main 跟踪 basemaps-assets 仓库默认分支。 */
-export const PROTOMAPS_ASSETS_MIRROR = "https://fastly.jsdelivr.net/gh/protomaps/basemaps-assets@main";
-
-export const DEFAULT_PROTOMAPS_GLYPHS_URL = `${PROTOMAPS_ASSETS_MIRROR}/fonts/{fontstack}/{range}.pbf`;
-
-export const DEFAULT_PROTOMAPS_SPRITE_BASE = `${PROTOMAPS_ASSETS_MIRROR}/sprites/v4`;
+/** 与瓦片服务同机的 Protomaps sprites 根路径（无公网 CDN）。 */
+export const DEFAULT_PROTOMAPS_SPRITE_BASE = `/${TILE_SERVICE_ASSETS_PREFIX}/sprites/v4`;
 
 export function mirrorProtomapsBasemapAssetsUrl(url: string): string {
-  const trimmed = url.trim();
-  if (!trimmed.includes("protomaps.github.io/basemaps-assets")) {
-    return trimmed;
-  }
-  return trimmed.replace(PROTOMAPS_ASSETS_GITHUB, PROTOMAPS_ASSETS_MIRROR);
+  return url.trim();
 }
 
-/** 开发态可走 Vite 同源代理，避免 MapLibre worker 对外部 CDN 偶发失败。 */
+/** @deprecated 开发态改写已并入 resolveGisPmtilesArchiveUrl */
 export function resolveDevBasemapAssetsUrl(url: string): string {
-  const mirrored = mirrorProtomapsBasemapAssetsUrl(url);
-  if (!import.meta.env.DEV || typeof window === "undefined") {
-    return mirrored;
+  return url.trim();
+}
+
+export function colocatedSpriteBase(pmtilesUrl: string | undefined, fallbackSprite?: string): string {
+  if (fallbackSprite?.trim()) {
+    const trimmed = fallbackSprite.trim();
+    const flavorMatch = trimmed.match(/\/sprites\/v4\/(light|dark|grayscale|white|black)$/);
+    if (flavorMatch) {
+      return trimmed.replace(/\/(light|dark|grayscale|white|black)$/, "");
+    }
   }
-  try {
-    const parsed = new URL(mirrored);
-    if (parsed.pathname.startsWith("/dev-basemaps-assets/")) {
-      return mirrored;
-    }
-    if (
-      parsed.hostname === "fastly.jsdelivr.net" &&
-      parsed.pathname.includes("/protomaps/basemaps-assets@")
-    ) {
-      const assetPath = parsed.pathname.replace(/^\/gh\/protomaps\/basemaps-assets@[^/]+/, "");
-      return `${window.location.origin}/dev-basemaps-assets${assetPath}`;
-    }
-    if (mirrored.includes("protomaps.github.io/basemaps-assets")) {
-      const assetPath = parsed.pathname.replace(/^\/basemaps-assets/, "");
-      return `${window.location.origin}/dev-basemaps-assets${assetPath}`;
-    }
-  } catch {
-    return mirrored;
-  }
-  return mirrored;
+  return pmtilesUrl ? colocatedSpriteBaseFromPmtilesUrl(pmtilesUrl) : DEFAULT_PROTOMAPS_SPRITE_BASE;
 }

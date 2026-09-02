@@ -15,8 +15,25 @@ from app.viz.tile_services.schemas import (
     TileServiceResolveOut,
 )
 
-DEFAULT_GLYPHS = "https://fastly.jsdelivr.net/gh/protomaps/basemaps-assets@main/fonts/{fontstack}/{range}.pbf"
-DEFAULT_SPRITE = "https://fastly.jsdelivr.net/gh/protomaps/basemaps-assets@main/sprites/v4/light"
+TILE_SERVICE_ASSETS_PREFIX = "basemaps-assets"
+
+
+def _offline_or_colocated(stored: str | None, colocated: str) -> str:
+    value = (stored or "").strip()
+    if not value:
+        return colocated
+    lowered = value.lower()
+    if "jsdelivr.net" in lowered or "protomaps.github.io" in lowered:
+        return colocated
+    return value
+
+
+def colocated_glyphs_url(base_url: str) -> str:
+    return _join_url(base_url, f"{TILE_SERVICE_ASSETS_PREFIX}/fonts/{{fontstack}}/{{range}}.pbf")
+
+
+def colocated_sprite_url(base_url: str) -> str:
+    return _join_url(base_url, f"{TILE_SERVICE_ASSETS_PREFIX}/sprites/v4/light")
 
 
 class TileServiceError(Exception):
@@ -68,8 +85,8 @@ def resolve_tile_service(db: Session, service_id: str) -> TileServiceResolveOut:
     if row is None or not row.enabled:
         raise TileServiceError("TILE_SERVICE_NOT_FOUND", "瓦片服务不存在或未启用", 404)
     pmtiles_url = _join_url(row.base_url, row.pmtiles_path)
-    glyphs_url = row.glyphs_url_template or DEFAULT_GLYPHS
-    sprite_url = row.sprite_url or DEFAULT_SPRITE
+    glyphs_url = _offline_or_colocated(row.glyphs_url_template, colocated_glyphs_url(row.base_url))
+    sprite_url = _offline_or_colocated(row.sprite_url, colocated_sprite_url(row.base_url))
     return TileServiceResolveOut(
         id=row.id,
         name=row.name,

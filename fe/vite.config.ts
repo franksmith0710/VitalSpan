@@ -22,9 +22,9 @@ export default defineConfig(({ mode }) => {
       rewrite: (path) => path.replace(/^\/dev-pmtiles/, ""),
     },
     "/dev-basemaps-assets": {
-      target: "https://fastly.jsdelivr.net/gh/protomaps/basemaps-assets@main",
+      target: env.VITE_DEV_PMTILES_PROXY || "http://127.0.0.1:8080",
       changeOrigin: true,
-      rewrite: (path) => path.replace(/^\/dev-basemaps-assets/, ""),
+      rewrite: (path) => path.replace(/^\/dev-basemaps-assets/, "/basemaps-assets"),
     },
   };
   for (const segment of proxyBaseSegments) {

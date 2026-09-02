@@ -19,8 +19,8 @@ const RESOLVED = {
   id: "planet-z15",
   name: "Planet Z15 Global",
   pmtilesUrl: "http://localhost:8080/planet-z15-20260817.pmtiles",
-  glyphsUrl: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
-  spriteUrl: "https://protomaps.github.io/basemaps-assets/sprites/v4/light",
+  glyphsUrl: "http://localhost:8080/basemaps-assets/fonts/{fontstack}/{range}.pbf",
+  spriteUrl: "http://localhost:8080/basemaps-assets/sprites/v4/light",
 };
 
 describe("gisProject", () => {
@@ -89,7 +89,8 @@ describe("gisMapStyle", () => {
     expect(style.sources?.[PMTILES_SOURCE_ID]).toBeDefined();
     expect(style.layers?.length).toBeGreaterThan(0);
     expect(style.layers?.some((layer) => layer.id === GIS_BUILDINGS_3D_LAYER_ID)).toBe(true);
-    expect(style.glyphs).toContain("dev-basemaps-assets");
+    expect(style.glyphs).toContain("/basemaps-assets/fonts/");
+    expect(style.glyphs).not.toContain("jsdelivr");
     expect(style.sprite).toContain("/sprites/v4/light");
   });
 
@@ -111,8 +112,11 @@ describe("gisMapStyle", () => {
 
   it("normalizes legacy protomaps sprite urls", () => {
     expect(
-      normalizeProtomapsSpriteUrl("https://protomaps.github.io/basemaps-assets/v4/light-sprite"),
-    ).toContain("/light");
+      normalizeProtomapsSpriteUrl(
+        "https://protomaps.github.io/basemaps-assets/v4/light-sprite",
+        RESOLVED.pmtilesUrl,
+      ),
+    ).toBe("http://localhost:8080/basemaps-assets/sprites/v4/light");
   });
 
   it("applies custom land and water colors", () => {
@@ -146,11 +150,8 @@ describe("gisMapStyle", () => {
 
   it("resolveProtomapsSpriteUrl swaps flavor suffix", () => {
     expect(
-      resolveProtomapsSpriteUrl(
-        "dark",
-        "https://protomaps.github.io/basemaps-assets/sprites/v4/light",
-      ),
-    ).toBe("https://fastly.jsdelivr.net/gh/protomaps/basemaps-assets@main/sprites/v4/dark");
+      resolveProtomapsSpriteUrl("dark", RESOLVED.spriteUrl, RESOLVED.pmtilesUrl),
+    ).toBe("http://localhost:8080/basemaps-assets/sprites/v4/dark");
   });
 });
 

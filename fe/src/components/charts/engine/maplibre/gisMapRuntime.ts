@@ -317,7 +317,7 @@ export function classifyGisMapErrorHint(message: string): string | null {
     return null;
   }
   if (/glyph|fonts\/|Unable to load glyph/i.test(text)) {
-    return "地图标注字体暂不可用，请检查网络或配置内网 glyphs 镜像";
+    return "地图标注字体不可用。请把 basemaps-assets 放到与 PMTiles 同一瓦片服务目录，未接全球底图时不会请求该服务";
   }
   if (/failed to fetch|cors|networkerror|access-control/i.test(text)) {
     if (/pmtiles|\.pmtiles|\/dev-pmtiles\//i.test(text)) {

@@ -10,13 +10,13 @@
 ## 职责
 
 - 对外提供 `.pmtiles` 文件的 **HTTP Range** 访问（含 CORS）
-- 可选：内网镜像 Protomaps **glyphs/sprite** 字体与图标
+- 同机提供 Protomaps **glyphs/sprite**（`/basemaps-assets/`），与瓦片同一进程；**禁止**默认公网 CDN
 
 ## 边界
 
 | In | Out |
 |----|-----|
-| 托管 planet-z15 等 PMTiles 归档 | VitalSpan 图表渲染、查询、鉴权 |
+| 托管 planet-z15 等 PMTiles 归档 + `basemaps-assets/` | VitalSpan 图表渲染、查询、鉴权 |
 | Range + CORS 配置 | 128GB 打进 VitalSpan release 包 |
 | 内网 URL（如 `http://tiles.internal:8080/...`） | 高德/天地图/Mapbox 等在线底图 Key |
 
@@ -47,7 +47,7 @@
 
 | 变量 | 默认 | 说明 |
 |------|------|------|
-| `PMTILES_DATA_DIR` | （必填） | 宿主机含 `.pmtiles` 的目录 |
+| `PMTILES_DATA_DIR` | （必填） | 宿主机含 `.pmtiles` **以及** `basemaps-assets/`（fonts、sprites）的目录 |
 | `PMTILES_TILE_PORT` | `8080` | 对外端口 |
 | `PMTILES_CORS_ORIGIN` | `http://localhost:5173` | VitalSpan FE origin |
 

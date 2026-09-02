@@ -19,6 +19,13 @@ if (-not (Test-Path -LiteralPath $pmtilesPath)) {
   throw "PMTiles file not found: $pmtilesPath"
 }
 
+$assetsFonts = Join-Path $dataPath (Join-Path "basemaps-assets" "fonts")
+if (-not (Test-Path -LiteralPath $assetsFonts)) {
+  $syncScript = Join-Path $repoRoot (Join-Path "scripts" "sync-pmtiles-basemaps-assets.ps1")
+  Write-Host "basemaps-assets/fonts missing; syncing next to PMTiles (no public CDN)..."
+  & $syncScript -DataDir $dataPath
+}
+
 $listeners = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
 foreach ($conn in $listeners) {
   $proc = Get-Process -Id $conn.OwningProcess -ErrorAction SilentlyContinue
@@ -81,4 +88,5 @@ if (-not $SkipRegister) {
 Write-Host ""
 Write-Host "External tile server ready."
 Write-Host ("  tile URL : http://127.0.0.1:{0}/{1}" -f $Port, $PmtilesFile)
+Write-Host ("  assets   : http://127.0.0.1:{0}/basemaps-assets/ (glyphs + sprites)" -f $Port)
 Write-Host ("  VitalSpan: gis-map -> optional PMTiles -> {0}" -f $ServiceId)
