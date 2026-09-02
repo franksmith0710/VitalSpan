@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from app.dashboard.templates.demo_datasource import (
     DEMO_DATASOURCE_NAME,
+    DEMO_DATASOURCE_POOL_SIZE,
     LEGACY_DEMO_DATASOURCE_CODES,
     OFFICIAL_DEMO_DATASOURCE_CODE,
     is_demo_package_datasource_code,
@@ -13,6 +14,7 @@ from app.dashboard.templates.demo_datasource import (
 def test_official_demo_code_is_demo() -> None:
     assert OFFICIAL_DEMO_DATASOURCE_CODE == "demo"
     assert DEMO_DATASOURCE_NAME == "示例数据"
+    assert DEMO_DATASOURCE_POOL_SIZE == 6
 
 
 def test_is_demo_package_datasource_code() -> None:

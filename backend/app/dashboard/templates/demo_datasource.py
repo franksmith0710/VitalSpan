@@ -16,7 +16,7 @@ from app.core.config import get_settings
 from app.datasources.credentials import encrypt_credential
 from app.datasources.dialects.mysql import MysqlConnector
 from app.datasources.models import DataSource
-from app.datasources.schemas import DataSourceCreate
+from app.datasources.schemas import ConnectionOptions, DataSourceCreate
 from app.datasources.service import create_data_source
 from app.viz.migrate_chart_types import migrate_layout_chart_configs
 
@@ -26,6 +26,7 @@ TEMPLATE_DEMO_DATASOURCE_REF = "__demo:sample_db__"
 OFFICIAL_DEMO_DATASOURCE_CODE = "demo"
 LEGACY_DEMO_DATASOURCE_CODES = frozenset({"official-demo-mysql", "sample-mysql-dev"})
 DEMO_DATASOURCE_NAME = "示例数据"
+DEMO_DATASOURCE_POOL_SIZE = 6
 
 _DEFAULT_HOST = "127.0.0.1"
 _DEFAULT_PORT = 3307
@@ -91,6 +92,13 @@ def can_connect_sample_mysql(conn: SampleMysqlConnection | None = None) -> bool:
         return False
 
 
+def _demo_connection_options() -> dict:
+    return ConnectionOptions(pool_size=DEMO_DATASOURCE_POOL_SIZE).model_dump(
+        by_alias=False,
+        exclude_none=True,
+    )
+
+
 def _sync_demo_row(row: DataSource, conn: SampleMysqlConnection) -> None:
     row.name = DEMO_DATASOURCE_NAME
     row.code = OFFICIAL_DEMO_DATASOURCE_CODE
@@ -100,6 +108,7 @@ def _sync_demo_row(row: DataSource, conn: SampleMysqlConnection) -> None:
     row.username = conn.username
     row.password_encrypted = encrypt_credential(conn.password)
     row.description = "官方内置示例库（sample_db），供模板预览与官方示例看板使用。"
+    row.connection_options = _demo_connection_options()
 
 
 def _migrate_legacy_demo_code(db: Session) -> DataSource | None:
@@ -199,6 +208,7 @@ def ensure_official_demo_datasource(db: Session) -> uuid.UUID | None:
                 username=conn.username,
                 password=conn.password,
                 description="官方内置示例库（sample_db），供模板预览与官方示例看板使用。",
+                connection_options=ConnectionOptions(pool_size=DEMO_DATASOURCE_POOL_SIZE),
             ),
         )
         logger.info("official_demo_datasource_created id=%s", out.id)
