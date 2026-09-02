@@ -25,7 +25,10 @@ import {
 } from "@/components/charts/engine/maplibre/gisMapLayerStyle";
 import { buildGeoJsonBoundsKey, fitGisOverlayBounds } from "@/components/charts/engine/maplibre/gisMapOverlayFit";
 import { mountGisOverlayInteraction } from "@/components/charts/engine/maplibre/gisMapOverlayInteraction";
-import { applyGisGlobeToStyle } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
+import {
+  applyGisGlobeToStyle,
+  spaceBackdropForPreset,
+} from "@/components/charts/engine/maplibre/gisAtmosphereSky";
 import { resolveGisEffectsSettings } from "@/components/charts/engine/maplibre/gisProjectEffects";
 import {
   applyGisGeolibreEffectsSettings,
@@ -144,11 +147,14 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     };
     whenGisMapStyleReady(map, mountSun);
   }, []);
+
   const [pmtilesStyle, setPmtilesStyle] = useState<StyleSpecification | null>(null);
   const [pmtilesLoading, setPmtilesLoading] = useState(false);
   const [pmtilesErrorHint, setPmtilesErrorHint] = useState<string | null>(null);
   const [mapErrorHint, setMapErrorHint] = useState<string | null>(null);
   const [gisPaintState, setGisPaintState] = useState<GisPaintState>("pending");
+  const gisPaintStateRef = useRef<GisPaintState>(gisPaintState);
+  gisPaintStateRef.current = gisPaintState;
   const [mapRuntimeEpoch, setMapRuntimeEpoch] = useState(0);
 
   const tileServiceId = project.tileServiceId;
@@ -249,6 +255,34 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const renderBasemap = useMemo(
     () => resolveGisRenderableBasemap(project, Boolean(pmtilesStyle)),
     [pmtilesStyle, project],
+  );
+
+  const ensureGisEffectsEngine = useCallback(
+    (map: MapLibreMap | null = mapRef.current) => {
+      if (!map) return;
+      const current = projectRef.current;
+      const settings = resolveGisEffectsSettings(current);
+      if (
+        renderBasemap !== "pmtiles" ||
+        current.projection !== "globe" ||
+        gisPaintStateRef.current !== "ready" ||
+        !settings.enabled
+      ) {
+        effectsEngineRef.current?.destroy();
+        effectsEngineRef.current = null;
+        return;
+      }
+      const mount = () => {
+        effectsEngineRef.current?.destroy();
+        effectsEngineRef.current = createGisGeolibreEffectsEngine(
+          map,
+          resolveGisEffectsSettings(projectRef.current),
+        );
+        ensureSunEngine(map);
+      };
+      whenGisMapStyleReady(map, mount);
+    },
+    [ensureSunEngine, renderBasemap],
   );
 
   const gisLayers = useMemo(() => listGisProjectLayers(project), [project]);
@@ -358,7 +392,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     if (!pmtilesStyle) return null;
     const withLayers = appendGisProjectLayersToStyle(pmtilesStyle, layerEntries);
     return applyGisGlobeToStyle(withLayers, project.projection, project.atmospherePreset);
-  }, [layerEntries, pmtilesStyle, project.projection]);
+  }, [layerEntries, pmtilesStyle, project.atmospherePreset, project.projection]);
 
   const styleKey = mapStyleKey;
   const atmosphereKey = useMemo(
@@ -381,6 +415,13 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const effectsSettings = useMemo(
     () => resolveGisEffectsSettings(project),
     [project.effects, project.fog, project.halo],
+  );
+  const globeSpaceBackdrop = useMemo(
+    () =>
+      projection === "globe"
+        ? spaceBackdropForPreset(project.atmospherePreset ?? "night")
+        : undefined,
+    [projection, project.atmospherePreset],
   );
 
   const applyConfiguredView = useCallback((map: MapLibreMap) => {
@@ -411,6 +452,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     let map: MapLibreMap | null = null;
     let resyncDataLayers: (() => void) | undefined;
     let resyncSun: (() => void) | undefined;
+    let resyncEffects: (() => void) | undefined;
     let disposeLiveCamera: (() => void) | undefined;
     setGisPaintState("loading");
 
@@ -449,8 +491,13 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         if (cancelled || !map) return;
         ensureSunEngine(map);
       };
+      resyncEffects = () => {
+        if (cancelled || !map) return;
+        ensureGisEffectsEngine(map);
+      };
       map.on("style.load", resyncDataLayers);
       map.on("style.load", resyncSun);
+      map.on("style.load", resyncEffects);
 
       map.on("error", (event) => {
         if (cancelled) return;
@@ -497,7 +544,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         });
         setMapRuntimeEpoch((epoch) => epoch + 1);
         map.resize();
+        gisPaintStateRef.current = "ready";
         setGisPaintState("ready");
+        ensureGisEffectsEngine(map);
         onPaintReadyRef.current?.();
       };
 
@@ -522,6 +571,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       if (map && resyncSun) {
         map.off("style.load", resyncSun);
       }
+      if (map && resyncEffects) {
+        map.off("style.load", resyncEffects);
+      }
+      effectsEngineRef.current?.destroy();
+      effectsEngineRef.current = null;
       sunEngineRef.current?.destroy();
       sunEngineRef.current = null;
       mapRef.current?.remove();
@@ -529,7 +583,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       appliedStyleKeyRef.current = null;
       syncedViewKeyRef.current = null;
     };
-  }, [applyConfiguredView, ensureSunEngine, mapBootstrapKey, renderBasemap, resolveInitialView]);
+  }, [applyConfiguredView, ensureGisEffectsEngine, ensureSunEngine, mapBootstrapKey, renderBasemap, resolveInitialView]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -588,7 +642,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         map.once("idle", () => syncLayersRuntime(map));
         setMapRuntimeEpoch((epoch) => epoch + 1);
         map.resize();
+        gisPaintStateRef.current = "ready";
         setGisPaintState("ready");
+        ensureGisEffectsEngine(map);
         onPaintReadyRef.current?.();
       },
       liveCameraRef.current,
@@ -604,6 +660,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     style,
     styleKey,
     syncLayersRuntime,
+    ensureGisEffectsEngine,
   ]);
 
   useEffect(() => {
@@ -655,32 +712,24 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
   useEffect(() => {
     const map = mapRef.current;
-    if (
-      !map ||
-      renderBasemap !== "pmtiles" ||
-      project.projection !== "globe" ||
-      gisPaintState !== "ready" ||
-      !effectsSettings.enabled
-    ) {
-      effectsEngineRef.current?.destroy();
-      effectsEngineRef.current = null;
-      return;
-    }
-    const mount = () => {
-      effectsEngineRef.current?.destroy();
-      effectsEngineRef.current = createGisGeolibreEffectsEngine(
-        map,
-        resolveGisEffectsSettings(projectRef.current),
-      );
-      ensureSunEngine(map);
-    };
-    if (map.isStyleLoaded()) mount();
-    else map.once("load", mount);
+    if (!map) return;
+    ensureGisEffectsEngine(map);
+    const onStyleLoad = () => ensureGisEffectsEngine(map);
+    map.on("style.load", onStyleLoad);
     return () => {
+      map.off("style.load", onStyleLoad);
       effectsEngineRef.current?.destroy();
       effectsEngineRef.current = null;
     };
-  }, [atmosphereKey, effectsSettings.enabled, ensureSunEngine, gisPaintState, mapRuntimeEpoch, project.projection, renderBasemap]);
+  }, [
+    atmosphereKey,
+    effectsSettings.enabled,
+    ensureGisEffectsEngine,
+    gisPaintState,
+    mapRuntimeEpoch,
+    project.projection,
+    renderBasemap,
+  ]);
 
   useEffect(() => {
     applyGisGeolibreEffectsSettings(effectsEngineRef.current, effectsSettings);
@@ -886,6 +935,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       <div
         ref={shellRef}
         className="relative h-full w-full"
+        style={globeSpaceBackdrop ? { background: globeSpaceBackdrop } : undefined}
         {...(fill ? { [VIZ_WHEEL_ZOOM_SURFACE_ATTR]: "true" } : {})}
       >
         <div

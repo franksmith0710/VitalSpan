@@ -21,9 +21,9 @@ describe("GisMapView overlay style regression", () => {
       "utf8",
     );
 
-    expect(source).toMatch(/createGisGeolibreEffectsEngine[\s\S]*atmosphereKey/);
+    expect(source).toMatch(/createGisGeolibreEffectsEngine[\s\S]*atmosphereKey|ensureGisEffectsEngine[\s\S]*atmosphereKey/);
     expect(source).not.toMatch(
-      /createGisGeolibreEffectsEngine[\s\S]*\], \[effectsSettings\.enabled[\s\S]*styleKey\]/,
+      /ensureGisEffectsEngine[\s\S]*\], \[effectsSettings\.enabled[\s\S]*styleKey\]/,
     );
   });
 });
