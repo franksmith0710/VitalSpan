@@ -16,6 +16,7 @@ import {
   drawGeolibreStarfieldParallax,
 } from "@/components/charts/engine/maplibre/gisGeolibreEffectsStarfield";
 import {
+  resolveGlobeLimbBoundsFromMap,
   resolveGlobeLimbBoundsFromProject,
   resolveGlobeScreenBounds,
   shouldRenderGisGlobeFarEffects,
@@ -287,8 +288,12 @@ export class GisGeolibreEffectsEngine {
   }
 
   private drawHaloLayer(): void {
-    if (this.width <= 0 || this.height <= 0) return;
-    const limb = resolveGlobeLimbBoundsFromProject(this.map);
+    if (this.width <= 0 || this.height <= 0 || !this.settings.enabled) return;
+    const screen = resolveGlobeScreenBounds(this.map);
+    const limb =
+      resolveGlobeLimbBoundsFromMap(this.map) ??
+      resolveGlobeLimbBoundsFromProject(this.map) ??
+      (screen ? { x: screen.x, y: screen.y, radius: screen.radius } : null);
     if (!limb) {
       this.haloCtx.clearRect(0, 0, this.width, this.height);
       return;
@@ -320,6 +325,9 @@ export class GisGeolibreEffectsEngine {
     }
 
     this.drawSpaceBackground();
+    // 光晕跟球缘走，任意 zoom 都应绘制；星场/流星才在远视图隐藏。
+    this.drawHaloLayer();
+
     if (!this.isFarGlobeView()) {
       this.starsCtx.clearRect(0, 0, this.width, this.height);
       this.comets = [];
@@ -337,7 +345,6 @@ export class GisGeolibreEffectsEngine {
       this.comets,
       elapsed / (1000 / 60),
     );
-    this.drawHaloLayer();
     this.start();
   }
 }

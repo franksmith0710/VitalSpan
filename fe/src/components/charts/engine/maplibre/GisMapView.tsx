@@ -865,6 +865,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           effectsEngineRef.current,
           resolveGisEffectsSettings(projectRef.current),
         );
+        ensureGisEffectsEngine(map);
         applyGlobeAtmosphere(
           map,
           {
@@ -915,7 +916,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       },
       getSunSettings: () => sunEngineRef.current?.getSettings() ?? null,
     });
-  }, [applyOverlayPatch, ensureSunEngine, instanceKey, remountMapControls, syncLayersRuntime]);
+  }, [applyOverlayPatch, ensureGisEffectsEngine, ensureSunEngine, instanceKey, remountMapControls, syncLayersRuntime]);
 
   const statusHint = pmtilesErrorHint ?? mapErrorHint;
   const dataHint = useMemo(

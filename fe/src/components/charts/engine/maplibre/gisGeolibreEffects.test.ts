@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { drawGeolibreComets } from "@/components/charts/engine/maplibre/gisGeolibreEffectsComets";
 import { resolveGeolibreStarfieldParallaxOffset } from "@/components/charts/engine/maplibre/gisGeolibreEffectsStarfield";
@@ -32,5 +34,20 @@ describe("gisGeolibreEffects", () => {
     ];
     const survivors = drawGeolibreComets(null as unknown as CanvasRenderingContext2D, 200, 200, seed, 2);
     expect(survivors).toHaveLength(0);
+  });
+
+  it("draws atmosphere halo outside far-view gate", () => {
+    const source = readFileSync(
+      resolve(process.cwd(), "src/components/charts/engine/maplibre/gisGeolibreEffectsEngine.ts"),
+      "utf8",
+    );
+    const tickBody = source.slice(source.indexOf("private tick("));
+    expect(tickBody).toContain("this.drawHaloLayer()");
+    expect(tickBody.indexOf("this.drawHaloLayer()")).toBeLessThan(
+      tickBody.indexOf("if (!this.isFarGlobeView())"),
+    );
+    expect(tickBody).not.toMatch(
+      /if \(!this\.isFarGlobeView\(\)\)[\s\S]*this\.drawHaloLayer\(\)/,
+    );
   });
 });

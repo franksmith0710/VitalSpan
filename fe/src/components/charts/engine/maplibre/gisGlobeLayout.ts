@@ -83,10 +83,10 @@ export function isInsideGlobeDisc(
   return dx * dx + dy * dy < r * r;
 }
 
-/** zoom 超过此值视为区域视图，隐藏星场/光晕/流星（避免球缘伪影）。 */
+/** zoom 超过此值视为区域视图，隐藏星场/流星（光晕仍跟随球缘绘制）。 */
 export const GIS_GLOBE_FAR_EFFECTS_MAX_ZOOM = 4.5;
 
-/** 全球远视图才显示星场/光晕/流星；区域放大后隐藏，避免球缘 overlay 伪影。 */
+/** 全球远视图才显示星场/流星；区域放大后隐藏，避免球缘 overlay 伪影。光晕不在此门控内。 */
 export function shouldRenderGisGlobeFarEffects(
   map: MapLibreMap | null,
   globe: GlobeScreenBounds | null,
