@@ -9,10 +9,11 @@ import {
 } from "react";
 import { ChartMountScheduler } from "@/lib/chartMountScheduler";
 import { registerActiveChartMountScheduler } from "@/lib/chartMountDrain";
+import { CHART_LOAD_MAX_CONCURRENCY } from "@/lib/chartLoadConcurrency";
 
 const ChartMountContext = createContext<ChartMountScheduler | null>(null);
 
-export const CHART_MOUNT_MAX_EDIT = 6;
+export const CHART_MOUNT_MAX_EDIT = CHART_LOAD_MAX_CONCURRENCY;
 export const CHART_MOUNT_MAX_VIEW = 3;
 export const CHART_MOUNT_MAX_LIST = 1;
 

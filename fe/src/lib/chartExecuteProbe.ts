@@ -12,6 +12,7 @@ import { migrateChartConfigToDeAxes, resolveChartEncoding, deAxisRenderReady } f
 import { groupDatasetFields } from "@/components/dashboard/datasetFieldClassification";
 import { nativeBodyHasLegacySqlBinding } from "@/lib/chartNativeBodyUi";
 import { isDemoPackageDataset } from "@/lib/demoPackage";
+import { CHART_EXECUTE_RESULT_CACHE_MAX, CHART_LOAD_MAX_CONCURRENCY } from "@/lib/chartLoadConcurrency";
 
 function activeFieldRefs(refs: ChartFieldRef[] | undefined): ChartFieldRef[] {
   return (refs ?? []).filter((r) => Boolean(r.field?.trim()));
@@ -81,6 +82,7 @@ export type ChartExecuteResult = {
 };
 
 export const CHART_EXECUTE_LIMIT = 50;
+export const CHART_EXECUTE_MAX_CONCURRENCY = CHART_LOAD_MAX_CONCURRENCY;
 
 export type ChartExecuteProbeOptions = {
   filterParameters?: Record<string, string>;
@@ -145,8 +147,6 @@ export function buildTimeRangeParameters(tr?: ChartTimeRangeRef): Record<string,
   }
   return { time_start: formatUtcDate(start), time_end: formatUtcDate(end) };
 }
-
-export const CHART_EXECUTE_MAX_CONCURRENCY = 3;
 
 export type ChartExecuteMode = "dataset";
 
@@ -217,6 +217,15 @@ export function chartExecuteRequestKey(
 const inflightExecute = new Map<string, Promise<ChartExecuteResult>>();
 const executeResultCache = new Map<string, ChartExecuteResult>();
 const executeConcurrencyLimiter = createConcurrencyLimiter(CHART_EXECUTE_MAX_CONCURRENCY);
+
+function rememberExecuteResult(cacheKey: string, data: ChartExecuteResult): void {
+  executeResultCache.set(cacheKey, data);
+  while (executeResultCache.size > CHART_EXECUTE_RESULT_CACHE_MAX) {
+    const oldest = executeResultCache.keys().next().value;
+    if (oldest === undefined) break;
+    executeResultCache.delete(oldest);
+  }
+}
 
 let cachedDemoDatasourceId: string | null | undefined;
 
@@ -324,7 +333,7 @@ export async function fetchChartExecuteResultShared(
         options.filterParameters,
         limit,
       );
-      executeResultCache.set(cacheKey, data);
+      rememberExecuteResult(cacheKey, data);
       return data;
     })
     .finally(() => {

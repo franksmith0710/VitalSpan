@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -21,7 +20,6 @@ import {
 } from "@/components/dashboard/inspectorCompact";
 import {
   DEFAULT_GIS_GLOBE_VIEW,
-  DEFAULT_PMTILES_TILE_SERVICE_ID,
   finalizeGisViewDraftField,
   formatGisViewDraftFromView,
   GIS_VIEW_BOUNDS,
@@ -43,7 +41,6 @@ import {
   buildGisConfiguredViewKey,
   GLOBE_IDLE_ROTATION_DEG_PER_SEC,
 } from "@/components/charts/engine/maplibre/gisMapRuntime";
-import { listTileServices } from "@/lib/tileServices";
 
 const GIS_VIEW_STEP = 10 ** -GIS_VIEW_DECIMALS;
 
@@ -59,7 +56,7 @@ const FLAVOR_LABELS: Record<GisBasemapFlavor, string> = {
 };
 
 const GIS_SECTION_HINT =
-  "全球矢量 PMTiles 底图（如 Planet Z15），由运维独立部署并登记；未登记时无法出图。";
+  "底图风格、投影与视角；全球 PMTiles 服务请在数据 Tab 连接。";
 
 export function ChartGisMapProjectPanel() {
   const { cfg, widget, mutateChartConfig } = useChartInspector();
@@ -69,17 +66,6 @@ export function ChartGisMapProjectPanel() {
     () => defaultBasemapPaletteForFlavor(project.basemapFlavor ?? "light"),
     [project.basemapFlavor],
   );
-  const {
-    data: tileServices = [],
-    isError: tileServicesError,
-    isLoading: tileServicesLoading,
-  } = useQuery({
-    queryKey: ["tile-services"],
-    queryFn: listTileServices,
-    retry: false,
-  });
-
-  const enabledTileServices = tileServices.filter((service) => service.enabled);
 
   const patchProject = useCallback(
     (patch: Parameters<typeof writeGisProject>[1]) => {
@@ -165,18 +151,6 @@ export function ChartGisMapProjectPanel() {
     viewDraftRef.current = draft;
   }, [committedViewKey]);
 
-  useEffect(() => {
-    if (tileServicesLoading || enabledTileServices.length === 0) return;
-    const currentId = project.tileServiceId;
-    if (currentId && enabledTileServices.some((service) => service.id === currentId)) return;
-    const preferred =
-      enabledTileServices.find((service) => service.id === DEFAULT_PMTILES_TILE_SERVICE_ID) ??
-      enabledTileServices[0];
-    if (preferred && preferred.id !== currentId) {
-      mutateChartConfig((current) => writeGisProject(current, { tileServiceId: preferred.id }));
-    }
-  }, [cfg, enabledTileServices, mutateChartConfig, project.tileServiceId, tileServicesLoading]);
-
   const commitCenterLng = () => blurViewField("centerLng", setCenterLng);
   const commitCenterLat = () => blurViewField("centerLat", setCenterLat);
   const commitZoom = () => blurViewField("zoom", setZoom);
@@ -254,36 +228,6 @@ export function ChartGisMapProjectPanel() {
     >
       <div className={INSPECTOR_SECTION_GAP}>
         <div className="grid gap-1.5">
-          <InspectorFieldLabel label="全球 PMTiles 服务" />
-          <Select
-            value={project.tileServiceId ?? ""}
-            onValueChange={(tileServiceId) => patchProject({ tileServiceId })}
-          >
-            <SelectTrigger className={INSPECTOR_CTRL} aria-label="全球 PMTiles 服务">
-              <SelectValue placeholder="选择已登记的全球底图服务" />
-            </SelectTrigger>
-            <SelectContent>
-              {enabledTileServices.map((service) => (
-                <SelectItem key={service.id} value={service.id}>
-                  {service.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {tileServicesLoading ? (
-            <p className="text-[10px] text-gray-400">正在加载…</p>
-          ) : tileServicesError ? (
-            <p className="text-[10px] text-amber-600 dark:text-amber-400">
-              无法加载服务列表，请确认已登录且后端可用。
-            </p>
-          ) : enabledTileServices.length === 0 ? (
-            <p className="text-[10px] text-amber-600 dark:text-amber-400">
-              尚未登记 PMTiles 服务，请联系管理员。
-            </p>
-          ) : !project.tileServiceId ? (
-            <p className="text-[10px] text-amber-600 dark:text-amber-400">请选择已登记服务。</p>
-          ) : null}
-
           <div className="grid gap-1.5">
             <InspectorFieldLabel
               label="底图风格"

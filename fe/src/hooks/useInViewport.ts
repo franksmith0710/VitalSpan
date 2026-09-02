@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { resolveViewportObserverRoot } from "@/hooks/resolveViewportObserverRoot";
 
 type UseInViewportOptions = {
   rootSelector?: string;
@@ -17,7 +18,7 @@ export function useInViewport<T extends Element>(
 ): UseInViewportResult<T> {
   const { rootSelector, rootMargin = "200px", enabled = true } = options;
   const [node, setNode] = useState<T | null>(null);
-  const [inView, setInView] = useState(() => !enabled);
+  const [inView, setInView] = useState(true);
   const ref = useCallback((next: T | null) => setNode(next), []);
 
   useEffect(() => {
@@ -31,7 +32,7 @@ export function useInViewport<T extends Element>(
       return undefined;
     }
 
-    const root = rootSelector ? document.querySelector(rootSelector) : null;
+    const root = resolveViewportObserverRoot(node, rootSelector);
     const observer = new IntersectionObserver(
       ([entry]) => setInView(entry.isIntersecting),
       { root, rootMargin, threshold: 0 },

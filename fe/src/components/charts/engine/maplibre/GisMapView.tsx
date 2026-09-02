@@ -182,6 +182,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   }, [gisPaintState]);
 
   useEffect(() => {
+    if (gisPaintState !== "error") return;
+    onPaintReadyRef.current?.();
+  }, [gisPaintState]);
+
+  useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
     const onPrep = () => {

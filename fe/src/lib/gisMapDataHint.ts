@@ -40,12 +40,26 @@ function hasGeoNameColumns(columns: string[]): boolean {
   return columns.some((c) => looksLikeGeoName(c));
 }
 
-/** GIS 地图数据绑定向导：底图可空载；可选经纬度散点 */
+/** GIS 地图数据绑定向导：须先连接底图服务；散点数据可选 */
 export function resolveGisMapDataHint(
   config: ChartViewConfig,
   columns: string[],
 ): GisMapDataHint {
   const cfg = config;
+  const gisProject = cfg.nativeBody?.gisProject;
+  const tileServiceId =
+    gisProject && typeof gisProject === "object" && "tileServiceId" in gisProject
+      ? String((gisProject as { tileServiceId?: unknown }).tileServiceId ?? "").trim()
+      : "";
+  if (!tileServiceId) {
+    return {
+      tone: "warn",
+      message:
+        "请先在上方连接全球 PMTiles 底图服务，地图才能出图。散点叠加为可选项，需同时绑定数值型经度、纬度。",
+      overlayMessage: "尚未连接全球底图服务",
+    };
+  }
+
   const dims = activeFieldRefs(cfg.dimensions);
   const metrics = activeFieldRefs(cfg.metrics);
   const lngField = dims[0]?.field?.trim();
@@ -66,7 +80,7 @@ export function resolveGisMapDataHint(
     return {
       tone: "info",
       message:
-        "底图无需数据集即可显示。可选叠加散点：同时绑定数值型经度、纬度；数值控制圆点大小，标签可选。可一键接入官方 de_map_heat 示例。",
+        "底图已连接。可选叠加散点：同时绑定数值型经度、纬度；数值控制圆点大小，标签可选。可一键接入官方 de_map_heat 示例。",
       sampleSql: GIS_MAP_SCATTER_SAMPLE_SQL,
     };
   }
@@ -137,7 +151,7 @@ export function resolveGisMapDataHint(
   return {
     tone: "info",
     message:
-      "底图无需数据集即可显示。可选叠加散点：同时绑定数值型经度、纬度；按省/市着色请改用「区域地图」。",
+      "底图已连接。可选叠加散点：同时绑定数值型经度、纬度；按省/市着色请改用「区域地图」。",
   };
 }
 

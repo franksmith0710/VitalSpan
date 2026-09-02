@@ -82,13 +82,13 @@ describe("gisProject", () => {
     ).toBe("pmtiles");
   });
 
-  it("defaults missing tileServiceId to planet-z15", () => {
+  it("leaves tileServiceId unset when missing", () => {
     const config: ChartViewConfig = {
       chartType: "gis-map",
       nativeBody: { gisProject: { basemap: "pmtiles" } },
     };
     expect(readGisProject(config).basemap).toBe("pmtiles");
-    expect(readGisProject(config).tileServiceId).toBe(DEFAULT_PMTILES_TILE_SERVICE_ID);
+    expect(readGisProject(config).tileServiceId).toBeUndefined();
     expect(readGisProject(config).basemapFlavor).toBe("light");
   });
 

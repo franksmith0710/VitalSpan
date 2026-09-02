@@ -8,12 +8,6 @@ import { ChartInspectorProvider } from "../ChartInspectorProvider";
 import { ChartGisMapProjectPanel } from "./ChartGisMapProjectPanel";
 import { applyGisMapControls, registerGisMapViewLiveControl } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 
-vi.mock("@/lib/tileServices", () => ({
-  listTileServices: vi.fn(async () => [
-    { id: "planet-z15", name: "Planet Z15", enabled: true },
-  ]),
-}));
-
 vi.mock("@/components/charts/engine/maplibre/gisMapViewBridge", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@/components/charts/engine/maplibre/gisMapViewBridge")>();
   return {
@@ -71,6 +65,7 @@ describe("ChartGisMapProjectPanel atmosphere wiring", () => {
       expect(screen.getByTestId("chart-gis-map-project-panel")).toBeInTheDocument();
     });
 
+    expect(screen.queryByRole("combobox", { name: "全球 PMTiles 服务" })).not.toBeInTheDocument();
     expect(screen.queryByRole("combobox", { name: "大气预设" })).not.toBeInTheDocument();
     expect(screen.queryByRole("option", { name: "白昼" })).not.toBeInTheDocument();
   });

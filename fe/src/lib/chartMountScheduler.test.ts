@@ -1,7 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { CHART_MOUNTING_WATCHDOG_MS } from "./chartLoadConcurrency";
 import { ChartMountScheduler } from "./chartMountScheduler";
 
 describe("ChartMountScheduler", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("limits concurrent mounting slots", () => {
     const scheduler = new ChartMountScheduler(2);
     scheduler.register("a", 1, true);
@@ -110,5 +115,39 @@ describe("ChartMountScheduler", () => {
     scheduler.register("fast", 0, true);
     expect(scheduler.getGate("fast")).toEqual({ canQuery: true, canRender: true });
     expect(scheduler.getGate("slow")).toEqual({ canQuery: false, canRender: false });
+  });
+
+  it("does not notify when register is a no-op", () => {
+    const scheduler = new ChartMountScheduler(2);
+    scheduler.register("a", 1, true);
+    let n = 0;
+    scheduler.subscribe(() => {
+      n += 1;
+    });
+    scheduler.register("a", 1, true);
+    expect(n).toBe(0);
+  });
+
+  it("does not preempt in-flight mounts while interaction is frozen", () => {
+    const scheduler = new ChartMountScheduler(1);
+    scheduler.register("slow", 1, true);
+    const release = scheduler.acquireInteractionFreeze();
+    scheduler.register("fast", 0, true);
+    expect(scheduler.getGate("slow")).toEqual({ canQuery: true, canRender: true });
+    expect(scheduler.getGate("fast")).toEqual({ canQuery: false, canRender: false });
+    release();
+    expect(scheduler.getGate("fast")).toEqual({ canQuery: true, canRender: true });
+    expect(scheduler.getGate("slow")).toEqual({ canQuery: false, canRender: false });
+  });
+
+  it("releases stale mounting slots after watchdog", () => {
+    vi.useFakeTimers();
+    const scheduler = new ChartMountScheduler(1);
+    scheduler.register("stuck", 1, true);
+    scheduler.register("next", 1, true);
+    expect(scheduler.getGate("next").canRender).toBe(false);
+    vi.advanceTimersByTime(CHART_MOUNTING_WATCHDOG_MS);
+    expect(scheduler.getGate("stuck")).toEqual({ canQuery: true, canRender: true });
+    expect(scheduler.getGate("next")).toEqual({ canQuery: true, canRender: true });
   });
 });

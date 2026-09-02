@@ -798,7 +798,7 @@ export const ChartRenderer = memo(function ChartRenderer({
   const renderBody = () => {
     if (!effectiveRenderEnabled) {
       const gateLabel =
-        mountGateStatus === "offscreen" ? "图表屏外已暂停" : "图表排队加载中";
+        mountGateStatus === "offscreen" ? "图表屏外已暂停" : "图表加载中";
       return embedded ? (
         <Skeleton className="h-full w-full rounded-lg" aria-busy="true" aria-label={gateLabel} />
       ) : (
@@ -950,7 +950,7 @@ export const ChartRenderer = memo(function ChartRenderer({
 
   if (embedded) {
     const gateLabel =
-      mountGateStatus === "offscreen" ? "图表屏外已暂停" : "图表排队加载中";
+      mountGateStatus === "offscreen" ? "图表屏外已暂停" : "图表加载中";
     if (
       shouldShowEmbeddedMountGateSkeleton(effectiveRenderEnabled, effectiveQueryEnabled, {
         gisBasemapOnly,

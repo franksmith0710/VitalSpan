@@ -3,6 +3,7 @@ import {
   buildFilterParameters,
   buildChartExecuteEncoding,
   chartExecuteBindingKey,
+  peekChartExecuteCachedResult,
   fetchChartExecuteResult,
   fetchChartExecuteResultShared,
   isChartExecuteReady,
@@ -367,5 +368,27 @@ describe("chartExecuteProbe shared execute", () => {
     );
     const body = JSON.parse(String(executeCall?.[1]?.body));
     expect(body.dataSourceId).toBe("demo-ds-uuid");
+  });
+
+  it("evicts oldest shared execute cache entries", async () => {
+    const { CHART_EXECUTE_RESULT_CACHE_MAX } = await import("@/lib/chartLoadConcurrency");
+    for (let i = 0; i < CHART_EXECUTE_RESULT_CACHE_MAX + 2; i += 1) {
+      await fetchChartExecuteResultShared({
+        ...datasetReadyConfig(),
+        configId: `cfg-cache-${i}`,
+      });
+    }
+    expect(
+      peekChartExecuteCachedResult({
+        ...datasetReadyConfig(),
+        configId: "cfg-cache-0",
+      }),
+    ).toBeUndefined();
+    expect(
+      peekChartExecuteCachedResult({
+        ...datasetReadyConfig(),
+        configId: `cfg-cache-${CHART_EXECUTE_RESULT_CACHE_MAX + 1}`,
+      }),
+    ).toEqual({ columns: ["id"], rows: [[1]] });
   });
 });

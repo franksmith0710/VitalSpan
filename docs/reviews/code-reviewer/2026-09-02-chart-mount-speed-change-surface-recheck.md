@@ -1,6 +1,6 @@
 # VitalSpan 生产就绪 / 产品体验评审 · 2026-09-02
 
-相对 [2026-08-30 同面评审](./2026-08-30-chart-mount-speed-change-surface.md) 的**复检**。工作区 `GisMapView.tsx` 仅有开发态 PMTiles URL 改写，**未修挂载槽释放**。
+相对 [2026-08-30 同面评审](./2026-08-30-chart-mount-speed-change-surface.md) 的复检。**2026-09-02 用户确认全量后已落地代码**（P1-5 按「不卸成灰」保留最后一帧，未做 DOM 驱逐）。
 
 ## 总览
 
@@ -8,8 +8,8 @@
 |----|------|
 | 范围 | PR·变更面：图表挂载调度 + 像素画布编辑门控（主根：`chartMountScheduler` · `ChartMountContext` · `useInViewport` · `DashboardWidget`/`DashboardEditCanvas` · `ChartRenderer` · `GisMapView`/`D3GeoMapView` · `pixelCanvas`；上追：`ChartMountProvider` 调用方） |
 | mode | auto-fix |
-| fix_mode | confirm-batch（待确认） |
-| cr_fix_scope | （待用户确认后填） |
+| fix_mode | auto（用户确认全量） |
+| cr_fix_scope | all |
 | Stack Card | 见下 |
 | 扫描方式 | 并行 explore：L1 · L7 · L11；主 agent 复核入口；`scan_tools: ast-grep + codegraph + rg` |
 | 证据层 / 外部依赖 | 无 `.evidence/`（Blind spot）；本批无新增仓外 SDK 契约（GIS 走既有 `apiFetch`） |
@@ -18,7 +18,9 @@
 | Lane 密度 | L1/L7/L11 均 ≥5；L2/L4/L6/L8/L9/L10 合理跳过 |
 | P0 / P1 / P2 | **1 / 6 / 4** |
 | 建议 | 修完 P0 再谈排队完成；不可写可上线 |
-| 回传 status | DONE_WITH_CONCERNS |
+| 回传 status | DONE_WITH_CONCERNS（已批量修代码，证据层仍无） |
+| 已修 | P0-1, P1-1, P1-2, P1-3, P1-4, P1-6, P2-1, P2-2, P2-3, P2-4 |
+| remaining | P1-5：与「已画完不卸成灰」冲突，改为屏外只停 query、保留 DOM/WebGL 最后一帧 |
 | 已排除非问题 | 查询失败仍 `onMountReady`（释槽，UI 仍示错）；`D3GeoMapView` 失败 `notifyPaintReady`（与 GIS 应对齐的正确行为）；无 Provider 时 fail-open（探查器/独立预览预期）；demo-mysql region 映射（超出本变更面）；测试双 |
 
 一句话结论：**上次 P0 仍在——`gis-map` 失败/未配底图不调用 `onPaintReady`，挂载槽占死，同屏其它图可一直灰。** v2 非大屏像素画布视口 root 仍错；首帧全体灰闪仍在。工作区未提交 diff 不覆盖这些问题。

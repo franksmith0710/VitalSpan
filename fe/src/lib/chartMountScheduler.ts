@@ -1,3 +1,5 @@
+import { CHART_MOUNTING_WATCHDOG_MS } from "@/lib/chartLoadConcurrency";
+
 export type ChartMountState = "waiting" | "mounting" | "ready";
 
 type MountEntry = {
@@ -11,10 +13,12 @@ type MountEntry = {
 export class ChartMountScheduler {
   private maxConcurrent: number;
   private mounting = new Set<string>();
+  private mountingAt = new Map<string, number>();
   private entries = new Map<string, MountEntry>();
   private listeners = new Set<() => void>();
   private interactionFreezeCount = 0;
   private interactionFrozen = false;
+  private watchdogTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(maxConcurrent: number) {
     this.maxConcurrent = Math.max(1, maxConcurrent);
@@ -38,6 +42,10 @@ export class ChartMountScheduler {
     const next = this.interactionFreezeCount > 0;
     if (next === this.interactionFrozen) return;
     this.interactionFrozen = next;
+    if (!next) {
+      this.preemptForPriority();
+      this.drain();
+    }
     this.notify();
   }
 
@@ -55,6 +63,9 @@ export class ChartMountScheduler {
 
   register(widgetId: string, priority: number, inView: boolean): void {
     const existing = this.entries.get(widgetId);
+    if (existing && existing.priority === priority && existing.inView === inView) {
+      return;
+    }
     if (existing) {
       existing.priority = priority;
       existing.inView = inView;
@@ -69,7 +80,7 @@ export class ChartMountScheduler {
   unregister(widgetId: string): void {
     const entry = this.entries.get(widgetId);
     if (entry?.state === "mounting") {
-      this.mounting.delete(widgetId);
+      this.releaseMounting(widgetId);
     }
     this.entries.delete(widgetId);
     this.drain();
@@ -79,7 +90,7 @@ export class ChartMountScheduler {
   markReady(widgetId: string): void {
     const entry = this.entries.get(widgetId);
     if (!entry || entry.state !== "mounting") return;
-    this.mounting.delete(widgetId);
+    this.releaseMounting(widgetId);
     entry.state = "ready";
     this.drain();
     this.notify();
@@ -90,7 +101,7 @@ export class ChartMountScheduler {
     if (!entry) {
       return { canQuery: false, canRender: false };
     }
-    // 已画完的图保留最后一帧：视口抖动/点选不要卸成灰色骨架
+    // 已画完的图保留最后一帧：视口抖动/点选不要卸成灰色骨架（屏外只停 query）
     if (entry.state === "ready") {
       return { canQuery: entry.inView, canRender: true };
     }
@@ -134,6 +145,11 @@ export class ChartMountScheduler {
     });
   }
 
+  private releaseMounting(widgetId: string): void {
+    this.mounting.delete(widgetId);
+    this.mountingAt.delete(widgetId);
+  }
+
   private drain(): void {
     const waiting = [...this.entries.values()]
       .filter((entry) => entry.inView && entry.state === "waiting")
@@ -146,10 +162,15 @@ export class ChartMountScheduler {
       if (this.mounting.size >= this.maxConcurrent) break;
       entry.state = "mounting";
       this.mounting.add(entry.widgetId);
+      if (!this.mountingAt.has(entry.widgetId)) {
+        this.mountingAt.set(entry.widgetId, Date.now());
+      }
     }
+    this.scheduleWatchdog();
   }
 
   private preemptForPriority(): void {
+    if (this.interactionFrozen) return;
     const waiting = [...this.entries.values()].filter(
       (entry) => entry.inView && entry.state === "waiting",
     );
@@ -167,9 +188,35 @@ export class ChartMountScheduler {
     for (const entry of victims) {
       if (toFree <= 0) break;
       entry.state = "waiting";
-      this.mounting.delete(entry.widgetId);
+      this.releaseMounting(entry.widgetId);
       toFree -= 1;
     }
+  }
+
+  private scheduleWatchdog(): void {
+    if (this.watchdogTimer != null) {
+      clearTimeout(this.watchdogTimer);
+      this.watchdogTimer = null;
+    }
+    if (this.mounting.size === 0) return;
+    const oldest = Math.min(
+      ...[...this.mounting].map((id) => this.mountingAt.get(id) ?? Date.now()),
+    );
+    const delay = Math.max(0, CHART_MOUNTING_WATCHDOG_MS - (Date.now() - oldest));
+    this.watchdogTimer = setTimeout(() => {
+      this.watchdogTimer = null;
+      this.releaseStaleMounts();
+    }, delay);
+  }
+
+  private releaseStaleMounts(): void {
+    const now = Date.now();
+    for (const widgetId of [...this.mounting]) {
+      const started = this.mountingAt.get(widgetId) ?? 0;
+      if (now - started < CHART_MOUNTING_WATCHDOG_MS) continue;
+      this.markReady(widgetId);
+    }
+    this.scheduleWatchdog();
   }
 
   private notify(): void {

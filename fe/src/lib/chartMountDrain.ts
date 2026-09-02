@@ -10,13 +10,14 @@ export function registerActiveChartMountScheduler(
 
 /**
  * 尽力等待可见图表挂载完成（缩略图截取前）。
- * 超时或调度器未就绪时不抛错，避免阻塞布局保存主路径。
+ * 超时返回 false，避免阻塞布局保存主路径。
  */
-export async function waitForActiveChartMountDrain(timeoutMs = 8_000): Promise<void> {
-  if (!activeScheduler) return;
+export async function waitForActiveChartMountDrain(timeoutMs = 8_000): Promise<boolean> {
+  if (!activeScheduler) return true;
   try {
     await activeScheduler.waitForInViewSettled(timeoutMs);
+    return true;
   } catch {
-    // best-effort：队列未排空时仍继续截图
+    return false;
   }
 }

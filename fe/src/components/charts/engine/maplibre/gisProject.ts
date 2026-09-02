@@ -483,7 +483,6 @@ export const DEFAULT_GIS_GLOBE_VIEW: GisProjectView = {
 
 export const DEFAULT_GIS_PROJECT: GisProject = {
   basemap: "pmtiles",
-  tileServiceId: DEFAULT_PMTILES_TILE_SERVICE_ID,
   labelLang: "zh-Hans",
   basemapFlavor: "light",
   projection: "globe",
@@ -548,7 +547,7 @@ function normalizeGisProject(raw: unknown): GisProject {
   const tileServiceId =
     typeof candidate.tileServiceId === "string" && candidate.tileServiceId.trim()
       ? candidate.tileServiceId.trim()
-      : DEFAULT_PMTILES_TILE_SERVICE_ID;
+      : undefined;
   const labelLang =
     candidate.labelLang === "en" || candidate.labelLang === "zh-Hans"
       ? candidate.labelLang
