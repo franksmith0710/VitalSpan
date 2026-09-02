@@ -21,6 +21,11 @@ export default defineConfig(({ mode }) => {
       changeOrigin: true,
       rewrite: (path) => path.replace(/^\/dev-pmtiles/, ""),
     },
+    "/dev-basemaps-assets": {
+      target: "https://fastly.jsdelivr.net/gh/protomaps/basemaps-assets@main",
+      changeOrigin: true,
+      rewrite: (path) => path.replace(/^\/dev-basemaps-assets/, ""),
+    },
   };
   for (const segment of proxyBaseSegments) {
     proxy[`/${segment}/api`] = {

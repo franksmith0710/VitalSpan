@@ -35,6 +35,7 @@ import { ListRowCheckbox } from "@/components/layout/list-batch-delete";
 import {
   dataScreenEditPath,
   dataScreenPreviewPath,
+  dashboardPreviewPath,
   dashboardSharePath,
   isDataScreenLayout,
   type DashboardSurfaceKind,
@@ -175,7 +176,7 @@ export function DashboardListCard({
     dashboard.surfaceKind === "data-screen" ||
     isDataScreenLayout(layoutForPreview);
   const previewKind: DashboardSurfaceKind = previewSurfaceKind ?? (isScreen ? "data-screen" : "dashboard");
-  const viewPath = isScreen ? dataScreenPreviewPath(dashboard.id) : `${routeBase}/${dashboard.id}`;
+  const viewPath = isScreen ? dataScreenPreviewPath(dashboard.id) : dashboardPreviewPath(dashboard.id);
   const editPath = isScreen ? dataScreenEditPath(dashboard.id) : `${routeBase}/${dashboard.id}/edit`;
   const sharePath = dashboardSharePath(dashboard.id, isScreen);
   const primaryPath = canEdit ? editPath : viewPath;

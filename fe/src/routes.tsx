@@ -88,6 +88,11 @@ const DataScreenPreviewPage = lazy(() =>
     default: m.DataScreenPreviewPage,
   })),
 );
+const DashboardPreviewPage = lazy(() =>
+  import("@/pages/admin/dashboard/DashboardPreviewPage").then((m) => ({
+    default: m.DashboardPreviewPage,
+  })),
+);
 const DashboardExportSnapshotPage = lazy(() =>
   import("@/pages/export/DashboardExportSnapshotPage").then((m) => ({
     default: m.DashboardExportSnapshotPage,
@@ -180,6 +185,7 @@ export function AppRoutes() {
               </RequireCapabilityName>
             }
           />
+          <Route path="dashboards/:id/preview" element={<Lazy><DashboardPreviewPage /></Lazy>} />
           <Route path="dashboards/:id" element={<Lazy><DashboardEditPage mode="view" /></Lazy>} />
           <Route
             path="data-screens/:id/share"

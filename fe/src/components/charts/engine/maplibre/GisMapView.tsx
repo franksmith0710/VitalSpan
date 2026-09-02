@@ -40,6 +40,7 @@ import {
   applyGisMapStylePreservingCamera,
   buildGisConfiguredViewKey,
   captureGisMapCamera,
+  classifyGisMapErrorHint,
   mountGisLiveCameraTracking,
   mountGisMapControls,
   GLOBE_IDLE_ROTATION_DEG_PER_SEC,
@@ -54,10 +55,8 @@ import { createGisSunEngine } from "@/components/charts/engine/maplibre/gisSunRu
 import type { GisSunEngine } from "@/components/charts/engine/maplibre/gisSunEngine";
 import { registerGisMapViewLiveControl } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
-import {
-  ensurePmtilesArchiveRegistered,
-  loadMapLibreRuntime,
-} from "@/components/charts/engine/maplibre/maplibreBootstrap";
+import { ensurePmtilesArchiveRegistered, loadMapLibreRuntime } from "@/components/charts/engine/maplibre/maplibreBootstrap";
+import { withDevPmtilesArchiveUrl } from "@/components/charts/engine/maplibre/gisPmtilesUrl";
 import { gisMapTransformRequest } from "@/components/charts/engine/maplibre/gisMapTransformRequest";
 import { GIS_MAP_CAPTURE_PREP_EVENT } from "@/lib/captureDashboardThumbnail";
 import { GeoMapOverlayHint } from "@/components/charts/engine/geo/GeoMapOverlayHint";
@@ -210,10 +209,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     void resolveTileService(tileServiceId)
       .then(async (resolved) => {
         if (cancelled) return;
-        await ensurePmtilesArchiveRegistered(resolved.pmtilesUrl);
+        const devResolved = withDevPmtilesArchiveUrl(resolved);
+        await ensurePmtilesArchiveRegistered(devResolved.pmtilesUrl);
         if (cancelled) return;
         setPmtilesStyle(
-          buildPmtilesStyle(resolved, project.labelLang ?? "zh-Hans", {
+          buildPmtilesStyle(devResolved, project.labelLang ?? "zh-Hans", {
             flavor,
             buildings3d: project.buildings3d,
             landColor: project.landColor,
@@ -508,13 +508,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
               ? event.error
               : "";
         const message = raw.trim() || "地图渲染失败";
-        if (/failed to fetch|cors|networkerror|access-control/i.test(message)) {
-          setMapErrorHint(
-            "全球 PMTiles 瓦片跨域请求被阻断，请确认外部服务 CORS 与前端访问地址（localhost / 127.0.0.1）一致",
-          );
-          return;
-        }
-        setMapErrorHint(message);
+        const hint = classifyGisMapErrorHint(message);
+        if (hint) setMapErrorHint(hint);
       });
 
       let initialLoadDone = false;

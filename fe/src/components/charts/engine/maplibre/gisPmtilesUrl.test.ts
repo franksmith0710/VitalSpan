@@ -27,6 +27,16 @@ describe("gisPmtilesUrl", () => {
     expect(resolveGisPmtilesArchiveUrl(raw)).toBe(raw);
   });
 
+  it("does not double-proxy dev-pmtiles urls", () => {
+    vi.stubEnv("DEV", true);
+    Object.defineProperty(window, "location", {
+      configurable: true,
+      value: { origin: "http://127.0.0.1:5173" },
+    });
+    const proxied = "http://127.0.0.1:5173/dev-pmtiles/planet-z15-20260817.pmtiles";
+    expect(resolveGisPmtilesArchiveUrl(proxied)).toBe(proxied);
+  });
+
   it("builds pmtiles protocol source url", () => {
     expect(buildPmtilesVectorSourceUrl("http://127.0.0.1:5173/dev-pmtiles/a.pmtiles")).toBe(
       "pmtiles://http://127.0.0.1:5173/dev-pmtiles/a.pmtiles",
@@ -43,9 +53,11 @@ describe("gisPmtilesUrl", () => {
       id: "planet-z15",
       name: "Planet Z15",
       pmtilesUrl: "http://localhost:8080/planet-z15-20260817.pmtiles",
-      glyphsUrl: "https://example.com/{fontstack}/{range}.pbf",
-      spriteUrl: "https://example.com/sprite",
+      glyphsUrl: "https://protomaps.github.io/basemaps-assets/fonts/{fontstack}/{range}.pbf",
+      spriteUrl: "https://protomaps.github.io/basemaps-assets/sprites/v4/light",
     });
     expect(next.pmtilesUrl).toContain("/dev-pmtiles/planet-z15-20260817.pmtiles");
+    expect(next.glyphsUrl).toContain("dev-basemaps-assets");
+    expect(next.spriteUrl).toContain("/sprites/v4/light");
   });
 });

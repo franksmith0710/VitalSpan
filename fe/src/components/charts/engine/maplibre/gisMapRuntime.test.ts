@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   advanceGlobeLongitude,
   applyGisMapStylePreservingCamera,
+  classifyGisMapErrorHint,
   GLOBE_IDLE_ROTATION_DEG_PER_SEC,
   markGisMapPaintReady,
   mountGisLiveCameraTracking,
@@ -146,5 +147,25 @@ describe("markGisMapPaintReady", () => {
     };
     markGisMapPaintReady(map as never, onReady, () => false, "globe");
     expect(onReady).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("classifyGisMapErrorHint", () => {
+  it("ignores non-blocking sprite warnings", () => {
+    expect(classifyGisMapErrorHint('Image "townspot" could not be loaded')).toBeNull();
+  });
+
+  it("maps glyph fetch failures to font hint", () => {
+    expect(
+      classifyGisMapErrorHint(
+        "AJAXError: Failed to fetch (0): https://protomaps.github.io/basemaps-assets/fonts/Noto Sans Regular/0-255.pbf",
+      ),
+    ).toContain("字体");
+  });
+
+  it("maps pmtiles cors failures to tile hint", () => {
+    expect(classifyGisMapErrorHint("Failed to fetch pmtiles://http://127.0.0.1:8080/a.pmtiles")).toContain(
+      "PMTiles",
+    );
   });
 });

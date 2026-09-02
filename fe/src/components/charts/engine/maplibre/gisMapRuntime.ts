@@ -307,3 +307,26 @@ export function startGisGlobeAutoRotate(
     map.off("pitchend", resumeAfterInteraction);
   };
 }
+
+/** 将 MapLibre error 事件分类为人话提示；返回 null 表示可忽略（非阻断）。 */
+export function classifyGisMapErrorHint(message: string): string | null {
+  const text = message.trim();
+  if (!text) return "地图渲染失败";
+
+  if (/sprite|townspot|capital|image .* could not be loaded/i.test(text)) {
+    return null;
+  }
+  if (/glyph|fonts\/|Unable to load glyph/i.test(text)) {
+    return "地图标注字体暂不可用，请检查网络或配置内网 glyphs 镜像";
+  }
+  if (/failed to fetch|cors|networkerror|access-control/i.test(text)) {
+    if (/pmtiles|\.pmtiles|\/dev-pmtiles\//i.test(text)) {
+      return "全球 PMTiles 瓦片跨域请求被阻断，请确认外部服务 CORS 与前端访问地址（localhost / 127.0.0.1）一致";
+    }
+    if (/fonts|sprite|basemaps-assets|jsdelivr|protomaps\.github\.io/i.test(text)) {
+      return "地图标注资源（字体/图标）暂不可用，请检查网络或配置内网镜像";
+    }
+    return null;
+  }
+  return text;
+}

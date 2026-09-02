@@ -22,6 +22,7 @@ import { canEditDashboards, canShareDashboards, sessionUserFromMe } from "@/lib/
 import {
   dataScreenListPath,
   dataScreenPreviewPath,
+  dashboardPreviewPath,
   ensureDataScreenStyleConfig,
   isDataScreenAdminPath,
   isDataScreenLayout,
@@ -1260,7 +1261,15 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           {mode === "edit" ? (
             <>
               <Button asChild variant="outline" size="sm">
-                <Link to={isDataScreenSurface && id ? dataScreenPreviewPath(id) : `${routeBase}/${id}`}>
+                <Link
+                  to={
+                    isDataScreenSurface && id
+                      ? dataScreenPreviewPath(id)
+                      : id
+                        ? dashboardPreviewPath(id)
+                        : `${routeBase}/${id}`
+                  }
+                >
                   预览
                 </Link>
               </Button>
@@ -1283,6 +1292,11 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
           ) : canEditDashboard ? (
             <Button asChild variant="outline" size="sm">
               <Link to={`${routeBase}/${id}/edit`}>编辑布局</Link>
+            </Button>
+          ) : null}
+          {mode === "view" && id && !isDataScreenSurface ? (
+            <Button asChild variant="outline" size="sm">
+              <Link to={dashboardPreviewPath(id)}>全屏预览</Link>
             </Button>
           ) : null}
         </>

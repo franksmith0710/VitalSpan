@@ -16,6 +16,11 @@ import type {
   GisLabelLang,
 } from "@/components/charts/engine/maplibre/gisProject";
 import { buildPmtilesVectorSourceUrl } from "@/components/charts/engine/maplibre/gisPmtilesUrl";
+import {
+  DEFAULT_PROTOMAPS_SPRITE_BASE,
+  mirrorProtomapsBasemapAssetsUrl,
+  resolveDevBasemapAssetsUrl,
+} from "@/components/charts/engine/maplibre/gisProtomapsAssets";
 import type { TileServiceResolve } from "@/lib/tileServices";
 
 export const GIS_OVERLAY_SOURCE_ID = "vs-gis-overlay";
@@ -32,12 +37,12 @@ export const GIS_OVERLAY_CLUSTER_FILTER = ["has", "point_count"] as const;
 export { GIS_BUILDINGS_3D_LAYER_ID } from "@/components/charts/engine/maplibre/gisBuildings3d";
 export const PMTILES_SOURCE_ID = "protomaps";
 
-const PROTOMAPS_SPRITE_BASE = "https://protomaps.github.io/basemaps-assets/sprites/v4";
+const PROTOMAPS_SPRITE_BASE = DEFAULT_PROTOMAPS_SPRITE_BASE;
 
 /** 兼容旧登记/默认值中的错误 sprite 路径（v4/light-sprite → sprites/v4/light）。 */
 export function normalizeProtomapsSpriteUrl(spriteUrl: string | undefined): string {
   if (!spriteUrl?.trim()) return `${PROTOMAPS_SPRITE_BASE}/light`;
-  const trimmed = spriteUrl.trim();
+  const trimmed = mirrorProtomapsBasemapAssetsUrl(spriteUrl.trim());
   if (trimmed.includes("/v4/light-sprite") || trimmed.endsWith("light-sprite")) {
     return `${PROTOMAPS_SPRITE_BASE}/light`;
   }
@@ -82,14 +87,14 @@ export function buildPmtilesStyle(
     landColor: options.landColor,
     waterColor: options.waterColor,
   }, { harmonizeLandDetail });
-  const sprite = resolveProtomapsSpriteUrl(flavorName, resolved.spriteUrl);
+  const sprite = resolveDevBasemapAssetsUrl(resolveProtomapsSpriteUrl(flavorName, resolved.spriteUrl));
   const baseLayers = applyBasemapLayerVisibility(
     layers(PMTILES_SOURCE_ID, flavor, { lang: labelLang }),
     options.basemapLayers,
   );
   const style: StyleSpecification = {
     version: 8,
-    glyphs: resolved.glyphsUrl,
+    glyphs: resolveDevBasemapAssetsUrl(mirrorProtomapsBasemapAssetsUrl(resolved.glyphsUrl)),
     sprite,
     sources: {
       [PMTILES_SOURCE_ID]: {

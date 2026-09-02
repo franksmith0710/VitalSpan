@@ -89,6 +89,8 @@ describe("gisMapStyle", () => {
     expect(style.sources?.[PMTILES_SOURCE_ID]).toBeDefined();
     expect(style.layers?.length).toBeGreaterThan(0);
     expect(style.layers?.some((layer) => layer.id === GIS_BUILDINGS_3D_LAYER_ID)).toBe(true);
+    expect(style.glyphs).toContain("dev-basemaps-assets");
+    expect(style.sprite).toContain("/sprites/v4/light");
   });
 
   it("builds dark flavor with matching sprite", () => {
@@ -148,7 +150,7 @@ describe("gisMapStyle", () => {
         "dark",
         "https://protomaps.github.io/basemaps-assets/sprites/v4/light",
       ),
-    ).toBe("https://protomaps.github.io/basemaps-assets/sprites/v4/dark");
+    ).toBe("https://fastly.jsdelivr.net/gh/protomaps/basemaps-assets@main/sprites/v4/dark");
   });
 });
 

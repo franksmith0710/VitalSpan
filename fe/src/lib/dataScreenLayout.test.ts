@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildDefaultDataScreenLayout,
+  dashboardPreviewPath,
   dashboardSharePath,
   dataScreenEmbedPath,
   dataScreenPreviewPath,
@@ -44,6 +45,7 @@ describe("dataScreenLayout", () => {
 
   it("resolves preview path for chromeless route", () => {
     expect(dataScreenPreviewPath("abc")).toBe("/admin/data-screens/abc/preview");
+    expect(dashboardPreviewPath("abc")).toBe("/admin/dashboards/abc/preview");
   });
 
   it("resolves persisted canvas min height by surface", () => {

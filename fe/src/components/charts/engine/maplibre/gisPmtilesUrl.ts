@@ -1,4 +1,5 @@
 import type { TileServiceResolve } from "@/lib/tileServices";
+import { resolveDevBasemapAssetsUrl } from "@/components/charts/engine/maplibre/gisProtomapsAssets";
 
 /** 本地 PMTiles 外部服务端口（docker pmtiles-tile-server 默认 8080）。 */
 const DEV_PMTILES_PORT = "8080";
@@ -13,6 +14,9 @@ export function resolveGisPmtilesArchiveUrl(rawUrl: string): string {
   }
   try {
     const parsed = new URL(rawUrl);
+    if (parsed.pathname.startsWith("/dev-pmtiles/")) {
+      return rawUrl;
+    }
     if (parsed.port !== DEV_PMTILES_PORT && !parsed.pathname.endsWith(".pmtiles")) {
       return rawUrl;
     }
@@ -26,6 +30,8 @@ export function withDevPmtilesArchiveUrl(resolved: TileServiceResolve): TileServ
   return {
     ...resolved,
     pmtilesUrl: resolveGisPmtilesArchiveUrl(resolved.pmtilesUrl),
+    glyphsUrl: resolveDevBasemapAssetsUrl(resolved.glyphsUrl),
+    spriteUrl: resolveDevBasemapAssetsUrl(resolved.spriteUrl),
   };
 }
 

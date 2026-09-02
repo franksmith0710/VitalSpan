@@ -122,8 +122,8 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 │   ├── /viz-templates               # 可视化模板 Hub（看板+大屏；≠ 报表模板）
 │   ├── /viz-components              # 组织组件库（复用时拷贝快照到看板）
 │   ├── /dashboards/:id              # 查看 view · bi-dashboard-builder（只读）
+│   ├── /dashboards/:id/preview      # 看板全屏预览投放（`DashboardPreviewPage` + `DataScreenPresenter`）
 │   ├── /dashboards/:id/edit         # 构建器 edit · bi-dashboard-builder
-│   ├── /dashboards/:id/preview      # （规划）构建器 preview；当前以 `/dashboards/:id` view 模式替代
 │   ├── /dashboards/:id/share        # 分享/嵌入 · bi-share-embed（含公开链接 + iframe 嵌入）
 │   # 图表类型目录：Palette Drawer「查看全部类型」（无独立 `/charts/types` 路由；旧路径重定向 dashboards）
 │
@@ -217,6 +217,7 @@ fe/src/layouts/EmbedLayout.tsx      # 最小 chrome（后续里程碑）
 | `/admin/data-screens/:id/preview` | 全屏投放：`DataScreenPresenter` + `CanvasScaleViewport`（只读，无 pan） | DASH-002 companion |
 | `/admin/data-screens/:id/share` | `bi-share-embed`（复用分享页） | VIZ-006, API-006 |
 | `/admin/dashboards/:id` | `bi-dashboard-builder`（view） | DASH-*, VIEW-* |
+| `/admin/dashboards/:id/preview` | 全屏投放：`DataScreenPresenter` + `CanvasScaleViewport`（只读，无 pan） | DASH-*, VIEW-* |
 | `/admin/dashboards/:id/share` | `bi-share-embed` | VIZ-006, API-006 |
 | `/admin/viz-components` | 组织组件库 Hub；复用插入为看板实例快照 | DASH-010 |
 | `/admin/viz-components/:id/edit` | 组件库内编辑（复用看板 Inspector + 实时预览） | DASH-010 |

@@ -9,6 +9,7 @@ describe("GisMapView geolibre effects mount regression", () => {
       "utf8",
     );
 
+    expect(source).toContain("withDevPmtilesArchiveUrl");
     expect(source).toContain("createGisGeolibreEffectsEngine");
     expect(source).toContain("ensureGisEffectsEngine");
     expect(source).toContain("gisPaintState !== \"ready\"");

@@ -47,6 +47,22 @@ export function dataScreenPreviewPath(id: string): string {
   return `/admin/data-screens/${id}/preview`;
 }
 
+export function dashboardEditPath(id: string): string {
+  return `/admin/dashboards/${id}/edit`;
+}
+
+export function dashboardViewPath(id: string): string {
+  return `/admin/dashboards/${id}`;
+}
+
+export function dashboardPreviewPath(id: string): string {
+  return `/admin/dashboards/${id}/preview`;
+}
+
+export function isDashboardPreviewPath(pathname: string): boolean {
+  return /^\/admin\/dashboards\/[^/]+\/preview\/?$/.test(pathname);
+}
+
 export function isDataScreenAdminPath(pathname: string): boolean {
   return pathname.startsWith("/admin/data-screens");
 }
