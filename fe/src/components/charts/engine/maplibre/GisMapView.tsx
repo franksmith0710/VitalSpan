@@ -278,11 +278,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         return;
       }
       const mount = () => {
-        effectsEngineRef.current?.destroy();
-        effectsEngineRef.current = createGisGeolibreEffectsEngine(
-          map,
-          resolveGisEffectsSettings(projectRef.current),
-        );
+        const settings = resolveGisEffectsSettings(projectRef.current);
+        if (effectsEngineRef.current) {
+          applyGisGeolibreEffectsSettings(effectsEngineRef.current, settings);
+        } else {
+          effectsEngineRef.current = createGisGeolibreEffectsEngine(map, settings);
+        }
         ensureSunEngine(map);
       };
       whenGisMapStyleReady(map, mount);

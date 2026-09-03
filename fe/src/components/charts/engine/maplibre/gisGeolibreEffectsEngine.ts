@@ -16,8 +16,8 @@ import {
   drawGeolibreStarfieldParallax,
 } from "@/components/charts/engine/maplibre/gisGeolibreEffectsStarfield";
 import {
-  resolveGlobeLimbBoundsFromMap,
-  resolveGlobeLimbBoundsFromProject,
+  bindMapRenderSync,
+  resolveGlobeLimbBoundsForOverlay,
   resolveGlobeScreenBounds,
   shouldRenderGisGlobeFarEffects,
 } from "@/components/charts/engine/maplibre/gisGlobeLayout";
@@ -28,6 +28,8 @@ type MapLibreMap = import("maplibre-gl").Map;
 const EFFECTS_MAP_CLASS = "vs-gis-geolibre-effects-map";
 const EFFECTS_STYLE_ID = "vs-gis-geolibre-effects-overlays";
 const MAP_CANVAS_Z = "4";
+/** 光晕叠在 map canvas 之上，仅外环可见（见 gisGlobeHaloDraw evenodd）。 */
+const HALO_CANVAS_Z = "5";
 const CONTROL_Z = "6";
 
 function isGlobeProjection(map: MapLibreMap): boolean {
@@ -82,6 +84,7 @@ export class GisGeolibreEffectsEngine {
   private rafId: number | null = null;
   private lastFrameTime = -Infinity;
   private destroyed = false;
+  private unbindMapRender: (() => void) | undefined;
 
   constructor(map: MapLibreMap, settings: ResolvedGisEffectsSettings) {
     this.map = map;
@@ -100,6 +103,7 @@ export class GisGeolibreEffectsEngine {
     const stars = createLayerCanvas(1);
     const comets = createLayerCanvas(2);
     const halo = createLayerCanvas(3);
+    halo.style.zIndex = HALO_CANVAS_Z;
     const container = map.getCanvasContainer();
     container.append(space, stars, comets, halo);
     this.spaceCtx = space.getContext("2d")!;
@@ -118,6 +122,9 @@ export class GisGeolibreEffectsEngine {
     this.handleVisibility = this.handleVisibility.bind(this);
     this.handleStyleData = this.handleStyleData.bind(this);
     this.tick = this.tick.bind(this);
+    this.unbindMapRender = bindMapRenderSync(map, () => {
+      if (!document.hidden) this.start();
+    });
     map.on("resize", this.handleResize);
     map.on("move", this.handleMapChange);
     map.on("styledata", this.handleStyleData);
@@ -140,6 +147,8 @@ export class GisGeolibreEffectsEngine {
     this.map.off("move", this.handleMapChange);
     this.map.off("styledata", this.handleStyleData);
     document.removeEventListener("visibilitychange", this.handleVisibility);
+    this.unbindMapRender?.();
+    this.unbindMapRender = undefined;
     this.mapCanvas.style.zIndex = this.previousMapZ;
     if (this.controlContainer) this.controlContainer.style.zIndex = this.previousControlZ;
     try {
@@ -289,11 +298,8 @@ export class GisGeolibreEffectsEngine {
 
   private drawHaloLayer(): void {
     if (this.width <= 0 || this.height <= 0 || !this.settings.enabled) return;
-    const screen = resolveGlobeScreenBounds(this.map);
-    const limb =
-      resolveGlobeLimbBoundsFromMap(this.map) ??
-      resolveGlobeLimbBoundsFromProject(this.map) ??
-      (screen ? { x: screen.x, y: screen.y, radius: screen.radius } : null);
+    const overlay = this.map.getCanvasContainer();
+    const limb = resolveGlobeLimbBoundsForOverlay(this.map, overlay, this.width, this.height);
     if (!limb) {
       this.haloCtx.clearRect(0, 0, this.width, this.height);
       return;
@@ -331,6 +337,7 @@ export class GisGeolibreEffectsEngine {
     if (!this.isFarGlobeView()) {
       this.starsCtx.clearRect(0, 0, this.width, this.height);
       this.comets = [];
+      this.start();
       return;
     }
     if (this.starsDirty) {

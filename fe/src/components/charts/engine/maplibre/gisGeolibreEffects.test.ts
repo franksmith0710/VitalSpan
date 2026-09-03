@@ -49,5 +49,8 @@ describe("gisGeolibreEffects", () => {
     expect(tickBody).not.toMatch(
       /if \(!this\.isFarGlobeView\(\)\)[\s\S]*this\.drawHaloLayer\(\)/,
     );
+    expect(source).toContain('const HALO_CANVAS_Z = "5"');
+    expect(source).toContain("resolveGlobeLimbBoundsForOverlay");
+    expect(source).toContain("bindMapRenderSync");
   });
 });
