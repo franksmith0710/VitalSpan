@@ -1,7 +1,39 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { syncOverlayCanvasSize } from "@/components/charts/engine/maplibre/gisOverlayCanvas";
+import {
+  applyOverlayCanvasLayout,
+  readMapOverlayPaintSize,
+  readOverlayLayoutSize,
+  syncOverlayCanvasSize,
+} from "@/components/charts/engine/maplibre/gisOverlayCanvas";
+
+describe("readMapOverlayPaintSize", () => {
+  it("prefers map canvas client size when canvas-container has no layout height", () => {
+    const container = document.createElement("div");
+    const mapCanvas = document.createElement("canvas");
+    Object.defineProperty(mapCanvas, "clientWidth", { value: 990, configurable: true });
+    Object.defineProperty(mapCanvas, "clientHeight", { value: 792, configurable: true });
+    Object.defineProperty(container, "clientWidth", { value: 990, configurable: true });
+    Object.defineProperty(container, "clientHeight", { value: 0, configurable: true });
+
+    const map = { getCanvas: () => mapCanvas } as import("maplibre-gl").Map;
+    expect(readMapOverlayPaintSize(map, container)).toEqual({ width: 990, height: 792 });
+    expect(readOverlayLayoutSize(container)).toEqual({ width: 990, height: 1 });
+  });
+});
+
+describe("applyOverlayCanvasLayout", () => {
+  it("sets explicit px size so h-full does not collapse on canvas-container", () => {
+    const canvas = document.createElement("canvas");
+    canvas.className = "pointer-events-none absolute h-full w-full";
+    applyOverlayCanvasLayout(canvas, 990, 792);
+    expect(canvas.style.width).toBe("990px");
+    expect(canvas.style.height).toBe("792px");
+    expect(canvas.style.top).toBe("0px");
+    expect(canvas.style.left).toBe("0px");
+  });
+});
 
 describe("syncOverlayCanvasSize", () => {
   it("updates canvas bitmap when container grows", () => {

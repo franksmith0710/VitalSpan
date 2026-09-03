@@ -16,11 +16,45 @@ export function syncOverlayCanvasSize(
   return true;
 }
 
+/** MapLibre canvas-container 无布局高度时，h-full 会把显示高度压成 0；须显式 px 尺寸。 */
+export function applyOverlayCanvasLayout(
+  canvas: HTMLCanvasElement,
+  width: number,
+  height: number,
+): void {
+  canvas.style.position = "absolute";
+  canvas.style.top = "0";
+  canvas.style.left = "0";
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+}
+
 /** 与 MapLibre transform 对齐：用 layout client 尺寸，不用 getBoundingClientRect（祖先 scale 会漂移）。 */
 export function readOverlayLayoutSize(el: HTMLElement): { width: number; height: number } {
   const width = el.clientWidth || el.offsetWidth || el.getBoundingClientRect().width;
   const height = el.clientHeight || el.offsetHeight || el.getBoundingClientRect().height;
   return { width: Math.max(1, width), height: Math.max(1, height) };
+}
+
+type MapLibreMap = import("maplibre-gl").Map;
+
+/**
+ * MapLibre canvas-container 常无布局高度（子 canvas 绝对定位），须读 map canvas 的 client 尺寸。
+ * @see gisGeolibreEffectsEngine.handleResize
+ */
+export function readMapOverlayPaintSize(
+  map: MapLibreMap | null,
+  fallback: HTMLElement,
+): { width: number; height: number } {
+  const mapCanvas = map?.getCanvas();
+  if (mapCanvas) {
+    const width = mapCanvas.clientWidth || mapCanvas.offsetWidth;
+    const height = mapCanvas.clientHeight || mapCanvas.offsetHeight;
+    if (width > 0 && height > 0) {
+      return { width, height };
+    }
+  }
+  return readOverlayLayoutSize(fallback);
 }
 
 export const GIS_OVERLAY_CANVAS_CLASS =
