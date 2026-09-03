@@ -138,7 +138,7 @@ export function ImBindingsCard() {
       }
       if (result.status === "needs_reauth" || result.needsReauth) {
         toast.warning(result.message ?? "还需补充飞书授权，正在打开浏览器…");
-        launchDeviceAuth(result.suggestedScope);
+        launchDeviceAuth();
       }
     },
     [launchDeviceAuth, qc, refreshCapability],
@@ -189,7 +189,7 @@ export function ImBindingsCard() {
         return;
       }
       if (!cap?.ready) {
-        launchDeviceAuth(cap?.suggestedScope);
+        launchDeviceAuth();
       }
     })();
   }, [feishuDelegated, launchDeviceAuth, refreshCapability, searchParams, setSearchParams]);
@@ -334,7 +334,7 @@ export function ImBindingsCard() {
         <div>
           <h2 className="text-theme-sm font-semibold text-gray-900 dark:text-white">工作通知绑定</h2>
           <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-            点击绑定将自动打开飞书授权页；若权限不足会提示并再次弹出补充授权（无需手动去开放平台）。
+            点击绑定将一次性申请<strong className="font-medium">发消息 + 上传/发送文件</strong>权限并自动打开飞书授权页；邮件通道走平台 SMTP，与飞书授权无关。若权限不足会自动再次弹出完整授权。
           </p>
         </div>
       </div>
@@ -359,7 +359,7 @@ export function ImBindingsCard() {
                 size="sm"
                 variant="primary"
                 disabled={bindPending}
-                onClick={() => launchDeviceAuth(capability?.suggestedScope)}
+                onClick={() => launchDeviceAuth()}
               >
                 在浏览器中补充授权
               </Button>
@@ -458,7 +458,7 @@ export function ImBindingsCard() {
                         variant="primary"
                         size="sm"
                         disabled={bindPending}
-                        onClick={() => launchDeviceAuth(capability.suggestedScope)}
+                        onClick={() => launchDeviceAuth()}
                       >
                         补充授权
                       </Button>

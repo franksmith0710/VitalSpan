@@ -7,13 +7,12 @@ from dataclasses import dataclass
 
 import httpx
 
+from app.reports.scheduler.channels.im_sdk.feishu_common import normalize_feishu_push_scopes
+
 _DEVICE_AUTH_URL = "https://accounts.feishu.cn/oauth/v1/device_authorization"
 _TOKEN_URL = "https://open.feishu.cn/open-apis/authen/v2/oauth/token"
 _USER_INFO_URL = "https://open.feishu.cn/open-apis/authen/v1/user_info"
 _DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code"
-from app.reports.scheduler.channels.im_sdk.feishu_common import FEISHU_PUSH_SCOPES
-
-_DEFAULT_SCOPE = FEISHU_PUSH_SCOPES
 _TIMEOUT = 8.0
 _PENDING_ERRORS = frozenset({"authorization_pending", "slow_down"})
 _PENDING_FEISHU_CODES = frozenset({20094})
@@ -67,9 +66,7 @@ def _basic_auth(app_id: str, app_secret: str) -> str:
 
 
 def start_feishu_device_auth(*, app_id: str, app_secret: str, scope: str | None = None) -> DeviceAuthStart:
-    scope_value = scope or _DEFAULT_SCOPE
-    if "offline_access" not in scope_value:
-        scope_value = f"{scope_value} offline_access".strip()
+    scope_value = normalize_feishu_push_scopes(scope)
     body = {"client_id": app_id, "scope": scope_value}
     with httpx.Client(timeout=_TIMEOUT) as client:
         resp = client.post(

@@ -7,13 +7,21 @@ from dataclasses import dataclass
 
 import httpx
 
-from app.reports.scheduler.channels.im_sdk.feishu_common import FEISHU_PUSH_SCOPES
+from app.reports.scheduler.channels.im_sdk.feishu_common import (
+    FEISHU_PUSH_SCOPES,
+    normalize_feishu_push_scopes,
+)
+from app.reports.scheduler.channels.im_sdk.feishu_files_http import (
+    send_feishu_file_http,
+    send_feishu_text_http,
+    upload_feishu_file_http,
+)
 
 _USER_INFO_URL = "https://open.feishu.cn/open-apis/authen/v1/user_info"
-_FILES_URL = "https://open.feishu.cn/open-apis/im/v1/files"
 _TIMEOUT = 8.0
 _SCOPE_RE = re.compile(r"privileges?:\s*\[([^\]]+)\]", re.I)
 _MIN_PROBE_PDF = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF"
+_PROBE_TEXT = "VitalSpan 连通性探测（可忽略）"
 
 
 @dataclass(frozen=True)
@@ -30,6 +38,10 @@ def feishu_app_admin_portal_url(app_id: str) -> str:
     return f"https://open.feishu.cn/app/{app_id.strip()}/auth"
 
 
+def _full_scope_suggestion(*, extra: str | None = None) -> str:
+    return normalize_feishu_push_scopes(extra)
+
+
 def _extract_missing_scopes(text: str) -> tuple[str, ...]:
     match = _SCOPE_RE.search(text)
     if not match:
@@ -40,7 +52,31 @@ def _extract_missing_scopes(text: str) -> tuple[str, ...]:
 
 def _admin_employee_id_missing(message: str) -> bool:
     lower = message.lower()
-    return "employee_id" in lower or "contact:user" in lower
+    return "employee_id" in lower or "contact:user.employee_id" in lower
+
+
+def _reauth_probe(
+    *,
+    message: str,
+    missing: tuple[str, ...] = (),
+    extra_scope_hint: str | None = None,
+) -> FeishuCapabilityProbe:
+    return FeishuCapabilityProbe(
+        ready=False,
+        message=message,
+        missing_scopes=missing,
+        suggested_scope=_full_scope_suggestion(extra=extra_scope_hint),
+    )
+
+
+def _resolve_probe_target(account_id: str, user_id: str | None, open_id: str | None) -> str | None:
+    if account_id:
+        return account_id
+    if user_id:
+        return str(user_id)
+    if open_id:
+        return str(open_id)
+    return None
 
 
 def probe_feishu_user_delivery(
@@ -49,7 +85,7 @@ def probe_feishu_user_delivery(
     account_id: str,
     app_id: str | None = None,
 ) -> FeishuCapabilityProbe:
-    """Best-effort probe after bind; drives auto re-auth UX."""
+    """Deep probe: user_info → 发自测文字 → 上传 PDF → 发文件消息。"""
     with httpx.Client(timeout=_TIMEOUT) as client:
         info_resp = client.get(
             _USER_INFO_URL,
@@ -67,55 +103,71 @@ def probe_feishu_user_delivery(
                 needs_admin=True,
                 admin_portal_url=feishu_app_admin_portal_url(app_id or ""),
             )
-        return FeishuCapabilityProbe(
-            ready=False,
-            message=msg,
-            missing_scopes=missing,
-            suggested_scope=" ".join(missing) if missing else FEISHU_PUSH_SCOPES,
+        return _reauth_probe(
+            message="飞书身份读取失败，将为您打开完整授权页（消息 + 文件）。",
+            missing=missing,
+            extra_scope_hint=" ".join(missing) if missing else None,
         )
 
     data = info_body.get("data") or {}
     user_id = data.get("user_id")
     open_id = data.get("open_id")
-    if not user_id and str(account_id).startswith("ou_"):
-        return FeishuCapabilityProbe(
-            ready=False,
-            message="当前仅获取到 open_id，飞书应用需管理员开通「读取 user_id」权限后再重新绑定。",
-            needs_admin=True,
-            admin_portal_url=feishu_app_admin_portal_url(app_id or ""),
-        )
-    if not user_id and not open_id:
-        return FeishuCapabilityProbe(
-            ready=False,
-            message="飞书未返回可用账号标识，请重新绑定。",
-            suggested_scope=FEISHU_PUSH_SCOPES,
+    target_id = _resolve_probe_target(account_id, user_id, open_id)
+    if not target_id:
+        return _reauth_probe(message="飞书未返回可用账号标识，请重新完成授权。")
+
+    try:
+        send_feishu_text_http(access_token=access_token, account_id=target_id, text=_PROBE_TEXT)
+    except Exception as exc:
+        msg = str(exc)
+        missing = _extract_missing_scopes(msg)
+        if _admin_employee_id_missing(msg):
+            return FeishuCapabilityProbe(
+                ready=False,
+                message="飞书应用缺少发消息或通讯录权限，需管理员在开放平台开通并发布后，您再补充授权。",
+                missing_scopes=missing,
+                needs_admin=True,
+                admin_portal_url=feishu_app_admin_portal_url(app_id or ""),
+            )
+        return _reauth_probe(
+            message="飞书发消息权限未就绪，将为您打开完整授权页（消息 + 文件）。",
+            missing=missing,
+            extra_scope_hint=" ".join(missing) if missing else None,
         )
 
-    with httpx.Client(timeout=_TIMEOUT) as client:
-        upload_resp = client.post(
-            _FILES_URL,
-            headers={"Authorization": f"Bearer {access_token}"},
-            data={"file_type": "pdf", "file_name": "vitalspan-probe.pdf"},
-            files={"file": ("vitalspan-probe.pdf", _MIN_PROBE_PDF, "application/pdf")},
+    try:
+        file_key = upload_feishu_file_http(
+            access_token=access_token,
+            filename="vitalspan-probe.pdf",
+            mime="application/pdf",
+            data=_MIN_PROBE_PDF,
         )
-        upload_body = upload_resp.json()
-    if upload_resp.status_code < 400 and upload_body.get("code") in (0, None):
-        return FeishuCapabilityProbe(ready=True, message="飞书推送权限已就绪")
+    except Exception as exc:
+        msg = str(exc)
+        missing = _extract_missing_scopes(msg)
+        if _admin_employee_id_missing(msg):
+            return FeishuCapabilityProbe(
+                ready=False,
+                message="飞书应用缺少文件或通讯录权限，需管理员在开放平台开通并发布后，您再补充授权。",
+                missing_scopes=missing,
+                needs_admin=True,
+                admin_portal_url=feishu_app_admin_portal_url(app_id or ""),
+            )
+        return _reauth_probe(
+            message="飞书文件上传权限未就绪，将为您打开完整授权页（消息 + 文件）。",
+            missing=missing,
+            extra_scope_hint=" ".join(missing) if missing else None,
+        )
 
-    msg = str(upload_body.get("msg") or "飞书文件上传权限未开通")
-    missing = _extract_missing_scopes(msg)
-    if _admin_employee_id_missing(msg):
-        return FeishuCapabilityProbe(
-            ready=False,
-            message="飞书应用缺少文件或通讯录权限，需管理员在开放平台开通并发布后，您再补充授权。",
-            missing_scopes=missing,
-            needs_admin=True,
-            admin_portal_url=feishu_app_admin_portal_url(app_id or ""),
+    try:
+        send_feishu_file_http(access_token=access_token, account_id=target_id, file_key=file_key)
+    except Exception as exc:
+        msg = str(exc)
+        missing = _extract_missing_scopes(msg)
+        return _reauth_probe(
+            message="飞书文件消息权限未就绪，将为您打开完整授权页（消息 + 文件）。",
+            missing=missing,
+            extra_scope_hint=" ".join(missing) if missing else None,
         )
-    scope_text = " ".join(missing) if missing else FEISHU_PUSH_SCOPES
-    return FeishuCapabilityProbe(
-        ready=False,
-        message="飞书还需补充消息/文件权限，将为您打开授权页，请在浏览器中确认。",
-        missing_scopes=missing,
-        suggested_scope=scope_text,
-    )
+
+    return FeishuCapabilityProbe(ready=True, message="飞书推送权限已就绪（消息与文件）")

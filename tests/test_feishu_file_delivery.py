@@ -14,6 +14,15 @@ from app.reports.scheduler.channels.im_sdk.feishu_files_http import deliver_feis
 from app.reports.scheduler.channels.im_sdk.feishu_user import deliver_feishu_as_user
 
 
+def test_feishu_push_scopes_include_message_and_file():
+    from app.reports.scheduler.channels.im_sdk.feishu_common import FEISHU_PUSH_SCOPE_PARTS
+
+    assert "im:message" in FEISHU_PUSH_SCOPE_PARTS
+    assert "im:message.send_as_user" in FEISHU_PUSH_SCOPE_PARTS
+    assert "im:resource" in FEISHU_PUSH_SCOPE_PARTS
+    assert "offline_access" in FEISHU_PUSH_SCOPE_PARTS
+
+
 def test_feishu_receive_id_type_open_id():
     assert feishu_receive_id_type("ou_abc") == "open_id"
     assert feishu_receive_id_type("4gxxx") == "user_id"
