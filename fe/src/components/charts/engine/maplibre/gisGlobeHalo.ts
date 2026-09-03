@@ -14,6 +14,10 @@ import {
   readOverlayLayoutSize,
   syncOverlayCanvasSize,
 } from "@/components/charts/engine/maplibre/gisOverlayCanvas";
+import {
+  ensureGisMapControlStack,
+  GIS_MAP_CANVAS_Z,
+} from "@/components/charts/engine/maplibre/gisMapControlStack";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
@@ -21,7 +25,6 @@ export type { GlobeLimbBounds } from "@/components/charts/engine/maplibre/gisGlo
 export { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
 
 const HALO_CANVAS_CLASS = "pointer-events-none absolute";
-const MAP_CANVAS_Z = "4";
 /** 置于 map canvas 之下；球面由 WebGL 自然遮挡，光晕只从球外透明区透出，不洗白地表。 */
 const HALO_CANVAS_Z = "3";
 const LIMB_REPAINT_EPS = 0.5;
@@ -94,8 +97,9 @@ export function mountGisGlobeHaloOverlay(
       paintRoot.insertBefore(canvas, mapCanvas);
     }
     paintRoot.style.position = paintRoot.style.position || "relative";
-    mapCanvas.style.zIndex = MAP_CANVAS_Z;
+    mapCanvas.style.zIndex = GIS_MAP_CANVAS_Z;
     canvas.style.zIndex = HALO_CANVAS_Z;
+    ensureGisMapControlStack(map);
     paintDomReady = true;
   };
 

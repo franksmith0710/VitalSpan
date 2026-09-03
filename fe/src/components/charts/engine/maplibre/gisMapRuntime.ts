@@ -1,5 +1,6 @@
 import type { StyleSpecification } from "maplibre-gl";
 import { gisFogToMapLibreSky } from "@/components/charts/engine/maplibre/gisAtmosphereSky";
+import { ensureGisMapControlStack } from "@/components/charts/engine/maplibre/gisMapControlStack";
 import type {
   GisAtmospherePreset,
   GisProjectFog,
@@ -240,6 +241,7 @@ export async function mountGisMapControls(
   }
 
   map.resize();
+  ensureGisMapControlStack(map);
   return () => {
     for (const control of mounted) {
       try {

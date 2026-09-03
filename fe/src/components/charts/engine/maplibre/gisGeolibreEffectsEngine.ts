@@ -20,13 +20,13 @@ import {
   resolveGlobeScreenBounds,
   shouldRenderGisGlobeFarEffects,
 } from "@/components/charts/engine/maplibre/gisGlobeLayout";
+import {
+  ensureGisMapControlStack,
+} from "@/components/charts/engine/maplibre/gisMapControlStack";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
 const EFFECTS_MAP_CLASS = "vs-gis-geolibre-effects-map";
-const EFFECTS_STYLE_ID = "vs-gis-geolibre-effects-overlays";
-const MAP_CANVAS_Z = "4";
-const CONTROL_Z = "6";
 
 function isGlobeProjection(map: MapLibreMap): boolean {
   try {
@@ -54,11 +54,8 @@ export class GisGeolibreEffectsEngine {
   private settings: ResolvedGisEffectsSettings;
   private readonly mapCanvas: HTMLCanvasElement;
   private readonly mapRoot: HTMLElement | null;
-  private readonly controlContainer: HTMLElement | null;
   private readonly previousMapZ: string;
-  private readonly previousControlZ: string;
   private readonly previousSky: SkySpecification | undefined;
-  private readonly overlayStyle: HTMLStyleElement;
   private readonly spaceCtx: CanvasRenderingContext2D;
   private readonly starsCtx: CanvasRenderingContext2D;
   private readonly cometCtx: CanvasRenderingContext2D;
@@ -81,13 +78,9 @@ export class GisGeolibreEffectsEngine {
     this.settings = settings;
     this.mapCanvas = map.getCanvas();
     this.mapRoot = this.mapCanvas.closest(".maplibregl-map");
-    this.controlContainer =
-      this.mapRoot?.querySelector<HTMLElement>(".maplibregl-control-container") ?? null;
     this.previousMapZ = this.mapCanvas.style.zIndex;
-    this.previousControlZ = this.controlContainer?.style.zIndex ?? "";
     this.previousSky = this.readSky();
     this.suppressMapLibreAtmosphere();
-    this.overlayStyle = this.ensureOverlayStyle();
 
     const space = createLayerCanvas(0);
     const stars = createLayerCanvas(1);
@@ -99,8 +92,7 @@ export class GisGeolibreEffectsEngine {
     this.cometCtx = comets.getContext("2d")!;
 
     this.mapRoot?.classList.add(EFFECTS_MAP_CLASS);
-    this.mapCanvas.style.zIndex = MAP_CANVAS_Z;
-    if (this.controlContainer) this.controlContainer.style.zIndex = CONTROL_Z;
+    ensureGisMapControlStack(map);
     container.style.background = "transparent";
     this.mapCanvas.style.background = "transparent";
 
@@ -137,34 +129,15 @@ export class GisGeolibreEffectsEngine {
     this.unbindMapRender?.();
     this.unbindMapRender = undefined;
     this.mapCanvas.style.zIndex = this.previousMapZ;
-    if (this.controlContainer) this.controlContainer.style.zIndex = this.previousControlZ;
     try {
       if (this.previousSky) this.map.setSky(this.previousSky);
     } catch {
       /* style tearing down */
     }
     this.mapRoot?.classList.remove(EFFECTS_MAP_CLASS);
-    this.overlayStyle.remove();
     for (const ctx of [this.spaceCtx, this.starsCtx, this.cometCtx]) {
       ctx.canvas.remove();
     }
-  }
-
-  private ensureOverlayStyle(): HTMLStyleElement {
-    const existing = document.getElementById(EFFECTS_STYLE_ID);
-    if (existing instanceof HTMLStyleElement) return existing;
-    const style = document.createElement("style");
-    style.id = EFFECTS_STYLE_ID;
-    style.textContent = `
-      .${EFFECTS_MAP_CLASS} .maplibregl-control-container { z-index: ${CONTROL_Z}; pointer-events: auto; }
-      .${EFFECTS_MAP_CLASS} .maplibregl-ctrl-top-right,
-      .${EFFECTS_MAP_CLASS} .maplibregl-ctrl-bottom-left,
-      .${EFFECTS_MAP_CLASS} .maplibregl-ctrl-bottom-right { pointer-events: auto; }
-      .${EFFECTS_MAP_CLASS} .maplibregl-boxzoom { z-index: 6; }
-      .${EFFECTS_MAP_CLASS} .maplibregl-marker { z-index: ${CONTROL_Z}; }
-    `;
-    document.head.appendChild(style);
-    return style;
   }
 
   private readSky(): SkySpecification | undefined {
