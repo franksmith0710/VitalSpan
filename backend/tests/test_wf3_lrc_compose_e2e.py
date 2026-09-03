@@ -81,10 +81,10 @@ def test_completion_gate_wf3_blocks_legacy_template_stdout() -> None:
     )
     result = check_completion("3", f"完成 dashboardId={dash_id}", stdout)
     assert result.ok is False
-    assert any("LEGACY" in r or "rhythm" in r.lower() for r in result.reasons)
+    assert any("LEGACY" in r or "template" in r.lower() or "removed" in r.lower() for r in result.reasons)
 
 
-def test_completion_gate_wf3_passes_rhythm_compose_stdout() -> None:
+def test_completion_gate_wf3_passes_upload_stdout() -> None:
     lib = str(REPO_ROOT / "docs" / "api" / "vs-ai-spec" / "deeptalk-product" / "lib")
     if lib not in sys.path:
         sys.path.insert(0, lib)
@@ -93,17 +93,14 @@ def test_completion_gate_wf3_passes_rhythm_compose_stdout() -> None:
     dash_id = "550e8400-e29b-41d4-a716-446655440000"
     stdout = (
         f"ok dashboardId={dash_id}\n"
-        "rhythm=rhythm-cv-stage\n"
-        "blocks: 2 widgets from contract\n"
-        "layout widgets: 4 (chart=0 customViz=2 kpi=0)\n"
-        "data binding: manual\n"
-        "done: compose complete"
+        "layout widgets: 12 (chart=7 customViz=3 kpi=4)\n"
+        "done: layout saved via upload — pass tool_stdout to completion_gate (wf3 default completion)"
     )
     result = check_completion("3", f"完成 dashboardId={dash_id}", stdout)
     assert result.ok is True
 
 
-def test_route_request_wf3_returns_rhythm_not_template() -> None:
+def test_route_request_wf3_returns_free_layout_not_template() -> None:
     lib = str(REPO_ROOT / "docs" / "api" / "vs-ai-spec" / "deeptalk-product" / "lib")
     if lib not in sys.path:
         sys.path.insert(0, lib)
@@ -112,5 +109,6 @@ def test_route_request_wf3_returns_rhythm_not_template() -> None:
     payload = route_request("用两个组件拼数据大屏").to_dict()
     assert payload["ok"] is True
     assert payload["workflow"] == "3"
-    assert payload.get("rhythm") == "rhythm-cv-stage"
+    assert payload.get("redirect") == "create_dashboard"
     assert "template" not in payload
+    assert "rhythm" not in payload

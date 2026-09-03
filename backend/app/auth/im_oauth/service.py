@@ -34,6 +34,8 @@ from app.auth.im_oauth.redirect import sanitize_redirect_after
 from app.auth.im_models import ImOAuthState
 from app.core.platform_config.im_connect_model import IM_CHANNELS, IM_LABELS
 from app.core.platform_config.im_resolve import resolve_im_credentials, resolve_im_delivery_mode
+from app.auth.im_oauth.feishu_capability import FeishuCapabilityProbe, probe_feishu_user_delivery
+from app.auth.im_oauth.im_user_token import get_user_access_token
 from app.reports.scheduler.channels.im_sdk.probe import probe_im_credentials_bundle
 
 _DEVICE_STATE_TTL = timedelta(minutes=15)
@@ -75,10 +77,21 @@ class DeviceAuthCompleteIn(BaseModel):
     model_config = {"populate_by_name": True}
 
 
+class DeviceAuthStartIn(BaseModel):
+    scope: str | None = None
+
+    model_config = {"populate_by_name": True}
+
+
 class DeviceAuthCompleteOut(BaseModel):
     status: str
     message: str | None = None
     interval: int | None = None
+    needs_reauth: bool = Field(default=False, alias="needsReauth")
+    missing_scopes: list[str] = Field(default_factory=list, alias="missingScopes")
+    suggested_scope: str | None = Field(default=None, alias="suggestedScope")
+    needs_admin: bool = Field(default=False, alias="needsAdmin")
+    admin_portal_url: str | None = Field(default=None, alias="adminPortalUrl")
 
     model_config = {"populate_by_name": True}
 
@@ -87,6 +100,44 @@ class AuthorizeUrlOut(BaseModel):
     authorize_url: str = Field(alias="authorizeUrl")
 
     model_config = {"populate_by_name": True}
+
+
+class FeishuCapabilityOut(BaseModel):
+    ready: bool
+    message: str
+    needs_reauth: bool = Field(default=False, alias="needsReauth")
+    missing_scopes: list[str] = Field(default_factory=list, alias="missingScopes")
+    suggested_scope: str | None = Field(default=None, alias="suggestedScope")
+    needs_admin: bool = Field(default=False, alias="needsAdmin")
+    admin_portal_url: str | None = Field(default=None, alias="adminPortalUrl")
+
+    model_config = {"populate_by_name": True}
+
+
+def _capability_out(probe: FeishuCapabilityProbe) -> FeishuCapabilityOut:
+    return FeishuCapabilityOut(
+        ready=probe.ready,
+        message=probe.message,
+        needs_reauth=not probe.ready and not probe.needs_admin and bool(probe.suggested_scope),
+        missing_scopes=list(probe.missing_scopes),
+        suggested_scope=probe.suggested_scope,
+        needs_admin=probe.needs_admin,
+        admin_portal_url=probe.admin_portal_url or None,
+    )
+
+
+def _complete_from_capability(probe: FeishuCapabilityProbe) -> DeviceAuthCompleteOut:
+    if probe.ready:
+        return DeviceAuthCompleteOut(status="success", message="绑定成功，飞书推送权限已就绪")
+    return DeviceAuthCompleteOut(
+        status="needs_reauth" if not probe.needs_admin else "needs_admin",
+        message=probe.message,
+        needs_reauth=not probe.needs_admin and bool(probe.suggested_scope),
+        missing_scopes=list(probe.missing_scopes),
+        suggested_scope=probe.suggested_scope,
+        needs_admin=probe.needs_admin,
+        admin_portal_url=probe.admin_portal_url or None,
+    )
 
 
 def _app_ready(session: Session, channel: str, creds) -> tuple[bool, str | None]:
@@ -194,7 +245,12 @@ def complete_callback(
     return oauth_state.user_id, redirect
 
 
-def start_feishu_device_auth_session(session: Session, *, user_id: uuid.UUID) -> DeviceAuthStartOut:
+def start_feishu_device_auth_session(
+    session: Session,
+    *,
+    user_id: uuid.UUID,
+    scope: str | None = None,
+) -> DeviceAuthStartOut:
     channel = "feishu"
     mode = resolve_im_delivery_mode(session, channel)
     if mode != "user_delegated":
@@ -205,6 +261,7 @@ def start_feishu_device_auth_session(session: Session, *, user_id: uuid.UUID) ->
     started = start_feishu_device_auth(
         app_id=creds.app_id or "",
         app_secret=creds.app_secret or "",
+        scope=scope,
     )
     session_id = secrets.token_urlsafe(24)
     session.add(
@@ -277,7 +334,36 @@ def complete_feishu_device_auth_session(
         raise ImOAuthError(exc.code, exc.message, exc.status) from exc
     session.delete(row)
     session.commit()
-    return DeviceAuthCompleteOut(status="success", message="绑定成功")
+    probe = probe_feishu_user_delivery(
+        access_token=result.access_token,
+        account_id=result.user_id,
+        app_id=creds.app_id,
+    )
+    return _complete_from_capability(probe)
+
+
+def probe_feishu_binding_capability(session: Session, *, user_id: uuid.UUID) -> FeishuCapabilityOut:
+    mode = resolve_im_delivery_mode(session, "feishu")
+    if mode != "user_delegated":
+        return FeishuCapabilityOut(ready=True, message="当前为企业应用模式")
+    rows = list_binding_rows(session, user_id)
+    row = rows.get("feishu")
+    if row is None:
+        return FeishuCapabilityOut(ready=False, message="尚未绑定飞书")
+    creds = resolve_im_credentials(session, channel="feishu")
+    token = get_user_access_token(session, user_id, "feishu")
+    if not token:
+        return FeishuCapabilityOut(
+            ready=False,
+            message="飞书授权已失效，请重新绑定",
+            needs_reauth=True,
+        )
+    probe = probe_feishu_user_delivery(
+        access_token=token,
+        account_id=row.account_id,
+        app_id=creds.app_id,
+    )
+    return _capability_out(probe)
 
 
 class ScanBindStartOut(BaseModel):

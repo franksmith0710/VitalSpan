@@ -53,15 +53,25 @@ export function summarizeRecipients(
 }
 
 export function summarizeDeliveryRecipients(
-  deliverySteps?: { channel?: string; recipients?: string[] }[],
+  deliverySteps?: { channel?: string; recipients?: string[]; to?: string[] }[],
 ): string {
   if (!deliverySteps?.length) return "—";
-  const emails = deliverySteps
-    .filter((step) => step.channel === "email")
-    .flatMap((step) => step.recipients ?? []);
-  if (!emails.length) return "—";
-  if (emails.length <= 2) return emails.join("、");
-  return `${emails.slice(0, 2).join("、")} 等 ${emails.length} 个`;
+  const parts: string[] = [];
+  for (const step of deliverySteps) {
+    if (step.channel === "email") {
+      parts.push(...(step.recipients ?? []));
+      continue;
+    }
+    const targets = step.to ?? step.recipients ?? [];
+    if (step.channel === "feishu" && targets.length) {
+      parts.push(targets.length === 1 ? "飞书 1 人" : `飞书 ${targets.length} 人`);
+    } else if (step.channel === "dingtalk" && targets.length) {
+      parts.push(targets.length === 1 ? "钉钉 1 人" : `钉钉 ${targets.length} 人`);
+    }
+  }
+  if (!parts.length) return "—";
+  if (parts.length <= 2) return parts.join("、");
+  return `${parts.slice(0, 2).join("、")} 等 ${parts.length} 项`;
 }
 
 export function formatAttachmentLabels(formats?: string[]): string {

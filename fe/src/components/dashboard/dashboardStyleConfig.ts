@@ -918,11 +918,26 @@ export function widgetDashboardStyleFingerprint(
   return JSON.stringify(pickWidgetDashboardStyle(config));
 }
 
-/** 画板底色/装饰变更指纹（PixelCanvas artboard 重绘） */
+/** 画板样式指纹（useMemo / inline style 重算） */
 export function canvasArtboardStyleFingerprint(config: DashboardStyleConfig): string {
   return JSON.stringify({
     scheme: config.colorScheme ?? "light",
     bg: config.canvasBackground,
+    img: config.canvasBackgroundImage,
+    imgFit: config.canvasBackgroundImageFit,
+    imgPos: config.canvasBackgroundImagePosition,
+    custom: config.canvasBackgroundCustom,
+    decor: config.canvasDecorPresetId,
+  });
+}
+
+/**
+ * 画板强制重绘指纹（key / metrics 刷新）。
+ * 不含纯色 `bg`，避免颜色选择器连续改色时整层 remount。
+ */
+export function canvasArtboardRepaintFingerprint(config: DashboardStyleConfig): string {
+  return JSON.stringify({
+    scheme: config.colorScheme ?? "light",
     img: config.canvasBackgroundImage,
     imgFit: config.canvasBackgroundImageFit,
     imgPos: config.canvasBackgroundImagePosition,

@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, MessageSquare } from "lucide-react";
 import { useSearchParams } from "react-router";
@@ -10,9 +10,17 @@ import { mapApiError } from "@/lib/apiError";
 import { IM_CHANNEL_LABELS, type ImChannel } from "@/lib/imChannels";
 import { queryKeys } from "@/lib/queryKeys";
 import {
-  embedDingtalkQr,
-  type ScanBindStart,
-} from "./imScanBind";
+  completeFeishuDeviceAuth,
+  fetchFeishuCapability,
+  navigateAuthTab,
+  openAdminPortal,
+  openPendingAuthTab,
+  startFeishuDeviceAuth,
+  type DeviceAuthComplete,
+  type DeviceAuthStart,
+  type FeishuCapability,
+} from "./feishuDeviceAuth";
+import { embedDingtalkQr, type ScanBindStart } from "./imScanBind";
 
 type ImBindingItem = {
   channel: ImChannel;
@@ -26,23 +34,7 @@ type ImBindingItem = {
   probeError?: string | null;
 };
 
-type ImBindingsResponse = {
-  items: ImBindingItem[];
-};
-
-type DeviceAuthStart = {
-  sessionId: string;
-  verificationUri: string;
-  userCode: string;
-  expiresIn: number;
-  interval: number;
-};
-
-type DeviceAuthComplete = {
-  status: "pending" | "success" | "failed";
-  message?: string | null;
-  interval?: number | null;
-};
+type ImBindingsResponse = { items: ImBindingItem[] };
 
 const SOURCE_LABEL: Record<string, string> = {
   oauth: "网页授权",
@@ -53,46 +45,42 @@ const SOURCE_LABEL: Record<string, string> = {
 
 const SCAN_CONTAINER_ID = "im-scan-bind-qr";
 
-/** 预开授权标签页：不能用 noopener，否则拿不到 Window 引用无法跳转。 */
-function openPendingAuthTab(): Window | null {
-  const popup = window.open("about:blank", "_blank");
-  if (popup) {
-    popup.opener = null;
-  }
-  return popup;
-}
-
-function navigateAuthTab(popup: Window | null, uri: string): boolean {
-  const target = uri.trim();
-  if (!target) return false;
-  if (popup && !popup.closed) {
-    popup.location.replace(target);
-    return true;
-  }
-  const opened = window.open(target, "_blank");
-  if (opened) {
-    opened.opener = null;
-    return true;
-  }
-  return false;
-}
-
 export function ImBindingsCard() {
   const [searchParams, setSearchParams] = useSearchParams();
   const qc = useQueryClient();
   const pollTimer = useRef<number | null>(null);
   const deviceAuthPopupRef = useRef<Window | null>(null);
   const devicePollSessionRef = useRef<string | null>(null);
+  const autoReauthOnceRef = useRef(false);
   const scanContainerId = useId().replace(/:/g, "");
   const [deviceSession, setDeviceSession] = useState<DeviceAuthStart | null>(null);
   const [devicePolling, setDevicePolling] = useState(false);
   const [scanSession, setScanSession] = useState<ScanBindStart | null>(null);
   const [scanChannel, setScanChannel] = useState<ImChannel | null>(null);
+  const [capability, setCapability] = useState<FeishuCapability | null>(null);
 
   const bindingsQuery = useQuery({
     queryKey: queryKeys.meImBindings,
     queryFn: () => apiFetch<ImBindingsResponse>("/api/v1/me/im-bindings"),
   });
+
+  const feishuItem = bindingsQuery.data?.items.find((item) => item.channel === "feishu");
+  const feishuDelegated = feishuItem?.deliveryMode === "user_delegated";
+
+  const refreshCapability = useCallback(async () => {
+    if (!feishuItem?.bound || !feishuDelegated) {
+      setCapability(null);
+      return null;
+    }
+    try {
+      const next = await fetchFeishuCapability();
+      setCapability(next);
+      return next;
+    } catch {
+      setCapability(null);
+      return null;
+    }
+  }, [feishuDelegated, feishuItem?.bound]);
 
   const clearDevicePollTimer = () => {
     if (pollTimer.current !== null) {
@@ -100,6 +88,111 @@ export function ImBindingsCard() {
       pollTimer.current = null;
     }
   };
+
+  const deviceStartMutation = useMutation({
+    mutationFn: (scope?: string) => startFeishuDeviceAuth(scope),
+    onSuccess: (data) => {
+      setScanSession(null);
+      setScanChannel(null);
+      setDeviceSession(data);
+      clearDevicePollTimer();
+      devicePollSessionRef.current = data.sessionId;
+      setDevicePolling(true);
+      const popup = deviceAuthPopupRef.current;
+      deviceAuthPopupRef.current = null;
+      const opened = navigateAuthTab(popup, data.verificationUri);
+      if (!opened) {
+        toast.info("浏览器拦截了弹窗，请点击「打开飞书授权页」继续");
+      }
+      void pollDeviceComplete(data.sessionId, data.interval);
+    },
+    onError: (err) => {
+      deviceAuthPopupRef.current?.close();
+      deviceAuthPopupRef.current = null;
+      toast.error(mapApiError(err));
+    },
+  });
+
+  const launchDeviceAuth = useCallback(
+    (scope?: string | null) => {
+      deviceAuthPopupRef.current = openPendingAuthTab();
+      deviceStartMutation.mutate(scope ?? undefined);
+    },
+    [deviceStartMutation],
+  );
+
+  const handleAuthOutcome = useCallback(
+    async (result: DeviceAuthComplete) => {
+      if (result.status === "success") {
+        toast.success(result.message ?? "飞书绑定成功");
+        await qc.invalidateQueries({ queryKey: queryKeys.meImBindings });
+        await refreshCapability();
+        return;
+      }
+      if (result.status === "needs_admin" || result.needsAdmin) {
+        toast.error(result.message ?? "需管理员在飞书开放平台开通权限");
+        if (result.adminPortalUrl) {
+          openAdminPortal(result.adminPortalUrl);
+        }
+        return;
+      }
+      if (result.status === "needs_reauth" || result.needsReauth) {
+        toast.warning(result.message ?? "还需补充飞书授权，正在打开浏览器…");
+        launchDeviceAuth(result.suggestedScope);
+      }
+    },
+    [launchDeviceAuth, qc, refreshCapability],
+  );
+
+  async function pollDeviceComplete(sessionId: string, intervalMs: number) {
+    if (devicePollSessionRef.current !== sessionId) return;
+    try {
+      const result = await completeFeishuDeviceAuth(sessionId);
+      if (devicePollSessionRef.current !== sessionId) return;
+      if (result.status === "pending") {
+        const nextInterval = Math.max(result.interval ?? intervalMs, 3);
+        pollTimer.current = window.setTimeout(
+          () => void pollDeviceComplete(sessionId, nextInterval),
+          nextInterval * 1000,
+        );
+        return;
+      }
+      clearDevicePollTimer();
+      devicePollSessionRef.current = null;
+      setDevicePolling(false);
+      setDeviceSession(null);
+      await handleAuthOutcome(result);
+    } catch (err) {
+      if (devicePollSessionRef.current !== sessionId) return;
+      clearDevicePollTimer();
+      devicePollSessionRef.current = null;
+      setDevicePolling(false);
+      toast.error(mapApiError(err));
+    }
+  }
+
+  useEffect(() => {
+    void refreshCapability();
+  }, [refreshCapability]);
+
+  useEffect(() => {
+    if (searchParams.get("feishuReauth") !== "1" || autoReauthOnceRef.current) return;
+    if (!feishuDelegated) return;
+    autoReauthOnceRef.current = true;
+    searchParams.delete("feishuReauth");
+    setSearchParams(searchParams, { replace: true });
+    void (async () => {
+      const cap = await refreshCapability();
+      if (cap?.needsAdmin && cap.adminPortalUrl) {
+        openAdminPortal(cap.adminPortalUrl);
+        toast.error(cap.message);
+        return;
+      }
+      if (!cap?.ready) {
+        launchDeviceAuth(cap?.suggestedScope);
+      }
+    })();
+  }, [feishuDelegated, launchDeviceAuth, refreshCapability, searchParams, setSearchParams]);
 
   useEffect(() => {
     const status = searchParams.get("status");
@@ -158,9 +251,7 @@ export function ImBindingsCard() {
           });
         }
       } catch (err) {
-        if (!cancelled) {
-          toast.error(mapApiError(err));
-        }
+        if (!cancelled) toast.error(mapApiError(err));
       }
     };
     void mount();
@@ -177,6 +268,7 @@ export function ImBindingsCard() {
       setDeviceSession(null);
       setScanSession(null);
       setScanChannel(null);
+      setCapability(null);
       await qc.invalidateQueries({ queryKey: queryKeys.meImBindings });
     },
     onError: (err) => toast.error(mapApiError(err)),
@@ -212,77 +304,16 @@ export function ImBindingsCard() {
     onError: (err) => toast.error(mapApiError(err)),
   });
 
-  const startOAuthBind = (channel: ImChannel) => {
-    oauthBindMutation.mutate(channel);
-  };
-
-  const pollDeviceComplete = async (sessionId: string, intervalMs: number) => {
-    if (devicePollSessionRef.current !== sessionId) return;
-    try {
-      const result = await apiFetch<DeviceAuthComplete>("/api/v1/me/im-bindings/feishu/device-auth/complete", {
-        method: "POST",
-        body: JSON.stringify({ sessionId }),
-      });
-      if (devicePollSessionRef.current !== sessionId) return;
-      if (result.status === "success") {
-        clearDevicePollTimer();
-        devicePollSessionRef.current = null;
-        setDevicePolling(false);
-        setDeviceSession(null);
-        toast.success("飞书绑定成功");
-        await qc.invalidateQueries({ queryKey: queryKeys.meImBindings });
-        return;
-      }
-      const nextInterval = Math.max(result.interval ?? intervalMs, 3);
-      pollTimer.current = window.setTimeout(
-        () => void pollDeviceComplete(sessionId, nextInterval),
-        nextInterval * 1000,
-      );
-    } catch (err) {
-      if (devicePollSessionRef.current !== sessionId) return;
-      clearDevicePollTimer();
-      devicePollSessionRef.current = null;
-      setDevicePolling(false);
-      toast.error(mapApiError(err));
-    }
-  };
-
-  const deviceStartMutation = useMutation({
-    mutationFn: () =>
-      apiFetch<DeviceAuthStart>("/api/v1/me/im-bindings/feishu/device-auth/start", { method: "POST" }),
-    onSuccess: (data) => {
-      setScanSession(null);
-      setScanChannel(null);
-      setDeviceSession(data);
-      clearDevicePollTimer();
-      devicePollSessionRef.current = data.sessionId;
-      setDevicePolling(true);
-      const popup = deviceAuthPopupRef.current;
-      deviceAuthPopupRef.current = null;
-      const opened = navigateAuthTab(popup, data.verificationUri);
-      if (!opened) {
-        toast.info("浏览器拦截了弹窗，请点击「打开飞书授权页」继续");
-      }
-      void pollDeviceComplete(data.sessionId, data.interval);
-    },
-    onError: (err) => {
-      deviceAuthPopupRef.current?.close();
-      deviceAuthPopupRef.current = null;
-      toast.error(mapApiError(err));
-    },
-  });
-
   const startBind = (item: ImBindingItem) => {
     if (item.channel === "feishu" && item.deliveryMode === "user_delegated") {
-      deviceAuthPopupRef.current = openPendingAuthTab();
-      deviceStartMutation.mutate();
+      launchDeviceAuth();
       return;
     }
     if (item.deliveryMode === "user_delegated" && item.channel === "dingtalk") {
       scanStartMutation.mutate(item.channel);
       return;
     }
-    startOAuthBind(item.channel);
+    oauthBindMutation.mutate(item.channel);
   };
 
   const bindPending =
@@ -292,6 +323,7 @@ export function ImBindingsCard() {
     scanCompleteMutation.isPending;
 
   const items = bindingsQuery.data?.items ?? [];
+  const showCapabilityBanner = Boolean(capability && !capability.ready && feishuItem?.bound);
 
   return (
     <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-theme-xs dark:border-gray-800 dark:bg-white/[0.02] md:p-6">
@@ -302,10 +334,39 @@ export function ImBindingsCard() {
         <div>
           <h2 className="text-theme-sm font-semibold text-gray-900 dark:text-white">工作通知绑定</h2>
           <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-            绑定后定时报告可发到您的飞书个人账号。钉钉为群发，无需在此绑定。
+            点击绑定将自动打开飞书授权页；若权限不足会提示并再次弹出补充授权（无需手动去开放平台）。
           </p>
         </div>
       </div>
+
+      {showCapabilityBanner ? (
+        <div className="mb-4 rounded-xl border border-warning-200 bg-warning-50/80 p-4 dark:border-warning-500/30 dark:bg-warning-500/10">
+          <p className="text-theme-sm font-medium text-gray-900 dark:text-white">飞书权限未就绪</p>
+          <p className="mt-1 text-theme-xs text-gray-600 dark:text-gray-300">{capability?.message}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {capability?.needsAdmin ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => openAdminPortal(capability.adminPortalUrl)}
+              >
+                打开飞书开放平台（管理员）
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                variant="primary"
+                disabled={bindPending}
+                onClick={() => launchDeviceAuth(capability?.suggestedScope)}
+              >
+                在浏览器中补充授权
+              </Button>
+            )}
+          </div>
+        </div>
+      ) : null}
 
       {deviceSession ? (
         <div className="mb-4 rounded-xl border border-brand-200 bg-brand-50/60 p-4 dark:border-brand-500/30 dark:bg-brand-500/10">
@@ -334,9 +395,7 @@ export function ImBindingsCard() {
           <p className="text-theme-sm font-medium text-gray-900 dark:text-white">
             {IM_CHANNEL_LABELS[scanChannel]} 扫码绑定
           </p>
-          <p className="mt-1 text-theme-xs text-gray-600 dark:text-gray-300">
-            请使用钉钉扫描下方二维码完成授权。
-          </p>
+          <p className="mt-1 text-theme-xs text-gray-600 dark:text-gray-300">请使用钉钉扫描下方二维码完成授权。</p>
           <div
             id={`${SCAN_CONTAINER_ID}-${scanContainerId}`}
             className="mt-3 flex min-h-[280px] items-center justify-center"
@@ -382,25 +441,38 @@ export function ImBindingsCard() {
                       ? "钉钉按群发，无需个人绑定"
                       : item.probeError || "请管理员在平台对接中粘贴群机器人 webhook"
                     : item.bound
-                    ? `账号 ${item.maskedAccount ?? "—"}${item.source ? ` · ${SOURCE_LABEL[item.source] ?? item.source}` : ""}`
-                    : item.appConfigured
-                      ? item.deliveryMode === "user_delegated"
-                        ? "点击绑定后将展示扫码区域"
-                        : "点击绑定后将在厂商页面确认身份"
-                      : item.probeError || "请管理员在平台对接中配置并探测通过"}
+                      ? `账号 ${item.maskedAccount ?? "—"}${item.source ? ` · ${SOURCE_LABEL[item.source] ?? item.source}` : ""}`
+                      : item.appConfigured
+                        ? item.deliveryMode === "user_delegated"
+                          ? "点击绑定后将自动打开飞书授权页"
+                          : "点击绑定后将在厂商页面确认身份"
+                        : item.probeError || "请管理员在平台对接中配置并探测通过"}
                 </p>
               </div>
               <div className="flex shrink-0 gap-2">
                 {item.deliveryMode === "group_webhook" ? null : item.bound ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    disabled={unbindMutation.isPending}
-                    onClick={() => unbindMutation.mutate(item.channel)}
-                  >
-                    解绑
-                  </Button>
+                  <>
+                    {item.channel === "feishu" && item.deliveryMode === "user_delegated" && capability && !capability.ready ? (
+                      <Button
+                        type="button"
+                        variant="primary"
+                        size="sm"
+                        disabled={bindPending}
+                        onClick={() => launchDeviceAuth(capability.suggestedScope)}
+                      >
+                        补充授权
+                      </Button>
+                    ) : null}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={unbindMutation.isPending}
+                      onClick={() => unbindMutation.mutate(item.channel)}
+                    >
+                      解绑
+                    </Button>
+                  </>
                 ) : (
                   <Button
                     type="button"

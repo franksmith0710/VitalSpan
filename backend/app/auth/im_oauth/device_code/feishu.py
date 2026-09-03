@@ -11,7 +11,9 @@ _DEVICE_AUTH_URL = "https://accounts.feishu.cn/oauth/v1/device_authorization"
 _TOKEN_URL = "https://open.feishu.cn/open-apis/authen/v2/oauth/token"
 _USER_INFO_URL = "https://open.feishu.cn/open-apis/authen/v1/user_info"
 _DEVICE_GRANT = "urn:ietf:params:oauth:grant-type:device_code"
-_DEFAULT_SCOPE = "offline_access"
+from app.reports.scheduler.channels.im_sdk.feishu_common import FEISHU_PUSH_SCOPES
+
+_DEFAULT_SCOPE = FEISHU_PUSH_SCOPES
 _TIMEOUT = 8.0
 _PENDING_ERRORS = frozenset({"authorization_pending", "slow_down"})
 _PENDING_FEISHU_CODES = frozenset({20094})

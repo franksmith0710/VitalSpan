@@ -5,6 +5,7 @@ import {
   scheduleSourceHref,
   scheduleTabForSourceType,
   summarizeRecipients,
+  summarizeDeliveryRecipients,
 } from "@/lib/scheduleSourceMeta";
 
 describe("scheduleSourceMeta", () => {
@@ -62,5 +63,14 @@ describe("scheduleSourceMeta", () => {
         catalogNodeId: null,
       }),
     ).toBe("/admin/reports/standard/setup?pack=equipment-overview");
+  });
+
+  it("summarizes delivery recipients including feishu", () => {
+    expect(
+      summarizeDeliveryRecipients([
+        { channel: "email", recipients: ["a@b.com"] },
+        { channel: "feishu", to: ["ou_abc", "ou_def"] },
+      ]),
+    ).toBe("a@b.com、飞书 2 人");
   });
 });

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AlertCircle, History } from "lucide-react";
+import { Link } from "react-router";
 import { fetchAuthenticatedBlob } from "@/lib/apiUpload";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ import {
 import { executionErrorHeadline } from "../scheduleHistoryPresentation";
 import { localizeArtifactKind } from "@/lib/scheduleArtifactMeta";
 import { summarizeDeliveryRecipients } from "@/lib/scheduleSourceMeta";
+import { FEISHU_REAUTH_PROFILE_PATH, rowNeedsFeishuReauth } from "@/lib/feishuDeliveryErrors";
 
 type ScheduleHistoryTableProps = {
   rows: ScheduleExecutionRow[];
@@ -117,6 +119,7 @@ export function ScheduleHistoryTable({
             const recipients = summarizeDeliveryRecipients(row.deliverySteps);
             const artifact = localizeArtifactKind(row.artifactKind);
             const hasError = Boolean(row.errorMessage);
+            const needsFeishuReauth = rowNeedsFeishuReauth(row.errorMessage, row.deliverySteps);
             return (
               <li
                 key={row.executionId}
@@ -141,12 +144,22 @@ export function ScheduleHistoryTable({
                       收件 {recipients || "—"}
                     </p>
                     {hasError ? (
-                      <p className="flex items-start gap-1.5 text-theme-xs leading-5 text-error-600 dark:text-error-400">
-                        <AlertCircle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                        <span className="min-w-0">
-                          {executionErrorHeadline(row.errorMessage ?? "")}
-                        </span>
-                      </p>
+                      <div className="space-y-1">
+                        <p className="flex items-start gap-1.5 text-theme-xs leading-5 text-error-600 dark:text-error-400">
+                          <AlertCircle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+                          <span className="min-w-0">
+                            {executionErrorHeadline(row.errorMessage ?? "")}
+                          </span>
+                        </p>
+                        {needsFeishuReauth ? (
+                          <Link
+                            to={FEISHU_REAUTH_PROFILE_PATH}
+                            className="text-theme-xs text-brand-600 hover:underline dark:text-brand-400"
+                          >
+                            打开浏览器补充飞书授权
+                          </Link>
+                        ) : null}
+                      </div>
                     ) : null}
                   </div>
                   {renderActions(row)}
@@ -177,6 +190,7 @@ export function ScheduleHistoryTable({
             <TableBody>
               {rows.map((row) => {
                 const hasError = Boolean(row.errorMessage);
+                const needsFeishuReauth = rowNeedsFeishuReauth(row.errorMessage, row.deliverySteps);
                 const recipients = summarizeDeliveryRecipients(row.deliverySteps);
                 return (
                   <TableRow key={row.executionId} className="border-gray-50 dark:border-gray-800/60">
@@ -204,11 +218,21 @@ export function ScheduleHistoryTable({
                     </TableCell>
                     <TableCell className="max-w-[220px] px-3 py-2 text-theme-xs text-gray-600 dark:text-gray-400">
                       {hasError ? (
-                        <TruncateHint title={localizeApiMessage(row.errorMessage)}>
-                          <span className="line-clamp-1 text-error-600 dark:text-error-400">
-                            {executionErrorHeadline(row.errorMessage ?? "")}
-                          </span>
-                        </TruncateHint>
+                        <div className="space-y-1">
+                          <TruncateHint title={localizeApiMessage(row.errorMessage)}>
+                            <span className="line-clamp-1 text-error-600 dark:text-error-400">
+                              {executionErrorHeadline(row.errorMessage ?? "")}
+                            </span>
+                          </TruncateHint>
+                          {needsFeishuReauth ? (
+                            <Link
+                              to={FEISHU_REAUTH_PROFILE_PATH}
+                              className="text-brand-600 hover:underline dark:text-brand-400"
+                            >
+                              补充飞书授权
+                            </Link>
+                          ) : null}
+                        </div>
                       ) : (
                         "—"
                       )}
@@ -238,6 +262,11 @@ export function ScheduleHistoryTable({
               <pre className="max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-3 text-theme-xs leading-5 text-gray-500 dark:bg-white/[0.04] dark:text-gray-400">
                 {localizeApiMessage(detailRow.errorMessage)}
               </pre>
+              {rowNeedsFeishuReauth(detailRow.errorMessage, detailRow.deliverySteps) ? (
+                <Button type="button" variant="primary" size="sm" asChild>
+                  <Link to={FEISHU_REAUTH_PROFILE_PATH}>在浏览器中补充飞书授权</Link>
+                </Button>
+              ) : null}
             </div>
           ) : (
             <p className="text-theme-sm text-gray-600 dark:text-gray-400">无详细错误信息</p>

@@ -78,7 +78,8 @@ describe("DashboardContextInspector", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "初始化当前主题样式" }));
+    await user.click(screen.getByRole("button", { name: "重置为当前主题默认" }));
+    await user.click(screen.getByRole("button", { name: "确认重置" }));
     expect(onStyleChange).toHaveBeenCalledWith(
       expect.objectContaining({
         colorScheme: "light",

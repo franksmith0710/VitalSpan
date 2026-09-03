@@ -254,8 +254,8 @@ describe("dashboard canvas mode", () => {
     const chart = saved.widgets[0];
     expect(chart.type).toBe("chart");
     if (chart.type !== "chart" || !chart.chartConfig) throw new Error("expected chart widget");
-    expect(chart.chartConfig.dimensions).toEqual([{ field: "province" }]);
-    expect(chart.chartConfig.metrics).toEqual([{ field: "value" }]);
+    expect(chart.chartConfig.dimensions).toEqual([{ field: "province", label: "省份" }]);
+    expect(chart.chartConfig.metrics).toEqual([{ field: "value", label: "数值" }]);
     expect(chart.chartConfig.chartId).toBe("map-1");
   });
 

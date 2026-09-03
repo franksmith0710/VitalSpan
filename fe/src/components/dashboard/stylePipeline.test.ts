@@ -3,6 +3,8 @@ import { resolveComponentGapRuntime } from "./componentGapRuntime";
 import {
   dashboardLayoutPersistRoundtrip,
   hydrateDashboardStyle,
+  layoutForEditorAfterPersist,
+  persistDashboardLayout,
   prepareLayoutForListPreview,
   resolveEffectiveDashboardStyle,
   syncPixelLayoutChartStyles,
@@ -133,5 +135,52 @@ describe("stylePipeline", () => {
   it("normalizes legacy paletteOpacity percent to fraction on hydrate", () => {
     const style = hydrateDashboardStyle({ paletteOpacity: 85, colorScheme: "light" });
     expect(style.paletteOpacity).toBeCloseTo(0.85);
+  });
+
+  it("persist roundtrip keeps inline map manualDrillStack through save and reload", () => {
+    const layout = {
+      version: 2 as const,
+      canvas: { width: 1440, height: 900 },
+      widgets: [
+        {
+          id: "map-inline",
+          type: "chart" as const,
+          title: "区域地图",
+          order: 0,
+          x: 0,
+          y: 0,
+          width: 800,
+          height: 600,
+          chartConfig: {
+            chartId: "map-inline",
+            chartType: "map" as const,
+            mode: "sql" as const,
+            dataSourceId: "00000000-0000-4000-8000-000000000001",
+            sql: "SELECT 1",
+            dimensions: [{ field: "province" }],
+            metrics: [{ field: "value" }],
+            nativeBody: {
+              deStyle: {
+                geo: {
+                  manualDrillStack: [
+                    { field: "province", value: "内蒙古自治区", label: "内蒙古自治区" },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      ],
+      globalFilters: [],
+    };
+    const style = hydrateDashboardStyle({ colorScheme: "dark" });
+    const saved = persistDashboardLayout(layout, style);
+    const reloaded = layoutForEditorAfterPersist(saved, saved.styleConfig ?? style);
+    const chart = reloaded.widgets[0];
+    expect(chart.type).toBe("chart");
+    if (chart.type !== "chart" || !chart.chartConfig) throw new Error("expected chart widget");
+    expect(chart.chartConfig.nativeBody?.deStyle?.geo?.manualDrillStack).toEqual([
+      { field: "province", value: "内蒙古自治区", label: "内蒙古自治区" },
+    ]);
   });
 });

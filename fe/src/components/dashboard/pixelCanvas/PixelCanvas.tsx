@@ -40,6 +40,7 @@ import { TabPaletteDropTargetProvider } from "./tabPaletteDropTargetContext";
 import { TabChildExtractProvider } from "./tabChildExtractContext";
 import { canUnparkTabChildAtPoint } from "./tabParking";
 import {
+  canvasArtboardRepaintFingerprint,
   canvasArtboardStyleFingerprint,
   pickWidgetDashboardStyle,
   resolveArtboardStyle,
@@ -298,13 +299,14 @@ export function PixelCanvas({
   );
 
   const artboardStyleFingerprint = canvasArtboardStyleFingerprint(styleConfig);
+  const artboardRepaintFingerprint = canvasArtboardRepaintFingerprint(styleConfig);
   const artboardStyle = useMemo(
     () => resolveArtboardStyle(styleConfig),
-    [artboardStyleFingerprint, styleConfig],
+    [artboardStyleFingerprint],
   );
   const hostLetterboxStyle = useMemo(
     () => resolveHostLetterboxStyle(styleConfig),
-    [artboardStyleFingerprint, styleConfig],
+    [artboardStyleFingerprint],
   );
   /** 编辑态固定按画布宽度贴满；大屏编辑改为整画布 fit 宿主 */
   const effectiveScaleMode =
@@ -470,7 +472,7 @@ export function PixelCanvas({
   // 样式重置/切换后 scaled stage 内 artboard 背景可能不重绘，直到拖动画布触发 metrics；强制刷新
   useLayoutEffect(() => {
     refreshCanvasMetrics();
-  }, [artboardStyleFingerprint, refreshCanvasMetrics]);
+  }, [artboardRepaintFingerprint, refreshCanvasMetrics]);
 
   const registerPreviewSync = useCallback(
     (widgetId: string, sync: (rect: PixelRect) => void) =>
@@ -1033,7 +1035,7 @@ export function PixelCanvas({
           onDrop={handleDrop}
         >
           <div
-            key={artboardStyleFingerprint}
+            key={artboardRepaintFingerprint}
             data-testid="pixel-canvas-artboard"
             className="pointer-events-none absolute inset-0 z-0 shadow-theme-sm ring-1 ring-gray-200 dark:ring-gray-700"
             style={artboardStyle}

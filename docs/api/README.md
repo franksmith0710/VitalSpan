@@ -105,8 +105,9 @@ redoc: /redoc
 | GET | `/api/v1/me/im-bindings/{channel}/authorize` | 发起 OAuth 授权跳转（浏览器直链，须 Cookie/Bearer） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | POST | `/api/v1/me/im-bindings/{channel}/authorize-url` | 返回 OAuth 授权 URL（SPA 带 Bearer 后跳转） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | DELETE | `/api/v1/me/im-bindings/{channel}` | 解绑指定 IM 通道 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
-| POST | `/api/v1/me/im-bindings/feishu/device-auth/start` | 飞书 device-code 绑定启动（user_delegated） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
-| POST | `/api/v1/me/im-bindings/feishu/device-auth/complete` | 飞书 device-code 轮询完成 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
+| POST | `/api/v1/me/im-bindings/feishu/device-auth/start` | 飞书 device-code 绑定启动（user_delegated；body 可选 `{ scope }` 增量补授权） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
+| POST | `/api/v1/me/im-bindings/feishu/device-auth/complete` | 飞书 device-code 轮询完成（返回 `needsReauth` / `suggestedScope` 驱动自动补授权） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
+| GET | `/api/v1/me/im-bindings/feishu/capability` | 飞书 user_delegated 推送能力探测（绑后/调度失败补授权） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | POST | `/api/v1/me/im-bindings/{channel}/scan-bind/start` | 钉钉 user_delegated 内嵌扫码参数（主路径钉钉为群发，通常 422） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | POST | `/api/v1/me/im-bindings/{channel}/scan-bind/complete` | 钉钉内嵌扫码完成 | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/me_im_bindings.py` |
 | GET | `/api/v1/auth/im/{channel}/callback` | IM OAuth 回调（公开路径，state 校验） | 内部 | 一期 | RPT-005 | 已实现 | `backend/app/api/v1/im_auth.py` |

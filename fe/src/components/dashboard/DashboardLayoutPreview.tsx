@@ -10,6 +10,7 @@ import { useChartLinkageState } from "./useChartLinkageState";
 import { pixelWidgetToLayoutWidget, type DashboardWidgetShell } from "./dashboardCanvasMode";
 import { PixelCanvas } from "./pixelCanvas";
 import {
+  canvasArtboardRepaintFingerprint,
   pickWidgetDashboardStyle,
   resolveArtboardStyle,
   widgetDashboardStyleFingerprint,
@@ -109,6 +110,7 @@ export function DashboardLayoutPreview({
     onChartLinkageClickProp ?? internalLinkage.handleChartLinkageClick;
   const { componentMap, isLoading: componentsLoading } = useVizComponentMap(widgets);
   const styleRevision = widgetDashboardStyleFingerprint(styleConfig);
+  const artboardStyleKey = canvasArtboardRepaintFingerprint(styleConfig);
   const effectiveLinkage: Linkage = linkage ?? {
     filters: [],
     linkageRules: [],
@@ -244,6 +246,7 @@ export function DashboardLayoutPreview({
     >
       <div className="relative h-full min-h-0">
         <div
+          key={artboardStyleKey}
           data-testid="dashboard-canvas-backdrop"
           className="pointer-events-none absolute inset-0 z-0"
           style={resolveArtboardStyle(styleConfig)}

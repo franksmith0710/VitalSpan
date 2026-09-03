@@ -78,8 +78,8 @@ def route_request(text: str) -> RouteResult:
         return RouteResult(
             True,
             "3",
-            "surface compose — wf3 default rhythm + blocks (LRC)",
-            rhythm="rhythm-cv-stage",
+            "wf3 free layout — create → get → write layoutJson → upload (no preset templates v0.4.6)",
+            redirect="create_dashboard",
         )
     if re.search(r"(组件|custom|customviz|artifact|入库|脚手架|scaffold)", normalized):
         return RouteResult(True, "2", "customViz keywords", runtime="html")

@@ -116,7 +116,7 @@ def test_send_work_notices_user_delegated():
                 "app.reports.scheduler.channels.work_notice.get_user_access_token",
                 return_value="ua_token",
             ):
-                with patch("app.reports.scheduler.channels.work_notice.send_feishu_text_as_user") as send_user:
+                with patch("app.reports.scheduler.channels.work_notice.deliver_feishu_as_user") as send_user:
                     result = work_notice.send_work_notices(
                     "feishu",
                     account_ids=["ou_recv"],

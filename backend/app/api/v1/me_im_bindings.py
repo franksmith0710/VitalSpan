@@ -13,7 +13,9 @@ from app.auth.im_oauth.service import (
     AuthorizeUrlOut,
     DeviceAuthCompleteIn,
     DeviceAuthCompleteOut,
+    DeviceAuthStartIn,
     DeviceAuthStartOut,
+    FeishuCapabilityOut,
     ImBindingsOut,
     ScanBindCompleteIn,
     ScanBindCompleteOut,
@@ -21,6 +23,7 @@ from app.auth.im_oauth.service import (
     complete_feishu_device_auth_session,
     complete_scan_bind_session,
     list_user_im_bindings,
+    probe_feishu_binding_capability,
     start_authorize,
     start_feishu_device_auth_session,
     start_scan_bind_session,
@@ -113,12 +116,23 @@ def delete_my_im_binding(
 def start_feishu_device_binding(
     current_user: Annotated[UserContext, Depends(get_current_user)],
     db: Annotated[Session, Depends(_db)],
+    payload: DeviceAuthStartIn | None = None,
 ) -> DeviceAuthStartOut | JSONResponse:
     try:
         user_id = profile_service.resolve_actor_user_id(db, current_user.id, current_user.username)
-        return start_feishu_device_auth_session(db, user_id=user_id)
+        scope = payload.scope if payload else None
+        return start_feishu_device_auth_session(db, user_id=user_id, scope=scope)
     except ImOAuthError as exc:
         return _oauth_error(exc)
+
+
+@router.get("/me/im-bindings/feishu/capability", response_model=FeishuCapabilityOut)
+def read_feishu_binding_capability(
+    current_user: Annotated[UserContext, Depends(get_current_user)],
+    db: Annotated[Session, Depends(_db)],
+) -> FeishuCapabilityOut:
+    user_id = profile_service.resolve_actor_user_id(db, current_user.id, current_user.username)
+    return probe_feishu_binding_capability(db, user_id=user_id)
 
 
 @router.post("/me/im-bindings/feishu/device-auth/complete", response_model=DeviceAuthCompleteOut)

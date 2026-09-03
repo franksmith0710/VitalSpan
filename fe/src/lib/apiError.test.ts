@@ -58,6 +58,12 @@ describe("mapApiError", () => {
     expect(mapApiError(err)).toBe("请先在「扩展配置」中添加指标并保存后再导出");
   });
 
+  it("maps feishu unauthorized scope to Chinese", () => {
+    expect(
+      localizeApiMessage("Unauthorized. contact:user.employee_id:readonly"),
+    ).toContain("飞书");
+  });
+
   it("falls back to generic message for unknown English", () => {
     expect(mapApiError(new Error("Something went wrong"))).toBe("操作失败，请稍后重试");
   });

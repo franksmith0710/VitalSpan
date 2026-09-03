@@ -4,8 +4,10 @@ import { Link } from "react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
+import { FEISHU_REAUTH_PROFILE_PATH } from "@/lib/feishuDeliveryErrors";
 import { IM_CHANNEL_LABELS, type ImChannel } from "@/lib/imChannels";
 import { queryKeys } from "@/lib/queryKeys";
+import { fetchFeishuCapability } from "@/pages/admin/account/components/feishuDeviceAuth";
 
 type ImBindingItem = {
   channel: ImChannel;
@@ -33,9 +35,22 @@ export function ScheduleImBindingBanner({ channels, className }: Props) {
     staleTime: 30_000,
   });
 
+  const feishuItem = bindingsQuery.data?.items.find((item) => item.channel === "feishu");
+  const feishuDelegated = feishuItem?.deliveryMode === "user_delegated";
+  const showFeishuCapability = channels.includes("feishu") && feishuDelegated && feishuItem?.bound;
+
+  const capabilityQuery = useQuery({
+    queryKey: [...queryKeys.meImBindings, "feishu-capability"],
+    queryFn: fetchFeishuCapability,
+    enabled: Boolean(showFeishuCapability),
+    staleTime: 30_000,
+  });
+
   if (channels.length === 0) return null;
 
   const items = (bindingsQuery.data?.items ?? []).filter((item) => channels.includes(item.channel));
+  const feishuCapability = capabilityQuery.data;
+  const feishuNeedsReauth = Boolean(showFeishuCapability && feishuCapability && !feishuCapability.ready);
 
   return (
     <div
@@ -46,11 +61,24 @@ export function ScheduleImBindingBanner({ channels, className }: Props) {
         <div className="min-w-0">
           <p className="text-theme-sm font-medium text-gray-900 dark:text-white">IM 绑定与发信身份</p>
           <p className="mt-0.5 text-theme-xs text-gray-500 dark:text-gray-400">
-            飞书收件人须在个人中心绑定；飞书用户委托模式下，<strong className="font-medium">您（调度创建人）</strong>
-            也需绑定。钉钉发到群机器人，无需个人绑定。
+            飞书定时推送以<strong className="font-medium">您（调度创建人）</strong>的身份发送；点击绑定或补充授权将
+            <strong className="font-medium">自动打开浏览器</strong>，无需手动去开放平台配置。钉钉发到群机器人，无需个人绑定。
           </p>
         </div>
       </div>
+
+      {feishuNeedsReauth ? (
+        <div className="mb-3 rounded-lg border border-warning-200 bg-warning-50/80 p-3 dark:border-warning-500/30 dark:bg-warning-500/10">
+          <p className="text-theme-xs font-medium text-gray-900 dark:text-white">飞书权限未就绪</p>
+          <p className="mt-0.5 text-theme-xs text-gray-600 dark:text-gray-300">{feishuCapability?.message}</p>
+          <Button type="button" variant="primary" size="sm" className="mt-2" asChild>
+            <Link to={FEISHU_REAUTH_PROFILE_PATH}>
+              自动打开浏览器补充授权
+              <ExternalLink className="size-3.5" aria-hidden />
+            </Link>
+          </Button>
+        </div>
+      ) : null}
 
       {bindingsQuery.isLoading ? (
         <p className="text-theme-xs text-gray-500">加载绑定状态…</p>
@@ -62,15 +90,31 @@ export function ScheduleImBindingBanner({ channels, className }: Props) {
             const groupWebhook = item.deliveryMode === "group_webhook";
             const ownerNeedsBind =
               item.channel === "feishu" && item.deliveryMode === "user_delegated" && !item.bound;
+            const ownerNeedsReauth =
+              item.channel === "feishu" &&
+              item.deliveryMode === "user_delegated" &&
+              item.bound &&
+              feishuNeedsReauth;
             const recipientHint = !item.appConfigured
               ? item.probeError || "管理员尚未在平台对接中配置"
               : groupWebhook
                 ? "钉钉按群发，无需个人绑定"
                 : ownerNeedsBind
-                ? "您尚未绑定，无法以您的身份发信"
-                : item.bound
-                  ? "您已绑定，可作为发信身份"
-                  : "建议先完成绑定，便于确认通道可用";
+                  ? "您尚未绑定，点击后将自动打开飞书授权页"
+                  : ownerNeedsReauth
+                    ? feishuCapability?.message || "需补充飞书消息/文件权限"
+                    : item.bound
+                      ? "您已绑定，可作为发信身份"
+                      : "建议先完成绑定，便于确认通道可用";
+            const profileLink =
+              ownerNeedsReauth || (item.channel === "feishu" && item.bound)
+                ? FEISHU_REAUTH_PROFILE_PATH
+                : "/admin/account/profile";
+            const linkLabel = ownerNeedsBind
+              ? "去绑定"
+              : ownerNeedsReauth
+                ? "补充授权"
+                : "个人中心";
             return (
               <li
                 key={item.channel}
@@ -95,8 +139,12 @@ export function ScheduleImBindingBanner({ channels, className }: Props) {
                         群发
                       </Badge>
                     ) : item.bound ? (
-                      <Badge variant="light" color="success" size="sm">
-                        我已绑定
+                      <Badge
+                        variant="light"
+                        color={ownerNeedsReauth ? "warning" : "success"}
+                        size="sm"
+                      >
+                        {ownerNeedsReauth ? "待补充授权" : "我已绑定"}
                       </Badge>
                     ) : (
                       <Badge variant="light" color="warning" size="sm">
@@ -108,8 +156,8 @@ export function ScheduleImBindingBanner({ channels, className }: Props) {
                 </div>
                 {!groupWebhook ? (
                   <Button type="button" variant="outline" size="sm" className="shrink-0" asChild>
-                    <Link to="/admin/account/profile">
-                      去绑定
+                    <Link to={profileLink}>
+                      {linkLabel}
                       <ExternalLink className="size-3.5" aria-hidden />
                     </Link>
                   </Button>

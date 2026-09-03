@@ -91,19 +91,9 @@ class GateResult:
 
 def validate_workflow3_lrc_stdout(tool_stdout: str) -> list[str]:
     reasons: list[str] = []
-    if UPLOAD_DONE_MARK in tool_stdout:
-        return reasons
-    if LEGACY_TEMPLATE_MARK in tool_stdout:
+    if LEGACY_TEMPLATE_MARK in tool_stdout or TEMPLATE_DE_RE.search(tool_stdout):
         reasons.append(
-            "tool_stdout uses LEGACY_TEMPLATE — wf3 default requires rhythm= + blocks= (not template=de-*)",
-        )
-    if NO_RHYTHM_MARK in tool_stdout:
-        reasons.append(
-            "tool_stdout missing rhythm — run vitalspan_list_layout_rhythms + compose with rhythm= and blocks JSON",
-        )
-    if not RHYTHM_STDOUT_RE.search(tool_stdout):
-        reasons.append(
-            "tool_stdout must include rhythm=<id> from list_layout_rhythms (wf3 default LRC path)",
+            "tool_stdout uses removed layout template — use free layout upload (create → get → write → upload)",
         )
     kpi_match = KPI_COUNT_RE.search(tool_stdout)
     rhythm_match = RHYTHM_ID_RE.search(tool_stdout)
@@ -114,28 +104,20 @@ def validate_workflow3_lrc_stdout(tool_stdout: str) -> list[str]:
         and int(kpi_match.group(1)) > 0
     ):
         reasons.append("rhythm-cv-stage must have kpi=0 — blocks should not fill metrics band")
-    if (
-        kpi_match
-        and int(kpi_match.group(1)) >= 4
-        and (not rhythm_match or rhythm_match.group(1).lower() != "rhythm-hero-stack")
-    ):
-        reasons.append(
-            "kpi>=4 without rhythm-hero-stack metrics intent — likely legacy template homogeneity",
-        )
     return reasons
 
 
 def validate_workflow3_summary_lrc(agent_summary: str, tool_stdout: str) -> list[str]:
     reasons: list[str] = []
     summary = agent_summary.strip()
-    if not summary or UPLOAD_DONE_MARK in tool_stdout:
+    if not summary:
         return reasons
-    if SUMMARY_LEGACY_TEMPLATE_RE.search(summary) and not RHYTHM_STDOUT_RE.search(tool_stdout):
+    if SUMMARY_LEGACY_TEMPLATE_RE.search(summary):
         reasons.append(
-            "summary references legacy de-* template but tool_stdout missing rhythm= — use LRC blocks compose",
+            "summary references removed layout templates — wf3 uses free layout (create → get → write → upload)",
         )
-    if TEMPLATE_DE_RE.search(tool_stdout) and not RHYTHM_STDOUT_RE.search(tool_stdout):
-        reasons.append("tool_stdout uses template=de-* without rhythm= — wf3 default is rhythm + blocks")
+    if TEMPLATE_DE_RE.search(tool_stdout):
+        reasons.append("tool_stdout uses removed template= — use upload file path")
     return reasons
 
 
@@ -143,26 +125,30 @@ def validate_workflow3_stdout(tool_stdout: str) -> list[str]:
     reasons: list[str] = []
     if not tool_stdout.strip():
         reasons.append(
-            "workflow 3 requires tool_stdout from vitalspan_compose_dashboard or vitalspan_upload_dashboard",
+            "workflow 3 requires tool_stdout from vitalspan_upload_dashboard (free layout file path)",
         )
         return reasons
     if not DASHBOARD_OK_RE.search(tool_stdout):
-        reasons.append("tool_stdout must contain ok dashboardId=<uuid> from compose or upload")
-    if "next: vitalspan_upload_dashboard" in tool_stdout:
+        reasons.append("tool_stdout must contain ok dashboardId=<uuid> from upload")
+    if UPLOAD_DONE_MARK not in tool_stdout:
         reasons.append(
-            "tool_stdout from create_dashboard is not workflow 3 completion — compose or upload required",
+            "wf3 v0.4.6 requires upload_dashboard stdout (done: layout saved via upload) — compose/create/get are not completion",
         )
-    if "patch style only" in tool_stdout:
+    if "next: vitalspan_upload_dashboard" in tool_stdout or "wf3 step 1/4" in tool_stdout:
         reasons.append(
-            "tool_stdout from get_dashboard_layout is not completion — upload after style patch",
+            "tool_stdout from create_dashboard is not workflow 3 completion — write layout file then upload",
         )
-    if re.search(r"\nfile \S+", tool_stdout):
+    if "patch style only" in tool_stdout or "wf3 step 2/4" in tool_stdout:
         reasons.append(
-            "tool_stdout looks like get_dashboard_layout export — use compose or upload stdout",
+            "tool_stdout from get_dashboard_layout is not completion — write file then upload_dashboard",
+        )
+    if re.search(r"\nfile \S+", tool_stdout) and UPLOAD_DONE_MARK not in tool_stdout:
+        reasons.append(
+            "tool_stdout looks like get_dashboard_layout export — upload after editing layout file",
         )
     widget_match = LAYOUT_WIDGETS_RE.search(tool_stdout)
     if not widget_match or int(widget_match.group(1)) < 1:
-        reasons.append("tool_stdout must include layout widgets: N with N>=1 from compose or upload")
+        reasons.append("tool_stdout must include layout widgets: N with N>=1 from upload")
     reasons.extend(validate_workflow3_lrc_stdout(tool_stdout))
     return reasons
 

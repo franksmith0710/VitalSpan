@@ -307,6 +307,11 @@ const MESSAGE_PREFIX_MAP: Array<[RegExp, string]> = [
   [/SMTP delivery not configured/i, "邮件投递未配置，请设置 RPT_SMTP_* 环境变量"],
   [/delivery failed/i, "邮件投递失败"],
   [/delivery degraded/i, "邮件投递降级（部分渠道未送达）"],
+  [/Unauthorized.*contact:user/i, "飞书缺少通讯录/用户身份权限，将引导您在浏览器补充授权"],
+  [/employee_id:readonly/i, "飞书缺少读取用户身份权限，请在浏览器补充授权"],
+  [/privileges:\s*\[[^\]]*im:/i, "飞书消息或文件权限不足，请在浏览器补充授权"],
+  [/im:resource/i, "飞书缺少文件上传权限，请在浏览器补充授权"],
+  [/^Unauthorized$/i, "飞书授权无效或权限不足，请重新绑定并补充授权"],
   [/^theme \w+ not available for field mapping/i, "字段映射与已启用主题不匹配，请检查字段映射或关闭不适用的主题"],
 ];
 

@@ -9,34 +9,27 @@ from app.reports.scheduler.channels.im_sdk import dingtalk, feishu
 
 
 def test_send_feishu_text_calls_lark_sdk():
-    mock_client = MagicMock()
-    mock_response = MagicMock()
-    mock_response.success.return_value = True
-    mock_client.im.v1.message.create.return_value = mock_response
-    with patch("app.reports.scheduler.channels.im_sdk.feishu.lark.Client") as builder:
-        builder.builder.return_value.app_id.return_value.app_secret.return_value.timeout.return_value.build.return_value = (
-            mock_client
-        )
+    with patch("app.reports.scheduler.channels.im_sdk.feishu.deliver_feishu_as_app") as deliver:
         feishu.send_feishu_text(
             app_id="cli",
             app_secret="sec",
             account_ids=["u1", "u2"],
             text="hello",
         )
-    assert mock_client.im.v1.message.create.call_count == 2
+    deliver.assert_called_once_with(
+        app_id="cli",
+        app_secret="sec",
+        account_ids=["u1", "u2"],
+        text="hello",
+        attachments=[],
+    )
 
 
 def test_send_feishu_text_raises_on_sdk_failure():
-    mock_client = MagicMock()
-    mock_response = MagicMock()
-    mock_response.success.return_value = False
-    mock_response.msg = "permission denied"
-    mock_response.code = 999
-    mock_client.im.v1.message.create.return_value = mock_response
-    with patch("app.reports.scheduler.channels.im_sdk.feishu.lark.Client") as builder:
-        builder.builder.return_value.app_id.return_value.app_secret.return_value.timeout.return_value.build.return_value = (
-            mock_client
-        )
+    with patch(
+        "app.reports.scheduler.channels.im_sdk.feishu.deliver_feishu_as_app",
+        side_effect=RuntimeError("permission denied"),
+    ):
         with pytest.raises(RuntimeError, match="permission denied"):
             feishu.send_feishu_text(
                 app_id="cli",

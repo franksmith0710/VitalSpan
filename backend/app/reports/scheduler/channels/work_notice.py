@@ -15,9 +15,10 @@ from app.core.platform_config.im_resolve import resolve_im_credentials
 from app.reports.scheduler.channels.im_sdk import (
     probe_im_channels,
     send_dingtalk_text,
-    send_feishu_text,
 )
-from app.reports.scheduler.channels.im_sdk.feishu_user import send_feishu_text_as_user
+from app.reports.scheduler.channels.im_sdk.feishu import deliver_feishu_as_app
+from app.reports.scheduler.channels.im_sdk.feishu_common import FeishuAttachment
+from app.reports.scheduler.channels.im_sdk.feishu_user import deliver_feishu_as_user
 from app.reports.scheduler.channels.im_sdk.probe import probe_im_credentials_bundle
 
 logger = logging.getLogger(__name__)
@@ -45,12 +46,19 @@ def probe_im_apps(
     return probe_im_channels(settings, session=session, force_refresh=force_refresh)
 
 
+def _feishu_notice_text(summary: str, artifact_ref: str, attachments: list[FeishuAttachment]) -> str:
+    if attachments:
+        return summary
+    return f"{summary}\n引用：{artifact_ref}"
+
+
 def send_work_notices(
     channel: str,
     *,
     account_ids: list[str],
     summary: str,
     artifact_ref: str,
+    attachments: list[FeishuAttachment] | None = None,
     owner_id: uuid.UUID | None = None,
     settings: Settings | None = None,
     session: Session | None = None,
@@ -87,8 +95,9 @@ def send_work_notices(
                 "error": owner_error or f"调度 owner 未完成{label}绑定",
                 "to": account_ids,
             }
-        text = f"{summary}\n引用：{artifact_ref}"
+        att_list = list(attachments or [])
         if channel == "feishu":
+            text = _feishu_notice_text(summary, artifact_ref, att_list)
             access_token = get_user_access_token(session, owner_id, channel)
             if not access_token:
                 return {
@@ -99,7 +108,12 @@ def send_work_notices(
                     "to": account_ids,
                 }
             try:
-                send_feishu_text_as_user(access_token=access_token, account_ids=account_ids, text=text)
+                deliver_feishu_as_user(
+                    access_token=access_token,
+                    account_ids=account_ids,
+                    text=text,
+                    attachments=att_list,
+                )
             except Exception as exc:
                 logger.warning("%s user-delegated notice failed: %s", label, exc)
                 return {
@@ -126,12 +140,13 @@ def send_work_notices(
             }
         try:
             if channel == "dingtalk":
+                dingtalk_text = f"{summary}\n引用：{artifact_ref}"
                 send_dingtalk_text(
                     app_key=resolved.app_key or "",
                     app_secret=resolved.app_secret or "",
                     agent_id=resolved.agent_id or "",
                     account_ids=account_ids,
-                    text=text,
+                    text=dingtalk_text,
                 )
             else:
                 return {
@@ -165,7 +180,8 @@ def send_work_notices(
             "error": probe.get("error") or f"{label}应用探测失败",
             "to": account_ids,
         }
-    text = f"{summary}\n引用：{artifact_ref}"
+    att_list = list(attachments or [])
+    text = _feishu_notice_text(summary, artifact_ref, att_list) if channel == "feishu" else f"{summary}\n引用：{artifact_ref}"
     try:
         if channel == "dingtalk":
             send_dingtalk_text(
@@ -176,11 +192,12 @@ def send_work_notices(
                 text=text,
             )
         elif channel == "feishu":
-            send_feishu_text(
+            deliver_feishu_as_app(
                 app_id=resolved.app_id or "",
                 app_secret=resolved.app_secret or "",
                 account_ids=account_ids,
                 text=text,
+                attachments=att_list,
             )
         else:
             return {"channel": channel, "status": "skipped", "error": "未知通道"}

@@ -1,5 +1,16 @@
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import type { ColorScheme } from "./dashboardStyleConfig";
 
 type ThemePreviewCardProps = {
@@ -86,9 +97,16 @@ export function DashboardThemeStylePanel({
   onPatchColorScheme,
   onResetColorsToTheme,
 }: Props) {
+  const [resetDialogOpen, setResetDialogOpen] = useState(false);
+
   const patchColorScheme = (scheme: ColorScheme) => {
     if (onSwitchColorScheme) onSwitchColorScheme(scheme);
     else onPatchColorScheme?.(scheme);
+  };
+
+  const confirmReset = () => {
+    onResetColorsToTheme?.();
+    setResetDialogOpen(false);
   };
 
   return (
@@ -108,16 +126,32 @@ export function DashboardThemeStylePanel({
         />
       </div>
       {onResetColorsToTheme ? (
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          className="h-8 w-full text-theme-xs"
-          data-testid="dashboard-theme-reset-colors"
-          onClick={onResetColorsToTheme}
-        >
-          初始化当前主题样式
-        </Button>
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-8 w-full text-theme-xs"
+            data-testid="dashboard-theme-reset-colors"
+            onClick={() => setResetDialogOpen(true)}
+          >
+            重置为当前主题默认
+          </Button>
+          <AlertDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>重置为当前主题默认？</AlertDialogTitle>
+                <AlertDialogDescription>
+                  将恢复当前浅色/深色主题的默认配色，并清除自定义画布背景、装饰图与组件背景/透明度等样式覆盖。此操作不可撤销，请确认后继续。
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction onClick={confirmReset}>确认重置</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </>
       ) : null}
     </div>
   );

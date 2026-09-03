@@ -33,7 +33,7 @@ export type ScheduleExecutionRow = {
   executedAt: string;
   errorMessage?: string | null;
   parentExecutionId?: string | null;
-  deliverySteps?: { channel?: string; recipients?: string[]; status?: string }[];
+  deliverySteps?: { channel?: string; recipients?: string[]; to?: string[]; status?: string; error?: string }[];
   secondaryArtifacts?: {
     label: string;
     kind?: string;
