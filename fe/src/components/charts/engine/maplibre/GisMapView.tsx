@@ -53,6 +53,7 @@ import {
 import { resolveGisProjectSun } from "@/components/charts/engine/maplibre/gisProjectSun";
 import { createGisSunEngine } from "@/components/charts/engine/maplibre/gisSunRuntime";
 import type { GisSunEngine } from "@/components/charts/engine/maplibre/gisSunEngine";
+import { mountGisGlobeHaloOverlay } from "@/components/charts/engine/maplibre/gisGlobeHalo";
 import { registerGisMapViewLiveControl } from "@/components/charts/engine/maplibre/gisMapViewBridge";
 import { VIZ_WHEEL_ZOOM_SURFACE_ATTR } from "@/components/dashboard/pixelCanvas/pixelCanvasWheelScroll";
 import { ensurePmtilesArchiveRegistered, loadMapLibreRuntime } from "@/components/charts/engine/maplibre/maplibreBootstrap";
@@ -712,6 +713,18 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   }, [applyConfiguredView, configuredViewKey]);
 
   useEffect(() => {
+    const shell = shellRef.current;
+    if (!shell) return;
+    return mountGisGlobeHaloOverlay(shell, () => mapRef.current, () => ({
+      preset: projectRef.current.atmospherePreset,
+      projection: projectRef.current.projection,
+      effects: projectRef.current.effects,
+      halo: projectRef.current.halo,
+      fog: projectRef.current.fog,
+    }));
+  }, [atmosphereKey, project.atmospherePreset, project.effects, project.fog, project.halo, project.projection]);
+
+  useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
     ensureGisEffectsEngine(map);
@@ -876,6 +889,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           },
           { preserveCamera: true },
         );
+        map.triggerRepaint();
         return true;
       },
       applyBasemapPatch: (patch) => {

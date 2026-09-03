@@ -16,12 +16,12 @@ type MapLibreMap = import("maplibre-gl").Map;
 export type { GlobeLimbBounds } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 export { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
 
-const HALO_CANVAS_CLASS =
-  "pointer-events-none absolute inset-0 z-0 h-full w-full";
+const HALO_CANVAS_CLASS = "pointer-events-none absolute inset-0 h-full w-full";
+const MAP_CANVAS_Z = "4";
+const HALO_CANVAS_Z = "5";
 
 /**
- * GeoLibre 层栈：光晕 canvas 置于 MapLibre 容器内（z-0），球面 canvas 自然遮挡洗白。
- * @see https://web.geolibre.app/
+ * 可靠光晕层：bindMapRenderSync 跟帧 + 球缘探测；叠在 map canvas 之上，仅外环发光。
  */
 export function mountGisGlobeHaloOverlay(
   wrapper: HTMLElement,
@@ -39,6 +39,7 @@ export function mountGisGlobeHaloOverlay(
   const canvas = document.createElement("canvas");
   canvas.dataset.testid = "gis-globe-halo";
   canvas.className = HALO_CANVAS_CLASS;
+  canvas.style.zIndex = HALO_CANVAS_Z;
   wrapper.appendChild(canvas);
 
   const ctx = canvas.getContext("2d");
@@ -60,13 +61,15 @@ export function mountGisGlobeHaloOverlay(
     const target = mapContainer ?? wrapper;
     if (canvas.parentElement !== target) {
       if (mapContainer) {
-        mapContainer.insertBefore(canvas, mapContainer.firstChild);
+        mapContainer.appendChild(canvas);
       } else {
         wrapper.appendChild(canvas);
       }
     }
     if (mapContainer) {
       mapContainer.style.position = mapContainer.style.position || "relative";
+      const mapCanvas = map.getCanvas();
+      mapCanvas.style.zIndex = MAP_CANVAS_Z;
     }
     return target;
   };
@@ -107,18 +110,23 @@ export function mountGisGlobeHaloOverlay(
     }
     bindMapIfNeeded();
 
+    const overlay = resolvePaintOverlay();
+    const { width, height } = readOverlayLayoutSize(overlay);
+    if (width <= 0 || height <= 0) return;
+
+    syncCanvasSize(width, height);
+
     const atmosphereContext = getContext();
     const effects = resolveGisEffectsSettings({
       effects: atmosphereContext.effects,
       halo: atmosphereContext.halo,
       fog: atmosphereContext.fog,
     });
-
-    const overlay = resolvePaintOverlay();
-    const { width, height } = readOverlayLayoutSize(overlay);
-    if (width <= 0 || height <= 0) return;
-
-    syncCanvasSize(width, height);
+    if (!effects.enabled) {
+      canvas.style.display = "none";
+      ctx.clearRect(0, 0, width, height);
+      return;
+    }
 
     const map = getMap();
     if (!map || !map.isStyleLoaded() || !isGlobeTransformProbeReady(map)) {

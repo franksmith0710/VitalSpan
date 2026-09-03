@@ -17,19 +17,15 @@ import {
 } from "@/components/charts/engine/maplibre/gisGeolibreEffectsStarfield";
 import {
   bindMapRenderSync,
-  resolveGlobeLimbBoundsForOverlay,
   resolveGlobeScreenBounds,
   shouldRenderGisGlobeFarEffects,
 } from "@/components/charts/engine/maplibre/gisGlobeLayout";
-import { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
 const EFFECTS_MAP_CLASS = "vs-gis-geolibre-effects-map";
 const EFFECTS_STYLE_ID = "vs-gis-geolibre-effects-overlays";
 const MAP_CANVAS_Z = "4";
-/** 光晕叠在 map canvas 之上，仅外环可见（见 gisGlobeHaloDraw evenodd）。 */
-const HALO_CANVAS_Z = "5";
 const CONTROL_Z = "6";
 
 function isGlobeProjection(map: MapLibreMap): boolean {
@@ -43,13 +39,7 @@ function isGlobeProjection(map: MapLibreMap): boolean {
 function createLayerCanvas(zIndex: number): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
   canvas.dataset.testid =
-    zIndex === 0
-      ? "gis-effects-space"
-      : zIndex === 1
-        ? "gis-effects-stars"
-        : zIndex === 2
-          ? "gis-effects-comets"
-          : "gis-effects-halo";
+    zIndex === 0 ? "gis-effects-space" : zIndex === 1 ? "gis-effects-stars" : "gis-effects-comets";
   canvas.style.position = "absolute";
   canvas.style.top = "0";
   canvas.style.left = "0";
@@ -58,6 +48,7 @@ function createLayerCanvas(zIndex: number): HTMLCanvasElement {
   return canvas;
 }
 
+/** 深空/星场/流星；球缘光晕由 mountGisGlobeHaloOverlay 独立承担（更可靠）。 */
 export class GisGeolibreEffectsEngine {
   private readonly map: MapLibreMap;
   private settings: ResolvedGisEffectsSettings;
@@ -71,7 +62,6 @@ export class GisGeolibreEffectsEngine {
   private readonly spaceCtx: CanvasRenderingContext2D;
   private readonly starsCtx: CanvasRenderingContext2D;
   private readonly cometCtx: CanvasRenderingContext2D;
-  private readonly haloCtx: CanvasRenderingContext2D;
   private starfield: HTMLCanvasElement | null = null;
   private starfieldOriginLng = 0;
   private starfieldOriginLat = 0;
@@ -102,14 +92,11 @@ export class GisGeolibreEffectsEngine {
     const space = createLayerCanvas(0);
     const stars = createLayerCanvas(1);
     const comets = createLayerCanvas(2);
-    const halo = createLayerCanvas(3);
-    halo.style.zIndex = HALO_CANVAS_Z;
     const container = map.getCanvasContainer();
-    container.append(space, stars, comets, halo);
+    container.append(space, stars, comets);
     this.spaceCtx = space.getContext("2d")!;
     this.starsCtx = stars.getContext("2d")!;
     this.cometCtx = comets.getContext("2d")!;
-    this.haloCtx = halo.getContext("2d")!;
 
     this.mapRoot?.classList.add(EFFECTS_MAP_CLASS);
     this.mapCanvas.style.zIndex = MAP_CANVAS_Z;
@@ -158,7 +145,7 @@ export class GisGeolibreEffectsEngine {
     }
     this.mapRoot?.classList.remove(EFFECTS_MAP_CLASS);
     this.overlayStyle.remove();
-    for (const ctx of [this.spaceCtx, this.starsCtx, this.cometCtx, this.haloCtx]) {
+    for (const ctx of [this.spaceCtx, this.starsCtx, this.cometCtx]) {
       ctx.canvas.remove();
     }
   }
@@ -219,7 +206,7 @@ export class GisGeolibreEffectsEngine {
     this.width = mapCanvas.clientWidth;
     this.height = mapCanvas.clientHeight;
     this.dpr = window.devicePixelRatio || 1;
-    for (const ctx of [this.spaceCtx, this.starsCtx, this.cometCtx, this.haloCtx]) {
+    for (const ctx of [this.spaceCtx, this.starsCtx, this.cometCtx]) {
       const canvas = ctx.canvas;
       canvas.style.width = `${this.width}px`;
       canvas.style.height = `${this.height}px`;
@@ -296,17 +283,6 @@ export class GisGeolibreEffectsEngine {
     );
   }
 
-  private drawHaloLayer(): void {
-    if (this.width <= 0 || this.height <= 0 || !this.settings.enabled) return;
-    const overlay = this.map.getCanvasContainer();
-    const limb = resolveGlobeLimbBoundsForOverlay(this.map, overlay, this.width, this.height);
-    if (!limb) {
-      this.haloCtx.clearRect(0, 0, this.width, this.height);
-      return;
-    }
-    drawGlobeAtmosphereHalo(this.haloCtx, this.width, this.height, limb, this.settings);
-  }
-
   private tick(timestamp: number): void {
     this.rafId = null;
     if (this.destroyed) return;
@@ -323,16 +299,14 @@ export class GisGeolibreEffectsEngine {
 
     this.spaceCtx.clearRect(0, 0, this.width, this.height);
     this.cometCtx.clearRect(0, 0, this.width, this.height);
-    this.haloCtx.clearRect(0, 0, this.width, this.height);
 
-    if (!isGlobeProjection(this.map)) {
+    if (!isGlobeProjection(this.map) || !this.settings.enabled) {
       this.starsCtx.clearRect(0, 0, this.width, this.height);
+      this.start();
       return;
     }
 
     this.drawSpaceBackground();
-    // 光晕跟球缘走，任意 zoom 都应绘制；星场/流星才在远视图隐藏。
-    this.drawHaloLayer();
 
     if (!this.isFarGlobeView()) {
       this.starsCtx.clearRect(0, 0, this.width, this.height);

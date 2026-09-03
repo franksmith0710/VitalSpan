@@ -36,21 +36,19 @@ describe("gisGeolibreEffects", () => {
     expect(survivors).toHaveLength(0);
   });
 
-  it("draws atmosphere halo outside far-view gate", () => {
-    const source = readFileSync(
+  it("delegates atmosphere halo to mountGisGlobeHaloOverlay, not effects engine", () => {
+    const effectsSource = readFileSync(
       resolve(process.cwd(), "src/components/charts/engine/maplibre/gisGeolibreEffectsEngine.ts"),
       "utf8",
     );
-    const tickBody = source.slice(source.indexOf("private tick("));
-    expect(tickBody).toContain("this.drawHaloLayer()");
-    expect(tickBody.indexOf("this.drawHaloLayer()")).toBeLessThan(
-      tickBody.indexOf("if (!this.isFarGlobeView())"),
+    const viewSource = readFileSync(
+      resolve(process.cwd(), "src/components/charts/engine/maplibre/GisMapView.tsx"),
+      "utf8",
     );
-    expect(tickBody).not.toMatch(
-      /if \(!this\.isFarGlobeView\(\)\)[\s\S]*this\.drawHaloLayer\(\)/,
-    );
-    expect(source).toContain('const HALO_CANVAS_Z = "5"');
-    expect(source).toContain("resolveGlobeLimbBoundsForOverlay");
-    expect(source).toContain("bindMapRenderSync");
+
+    expect(effectsSource).not.toContain("drawHaloLayer");
+    expect(effectsSource).not.toContain("gis-effects-halo");
+    expect(effectsSource).toContain("bindMapRenderSync");
+    expect(viewSource).toContain("mountGisGlobeHaloOverlay");
   });
 });
