@@ -924,6 +924,8 @@ export function canvasArtboardStyleFingerprint(config: DashboardStyleConfig): st
     scheme: config.colorScheme ?? "light",
     bg: config.canvasBackground,
     img: config.canvasBackgroundImage,
+    imgFit: config.canvasBackgroundImageFit,
+    imgPos: config.canvasBackgroundImagePosition,
     custom: config.canvasBackgroundCustom,
     decor: config.canvasDecorPresetId,
   });

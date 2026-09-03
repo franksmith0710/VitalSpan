@@ -29,6 +29,7 @@ import {
   widgetDashboardStyleFingerprint,
   pickChartPaletteDefaults,
   chartPaletteDefaultsFingerprint,
+  canvasArtboardStyleFingerprint,
 } from "../dashboardStyleConfig";
 import { resolveDashboardGapRuntimeFromLayout, resolveEffectiveDashboardStyle } from "../stylePipeline";
 import { DashboardStyleSurface } from "../DashboardStyleSurface";
@@ -124,6 +125,7 @@ export function DashboardEditCanvas({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- layout.styleConfig 仅作 liveStyle 缺省回退
     [styleConfig, layout.styleConfig],
   );
+  const artboardStyleKey = canvasArtboardStyleFingerprint(effectiveStyle);
   const widgetDashboardStyle = useMemo(
     () => pickWidgetDashboardStyle(effectiveStyle),
     [widgetDashboardStyleFingerprint(effectiveStyle)],
@@ -324,6 +326,7 @@ export function DashboardEditCanvas({
         ) : (
           <div className="relative h-full min-h-0" data-dashboard-thumbnail-capture="">
             <div
+              key={artboardStyleKey}
               data-testid="dashboard-canvas-backdrop"
               className="pointer-events-none absolute inset-0 z-0"
               style={resolveArtboardStyle(effectiveStyle)}

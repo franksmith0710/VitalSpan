@@ -971,6 +971,42 @@ describe("PixelCanvas", () => {
     expect(screen.getByTestId("canvas-mark-line")).toBeInTheDocument();
   });
 
+  it("updates artboard background when styleConfig resets canvas decor", () => {
+    const withDecor = {
+      colorScheme: "dark" as const,
+      canvasBackgroundCustom: true,
+      canvasBackground:
+        "radial-gradient(ellipse 100% 85% at 50% -5%, #22d3ee40 0%, #0f172a 42%, #020617 100%)",
+      canvasBackgroundImage:
+        "/template-assets/packs/gov-enterprise-v1/backgrounds/dark/canvas-dark-cyan-command.svg",
+    };
+    const { rerender } = renderPixelCanvas(
+      <PixelCanvas
+        mode="edit"
+        layout={layout}
+        styleConfig={withDecor}
+        selectedIds={new Set()}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    const artboard = screen.getByTestId("pixel-canvas-artboard");
+    expect(artboard.style.backgroundImage).toContain("canvas-dark-cyan-command.svg");
+
+    rerenderPixelCanvas(
+      rerender,
+      <PixelCanvas
+        mode="edit"
+        layout={layout}
+        styleConfig={{ colorScheme: "dark", canvasBackground: "#0f172a" }}
+        selectedIds={new Set()}
+        renderWidget={(item) => <span>{item.title}</span>}
+      />,
+    );
+    const resetArtboard = screen.getByTestId("pixel-canvas-artboard");
+    expect(resetArtboard.style.backgroundImage).toBe("");
+    expect(resetArtboard.style.backgroundColor).toBe("rgb(15, 23, 42)");
+  });
+
   it("keeps tile decor only on artboard so host letterbox does not double-scale dots", () => {
     renderPixelCanvas(
       <PixelCanvas

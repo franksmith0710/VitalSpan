@@ -9,6 +9,7 @@ import {
 import {
   applyDashboardStylePatch,
   bootstrapDashboardStyleConfig,
+  resetDashboardColorsToActiveThemeBundle,
 } from "./dashboardThemeVariants";
 import { hydrateDashboardStyle } from "./stylePipeline";
 
@@ -137,5 +138,21 @@ describe("canvas background edit pipeline", () => {
     });
     expect(restored.canvasBackgroundImage).toContain("data:image/svg+xml");
     expect(resolveArtboardStyle(restored).backgroundImage).toContain("url(");
+  });
+
+  it("reset + hydrate clears custom canvas image from artboard style", () => {
+    const base = hydrateDashboardStyle({
+      colorScheme: "dark",
+      canvasBackgroundCustom: true,
+      canvasBackground:
+        "radial-gradient(ellipse 100% 85% at 50% -5%, #22d3ee40 0%, #0f172a 42%, #020617 100%)",
+      canvasBackgroundImage:
+        "/template-assets/packs/gov-enterprise-v1/backgrounds/dark/canvas-dark-cyan-command.svg",
+      widgetStyle: { opacity: 0, background: "#1e293b" },
+    });
+    const { styleConfig } = resetDashboardColorsToActiveThemeBundle(base, []);
+    const hydrated = hydrateDashboardStyle(styleConfig);
+    expect(hydrated.canvasBackgroundImage).toBeUndefined();
+    expect(resolveArtboardStyle(hydrated).backgroundImage).toBeUndefined();
   });
 });
