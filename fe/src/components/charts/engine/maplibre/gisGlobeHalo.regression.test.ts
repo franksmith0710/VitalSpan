@@ -16,7 +16,7 @@ describe("gisGlobeHalo atmosphere sync regression", () => {
     expect(haloSource).not.toContain("resolveGlobeScreenBoundsFallback");
     expect(haloSource).toContain("resolveGlobeLimbBoundsForHaloPaint");
     expect(haloSource).toContain("if (!limb)");
-    expect(haloSource).toContain('const HALO_CANVAS_Z = "3"');
+    expect(haloSource).toContain('const HALO_CANVAS_Z = "5"');
     expect(haloSource).toContain("getCanvasContainer");
     expect(haloSource).toContain("resolveGlobeLimbBoundsForHaloPaint");
     expect(haloSource).toContain("if (!effects.enabled)");

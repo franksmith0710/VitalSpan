@@ -17,11 +17,12 @@ export { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gis
 
 const HALO_CANVAS_CLASS = "pointer-events-none absolute inset-0 h-full w-full";
 const MAP_CANVAS_Z = "4";
-const HALO_CANVAS_Z = "3";
+/** 叠在 map canvas 之上；球外 MapLibre 画布不透明，置于下方会被整屏遮挡。 */
+const HALO_CANVAS_Z = "5";
 
 /**
- * 可靠光晕层：canvas-container 内 z=3（地图 z=4 自然遮挡中心），bindMapRenderSync 跟帧。
- * 对齐 GeoLibre maplibre-effects 层栈。
+ * 可靠光晕层：canvas-container 内 z=5（地图 z=4），evenodd 外环 + screen 混合。
+ * bindMapRenderSync 跟帧；球缘 resolveGlobeLimbBoundsForHaloPaint。
  */
 export function mountGisGlobeHaloOverlay(
   wrapper: HTMLElement,
@@ -58,10 +59,13 @@ export function mountGisGlobeHaloOverlay(
     const paintRoot = map?.getCanvasContainer() ?? map?.getContainer() ?? wrapper;
     if (canvas.parentElement !== paintRoot) {
       paintRoot.appendChild(canvas);
+    } else if (paintRoot.lastElementChild !== canvas) {
+      paintRoot.appendChild(canvas);
     }
     if (map) {
       paintRoot.style.position = paintRoot.style.position || "relative";
       map.getCanvas().style.zIndex = MAP_CANVAS_Z;
+      canvas.style.zIndex = HALO_CANVAS_Z;
     }
     return paintRoot;
   };

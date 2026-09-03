@@ -32,8 +32,10 @@ export function drawGlobeAtmosphereHalo(
   }
   ctx.globalCompositeOperation = "screen";
   ctx.fillStyle = gradient;
+  // 仅绘制球缘外环，叠在 MapLibre canvas 之上而不洗白球面。
   ctx.beginPath();
   ctx.arc(cx, cy, outerRadius, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.arc(cx, cy, globeRadius * 0.995, 0, Math.PI * 2, true);
+  ctx.fill("evenodd");
   ctx.restore();
 }
