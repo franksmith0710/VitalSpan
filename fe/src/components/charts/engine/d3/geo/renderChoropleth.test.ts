@@ -208,7 +208,7 @@ describe("renderD3ChoroplethChart", () => {
     });
 
     const zoomRoot = container.querySelector("g.map-zoom-root");
-    expect(zoomRoot?.getAttribute("transform")).toBeNull();
+    expect(zoomRoot?.getAttribute("transform")).toMatch(/translate\(0,?0\)\s*scale\(1\)/);
 
     dispose();
     document.body.removeChild(container);
