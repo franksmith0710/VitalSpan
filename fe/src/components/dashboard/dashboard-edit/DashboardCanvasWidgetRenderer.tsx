@@ -23,6 +23,7 @@ import { resolveDashboardChrome } from "../dashboardChromeConfig";
 import { resolveComponentGapRuntime } from "../componentGapRuntime";
 import { readChartTitleVisible, mergeChartTitleStyle } from "@/lib/chartDeStyle";
 import { resolveWidgetEffectiveScheme } from "@/lib/chartSurfaceTheme";
+import { normalizeLinkedChartConfigChange } from "@/lib/vizComponentEdit";
 import { mergeTitleStyle } from "../dashboardStyleConfig";
 import { pixelViewTitleHeightPx } from "../dashboardWidgetTypography";
 import { usePixelChromeScale } from "../pixelCanvas/PixelCanvasScaleContext";
@@ -260,9 +261,10 @@ export const DashboardCanvasWidgetRenderer = memo(function DashboardCanvasWidget
   const handleChartConfigChange = useCallback(
     (widgetId: string, chartConfig: LayoutWidget["chartConfig"]) => {
       if (!chartConfig) return;
-      updateWidget(widgetId, { chartConfig });
+      const normalized = normalizeLinkedChartConfigChange(widget, chartConfig);
+      updateWidget(widgetId, { chartConfig: normalized });
     },
-    [updateWidget],
+    [updateWidget, widget],
   );
 
   const handleTabsConfigChange = useCallback(

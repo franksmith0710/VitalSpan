@@ -11,7 +11,7 @@ import {
   type ResolvedGisMapControls,
   type GisProjectOverlay,
 } from "@/components/charts/engine/maplibre/gisProject";
-import { applyGisGraticule } from "@/components/charts/engine/maplibre/gisGraticule";
+import { applyGisGraticule, maintainGisGraticuleStack } from "@/components/charts/engine/maplibre/gisGraticule";
 import { applyBasemapRuntimePatch } from "@/components/charts/engine/maplibre/gisBasemapPalette";
 import { buildPmtilesStyle } from "@/components/charts/engine/maplibre/gisMapStyle";
 import {
@@ -107,6 +107,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     [project.mapControls, project.showControls],
   );
   const mapControlsKey = useMemo(() => JSON.stringify(mapControls), [mapControls]);
+  const mapControlsRef = useRef(mapControls);
+  mapControlsRef.current = mapControls;
 
   const remountMapControls = useCallback(async (controls: ResolvedGisMapControls) => {
     const map = mapRef.current;
@@ -114,9 +116,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     mapControlsDisposeRef.current?.();
     mapControlsDisposeRef.current = null;
     mapControlsDisposeRef.current = await mountGisMapControls(map, controls);
-    if (map.isStyleLoaded()) {
-      applyGisGraticule(map, controls.graticule);
-    }
+    applyGisGraticule(map, controls.graticule);
     return true;
   }, []);
   const sunKey = useMemo(
@@ -355,6 +355,9 @@ function GisMapViewInner(props: ChartEngineViewProps) {
 
   const syncLayersRuntime = useCallback((map: MapLibreMap) => {
     syncGisProjectLayers(map, layerEntriesRef.current);
+    if (mapControlsRef.current.graticule) {
+      whenGisMapStyleReady(map, () => maintainGisGraticuleStack(map));
+    }
     const fitCollections: GeoJSON.FeatureCollection[] = [];
     for (const entry of layerEntriesRef.current) {
       const resolved = resolveGisOverlayStyle(entry.layer.style, entry.options.chartColors);

@@ -1,16 +1,29 @@
-import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
+import type { GeoJSONSource, LayerSpecification, Map as MapLibreMap } from "maplibre-gl";
 import { whenGisMapStyleReady } from "@/components/charts/engine/maplibre/gisMapRuntime";
 
 export const GIS_GRATICULE_SOURCE_ID = "vs-gis-graticule";
 export const GIS_GRATICULE_LAYER_ID = "vs-gis-graticule-lines";
+export const GIS_SUN_NIGHT_LAYER_ID = "vs-gis-sun-night-layer";
 
 const DATA_OVERLAY_PREFIXES = ["vs-gis-layer-", "vs-gis-overlay-"];
+const DATA_CORE_LAYER =
+  /-circles$|-clusters$|-heat$|-detail$|-cluster-count$|-labels$/;
 
-const GRATICULE_PAINT = {
-  "line-color": "#b8c9e0",
-  "line-opacity": 0.72,
-  "line-width": 1.25,
-} as const;
+const GRATICULE_PAINT: import("maplibre-gl").LineLayerSpecification["paint"] = {
+  "line-color": "#9eb8e8",
+  "line-opacity": 0.88,
+  "line-width": [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    0,
+    0.9,
+    4,
+    1.25,
+    8,
+    1.6,
+  ],
+};
 
 const GRATICULE_LAYOUT = {
   "line-join": "round",
@@ -57,25 +70,53 @@ function graticuleLayerSpec(): import("maplibre-gl").LineLayerSpecification {
   };
 }
 
-/** 置于昼夜遮罩之上、业务散点/热力之下，避免被 night raster 完全盖住。 */
+function isDataOverlayLayer(id: string): boolean {
+  return DATA_OVERLAY_PREFIXES.some((prefix) => id.startsWith(prefix));
+}
+
+/** 插在散点光晕/热力光晕之下、实心点/热力核之上，避免被 halo 整块盖住。 */
+export function resolveGisGraticuleInsertBeforeId(
+  layers: Pick<LayerSpecification, "id">[],
+): string | undefined {
+  for (const layer of layers) {
+    if (!isDataOverlayLayer(layer.id)) continue;
+    if (DATA_CORE_LAYER.test(layer.id)) return layer.id;
+  }
+  for (const layer of layers) {
+    if (isDataOverlayLayer(layer.id)) return layer.id;
+  }
+  return undefined;
+}
+
+export function stackGisNightBelowGraticule(map: MapLibreMap): void {
+  if (!map.getLayer(GIS_SUN_NIGHT_LAYER_ID) || !map.getLayer(GIS_GRATICULE_LAYER_ID)) return;
+  try {
+    map.moveLayer(GIS_SUN_NIGHT_LAYER_ID, GIS_GRATICULE_LAYER_ID);
+  } catch {
+    /* sun engine may re-order on next render */
+  }
+}
+
+/** 置于昼夜遮罩之上、散点光晕之下（或实心点层之下）。 */
 export function placeGisGraticuleLayer(map: MapLibreMap): void {
   if (!map.getLayer(GIS_GRATICULE_LAYER_ID)) return;
   const layers = map.getStyle()?.layers ?? [];
-  for (const layer of layers) {
-    if (DATA_OVERLAY_PREFIXES.some((prefix) => layer.id.startsWith(prefix))) {
-      try {
-        map.moveLayer(GIS_GRATICULE_LAYER_ID, layer.id);
-      } catch {
-        /* layer race during style swap */
-      }
-      return;
-    }
-  }
+  const beforeId = resolveGisGraticuleInsertBeforeId(layers);
   try {
-    map.moveLayer(GIS_GRATICULE_LAYER_ID);
+    if (beforeId) {
+      map.moveLayer(GIS_GRATICULE_LAYER_ID, beforeId);
+    } else {
+      map.moveLayer(GIS_GRATICULE_LAYER_ID);
+    }
   } catch {
-    /* style tearing down */
+    /* layer race during style swap */
   }
+  stackGisNightBelowGraticule(map);
+}
+
+export function maintainGisGraticuleStack(map: MapLibreMap): void {
+  if (!map.getLayer(GIS_GRATICULE_LAYER_ID)) return;
+  placeGisGraticuleLayer(map);
 }
 
 function applyGisGraticuleNow(map: MapLibreMap, enabled: boolean) {
@@ -98,15 +139,7 @@ function applyGisGraticuleNow(map: MapLibreMap, enabled: boolean) {
   if (!map.getLayer(GIS_GRATICULE_LAYER_ID)) {
     map.addLayer(graticuleLayerSpec());
   }
-  placeGisGraticuleLayer(map);
-  const nightLayerId = "vs-gis-sun-night-layer";
-  if (map.getLayer(nightLayerId)) {
-    try {
-      map.moveLayer(nightLayerId, GIS_GRATICULE_LAYER_ID);
-    } catch {
-      /* sun engine may re-order on next render */
-    }
-  }
+  maintainGisGraticuleStack(map);
 }
 
 export function applyGisGraticule(map: MapLibreMap, enabled: boolean) {

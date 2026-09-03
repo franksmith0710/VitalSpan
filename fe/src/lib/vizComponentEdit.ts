@@ -13,9 +13,42 @@ import {
 } from "@/lib/vizComponents";
 import { createLinkedLayoutWidget } from "@/components/dashboard/createLayoutWidget";
 import { normalizeChartConfigForPortableDemo } from "@/lib/templateDemoData";
+import { buildLinkedChartInstanceOverlay } from "@/lib/geoMapRegionPicker";
 import { queueLinkedComponentPush } from "@/lib/linkedComponentSaveQueue";
 
 export { awaitLinkedComponentWrites } from "@/lib/linkedComponentSaveQueue";
+
+/** ADR-14：已链接 widget 保存时剥离内联 payload，仅保留实例覆盖（如地图下钻路径） */
+export function stripLinkedWidgetForPersist<T extends DashboardWidgetBase>(widget: T): T {
+  if (!isLinkedComponentRef(widget.componentRef)) return widget;
+  if (widget.type === "chart") {
+    const overlay = widget.chartConfig
+      ? buildLinkedChartInstanceOverlay(widget.chartConfig)
+      : undefined;
+    return { ...widget, chartConfig: overlay } as T;
+  }
+  if (widget.type === "filter") {
+    return { ...widget, filterConfig: undefined } as T;
+  }
+  if (widget.type === "text") {
+    return { ...widget, textConfig: undefined } as T;
+  }
+  if (widget.type === "media") {
+    return { ...widget, mediaConfig: undefined } as T;
+  }
+  if (widget.type === "customViz") {
+    return { ...widget, customVizConfig: undefined } as T;
+  }
+  return widget;
+}
+
+export function normalizeLinkedChartConfigChange(
+  widget: LayoutWidget,
+  chartConfig: NonNullable<LayoutWidget["chartConfig"]>,
+): LayoutWidget["chartConfig"] | undefined {
+  if (!isLinkedComponentRef(widget.componentRef)) return chartConfig;
+  return buildLinkedChartInstanceOverlay(chartConfig);
+}
 
 export async function pushWidgetPayloadToLibrary(
   widget: LayoutWidget,

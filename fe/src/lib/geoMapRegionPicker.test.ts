@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildGeoMapDrillStackFromSelection,
+  buildLinkedChartInstanceOverlay,
   formatGeoMapRegionSelectionLabel,
   parseGeoMapDrillStackSelection,
   validateManualGeoMapDrillStack,
@@ -76,6 +77,37 @@ describe("formatGeoMapRegionSelectionLabel", () => {
   it("persists empty manualDrillStack for national selection", () => {
     const stack = buildGeoMapDrillStackFromSelection(mapConfig, null);
     expect(stack).toEqual([]);
+  });
+});
+
+describe("buildLinkedChartInstanceOverlay", () => {
+  it("keeps only manualDrillStack and viewTransforms for linked persist", () => {
+    const overlay = buildLinkedChartInstanceOverlay({
+      chartType: "map",
+      mode: "sql",
+      dataSourceId: "ds-1",
+      sql: "select 1",
+      dimensions: [{ field: "province" }],
+      metrics: [{ field: "total" }],
+      nativeBody: {
+        deStyle: {
+          geo: {
+            manualDrillStack: [{ field: "province", value: "内蒙古自治区", label: "内蒙古自治区" }],
+            viewTransforms: { "vs-regions": { x: 12, y: 8, k: 1.2 } },
+            showZoomControl: true,
+          },
+        },
+      },
+    } as never);
+    expect(overlay?.chartType).toBe("map");
+    expect(overlay?.dataSourceId).toBeUndefined();
+    expect(overlay?.nativeBody?.deStyle?.geo?.manualDrillStack).toEqual([
+      { field: "province", value: "内蒙古自治区", label: "内蒙古自治区" },
+    ]);
+    expect(overlay?.nativeBody?.deStyle?.geo?.viewTransforms).toEqual({
+      "vs-regions": { x: 12, y: 8, k: 1.2 },
+    });
+    expect(overlay?.nativeBody?.deStyle?.geo?.showZoomControl).toBeUndefined();
   });
 });
 

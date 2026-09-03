@@ -1,7 +1,14 @@
 import type { ChartDrillFrame } from "@/lib/chartDrill";
 import { getDrillChain } from "@/lib/chartDrill";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
-import { readChartDeStyle, readChartGeoStyle, patchChartDeStyleNested } from "@/lib/chartDeStyle";
+import {
+  readChartDeStyle,
+  readChartGeo3dStyle,
+  readChartGeoStyle,
+  patchChartDeStyleNested,
+  type ChartGeo3dStyle,
+  type ChartGeoStyle,
+} from "@/lib/chartDeStyle";
 import {
   isMunicipalityAdcode,
   lookupCityAdcode,
@@ -27,23 +34,65 @@ export function applyManualGeoMapDrillOverlay(
   base: ChartViewConfig,
   instance?: ChartViewConfig | null,
 ): ChartViewConfig {
-  if (!instance) return base;
-  const stack = readManualGeoMapDrillStack(instance);
-  if (stack === undefined) return base;
-  return patchChartDeStyleNested(base, "geo", { manualDrillStack: stack });
+  return applyLinkedChartInstanceOverlay(base, instance);
 }
 
-/** 关联组件落库时仅保留地图下钻实例覆盖 */
+function readLinkedChartGeoInstancePatches(config: ChartViewConfig): {
+  geo?: Partial<ChartGeoStyle>;
+  geo3d?: Partial<ChartGeo3dStyle>;
+} {
+  const deStyle = readChartDeStyle(config);
+  const geo = readChartGeoStyle(deStyle);
+  const geo3d = readChartGeo3dStyle(deStyle);
+  const geoPatch: Partial<ChartGeoStyle> = {};
+  if (geo.manualDrillStack !== undefined) {
+    geoPatch.manualDrillStack = geo.manualDrillStack;
+  }
+  if (geo.viewTransforms && Object.keys(geo.viewTransforms).length > 0) {
+    geoPatch.viewTransforms = geo.viewTransforms;
+  }
+  const geo3dPatch: Partial<ChartGeo3dStyle> = {};
+  if (geo3d.orbitViews && Object.keys(geo3d.orbitViews).length > 0) {
+    geo3dPatch.orbitViews = geo3d.orbitViews;
+  }
+  return {
+    geo: Object.keys(geoPatch).length > 0 ? geoPatch : undefined,
+    geo3d: Object.keys(geo3dPatch).length > 0 ? geo3dPatch : undefined,
+  };
+}
+
+/** 关联组件落库时仅保留地图实例覆盖（下钻路径、缩放视角等） */
+export function buildLinkedChartInstanceOverlay(
+  config: ChartViewConfig,
+): ChartViewConfig | undefined {
+  const { geo, geo3d } = readLinkedChartGeoInstancePatches(config);
+  if (!geo && !geo3d) return undefined;
+  let next = { chartType: config.chartType } as ChartViewConfig;
+  if (geo) next = patchChartDeStyleNested(next, "geo", geo);
+  if (geo3d) next = patchChartDeStyleNested(next, "geo3d", geo3d);
+  return next;
+}
+
+/** @deprecated 使用 buildLinkedChartInstanceOverlay */
 export function buildGeoMapDrillPersistOverlay(
   config: ChartViewConfig,
 ): ChartViewConfig | undefined {
-  const stack = readManualGeoMapDrillStack(config);
-  if (stack === undefined) return undefined;
-  return patchChartDeStyleNested(
-    { chartType: config.chartType } as ChartViewConfig,
-    "geo",
-    { manualDrillStack: stack },
-  );
+  return buildLinkedChartInstanceOverlay(config);
+}
+
+/** 实例级地图覆盖合并到库内/合并后的 chartConfig */
+export function applyLinkedChartInstanceOverlay(
+  base: ChartViewConfig,
+  instance?: ChartViewConfig | null,
+): ChartViewConfig {
+  if (!instance) return base;
+  const overlay = buildLinkedChartInstanceOverlay(instance);
+  if (!overlay) return base;
+  const { geo, geo3d } = readLinkedChartGeoInstancePatches(overlay);
+  let next = base;
+  if (geo) next = patchChartDeStyleNested(next, "geo", geo);
+  if (geo3d) next = patchChartDeStyleNested(next, "geo3d", geo3d);
+  return next;
 }
 
 export function formatGeoMapRegionSelectionLabel(

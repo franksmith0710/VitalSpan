@@ -259,6 +259,57 @@ describe("dashboard canvas mode", () => {
     expect(chart.chartConfig.chartId).toBe("map-1");
   });
 
+  it("buildDashboardLayoutForSave strips linked chart to geo instance overlay only", () => {
+    const layout: DashboardLayoutV2 = {
+      version: 2,
+      canvas: { width: 1440, height: 900 },
+      widgets: [
+        {
+          id: "map-linked",
+          type: "chart",
+          title: "区域地图",
+          order: 0,
+          x: 0,
+          y: 0,
+          width: 480,
+          height: 360,
+          componentRef: { componentId: "550e8400-e29b-41d4-a716-446655440099" },
+          chartConfig: {
+            chartId: "map-linked",
+            chartType: "map",
+            mode: "sql",
+            dataSourceId: "ds-1",
+            sql: "select 1",
+            dimensions: [{ field: "province" }],
+            metrics: [{ field: "total" }],
+            nativeBody: {
+              deStyle: {
+                geo: {
+                  manualDrillStack: [
+                    { field: "province", value: "内蒙古自治区", label: "内蒙古自治区" },
+                  ],
+                },
+              },
+            },
+          },
+        },
+      ],
+      globalFilters: [],
+    };
+    const saved = buildDashboardLayoutForSave(layout, { widgetGap: 8 });
+    const chart = saved.widgets[0];
+    expect(chart.type).toBe("chart");
+    if (chart.type !== "chart") throw new Error("expected chart widget");
+    expect(chart.componentRef).toEqual({
+      componentId: "550e8400-e29b-41d4-a716-446655440099",
+    });
+    expect(chart.chartConfig?.dataSourceId).toBeUndefined();
+    expect(chart.chartConfig?.nativeBody?.deStyle?.geo?.manualDrillStack).toEqual([
+      { field: "province", value: "内蒙古自治区", label: "内蒙古自治区" },
+    ]);
+    expect(chart.chartConfig?.chartId).toBe("map-linked");
+  });
+
   it("buildDashboardLayoutForSave persists themeVariants for DE dual-theme round-trip", () => {
     const layout: DashboardLayoutV2 = {
       version: 2,

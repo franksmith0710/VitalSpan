@@ -2,7 +2,7 @@ import type { DashboardWidgetBase } from "@/components/dashboard/dashboardLayout
 import { applyCustomVizEditOverlay } from "@/components/dashboard/custom-viz/customVizExecute";
 import type { VizComponentDetail } from "@/lib/vizComponents";
 import { isLinkedComponentRef } from "@/lib/vizComponents";
-import { applyManualGeoMapDrillOverlay } from "@/lib/geoMapRegionPicker";
+import { applyLinkedChartInstanceOverlay } from "@/lib/geoMapRegionPicker";
 
 export type VizComponentMap = Map<string, VizComponentDetail>;
 
@@ -71,7 +71,7 @@ export function resolveLayoutWidget<T extends DashboardWidgetBase>(
   if (resolved.type === "chart" && resolved.chartConfig && widget.type === "chart" && widget.chartConfig) {
     return {
       ...resolved,
-      chartConfig: applyManualGeoMapDrillOverlay(resolved.chartConfig, widget.chartConfig),
+      chartConfig: applyLinkedChartInstanceOverlay(resolved.chartConfig, widget.chartConfig),
     } as T;
   }
   if (

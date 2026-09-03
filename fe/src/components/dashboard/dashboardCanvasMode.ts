@@ -21,6 +21,7 @@ import {
 } from "@/lib/canvasPersistPolicy";
 import { sanitizeChartFieldsForValidate } from "@/lib/chartFieldRules";
 import { sanitizeCustomVizDataBinding } from "./custom-viz/customVizExecute";
+import { stripLinkedWidgetForPersist } from "@/lib/vizComponentEdit";
 
 const CANVAS_WIDTH = 1440 as const;
 const MIN_CANVAS_HEIGHT = 900;
@@ -230,7 +231,9 @@ function prepareWidgetForPersist<W extends LayoutWidget>(
   widget: W,
   options?: { attachChartId?: boolean },
 ): W {
-  return prepareCustomVizWidgetForPersist(prepareChartWidgetForPersist(widget, options));
+  return prepareCustomVizWidgetForPersist(
+    prepareChartWidgetForPersist(stripLinkedWidgetForPersist(widget), options),
+  );
 }
 
 /** v1 可规范化栅格；v2 只补公共 ID，严格保留数组顺序、order 与像素几何。 */

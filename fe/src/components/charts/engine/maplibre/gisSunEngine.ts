@@ -8,12 +8,16 @@ import {
   type GisSunSettings,
 } from "@/components/charts/engine/maplibre/gisSunPosition";
 import { whenGisMapStyleReady } from "@/components/charts/engine/maplibre/gisMapRuntime";
-import { GIS_GRATICULE_LAYER_ID } from "@/components/charts/engine/maplibre/gisGraticule";
+import {
+  GIS_GRATICULE_LAYER_ID,
+  GIS_SUN_NIGHT_LAYER_ID,
+  stackGisNightBelowGraticule,
+} from "@/components/charts/engine/maplibre/gisGraticule";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
 const NIGHT_SOURCE_ID = "vs-gis-sun-night-source";
-const NIGHT_LAYER_ID = "vs-gis-sun-night-layer";
+const NIGHT_LAYER_ID = GIS_SUN_NIGHT_LAYER_ID;
 const NIGHT_LAYER_PREFIX = "vs-gis-sun-night-layer-";
 const NIGHT_CANVAS_WIDTH = 960;
 const NIGHT_CANVAS_HEIGHT = 480;
@@ -170,14 +174,11 @@ export class GisSunEngine {
   private raiseNightLayer(): void {
     if (!this.map.getLayer(NIGHT_LAYER_ID)) return;
     try {
-      const beforeId = this.map.getLayer(GIS_GRATICULE_LAYER_ID)
-        ? GIS_GRATICULE_LAYER_ID
-        : undefined;
-      if (beforeId) {
-        this.map.moveLayer(NIGHT_LAYER_ID, beforeId);
-      } else {
-        this.map.moveLayer(NIGHT_LAYER_ID);
+      if (this.map.getLayer(GIS_GRATICULE_LAYER_ID)) {
+        stackGisNightBelowGraticule(this.map);
+        return;
       }
+      this.map.moveLayer(NIGHT_LAYER_ID);
     } catch {
       /* layer mid-move during style swap */
     }
