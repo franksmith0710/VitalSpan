@@ -63,6 +63,7 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
     drillDepth = 0,
     areaMapping,
     onViewTransformChange,
+    onRefresh,
   } = config;
 
   const mapId = mapIdRaw?.trim() || VS_REGIONS_MAP_ID;
@@ -412,24 +413,22 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
         schedulePersistViewTransform(event.transform);
       });
     root.call(zoom);
-    if (roam || resolvedTransform) {
-      try {
-        root.call(zoom.transform, initialTransform);
-        g.attr("transform", initialTransform.toString());
-      } catch {
-        // jsdom 无 layout，跳过初始 transform
-      }
-      if (roam) {
-        root.on("dblclick.zoom", () => {
-          root
-            .transition()
-            .duration(300)
-            .call(zoom.transform, d3.zoomIdentity)
-            .on("end", () => {
-              notifyViewTransform(d3.zoomIdentity);
-            });
-        });
-      }
+    try {
+      root.call(zoom.transform, initialTransform);
+      g.attr("transform", initialTransform.toString());
+    } catch {
+      // jsdom 无 layout，跳过初始 transform
+    }
+    if (roam) {
+      root.on("dblclick.zoom", () => {
+        root
+          .transition()
+          .duration(300)
+          .call(zoom.transform, d3.zoomIdentity)
+          .on("end", () => {
+            notifyViewTransform(d3.zoomIdentity);
+          });
+      });
     }
     if (showZoomControl) {
       detachZoomControls = mountGeoZoomControls({
@@ -437,6 +436,10 @@ export function renderD3ChoroplethChart(container: HTMLElement, config: D3GeoRen
         svg: root.node()!,
         zoom,
         zoomRoot: g,
+        onRefresh: () => {
+          notifyViewTransform(d3.zoomIdentity);
+          onRefresh?.();
+        },
       });
     }
     detachZoom = () => {

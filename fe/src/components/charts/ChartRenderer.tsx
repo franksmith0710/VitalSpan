@@ -792,6 +792,7 @@ export const ChartRenderer = memo(function ChartRenderer({
       chartDataRevision={resolvedExecuteKey}
       instanceKey={widgetId}
       onPaintReady={deferMountReadyForPaint ? handlePaintReady : undefined}
+      onChartRefresh={isGeoMapChart ? () => void rerun() : undefined}
     />
   );
 

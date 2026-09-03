@@ -177,6 +177,7 @@ export function buildD3DispatchPayload(
         onOrbitViewChange: props.onGeo3dOrbitViewChange
           ? (view) => props.onGeo3dOrbitViewChange?.(mapId, view)
           : undefined,
+        onRefresh: props.onChartRefresh,
         depthVisual: styleProps.depthVisual,
       },
     };

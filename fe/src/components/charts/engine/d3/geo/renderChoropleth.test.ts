@@ -179,6 +179,36 @@ describe("renderD3ChoroplethChart", () => {
     });
     expect(zeroRegion).toBeTruthy();
     expect(container.querySelector('[data-testid="geo-zoom-controls"]')).toBeTruthy();
+    expect(container.querySelector('[aria-label="刷新"]')).toBeTruthy();
+
+    dispose();
+    document.body.removeChild(container);
+  });
+
+  it("applies initial zoom transform when only zoom controls are enabled", () => {
+    const container = document.createElement("div");
+    container.style.width = "400px";
+    container.style.height = "320px";
+    document.body.appendChild(container);
+
+    const dispose = renderD3ChoroplethChart(container, {
+      width: 400,
+      height: 320,
+      rows: [["广东省", 320]],
+      columns: ["province", "value"],
+      regionField: "province",
+      metricField: "value",
+      theme: resolveD3Theme("light"),
+      showTooltip: false,
+      colors: ["#1653a9"],
+      geoStyle: {
+        showZoomControl: true,
+        roam: false,
+      },
+    });
+
+    const zoomRoot = container.querySelector("g.map-zoom-root");
+    expect(zoomRoot?.getAttribute("transform")).toBeNull();
 
     dispose();
     document.body.removeChild(container);

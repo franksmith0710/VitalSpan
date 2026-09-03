@@ -102,6 +102,8 @@ export type ChartEngineViewProps = {
   instanceKey?: string;
   /** 首帧绘制完成（3D 地图异步渲染结束后通知挂载调度释放 slot） */
   onPaintReady?: () => void;
+  /** 2D 地图缩放条「刷新」：复位视口并重新拉数 */
+  onChartRefresh?: () => void;
 };
 
 /** @deprecated 使用 ChartViewModel；兼容过渡期 */

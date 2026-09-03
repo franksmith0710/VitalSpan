@@ -79,6 +79,7 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
     onPaintReady,
     paintMaxEdge,
     chartDataRevision,
+    onChartRefresh,
   } = props;
 
   const isThreeMap = viewModel.chartType === "map-3d";
@@ -176,6 +177,12 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
   const [threeLoading, setThreeLoading] = useState(false);
   const [mapAssetLoading, setMapAssetLoading] = useState(false);
   const [mapRetryToken, setMapRetryToken] = useState(0);
+  const mapViewResetRef = useRef(false);
+
+  const handleGeoMapRefresh = useCallback(() => {
+    mapViewResetRef.current = true;
+    onChartRefresh?.();
+  }, [onChartRefresh]);
 
   const { ref: sizeRef, size } = useElementSize<HTMLDivElement>({
     enabled: !fill,
@@ -381,10 +388,32 @@ function D3GeoMapViewInner(props: ChartEngineViewProps) {
       };
       beginPresentationPaint(presentationPaint);
 
-      const payload = buildD3DispatchPayload(props, planWithGeo, chartWidth, chartHeight, {
-        visualScale,
-        renderTier: props.geo3dRenderTier,
-      });
+      const payloadRaw = buildD3DispatchPayload(
+        { ...props, onChartRefresh: handleGeoMapRefresh },
+        planWithGeo,
+        chartWidth,
+        chartHeight,
+        {
+          visualScale,
+          renderTier: props.geo3dRenderTier,
+        },
+      );
+      const payload =
+        mapViewResetRef.current && payloadRaw?.kind === "geo"
+          ? {
+              ...payloadRaw,
+              config: {
+                ...payloadRaw.config,
+                geoStyle: {
+                  ...payloadRaw.config.geoStyle,
+                  viewTransform: undefined,
+                },
+              },
+            }
+          : payloadRaw;
+      if (mapViewResetRef.current && payload?.kind === "geo") {
+        mapViewResetRef.current = false;
+      }
       if (!payload || payload.kind !== "geo") {
         endPresentationPaint();
         if (mode !== "live") setChartAnimationSuppressed(false);

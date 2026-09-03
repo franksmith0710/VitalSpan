@@ -159,6 +159,8 @@ export type D3GeoRenderConfig = D3RenderConfigBase & {
   onDrillClick?: (datum: { name: string; value: number; adcode?: number }) => void;
   onViewTransformChange?: (transform: ChartGeoViewTransform | undefined) => void;
   onOrbitViewChange?: (view: ChartGeo3dOrbitView | undefined) => void;
+  /** 地图缩放条「刷新」：复位视口并重新拉数/重绘 */
+  onRefresh?: () => void;
 };
 
 export type D3MatrixCell = { x: string; y: string; value: number };
