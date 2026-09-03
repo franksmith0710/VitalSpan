@@ -5,8 +5,7 @@ import type { GisProjectFog } from "@/components/charts/engine/maplibre/gisProje
 import type { GisProjectHalo } from "@/components/charts/engine/maplibre/gisProjectHalo";
 import {
   bindMapRenderSync,
-  isGlobeTransformProbeReady,
-  resolveGlobeLimbBoundsForOverlay,
+  resolveGlobeLimbBoundsForHaloPaint,
 } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 import { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
 import { readOverlayLayoutSize, syncOverlayCanvasSize } from "@/components/charts/engine/maplibre/gisOverlayCanvas";
@@ -18,10 +17,11 @@ export { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gis
 
 const HALO_CANVAS_CLASS = "pointer-events-none absolute inset-0 h-full w-full";
 const MAP_CANVAS_Z = "4";
-const HALO_CANVAS_Z = "5";
+const HALO_CANVAS_Z = "3";
 
 /**
- * 可靠光晕层：bindMapRenderSync 跟帧 + 球缘探测；叠在 map canvas 之上，仅外环发光。
+ * 可靠光晕层：canvas-container 内 z=3（地图 z=4 自然遮挡中心），bindMapRenderSync 跟帧。
+ * 对齐 GeoLibre maplibre-effects 层栈。
  */
 export function mountGisGlobeHaloOverlay(
   wrapper: HTMLElement,
@@ -47,31 +47,23 @@ export function mountGisGlobeHaloOverlay(
   let unbindRender: (() => void) | undefined;
   let boundMap: MapLibreMap | null = null;
   let bootFrameId = 0;
-  let mapReady = false;
   const canvasSize = { width: 0, height: 0 };
 
   const syncCanvasSize = (width: number, height: number) => {
     syncOverlayCanvasSize(canvas, ctx, width, height, canvasSize);
   };
 
-  /** 光晕与 MapLibre transform 共用同一容器坐标系，避免 shell/map 尺寸源不一致导致偏移。 */
   const resolvePaintOverlay = (): HTMLElement => {
     const map = getMap();
-    const mapContainer = map?.getContainer();
-    const target = mapContainer ?? wrapper;
-    if (canvas.parentElement !== target) {
-      if (mapContainer) {
-        mapContainer.appendChild(canvas);
-      } else {
-        wrapper.appendChild(canvas);
-      }
+    const paintRoot = map?.getCanvasContainer() ?? map?.getContainer() ?? wrapper;
+    if (canvas.parentElement !== paintRoot) {
+      paintRoot.appendChild(canvas);
     }
-    if (mapContainer) {
-      mapContainer.style.position = mapContainer.style.position || "relative";
-      const mapCanvas = map.getCanvas();
-      mapCanvas.style.zIndex = MAP_CANVAS_Z;
+    if (map) {
+      paintRoot.style.position = paintRoot.style.position || "relative";
+      map.getCanvas().style.zIndex = MAP_CANVAS_Z;
     }
-    return target;
+    return paintRoot;
   };
 
   let mapResizeObserver: ResizeObserver | null = null;
@@ -80,10 +72,11 @@ export function mountGisGlobeHaloOverlay(
     mapResizeObserver?.disconnect();
     mapResizeObserver = null;
     if (!map || typeof ResizeObserver === "undefined") return;
+    const target = map.getCanvasContainer();
     mapResizeObserver = new ResizeObserver(() => {
       paint();
     });
-    mapResizeObserver.observe(map.getContainer());
+    mapResizeObserver.observe(target);
   };
 
   const bindMapIfNeeded = () => {
@@ -93,12 +86,10 @@ export function mountGisGlobeHaloOverlay(
     boundMap = map;
     if (map) {
       observeMapContainer(map);
-      const container = map.getContainer();
+      const container = map.getCanvasContainer();
       container.style.background = "transparent";
-      const mapCanvas = container.querySelector(".maplibregl-canvas");
-      if (mapCanvas instanceof HTMLCanvasElement) {
-        mapCanvas.style.background = "transparent";
-      }
+      map.getCanvas().style.background = "transparent";
+      map.getCanvas().style.zIndex = MAP_CANVAS_Z;
     }
     unbindRender = bindMapRenderSync(map, paint);
   };
@@ -129,27 +120,26 @@ export function mountGisGlobeHaloOverlay(
     }
 
     const map = getMap();
-    if (!map || !map.isStyleLoaded() || !isGlobeTransformProbeReady(map)) {
+    if (!map || !map.isStyleLoaded()) {
       canvas.style.display = "none";
       ctx.clearRect(0, 0, width, height);
       return;
     }
 
-    const limb = resolveGlobeLimbBoundsForOverlay(map, overlay, width, height);
+    const limb = resolveGlobeLimbBoundsForHaloPaint(map, overlay, width, height);
     if (!limb) {
       canvas.style.display = "none";
       ctx.clearRect(0, 0, width, height);
       return;
     }
 
-    mapReady = true;
     canvas.style.display = "block";
     drawGlobeAtmosphereHalo(ctx, width, height, limb, effects);
   };
 
   const bootLoop = () => {
     paint();
-    if (running && !mapReady) {
+    if (running) {
       bootFrameId = requestAnimationFrame(bootLoop);
     }
   };

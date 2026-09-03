@@ -346,3 +346,42 @@ export function resolveGlobeLimbBoundsForOverlay(
   }
   return limbInOverlay;
 }
+
+/**
+ * 光晕绘制专用球缘：对齐 GeoLibre getGeoglifyGlobeCircle，不依赖 isPointOnMapSurface 探测。
+ * style 已加载即可绘制；project 地平线采样优先，screen 仅作最后 fallback。
+ */
+export function resolveGlobeLimbBoundsForHaloPaint(
+  map: MapLibreMap | null,
+  overlay: HTMLElement,
+  width: number,
+  height: number,
+): GlobeLimbBounds | null {
+  if (!map || !map.isStyleLoaded() || width <= 0 || height <= 0) {
+    return null;
+  }
+  try {
+    if (map.getProjection()?.type !== "globe") return null;
+  } catch {
+    return null;
+  }
+
+  const screen = resolveGlobeScreenBounds(map);
+  const inMapPixels =
+    resolveGlobeLimbBoundsFromProject(map) ??
+    (isGlobeTransformProbeReady(map) ? resolveGlobeLimbBoundsFromMap(map) : null) ??
+    (screen ? { x: screen.x, y: screen.y, radius: screen.radius } : null);
+  if (!inMapPixels) {
+    return null;
+  }
+
+  const limbInOverlay =
+    map.getCanvasContainer() === overlay || map.getContainer() === overlay
+      ? inMapPixels
+      : offsetMapPixelToOverlay(map, overlay, inMapPixels);
+
+  if (screen) {
+    return clampGlobeLimbToScreenBounds(limbInOverlay, screen, overlay, map);
+  }
+  return limbInOverlay;
+}

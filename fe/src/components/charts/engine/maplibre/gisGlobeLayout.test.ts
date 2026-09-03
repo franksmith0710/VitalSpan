@@ -3,6 +3,7 @@ import {
   isGlobeTransformProbeReady,
   isInsideGlobeDisc,
   offsetMapPixelToOverlay,
+  resolveGlobeLimbBoundsForHaloPaint,
   resolveGlobeLimbBoundsForOverlay,
   resolveGlobeLimbBoundsFromMap,
   resolveGlobeLimbBoundsFromProject,
@@ -172,6 +173,8 @@ describe("resolveGlobeLimbBoundsForOverlay", () => {
     const map = {
       isStyleLoaded: () => true,
       getContainer: () => mapHost,
+      getCanvasContainer: () => mapHost,
+      getProjection: () => ({ type: "globe" }),
       getCenter: () => ({ lng: 100, lat: 28 }),
       getPitch: () => 0,
       getBearing: () => 0,
@@ -187,5 +190,33 @@ describe("resolveGlobeLimbBoundsForOverlay", () => {
 
     expect(isGlobeTransformProbeReady(map as never)).toBe(false);
     expect(resolveGlobeLimbBoundsForOverlay(map as never, mapHost, 400, 300)).toBeNull();
+  });
+
+  it("resolves halo limb via project sampling when surface probe is unavailable", () => {
+    const mapHost = document.createElement("div");
+    const map = {
+      isStyleLoaded: () => true,
+      getContainer: () => mapHost,
+      getCanvasContainer: () => mapHost,
+      getProjection: () => ({ type: "globe" }),
+      getCenter: () => ({ lng: 0, lat: 0 }),
+      getPitch: () => 0,
+      getBearing: () => 0,
+      project: ([lng, lat]: [number, number]) => ({
+        x: 200 + lng,
+        y: 150 + lat,
+      }),
+      transform: {
+        centerPoint: { x: 200, y: 150 },
+        worldSize: 512,
+        center: { lat: 0 },
+        width: 400,
+        height: 300,
+      },
+    };
+
+    const limb = resolveGlobeLimbBoundsForHaloPaint(map as never, mapHost, 400, 300);
+    expect(limb).not.toBeNull();
+    expect(limb!.radius).toBeGreaterThan(0);
   });
 });
