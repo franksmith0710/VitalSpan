@@ -106,21 +106,36 @@ def poll_feishu_device_token(
     with httpx.Client(timeout=_TIMEOUT) as client:
         resp = client.post(
             _TOKEN_URL,
-            json={
+            data={
                 "grant_type": _DEVICE_GRANT,
                 "client_id": app_id,
                 "client_secret": app_secret,
                 "device_code": device_code,
             },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
         )
-        data = resp.json()
-    if data.get("code") == 0:
-        access_token = str(data.get("access_token") or "")
-        if not access_token:
+        try:
+            data = resp.json()
+        except ValueError as exc:
+            raise FeishuDeviceAuthError(
+                "IM_DEVICE_AUTH_POLL_FAILED",
+                "飞书 device 授权响应无法解析",
+                422,
+            ) from exc
+    if not isinstance(data, dict):
+        raise FeishuDeviceAuthError(
+            "IM_DEVICE_AUTH_POLL_FAILED",
+            "飞书 device 授权响应格式无效",
+            422,
+        )
+    access_token = data.get("access_token")
+    if data.get("code") == 0 or access_token:
+        token = str(access_token or "")
+        if not token:
             raise FeishuDeviceAuthError("IM_DEVICE_AUTH_TOKEN_EMPTY", "飞书未返回 access_token", 422)
-        user_id = _fetch_user_id(client_token=access_token)
+        user_id = _fetch_user_id(client_token=token)
         return DeviceAuthTokens(
-            access_token=access_token,
+            access_token=token,
             refresh_token=(str(data["refresh_token"]) if data.get("refresh_token") else None),
             expires_in=int(data.get("expires_in") or 7200),
             user_id=user_id,

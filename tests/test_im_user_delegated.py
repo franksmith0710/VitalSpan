@@ -238,11 +238,35 @@ def test_start_feishu_device_auth_session():
 )
 def test_poll_feishu_device_token_pending_variants(payload):
     mock_resp = MagicMock()
+    mock_resp.status_code = 400
     mock_resp.json.return_value = payload
     with patch("app.auth.im_oauth.device_code.feishu.httpx.Client") as client_cls:
         client_cls.return_value.__enter__.return_value.post.return_value = mock_resp
         result = poll_feishu_device_token(app_id="cli", app_secret="sec", device_code="dc")
     assert isinstance(result, DeviceAuthPending)
+
+
+def test_poll_feishu_device_token_success_flat_access_token():
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.json.return_value = {
+        "access_token": "ua_test",
+        "refresh_token": "rt_test",
+        "expires_in": 7200,
+    }
+    with patch("app.auth.im_oauth.device_code.feishu.httpx.Client") as client_cls:
+        client_cls.return_value.__enter__.return_value.post.return_value = mock_resp
+        with patch(
+            "app.auth.im_oauth.device_code.feishu._fetch_user_id",
+            return_value="ou_test",
+        ):
+            result = poll_feishu_device_token(app_id="cli", app_secret="sec", device_code="dc")
+    assert isinstance(result, DeviceAuthTokens)
+    assert result.access_token == "ua_test"
+    assert result.user_id == "ou_test"
+    posted = client_cls.return_value.__enter__.return_value.post.call_args
+    assert posted.kwargs["headers"]["Content-Type"] == "application/x-www-form-urlencoded"
+    assert posted.kwargs["data"]["grant_type"] == "urn:ietf:params:oauth:grant-type:device_code"
 
 
 def test_check_im_owner_sender_ready_unbound():

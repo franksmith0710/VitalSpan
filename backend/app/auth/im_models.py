@@ -21,7 +21,7 @@ class UserImBinding(Base):
             name="ck_user_im_bindings_channel",
         ),
         CheckConstraint(
-            "source IN ('oauth', 'admin')",
+            "source IN ('oauth', 'admin', 'device', 'scan')",
             name="ck_user_im_bindings_source",
         ),
     )
