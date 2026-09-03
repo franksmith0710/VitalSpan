@@ -151,8 +151,6 @@ export type GisBasemapLayerVisibility = {
 export type GisMapControls = {
   /** 导航 + 指南针（NavigationControl） */
   navigation?: boolean;
-  /** 全屏（FullscreenControl） */
-  fullscreen?: boolean;
   /** 比例尺（ScaleControl） */
   scale?: boolean;
   /** 归属信息（AttributionControl） */
@@ -165,7 +163,6 @@ export type ResolvedGisMapControls = Required<GisMapControls>;
 
 const DEFAULT_GIS_MAP_CONTROLS: ResolvedGisMapControls = {
   navigation: false,
-  fullscreen: false,
   scale: false,
   attribution: true,
   graticule: false,
@@ -176,7 +173,6 @@ export function resolveGisMapControls(project: Pick<GisProject, "mapControls" | 
   const raw = project.mapControls;
   return {
     navigation: raw?.navigation ?? legacy ?? DEFAULT_GIS_MAP_CONTROLS.navigation,
-    fullscreen: raw?.fullscreen ?? DEFAULT_GIS_MAP_CONTROLS.fullscreen,
     scale: raw?.scale ?? legacy ?? DEFAULT_GIS_MAP_CONTROLS.scale,
     attribution: raw?.attribution ?? DEFAULT_GIS_MAP_CONTROLS.attribution,
     graticule: raw?.graticule ?? DEFAULT_GIS_MAP_CONTROLS.graticule,
@@ -689,7 +685,6 @@ function normalizeGisMapControls(input: unknown): GisMapControls | undefined {
   const raw = input as GisMapControls;
   const next: GisMapControls = {};
   if (raw.navigation === true) next.navigation = true;
-  if (raw.fullscreen === true) next.fullscreen = true;
   if (raw.scale === true) next.scale = true;
   if (raw.attribution === false) next.attribution = false;
   if (raw.graticule === true) next.graticule = true;

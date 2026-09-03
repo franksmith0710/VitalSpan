@@ -99,11 +99,10 @@ describe("gisProject", () => {
     });
     expect(
       resolveGisMapControls({
-        mapControls: { navigation: true, fullscreen: true, graticule: true },
+        mapControls: { navigation: true, graticule: true },
       }),
     ).toMatchObject({
       navigation: true,
-      fullscreen: true,
       graticule: true,
       attribution: true,
     });

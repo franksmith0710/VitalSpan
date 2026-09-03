@@ -8,6 +8,7 @@ import {
   type GisSunSettings,
 } from "@/components/charts/engine/maplibre/gisSunPosition";
 import { whenGisMapStyleReady } from "@/components/charts/engine/maplibre/gisMapRuntime";
+import { GIS_GRATICULE_LAYER_ID } from "@/components/charts/engine/maplibre/gisGraticule";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
@@ -165,11 +166,18 @@ export class GisSunEngine {
     this.raiseNightLayer();
   }
 
-  /** 昼夜遮罩须在业务散点层之上，与 GeoLibre maplibre-sun 一致。 */
+  /** 昼夜遮罩在业务散点层之上；若启用经纬网则保持在光晕线之下，避免盖住网格。 */
   private raiseNightLayer(): void {
     if (!this.map.getLayer(NIGHT_LAYER_ID)) return;
     try {
-      this.map.moveLayer(NIGHT_LAYER_ID);
+      const beforeId = this.map.getLayer(GIS_GRATICULE_LAYER_ID)
+        ? GIS_GRATICULE_LAYER_ID
+        : undefined;
+      if (beforeId) {
+        this.map.moveLayer(NIGHT_LAYER_ID, beforeId);
+      } else {
+        this.map.moveLayer(NIGHT_LAYER_ID);
+      }
     } catch {
       /* layer mid-move during style swap */
     }

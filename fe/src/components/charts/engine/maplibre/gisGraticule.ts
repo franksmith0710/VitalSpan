@@ -1,7 +1,21 @@
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
+import { whenGisMapStyleReady } from "@/components/charts/engine/maplibre/gisMapRuntime";
 
 export const GIS_GRATICULE_SOURCE_ID = "vs-gis-graticule";
 export const GIS_GRATICULE_LAYER_ID = "vs-gis-graticule-lines";
+
+const DATA_OVERLAY_PREFIXES = ["vs-gis-layer-", "vs-gis-overlay-"];
+
+const GRATICULE_PAINT = {
+  "line-color": "#b8c9e0",
+  "line-opacity": 0.72,
+  "line-width": 1.25,
+} as const;
+
+const GRATICULE_LAYOUT = {
+  "line-join": "round",
+  "line-cap": "round",
+} as const;
 
 /** 生成经纬网 GeoJSON（默认 15° 间隔，纬度截断至 ±85° 避免极点畸变）。 */
 export function buildGraticuleGeoJson(stepDeg = 15): GeoJSON.FeatureCollection {
@@ -33,14 +47,38 @@ export function buildGraticuleGeoJson(stepDeg = 15): GeoJSON.FeatureCollection {
   return { type: "FeatureCollection", features };
 }
 
-function findGraticuleInsertBefore(map: MapLibreMap): string | undefined {
-  for (const layer of map.getStyle()?.layers ?? []) {
-    if (layer.id.startsWith("vs-gis-")) return layer.id;
-  }
-  return undefined;
+function graticuleLayerSpec(): import("maplibre-gl").LineLayerSpecification {
+  return {
+    id: GIS_GRATICULE_LAYER_ID,
+    type: "line",
+    source: GIS_GRATICULE_SOURCE_ID,
+    paint: GRATICULE_PAINT,
+    layout: GRATICULE_LAYOUT,
+  };
 }
 
-export function applyGisGraticule(map: MapLibreMap, enabled: boolean) {
+/** 置于昼夜遮罩之上、业务散点/热力之下，避免被 night raster 完全盖住。 */
+export function placeGisGraticuleLayer(map: MapLibreMap): void {
+  if (!map.getLayer(GIS_GRATICULE_LAYER_ID)) return;
+  const layers = map.getStyle()?.layers ?? [];
+  for (const layer of layers) {
+    if (DATA_OVERLAY_PREFIXES.some((prefix) => layer.id.startsWith(prefix))) {
+      try {
+        map.moveLayer(GIS_GRATICULE_LAYER_ID, layer.id);
+      } catch {
+        /* layer race during style swap */
+      }
+      return;
+    }
+  }
+  try {
+    map.moveLayer(GIS_GRATICULE_LAYER_ID);
+  } catch {
+    /* style tearing down */
+  }
+}
+
+function applyGisGraticuleNow(map: MapLibreMap, enabled: boolean) {
   if (!map.isStyleLoaded()) return;
 
   if (!enabled) {
@@ -53,20 +91,24 @@ export function applyGisGraticule(map: MapLibreMap, enabled: boolean) {
   const existing = map.getSource(GIS_GRATICULE_SOURCE_ID) as GeoJSONSource | undefined;
   if (existing) {
     existing.setData(geojson);
-    return;
+  } else {
+    map.addSource(GIS_GRATICULE_SOURCE_ID, { type: "geojson", data: geojson });
   }
 
-  map.addSource(GIS_GRATICULE_SOURCE_ID, { type: "geojson", data: geojson });
-  map.addLayer(
-    {
-      id: GIS_GRATICULE_LAYER_ID,
-      type: "line",
-      source: GIS_GRATICULE_SOURCE_ID,
-      paint: {
-        "line-color": "rgba(148, 163, 184, 0.5)",
-        "line-width": 1,
-      },
-    },
-    findGraticuleInsertBefore(map),
-  );
+  if (!map.getLayer(GIS_GRATICULE_LAYER_ID)) {
+    map.addLayer(graticuleLayerSpec());
+  }
+  placeGisGraticuleLayer(map);
+  const nightLayerId = "vs-gis-sun-night-layer";
+  if (map.getLayer(nightLayerId)) {
+    try {
+      map.moveLayer(nightLayerId, GIS_GRATICULE_LAYER_ID);
+    } catch {
+      /* sun engine may re-order on next render */
+    }
+  }
+}
+
+export function applyGisGraticule(map: MapLibreMap, enabled: boolean) {
+  whenGisMapStyleReady(map, () => applyGisGraticuleNow(map, enabled));
 }

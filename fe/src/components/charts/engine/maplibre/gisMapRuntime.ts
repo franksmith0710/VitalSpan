@@ -228,11 +228,6 @@ export async function mountGisMapControls(
     map.addControl(nav, "top-right");
     mounted.push(nav);
   }
-  if (controls.fullscreen) {
-    const fullscreen = new maplibregl.FullscreenControl();
-    map.addControl(fullscreen, "top-right");
-    mounted.push(fullscreen);
-  }
   if (controls.scale) {
     const scale = new maplibregl.ScaleControl({ maxWidth: 96, unit: "metric" });
     map.addControl(scale, "bottom-left");

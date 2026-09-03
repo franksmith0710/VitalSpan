@@ -4,11 +4,16 @@ import type { GisEffectsSettings } from "@/components/charts/engine/maplibre/gis
 import type { GisProjectFog } from "@/components/charts/engine/maplibre/gisProject";
 import type { GisProjectHalo } from "@/components/charts/engine/maplibre/gisProjectHalo";
 import {
-  bindMapRenderSync,
+  type GlobeLimbBounds,
   resolveGlobeLimbBoundsForHaloPaint,
 } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 import { drawGlobeAtmosphereHalo } from "@/components/charts/engine/maplibre/gisGlobeHaloDraw";
-import { applyOverlayCanvasLayout, readMapOverlayPaintSize, readOverlayLayoutSize, syncOverlayCanvasSize } from "@/components/charts/engine/maplibre/gisOverlayCanvas";
+import {
+  applyOverlayCanvasLayout,
+  readMapOverlayPaintSize,
+  readOverlayLayoutSize,
+  syncOverlayCanvasSize,
+} from "@/components/charts/engine/maplibre/gisOverlayCanvas";
 
 type MapLibreMap = import("maplibre-gl").Map;
 
@@ -19,10 +24,32 @@ const HALO_CANVAS_CLASS = "pointer-events-none absolute";
 const MAP_CANVAS_Z = "4";
 /** 置于 map canvas 之下；球面由 WebGL 自然遮挡，光晕只从球外透明区透出，不洗白地表。 */
 const HALO_CANVAS_Z = "3";
+const LIMB_REPAINT_EPS = 0.5;
+
+function limbNearlyEqual(a: GlobeLimbBounds, b: GlobeLimbBounds): boolean {
+  return (
+    Math.hypot(a.x - b.x, a.y - b.y) <= LIMB_REPAINT_EPS &&
+    Math.abs(a.radius - b.radius) <= LIMB_REPAINT_EPS
+  );
+}
+
+function bindMapHaloPaintSync(map: MapLibreMap | null, schedule: () => void): () => void {
+  if (!map) return () => undefined;
+  const onSync = () => schedule();
+  const events = ["render", "resize", "idle", "style.load"] as const;
+  for (const event of events) {
+    map.on(event, onSync);
+  }
+  return () => {
+    for (const event of events) {
+      map.off(event, onSync);
+    }
+  };
+}
 
 /**
  * 可靠光晕层：canvas-container 内 z=3（地图 z=4），全圆 + screen；地图遮挡中心。
- * bindMapRenderSync 跟帧；球缘 resolveGlobeLimbBoundsForHaloPaint。
+ * 仅在 map render 时合并重绘（rAF 去抖），避免常驻 rAF 与 render 双通道闪烁/卡顿。
  */
 export function mountGisGlobeHaloOverlay(
   wrapper: HTMLElement,
@@ -47,33 +74,29 @@ export function mountGisGlobeHaloOverlay(
   let running = true;
   let unbindRender: (() => void) | undefined;
   let boundMap: MapLibreMap | null = null;
-  let bootFrameId = 0;
+  let paintFrameId = 0;
+  let paintDomReady = false;
   const canvasSize = { width: 0, height: 0 };
+  let lastResolvedLimb: GlobeLimbBounds | null = null;
+  let lastPaintedLimb: GlobeLimbBounds | null = null;
+  let lastEffectsKey = "";
 
   const syncCanvasSize = (width: number, height: number) => {
     syncOverlayCanvasSize(canvas, ctx, width, height, canvasSize);
     applyOverlayCanvasLayout(canvas, width, height);
   };
 
-  const resolvePaintOverlay = (): HTMLElement => {
-    const map = getMap();
-    const paintRoot = map?.getCanvasContainer() ?? map?.getContainer() ?? wrapper;
-    const mapCanvas = map?.getCanvas();
+  const ensurePaintDom = (map: MapLibreMap) => {
+    if (paintDomReady) return;
+    const paintRoot = map.getCanvasContainer();
+    const mapCanvas = map.getCanvas();
     if (canvas.parentElement !== paintRoot) {
-      if (mapCanvas?.parentElement === paintRoot) {
-        paintRoot.insertBefore(canvas, mapCanvas);
-      } else {
-        paintRoot.appendChild(canvas);
-      }
-    } else if (mapCanvas && canvas.nextElementSibling !== mapCanvas) {
       paintRoot.insertBefore(canvas, mapCanvas);
     }
-    if (map && mapCanvas) {
-      paintRoot.style.position = paintRoot.style.position || "relative";
-      mapCanvas.style.zIndex = MAP_CANVAS_Z;
-      canvas.style.zIndex = HALO_CANVAS_Z;
-    }
-    return paintRoot;
+    paintRoot.style.position = paintRoot.style.position || "relative";
+    mapCanvas.style.zIndex = MAP_CANVAS_Z;
+    canvas.style.zIndex = HALO_CANVAS_Z;
+    paintDomReady = true;
   };
 
   let mapResizeObserver: ResizeObserver | null = null;
@@ -84,7 +107,7 @@ export function mountGisGlobeHaloOverlay(
     if (!map || typeof ResizeObserver === "undefined") return;
     const target = map.getCanvasContainer();
     mapResizeObserver = new ResizeObserver(() => {
-      paint();
+      schedulePaint();
     });
     mapResizeObserver.observe(target);
   };
@@ -94,14 +117,18 @@ export function mountGisGlobeHaloOverlay(
     if (map && map === boundMap) return;
     unbindRender?.();
     boundMap = map;
+    paintDomReady = false;
+    lastResolvedLimb = null;
+    lastPaintedLimb = null;
+    lastEffectsKey = "";
     if (map) {
       observeMapContainer(map);
       const container = map.getCanvasContainer();
       container.style.background = "transparent";
       map.getCanvas().style.background = "transparent";
-      map.getCanvas().style.zIndex = MAP_CANVAS_Z;
+      ensurePaintDom(map);
     }
-    unbindRender = bindMapRenderSync(map, paint);
+    unbindRender = bindMapHaloPaintSync(map, schedulePaint);
   };
 
   const paint = () => {
@@ -111,12 +138,19 @@ export function mountGisGlobeHaloOverlay(
     }
     bindMapIfNeeded();
 
-    const overlay = resolvePaintOverlay();
     const map = getMap();
+    if (!map) return;
+    ensurePaintDom(map);
+
+    const overlay = map.getCanvasContainer();
     const { width, height } = readMapOverlayPaintSize(map, overlay);
     if (width <= 0 || height <= 0) return;
 
-    syncCanvasSize(width, height);
+    const sizeChanged = width !== canvasSize.width || height !== canvasSize.height;
+    if (sizeChanged) {
+      syncCanvasSize(width, height);
+      lastPaintedLimb = null;
+    }
 
     const atmosphereContext = getContext();
     const effects = resolveGisEffectsSettings({
@@ -124,51 +158,68 @@ export function mountGisGlobeHaloOverlay(
       halo: atmosphereContext.halo,
       fog: atmosphereContext.fog,
     });
+    const effectsKey = `${effects.haloColor}:${effects.haloExtent}:${effects.haloOpacity}:${effects.enabled}`;
     if (!effects.enabled) {
       canvas.style.display = "none";
       ctx.clearRect(0, 0, width, height);
+      lastPaintedLimb = null;
+      lastEffectsKey = "";
       return;
     }
 
-    if (!map || !map.isStyleLoaded()) {
+    if (!map.isStyleLoaded()) {
       canvas.style.display = "none";
-      ctx.clearRect(0, 0, width, height);
       return;
     }
 
-    const limb = resolveGlobeLimbBoundsForHaloPaint(map, overlay, width, height);
+    const resolved = resolveGlobeLimbBoundsForHaloPaint(map, overlay, width, height);
+    if (resolved) {
+      lastResolvedLimb = resolved;
+    }
+    const limb = resolved ?? lastResolvedLimb;
     if (!limb) {
       canvas.style.display = "none";
-      ctx.clearRect(0, 0, width, height);
       return;
     }
 
     canvas.style.display = "block";
+    if (
+      !sizeChanged &&
+      effectsKey === lastEffectsKey &&
+      lastPaintedLimb &&
+      limbNearlyEqual(limb, lastPaintedLimb)
+    ) {
+      return;
+    }
+
     drawGlobeAtmosphereHalo(ctx, width, height, limb, effects);
+    lastPaintedLimb = { ...limb };
+    lastEffectsKey = effectsKey;
   };
 
-  const bootLoop = () => {
-    paint();
-    if (running) {
-      bootFrameId = requestAnimationFrame(bootLoop);
-    }
+  const schedulePaint = () => {
+    if (!running || paintFrameId !== 0) return;
+    paintFrameId = requestAnimationFrame(() => {
+      paintFrameId = 0;
+      paint();
+    });
   };
 
   const initial = readOverlayLayoutSize(wrapper);
   syncCanvasSize(initial.width, initial.height);
-  bootLoop();
+  schedulePaint();
 
   const wrapperObserver =
     typeof ResizeObserver !== "undefined"
       ? new ResizeObserver(() => {
-          paint();
+          schedulePaint();
         })
       : null;
   wrapperObserver?.observe(wrapper);
 
   return () => {
     running = false;
-    cancelAnimationFrame(bootFrameId);
+    cancelAnimationFrame(paintFrameId);
     unbindRender?.();
     wrapperObserver?.disconnect();
     mapResizeObserver?.disconnect();

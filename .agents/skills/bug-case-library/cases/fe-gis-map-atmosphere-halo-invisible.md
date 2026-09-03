@@ -29,7 +29,7 @@
 - 全球 zoom 1–3，球缘应有可见蓝色光晕
 - `pnpm vitest run src/components/charts/engine/maplibre/gisGlobeHalo*.test.ts src/components/charts/engine/maplibre/gisGlobeLayout.test.ts`
 
-## 防复发
+- 旋转卡顿/闪烁：`bootLoop` 与 `bindMapRenderSync` 双通道每帧 clear+重绘；改为 `schedulePaint`（rAF 合并）+ 仅 `render/resize` 同步；球缘未变跳过重绘；探测优先于 project 采样
 
 - 回归测：`GisMapView.effects.regression.test.ts` 要求 `mountGisGlobeHaloOverlay` 且不经 `gisPaintState` 门控
 - 勿再把光晕收回 effects 引擎或加 `isGlobeTransformProbeReady` 硬门控

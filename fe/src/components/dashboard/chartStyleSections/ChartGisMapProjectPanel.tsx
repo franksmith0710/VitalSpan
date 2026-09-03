@@ -484,7 +484,6 @@ export function ChartGisMapProjectPanel() {
           {(
             [
               ["navigation", "导航与指南针"],
-              ["fullscreen", "全屏"],
               ["scale", "比例尺"],
               ["attribution", "归属信息"],
               ["graticule", "经纬网"],

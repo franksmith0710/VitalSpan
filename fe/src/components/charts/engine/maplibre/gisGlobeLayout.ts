@@ -348,8 +348,7 @@ export function resolveGlobeLimbBoundsForOverlay(
 }
 
 /**
- * 光晕绘制专用球缘：对齐 GeoLibre getGeoglifyGlobeCircle，不依赖 isPointOnMapSurface 探测。
- * style 已加载即可绘制；project 地平线采样优先，screen 仅作最后 fallback。
+ * 光晕绘制专用球缘：transform 球面探测优先（旋转时更稳），project 地平线采样兜底。
  */
 export function resolveGlobeLimbBoundsForHaloPaint(
   map: MapLibreMap | null,
@@ -368,8 +367,8 @@ export function resolveGlobeLimbBoundsForHaloPaint(
 
   const screen = resolveGlobeScreenBounds(map);
   const inMapPixels =
-    resolveGlobeLimbBoundsFromProject(map) ??
     (isGlobeTransformProbeReady(map) ? resolveGlobeLimbBoundsFromMap(map) : null) ??
+    resolveGlobeLimbBoundsFromProject(map) ??
     (screen ? { x: screen.x, y: screen.y, radius: screen.radius } : null);
   if (!inMapPixels) {
     return null;

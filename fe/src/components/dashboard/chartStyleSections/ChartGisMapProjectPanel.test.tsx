@@ -191,7 +191,6 @@ describe("ChartGisMapProjectPanel map controls", () => {
     await user.click(screen.getByRole("button", { name: "GIS 底图" }));
 
     expect(screen.getByRole("switch", { name: "导航与指南针" })).not.toBeChecked();
-    expect(screen.getByRole("switch", { name: "全屏" })).not.toBeChecked();
     expect(screen.getByRole("switch", { name: "比例尺" })).not.toBeChecked();
     expect(screen.getByRole("switch", { name: "归属信息" })).toBeChecked();
     expect(screen.getByRole("switch", { name: "经纬网" })).not.toBeChecked();
