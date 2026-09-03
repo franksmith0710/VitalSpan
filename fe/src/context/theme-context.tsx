@@ -60,7 +60,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     if (!isInitialized) return;
-    document.documentElement.classList.toggle("dark", theme === "dark");
+    const root = document.documentElement;
+    root.classList.toggle("dark", theme === "dark");
+    root.classList.toggle("light", theme === "light");
   }, [theme, isInitialized]);
 
   const setTheme = React.useCallback((newTheme: ThemeMode) => {

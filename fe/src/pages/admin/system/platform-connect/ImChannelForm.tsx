@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SegmentGroup } from "@/components/ui/segment-group";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import type { ImConfigSummary } from "@/lib/imChannels";
@@ -133,28 +134,16 @@ export function ImChannelForm({
 
       {userDelegatedSupported ? (
         <ConnectFormSection title="投递模式" description="用户委托无需在管理面填写回调域名；同事在个人中心扫码绑定。" icon={Server}>
-          <div className="flex flex-wrap gap-3">
-            <label className="flex cursor-pointer items-center gap-2 text-theme-sm">
-              <input
-                type="radio"
-                name={`im-mode-${config.channel}`}
-                checked={form.deliveryMode === "corporate_app"}
-                disabled={disabled || pending}
-                onChange={() => setForm((prev) => ({ ...prev, deliveryMode: "corporate_app" }))}
-              />
-              企业应用工作通知
-            </label>
-            <label className="flex cursor-pointer items-center gap-2 text-theme-sm">
-              <input
-                type="radio"
-                name={`im-mode-${config.channel}`}
-                checked={form.deliveryMode === "user_delegated"}
-                disabled={disabled || pending}
-                onChange={() => setForm((prev) => ({ ...prev, deliveryMode: "user_delegated" }))}
-              />
-              用户委托（扫码绑定）
-            </label>
-          </div>
+          <SegmentGroup
+            value={form.deliveryMode}
+            disabled={disabled || pending}
+            sizing="fit"
+            onChange={(deliveryMode) => setForm((prev) => ({ ...prev, deliveryMode }))}
+            options={[
+              { value: "corporate_app", label: "企业应用工作通知" },
+              { value: "user_delegated", label: "用户委托（扫码绑定）" },
+            ]}
+          />
         </ConnectFormSection>
       ) : null}
 

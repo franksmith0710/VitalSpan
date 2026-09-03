@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { RadioChoiceGroup } from "@/components/ui/radio-choice-group";
 import {
   Select,
   SelectContent,
@@ -173,24 +174,17 @@ export function ScheduleFormFields({
     ) : showAttachments ? (
       <div className="grid gap-2">
         <Label>附件格式</Label>
-        <div className="space-y-2">
-          {ATTACHMENT_OPTIONS.map((opt) => (
-            <label key={opt.value} className="flex cursor-pointer items-start gap-2 text-theme-sm">
-              <input
-                type="radio"
-                name={`${idPrefix}-format`}
-                checked={value.attachmentFormats[0] === opt.value}
-                disabled={disabled}
-                onChange={() => setAttachmentFormat(opt.value)}
-                className="mt-1"
-              />
-              <span>
-                {opt.label}
-                <span className="block text-theme-xs text-gray-500">{opt.hint}</span>
-              </span>
-            </label>
-          ))}
-        </div>
+        <RadioChoiceGroup
+          name="附件格式"
+          value={value.attachmentFormats[0] ?? "pdf"}
+          disabled={disabled}
+          onChange={(format) => setAttachmentFormat(format)}
+          options={ATTACHMENT_OPTIONS.map((opt) => ({
+            value: opt.value,
+            label: opt.label,
+            hint: opt.hint,
+          }))}
+        />
       </div>
     ) : null;
 

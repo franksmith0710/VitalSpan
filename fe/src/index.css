@@ -80,6 +80,26 @@
   --radius-xl: 0.75rem;
 }
 
+/* 原生 checkbox/radio 兜底：未接入设计系统组件时仍跟随品牌色与主题 */
+@layer base {
+  input[type="checkbox"],
+  input[type="radio"] {
+    accent-color: var(--color-brand-500);
+    color-scheme: light dark;
+  }
+
+  input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    border-radius: 0.25rem;
+  }
+
+  input[type="radio"] {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
 @utility menu-item {
   @apply relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-theme-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-brand-500/35 focus-visible:ring-offset-1 dark:focus-visible:ring-brand-400/40;
 }

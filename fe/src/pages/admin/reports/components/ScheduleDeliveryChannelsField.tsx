@@ -1,4 +1,5 @@
 import { MessageSquare } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -90,32 +91,37 @@ export function ScheduleDeliveryChannelsField({
   const channelToggles = (
     <div className="space-y-2">
       <label className="flex cursor-pointer items-start gap-2 text-theme-sm">
-        <input
-          type="checkbox"
-          className="mt-1"
+        <Checkbox
+          className="mt-0.5"
           checked={emailSelected}
           disabled={disabled}
           aria-label="邮件"
-          onChange={toggleEmail}
+          onCheckedChange={(checked) => {
+            if (checked === emailSelected) return;
+            toggleEmail();
+          }}
         />
         <span>
           邮件
-          <span className="mt-0.5 block text-theme-xs text-gray-500">发到收件人邮箱</span>
+          <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">发到收件人邮箱</span>
         </span>
       </label>
       {IM_OPTIONS.map((channel) => (
         <label key={channel} className="flex cursor-pointer items-start gap-2 text-theme-sm">
-          <input
-            type="checkbox"
-            className="mt-1"
+          <Checkbox
+            className="mt-0.5"
             checked={imSelected.includes(channel)}
             disabled={disabled}
             aria-label={IM_CHANNEL_LABELS[channel]}
-            onChange={() => toggleIm(channel)}
+            onCheckedChange={(checked) => {
+              const isOn = imSelected.includes(channel);
+              if (checked === isOn) return;
+              toggleIm(channel);
+            }}
           />
           <span>
             {IM_CHANNEL_LABELS[channel]}
-            <span className="mt-0.5 block text-theme-xs text-gray-500">
+            <span className="mt-0.5 block text-theme-xs text-gray-500 dark:text-gray-400">
               {channel === "dingtalk" ? "发到钉钉群（自定义机器人）" : "按人投递工作通知（须已绑定）"}
             </span>
           </span>

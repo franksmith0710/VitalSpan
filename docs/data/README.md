@@ -5,7 +5,7 @@
 > **域边界**：各表业务语义见 [services/README.md](../services/README.md)。
 
 ```yaml
-alembic_head: 0063
+alembic_head: 0064
 revision_count: 63
 migrations_path: backend/migrations/versions/
 ```
@@ -22,7 +22,7 @@ migrations_path: backend/migrations/versions/
 
 | 项 | 值 |
 |----|-----|
-| **Head revision** | `0063`（`0063_drop_wecom_im_channel.py`） |
+| **Head revision** | `0064`（`0064_user_im_bindings_source_device_scan.py`） |
 | **上一版** | `0062`（`0062_im_dingtalk_group_webhook.py`） |
 | **主要新增** | 删除企业微信 IM 通道（绑定/平台对接 CHECK + 清数据） |
 
@@ -31,7 +31,7 @@ migrations_path: backend/migrations/versions/
 ```bash
 cd backend
 alembic upgrade head
-alembic current   # 应显示 0063
+alembic current   # 应显示 0064
 ```
 
 ## 修订一览（按域分组）
@@ -83,6 +83,7 @@ alembic current   # 应显示 0063
 | 0061 | `model_reviewer_auth_fixes` | auth | org path / audit / user_roles 索引；resource_type CHECK；IM source CHECK |
 | 0062 | `im_dingtalk_group_webhook` | reports | 钉钉 `delivery_mode=group_webhook` |
 | 0063 | `drop_wecom_im_channel` | auth / reports | 删除企业微信绑定与平台对接通道 |
+| 0064 | `user_im_bindings_source_device_scan` | auth | `source` CHECK 允许 `device`/`scan`（飞书 device-code 绑定） |
 
 ## 域 ↔ 主要表（导航）
 
