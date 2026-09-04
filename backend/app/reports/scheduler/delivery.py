@@ -22,35 +22,28 @@ def dispatch_artifact(
     attachment_filename: str | None = None,
     attachment_mime: str | None = None,
     attachments: list[tuple[bytes, str, str]] | None = None,
-    im_targets: dict[str, list[tuple[str, str]]] | None = None,
-    im_missing: dict[str, list[str]] | None = None,
-    notify_group: bool = False,
     email_smtp_slot: str | None = EMAIL_SLOT_QQ,
-    owner_id=None,
+    **_: object,
 ) -> dict:
     att_list = attachments or []
     if not att_list and attachment_bytes and attachment_filename:
         att_list = [(attachment_bytes, attachment_mime or "application/pdf", attachment_filename)]
-    if len(channels) > 1 or any(c != "email" for c in channels) or len(att_list) > 1:
+    if len(att_list) > 1:
         result = deliver_to_channels(
-            channels,
+            ["email"],
             artifact_ref=artifact_ref,
             artifact_kind=artifact_kind,
             recipient_emails=recipient_emails,
             attachments=att_list,
             mock_mode=mock_mode,
             settings=settings,
-            im_targets=im_targets,
-            im_missing=im_missing,
-            notify_group=notify_group,
             email_smtp_slot=email_smtp_slot,
             session=session,
-            owner_id=owner_id,
         )
     else:
         result = _legacy_deliver(
             artifact_ref,
-            channels,
+            ["email"],
             mock_mode,
             session,
             recipient_emails=recipient_emails,

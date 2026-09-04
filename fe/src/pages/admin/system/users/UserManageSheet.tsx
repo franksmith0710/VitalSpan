@@ -23,7 +23,6 @@ import { mapUserError } from "./userErrors";
 import { UserAccountStatusPanel } from "./UserAccountStatusPanel";
 import { UserOrgBindingPanel } from "./UserOrgBindingPanel";
 import { UserResetPasswordPanel } from "./UserResetPasswordPanel";
-import { UserImAccountsPanel, type ImAccounts } from "./UserImAccountsPanel";
 import { UserOverrideGrantsPanel } from "./UserOverrideGrantsPanel";
 import { isUserLocked, type UserAccountFields } from "./userAccountStatus";
 
@@ -229,19 +228,6 @@ export function UserManageSheet({
                     onActionError={onActionError}
                   />
                   <UserOrgBindingPanel userId={user.id} onActionError={onActionError} />
-                  <UserImAccountsPanel
-                    userId={user.id}
-                    email={user.email}
-                    imAccounts={user.imAccounts}
-                    onActionError={onActionError}
-                    onSaved={(next) =>
-                      onUserChange?.({
-                        ...user,
-                        email: next.email,
-                        imAccounts: next.imAccounts,
-                      })
-                    }
-                  />
                   <UserResetPasswordPanel
                     userId={user.id}
                     username={user.username}

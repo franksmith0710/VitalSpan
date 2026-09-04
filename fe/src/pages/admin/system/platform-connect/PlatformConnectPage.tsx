@@ -11,12 +11,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiFetch } from "@/lib/api";
 import { mapApiError } from "@/lib/apiError";
 import { DEFAULT_EMAIL_SMTP_SLOT, type EmailSmtpSlot } from "@/lib/emailSmtpSlots";
-import type { ImChannel, ImConfigSummary } from "@/lib/imChannels";
-import { IM_CHANNELS } from "@/lib/imChannels";
 import { queryKeys } from "@/lib/queryKeys";
 import { EmailSmtpSlotForm } from "./EmailSmtpSlotForm";
-import { ImChannelForm, ImChannelPickerCard } from "./ImChannelForm";
-import { ImDingtalkWebhookForm } from "./ImDingtalkWebhookForm";
 import { ChannelPickerCard } from "./platformConnectUi";
 import { SystemAdminScopeHint } from "../SystemAdminScopeHint";
 
@@ -35,62 +31,32 @@ type EmailConfig = {
 };
 
 type EmailSlotsResponse = { items: EmailConfig[] };
-type ImSlotsResponse = { items: ImConfigSummary[] };
-
-type ActiveTarget =
-  | { type: "email"; slot: EmailSmtpSlot }
-  | { type: "im"; channel: ImChannel };
 
 export function PlatformConnectPage() {
-  const [activeTarget, setActiveTarget] = useState<ActiveTarget>({
-    type: "email",
-    slot: DEFAULT_EMAIL_SMTP_SLOT,
-  });
+  const [activeSlot, setActiveSlot] = useState<EmailSmtpSlot>(DEFAULT_EMAIL_SMTP_SLOT);
   const configQuery = useQuery({
     queryKey: queryKeys.platformConnect.emailSlots,
     queryFn: () => apiFetch<EmailSlotsResponse>("/api/v1/platform/delivery/email/slots"),
   });
-  const imQuery = useQuery({
-    queryKey: queryKeys.platformConnect.imSlots,
-    queryFn: () => apiFetch<ImSlotsResponse>("/api/v1/platform/delivery/im/slots"),
-  });
 
   const items = configQuery.data?.items ?? [];
-  const imItems =
-    imQuery.data?.items ??
-    IM_CHANNELS.map(
-      (channel) =>
-        ({
-          channel,
-          label: channel,
-          configured: false,
-          source: "none",
-          hasSecret: false,
-        }) satisfies ImConfigSummary,
-    );
-  const activeEmailConfig = items.find((item) => item.slot === activeTarget.slot && activeTarget.type === "email");
-  const activeImConfig = imItems.find(
-    (item) => item.channel === activeTarget.channel && activeTarget.type === "im",
-  );
-  const pending = configQuery.isLoading || imQuery.isLoading;
+  const activeEmailConfig = items.find((item) => item.slot === activeSlot);
+  const pending = configQuery.isLoading;
 
   return (
     <AdminPageShell
       title="平台对接"
-      description="配置邮件 SMTP、飞书工作通知，以及钉钉群机器人。飞书需个人中心绑定；钉钉发到已配置的群。"
+      description="配置邮件 SMTP，供定时报告等场景发信。"
       headerIcon={
         <AdminPageHeaderIcon>
           <Link2 className="size-5" aria-hidden />
         </AdminPageHeaderIcon>
       }
     >
-      {configQuery.isError || imQuery.isError ? (
+      {configQuery.isError ? (
         <PageErrorBanner
-          message={mapApiError(configQuery.error ?? imQuery.error)}
-          onRetry={() => {
-            void configQuery.refetch();
-            void imQuery.refetch();
-          }}
+          message={mapApiError(configQuery.error)}
+          onRetry={() => void configQuery.refetch()}
         />
       ) : null}
 
@@ -112,9 +78,9 @@ export function PlatformConnectPage() {
                   <Link2 className="size-4" aria-hidden />
                 </span>
                 <div>
-                  <h2 className="text-theme-sm font-semibold text-gray-900 dark:text-white">投递通道</h2>
+                  <h2 className="text-theme-sm font-semibold text-gray-900 dark:text-white">邮件发信</h2>
                   <p className="mt-0.5 text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                    邮件 SMTP、飞书工作通知与钉钉群机器人并列配置；定时任务可勾选对应通道。
+                    配置 QQ / 163 等 SMTP 槽位；定时任务将使用所选槽位发信。
                   </p>
                 </div>
               </div>
@@ -124,22 +90,14 @@ export function PlatformConnectPage() {
                   <ChannelPickerCard
                     key={config.slot}
                     config={config}
-                    active={activeTarget.type === "email" && activeTarget.slot === config.slot}
-                    onSelect={() => setActiveTarget({ type: "email", slot: config.slot })}
-                  />
-                ))}
-                {imItems.map((config) => (
-                  <ImChannelPickerCard
-                    key={config.channel}
-                    config={config}
-                    active={activeTarget.type === "im" && activeTarget.channel === config.channel}
-                    onSelect={() => setActiveTarget({ type: "im", channel: config.channel })}
+                    active={activeSlot === config.slot}
+                    onSelect={() => setActiveSlot(config.slot)}
                   />
                 ))}
               </div>
 
               <div className="mt-5">
-                {activeTarget.type === "email" && activeEmailConfig ? (
+                {activeEmailConfig ? (
                   <EmailSmtpSlotForm
                     key={activeEmailConfig.slot}
                     config={activeEmailConfig}
@@ -147,30 +105,13 @@ export function PlatformConnectPage() {
                     onSaved={() => void configQuery.refetch()}
                   />
                 ) : null}
-                {activeTarget.type === "im" && activeImConfig ? (
-                  activeImConfig.channel === "dingtalk" ? (
-                    <ImDingtalkWebhookForm
-                      key={activeImConfig.channel}
-                      config={activeImConfig}
-                      disabled={pending}
-                      onSaved={() => void imQuery.refetch()}
-                    />
-                  ) : (
-                    <ImChannelForm
-                      key={activeImConfig.channel}
-                      config={activeImConfig}
-                      disabled={pending}
-                      onSaved={() => void imQuery.refetch()}
-                    />
-                  )
-                ) : null}
               </div>
             </div>
 
             <div className="flex items-start gap-2.5 border-t border-gray-100 px-5 py-4 dark:border-white/[0.06] md:px-6">
               <Info className="mt-0.5 size-4 shrink-0 text-gray-400" aria-hidden />
               <p className="text-theme-xs leading-relaxed text-gray-500 dark:text-gray-400">
-                IM 账号由用户在个人中心自助绑定（飞书）；钉钉走群机器人，无需个人绑定。清空某通道后即使环境变量仍有旧值，该通道也不会再发信。
+                清空某槽位后，即使环境变量仍有旧值，该槽位也不会再发信。
               </p>
             </div>
           </div>

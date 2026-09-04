@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { AlertCircle, History } from "lucide-react";
-import { Link } from "react-router";
 import { fetchAuthenticatedBlob } from "@/lib/apiUpload";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,11 +33,6 @@ import { executionErrorHeadline } from "../scheduleHistoryPresentation";
 import { localizeArtifactKind } from "@/lib/scheduleArtifactMeta";
 import { summarizeDeliveryRecipients } from "@/lib/scheduleSourceMeta";
 import { formatDeliveryStepLines } from "@/lib/scheduleDeliveryDetail";
-import { FEISHU_REAUTH_PROFILE_PATH, rowNeedsFeishuReauth } from "@/lib/feishuDeliveryErrors";
-
-function rowFeishuDelivered(steps?: ScheduleExecutionRow["deliverySteps"]): boolean {
-  return Boolean(steps?.some((s) => s.channel === "feishu" && s.status === "delivered"));
-}
 
 type ScheduleHistoryTableProps = {
   rows: ScheduleExecutionRow[];
@@ -124,8 +118,6 @@ export function ScheduleHistoryTable({
             const recipients = summarizeDeliveryRecipients(row.deliverySteps);
             const artifact = localizeArtifactKind(row.artifactKind);
             const hasError = Boolean(row.errorMessage);
-            const feishuDelivered = !hasError && rowFeishuDelivered(row.deliverySteps);
-            const needsFeishuReauth = rowNeedsFeishuReauth(row.errorMessage, row.deliverySteps);
             return (
               <li
                 key={row.executionId}
@@ -149,11 +141,6 @@ export function ScheduleHistoryTable({
                     <p className="truncate text-theme-xs text-gray-500 dark:text-gray-400">
                       收件 {recipients || "—"}
                     </p>
-                    {feishuDelivered ? (
-                      <p className="text-theme-xs leading-5 text-gray-500 dark:text-gray-400">
-                        已在飞书投递，请打开飞书「消息」搜索「VitalSpan 定时报告」；也可点右侧下载 PDF。
-                      </p>
-                    ) : null}
                     {hasError ? (
                       <div className="space-y-1">
                         <p className="flex items-start gap-1.5 text-theme-xs leading-5 text-error-600 dark:text-error-400">
@@ -162,14 +149,6 @@ export function ScheduleHistoryTable({
                             {executionErrorHeadline(row.errorMessage ?? "")}
                           </span>
                         </p>
-                        {needsFeishuReauth ? (
-                          <Link
-                            to={FEISHU_REAUTH_PROFILE_PATH}
-                            className="text-theme-xs text-brand-600 hover:underline dark:text-brand-400"
-                          >
-                            打开浏览器补充飞书授权
-                          </Link>
-                        ) : null}
                       </div>
                     ) : null}
                   </div>
@@ -201,8 +180,6 @@ export function ScheduleHistoryTable({
             <TableBody>
               {rows.map((row) => {
                 const hasError = Boolean(row.errorMessage);
-                const feishuDelivered = !hasError && rowFeishuDelivered(row.deliverySteps);
-                const needsFeishuReauth = rowNeedsFeishuReauth(row.errorMessage, row.deliverySteps);
                 const recipients = summarizeDeliveryRecipients(row.deliverySteps);
                 return (
                   <TableRow key={row.executionId} className="border-gray-50 dark:border-gray-800/60">
@@ -236,19 +213,7 @@ export function ScheduleHistoryTable({
                               {executionErrorHeadline(row.errorMessage ?? "")}
                             </span>
                           </TruncateHint>
-                          {needsFeishuReauth ? (
-                            <Link
-                              to={FEISHU_REAUTH_PROFILE_PATH}
-                              className="text-brand-600 hover:underline dark:text-brand-400"
-                            >
-                              补充飞书授权
-                            </Link>
-                          ) : null}
                         </div>
-                      ) : feishuDelivered ? (
-                        <span className="text-gray-500 dark:text-gray-400">
-                          飞书已投递，请查消息或下载 PDF
-                        </span>
                       ) : (
                         "—"
                       )}
@@ -280,11 +245,6 @@ export function ScheduleHistoryTable({
               <pre className="max-h-48 overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-gray-50 p-3 text-theme-xs leading-5 text-gray-500 dark:bg-white/[0.04] dark:text-gray-400">
                 {localizeApiMessage(detailRow.errorMessage)}
               </pre>
-              {rowNeedsFeishuReauth(detailRow.errorMessage, detailRow.deliverySteps) ? (
-                <Button type="button" variant="primary" size="sm" asChild>
-                  <Link to={FEISHU_REAUTH_PROFILE_PATH}>在浏览器中补充飞书授权</Link>
-                </Button>
-              ) : null}
             </div>
           ) : formatDeliveryStepLines(detailRow?.deliverySteps).length ? (
             <ul className="space-y-3">

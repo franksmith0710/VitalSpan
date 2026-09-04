@@ -98,8 +98,7 @@ def _out(row: dict) -> ScheduleStatusOut:
         sourceLabel=_source_label(row),
         recipients=recipients,
         attachmentFormats=row.get("attachment_formats") or ["pdf"],
-        deliveryChannels=row.get("delivery_channels") or ["email"],
-        notifyGroup=bool(row.get("notify_group", False)),
+        deliveryChannels=["email"],
         emailSmtpSlot=normalize_email_slot(row.get("email_smtp_slot")),
         cron=row["cron"],
         timezone=row["timezone"],
@@ -173,8 +172,8 @@ def create_schedule(payload: ScheduleCreate, actor: UserContext) -> ScheduleStat
         "source_key": payload.source_key,
         "recipients": recipients,
         "attachment_formats": list(payload.attachment_formats),
-        "delivery_channels": list(payload.delivery_channels),
-        "notify_group": bool(payload.notify_group),
+        "delivery_channels": ["email"],
+        "notify_group": False,
         "email_smtp_slot": normalize_email_slot(payload.email_smtp_slot),
         "cron": payload.cron,
         "timezone": payload.timezone,
@@ -205,9 +204,7 @@ def update_schedule(
         _assert_standard_pdf_only(row["source_type"], list(payload.attachment_formats))
         row["attachment_formats"] = list(payload.attachment_formats)
     if payload.delivery_channels is not None:
-        row["delivery_channels"] = list(payload.delivery_channels)
-    if payload.notify_group is not None:
-        row["notify_group"] = bool(payload.notify_group)
+        row["delivery_channels"] = ["email"]
     if payload.email_smtp_slot is not None:
         row["email_smtp_slot"] = normalize_email_slot(payload.email_smtp_slot)
     if payload.name is not None:

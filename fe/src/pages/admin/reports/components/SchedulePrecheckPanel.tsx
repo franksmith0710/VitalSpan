@@ -4,7 +4,6 @@ import { CheckCircle2, CircleAlert, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/api";
 import { emailSmtpSlotLabel } from "@/lib/emailSmtpSlots";
-import { IM_CHANNEL_LABELS } from "@/lib/imChannels";
 import { cn } from "@/lib/utils";
 import {
   SCHEDULE_DELIVERY_HEALTH_KEY,
@@ -15,11 +14,6 @@ import {
 type DeliveryHealth = {
   status: "reachable" | "unreachable" | "unconfigured";
   error?: string | null;
-  im?: Record<
-    string,
-    { configured?: boolean; deliveryMode?: string; error?: string | null }
-  >;
-  imOwner?: Record<string, { ready?: boolean; error?: string | null }>;
 };
 
 type PrecheckItem = {
@@ -152,42 +146,6 @@ export function useSchedulePrecheckItems(input: {
         : `${emailSmtpSlotLabel(input.emailSmtpSlot ?? "qq")} 发信通道未配置或不可达；激活后执行可能投递失败，请联系管理员。`),
     blocking: false,
   });
-
-  const imHealth = delivery?.im;
-  const imOwner = delivery?.imOwner;
-  if (imHealth) {
-    for (const channel of ["dingtalk", "feishu"] as const) {
-      const row = imHealth[channel];
-      const ok = Boolean(row?.configured);
-      const groupWebhook = row?.deliveryMode === "group_webhook";
-      const userDelegated = row?.deliveryMode === "user_delegated";
-      const ownerRow = imOwner?.[channel];
-      const ownerReady = groupWebhook || !userDelegated || Boolean(ownerRow?.ready);
-      items.push({
-        id: `im-${channel}`,
-        label: groupWebhook ? `${IM_CHANNEL_LABELS[channel]}群机器人` : `${IM_CHANNEL_LABELS[channel]}工作通知`,
-        ok: ok && ownerReady,
-        detail: !ok
-          ? row?.error || (groupWebhook
-            ? "群机器人 webhook 未配置，请在平台对接中粘贴钉钉自定义机器人地址。"
-            : "应用未配置或探测未通过，请联系管理员在平台对接中配置。")
-          : groupWebhook
-            ? "钉钉按群发：将把摘要和产物链接发到已配置的群。"
-          : userDelegated && !ownerReady
-            ? ownerRow?.error || "您尚未完成飞书扫码绑定，定时 IM 投递将以您的身份发信。"
-            : userDelegated
-              ? "用户委托模式：应用已配置；发信将使用您绑定的飞书身份。"
-              : "应用已配置且探测通过；收件人须在个人中心绑定自己的账号。",
-        blocking: false,
-        fixHint:
-          !ok
-            ? "系统管理 → 平台对接 → 工作通知"
-            : userDelegated && !ownerReady
-              ? "个人中心 → 工作通知绑定 → 飞书扫码"
-              : undefined,
-      });
-    }
-  }
 
   if (input.requireVisualExport !== false) {
     const exportHealth = exportQuery.data;

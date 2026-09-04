@@ -1,7 +1,13 @@
 import type { ImChannel } from "@/lib/imChannels";
 import type { ScheduleRecipient } from "./useReportSchedules";
 import { isValidRecipient } from "./components/ScheduleRecipientsField";
-import type { DeliveryChannel, ScheduleFormValue } from "./components/ScheduleFormFields";
+import type { DeliveryChannel } from "./components/ScheduleDeliveryChannelsField";
+
+/** 校验用表单切片，避免与 ScheduleFormFields 循环 import。 */
+type ScheduleDeliveryForm = {
+  deliveryChannels: DeliveryChannel[];
+  recipients: ScheduleRecipient[];
+};
 
 export function imChannelsFromDelivery(channels: DeliveryChannel[]): ImChannel[] {
   return channels.filter((ch): ch is ImChannel => ch !== "email");
@@ -17,11 +23,11 @@ export function hasEmailRecipients(recipients: ScheduleRecipient[]): boolean {
   return recipients.some((row) => row.type === "email" && isValidRecipient(row));
 }
 
-export function isScheduleFormSubmittable(form: ScheduleFormValue): boolean {
+export function isScheduleFormSubmittable(form: ScheduleDeliveryForm): boolean {
   return getScheduleFormValidation(form).ok;
 }
 
-export function getScheduleFormValidation(form: ScheduleFormValue): { ok: boolean; message: string | null } {
+export function getScheduleFormValidation(form: ScheduleDeliveryForm): { ok: boolean; message: string | null } {
   const emailOn = form.deliveryChannels.includes("email");
   const imOn = imChannelsFromDelivery(form.deliveryChannels).length > 0;
 

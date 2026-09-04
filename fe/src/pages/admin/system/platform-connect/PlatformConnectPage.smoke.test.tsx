@@ -25,44 +25,32 @@ function renderPage() {
 describe("PlatformConnectPage smoke", () => {
   beforeEach(() => {
     mockApiFetch.mockReset();
-    mockApiFetch.mockImplementation((path: string) => {
-      if (path.includes("/im/slots")) {
-        return Promise.resolve({
-          items: [
-            { channel: "dingtalk", label: "钉钉", configured: false, source: "none", hasSecret: false, deliveryMode: "corporate_app" },
-            { channel: "feishu", label: "飞书", configured: false, source: "none", hasSecret: false, deliveryMode: "corporate_app" },
-          ],
-        });
-      }
-      return Promise.resolve({
-        items: [
-          {
-            slot: "qq",
-            label: "QQ 邮箱",
-            configured: false,
-            source: "none",
-            hasPassword: false,
-          },
-        ],
-      });
+    mockApiFetch.mockResolvedValue({
+      items: [
+        {
+          slot: "qq",
+          label: "QQ 邮箱",
+          configured: false,
+          source: "none",
+          hasPassword: false,
+        },
+      ],
     });
   });
   afterEach(() => cleanup());
 
-  it("shows scope banner for email and IM work notice", async () => {
+  it("shows scope banner for email SMTP", async () => {
     renderPage();
     const hint = await screen.findByTestId("platform-connect-scope-hint");
     expect(hint).toHaveTextContent("邮件 SMTP");
-    expect(hint).toHaveTextContent("工作通知");
-    expect(hint).toHaveTextContent("个人中心");
+    expect(hint).toHaveTextContent("邮箱地址");
   });
 
-  it("renders email and IM channel pickers in one row", async () => {
+  it("renders email channel pickers", async () => {
     renderPage();
-    expect(await screen.findByText("投递通道")).toBeInTheDocument();
+    expect(await screen.findByText("邮件发信")).toBeInTheDocument();
     expect(screen.getByText("QQ 邮箱")).toBeInTheDocument();
-    expect(screen.queryByText("企业微信")).not.toBeInTheDocument();
-    expect(screen.getByText("飞书")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "工作通知" })).not.toBeInTheDocument();
+    expect(screen.queryByText("飞书")).not.toBeInTheDocument();
+    expect(screen.queryByText("钉钉")).not.toBeInTheDocument();
   });
 });

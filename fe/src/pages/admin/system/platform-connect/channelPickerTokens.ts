@@ -1,5 +1,4 @@
 import type { EmailSmtpSlot } from "@/lib/emailSmtpSlots";
-import type { ImChannel } from "@/lib/imChannels";
 import { cn } from "@/lib/utils";
 
 export type ChannelPickerToken = {
@@ -31,35 +30,16 @@ export const EMAIL_SLOT_ICON: Record<EmailSmtpSlot, ChannelPickerToken> = {
   },
 };
 
-export const IM_CHANNEL_ICON: Record<ImChannel, ChannelPickerToken> = {
-  dingtalk: {
-    label: "钉",
-    iconIdle:
-      "bg-blue-100 text-blue-700 ring-1 ring-blue-200/80 group-hover:bg-blue-200/90 dark:bg-blue-500/15 dark:text-blue-300 dark:ring-blue-500/25",
-    iconActive: "bg-blue-500 text-white shadow-theme-xs",
-    cardActive:
-      "border-blue-300 bg-blue-50/60 shadow-theme-sm ring-1 ring-blue-500/15 dark:border-blue-500/35 dark:bg-blue-500/10",
-  },
-  feishu: {
-    label: "飞",
-    iconIdle:
-      "bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200/80 group-hover:bg-indigo-200/90 dark:bg-indigo-500/15 dark:text-indigo-300 dark:ring-indigo-500/25",
-    iconActive: "bg-indigo-500 text-white shadow-theme-xs",
-    cardActive:
-      "border-indigo-300 bg-indigo-50/60 shadow-theme-sm ring-1 ring-indigo-500/15 dark:border-indigo-500/35 dark:bg-indigo-500/10",
-  },
-};
-
-const ICON_BASE =
-  "flex size-8 shrink-0 items-center justify-center rounded-lg text-theme-xs font-semibold transition-colors";
-
-export function channelPickerCardClass(token: ChannelPickerToken, active: boolean) {
+export function channelPickerCardClass(token: ChannelPickerToken, active: boolean): string {
   return cn(
-    "group relative flex w-full items-start justify-between gap-2 rounded-xl border p-3 text-left transition-all",
+    "group flex w-full items-center justify-between gap-2 rounded-2xl border px-3 py-3 text-left transition",
     active ? token.cardActive : PICKER_CARD_IDLE,
   );
 }
 
-export function channelPickerIconClass(token: ChannelPickerToken, active: boolean) {
-  return cn(ICON_BASE, active ? token.iconActive : token.iconIdle);
+export function channelPickerIconClass(token: ChannelPickerToken, active: boolean): string {
+  return cn(
+    "flex size-10 shrink-0 items-center justify-center rounded-xl text-theme-sm font-semibold transition",
+    active ? token.iconActive : token.iconIdle,
+  );
 }

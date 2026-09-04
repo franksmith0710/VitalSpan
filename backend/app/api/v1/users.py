@@ -34,7 +34,6 @@ from app.auth.schemas_phase_c import (
     UserResourceGrantUpsert,
 )
 from app.auth.user_overrides import service as override_service
-from app.auth.users import im_bindings
 from app.auth.users import service as user_service
 from app.auth.roles import service as role_service
 from app.core.logging import trace_id_var
@@ -80,8 +79,7 @@ def _binding_context(actor: UserContext) -> dict[str, str | list[str] | None]:
 
 
 def _to_user_out(db: Session, user) -> UserOut:
-    out = UserOut.model_validate(user)
-    return out.model_copy(update={"im_accounts": im_bindings.list_accounts(db, user.id)})
+    return UserOut.model_validate(user)
 
 
 def _audit_context(actor: UserContext) -> dict[str, str | None]:

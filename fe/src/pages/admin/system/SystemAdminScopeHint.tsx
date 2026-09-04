@@ -108,10 +108,7 @@ const HINTS: Record<SystemAdminScope, HintConfig> = {
     testId: "platform-connect-scope-hint",
     body: (
       <>
-        本页支持邮件 SMTP（QQ / 163）、飞书<strong className="font-medium">工作通知</strong>
-        ，以及钉钉<strong className="font-medium">群机器人</strong>。飞书探测通过后，同事可在
-        <strong className="font-medium">个人中心</strong>
-        绑定账号；钉钉将报告发到已配置的群。
+        本页配置邮件 SMTP（QQ / 163 等槽位），供定时报告等场景发信。收件人只需填写邮箱地址，无需绑定飞书、钉钉或企业微信。
       </>
     ),
   },

@@ -25,10 +25,9 @@ class ScheduleCreate(BaseModel):
     attachment_formats: list[Literal["pdf", "excel"]] = Field(
         default_factory=lambda: ["pdf"], alias="attachmentFormats",
     )
-    delivery_channels: list[Literal["email", "dingtalk", "feishu"]] = Field(
+    delivery_channels: list[Literal["email"]] = Field(
         default_factory=lambda: ["email"], alias="deliveryChannels",
     )
-    notify_group: bool = Field(default=False, alias="notifyGroup")
     email_smtp_slot: Literal["qq", "163"] = Field(default=EMAIL_SLOT_QQ, alias="emailSmtpSlot")
     name: str | None = Field(default=None, max_length=120)
     cron: str = Field(min_length=1, max_length=64)
@@ -64,10 +63,9 @@ class ScheduleUpdate(BaseModel):
     timezone: str | None = Field(default=None, max_length=64)
     recipients: list[ScheduleRecipientIn] | None = None
     attachment_formats: list[Literal["pdf", "excel"]] | None = Field(default=None, alias="attachmentFormats")
-    delivery_channels: list[Literal["email", "dingtalk", "feishu"]] | None = Field(
+    delivery_channels: list[Literal["email"]] | None = Field(
         default=None, alias="deliveryChannels",
     )
-    notify_group: bool | None = Field(default=None, alias="notifyGroup")
     email_smtp_slot: Literal["qq", "163"] | None = Field(default=None, alias="emailSmtpSlot")
 
 
@@ -83,7 +81,6 @@ class ScheduleStatusOut(BaseModel):
     recipients: list[ScheduleRecipientIn] = Field(default_factory=list)
     attachment_formats: list[str] = Field(default_factory=list, alias="attachmentFormats")
     delivery_channels: list[str] = Field(default_factory=lambda: ["email"], alias="deliveryChannels")
-    notify_group: bool = Field(default=False, alias="notifyGroup")
     email_smtp_slot: str = Field(default=EMAIL_SLOT_QQ, alias="emailSmtpSlot")
     cron: str
     timezone: str

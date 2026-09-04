@@ -17,7 +17,7 @@ from app.reports.catalog.acl import register_artifact_owner
 from app.reports.scheduler import acl as schedule_acl
 from app.reports.scheduler.delivery import dispatch_artifact
 from app.reports.scheduler.errors import ScheduleError
-from app.reports.scheduler.recipients import resolve_im_targets, resolve_recipient_emails
+from app.reports.scheduler.recipients import resolve_recipient_emails
 from app.reports.scheduler.schemas import ScheduleExecuteOut, ScheduleRecipientIn
 from app.reports.scheduler import service as scheduler_service
 from app.core.config import get_settings
@@ -398,25 +398,16 @@ def semi_real_execute_schedule(
         _append_history(schedule_id, out, error_message=export_error)
         return normalize_execute_out(out)
     recipient_emails: list[str] | None = None
-    im_targets: dict[str, list[tuple[str, str]]] = {}
-    im_missing: dict[str, list[str]] = {}
     raw_recipients = row.get("recipients") or []
-    channels = row.get("delivery_channels") or ["email"]
+    channels = ["email"]
     if raw_recipients:
         session = get_meta_session()
         try:
             parsed = [ScheduleRecipientIn.model_validate(r) for r in raw_recipients]
             recipient_emails = resolve_recipient_emails(session, parsed)
-            for channel in channels:
-                if channel == "dingtalk":
-                    continue
-                if channel == "feishu":
-                    targets, missing = resolve_im_targets(session, parsed, channel)
-                    im_targets[channel] = targets
-                    im_missing[channel] = missing
         finally:
             session.close()
-    if "email" in channels and not recipient_emails:
+    if not recipient_emails:
         error_message = (
             "未解析到有效收件邮箱：请配置接收人（直接填邮箱，或确保角色/用户资料含真实邮箱）。"
         )
@@ -459,9 +450,6 @@ def semi_real_execute_schedule(
             attachment_filename=att_name,
             attachment_mime=att_mime,
             attachments=attachments,
-            im_targets=im_targets,
-            im_missing=im_missing,
-            notify_group=bool(row.get("notify_group", False)),
             email_smtp_slot=row.get("email_smtp_slot") or "qq",
             owner_id=owner_id,
         )

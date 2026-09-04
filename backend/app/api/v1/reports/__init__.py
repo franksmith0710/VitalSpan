@@ -293,32 +293,15 @@ def schedule_delivery_health(
     user: Annotated[UserContext, Depends(require_permission(PERM_READ))],
     email_smtp_slot: str | None = Query(default=None, alias="emailSmtpSlot"),
 ):
-    from app.auth.im_oauth.im_user_token import check_im_owner_sender_ready
     from app.auth.models import get_meta_session
-    from app.auth.profile import service as profile_service
-    from app.reports.scheduler.channels.work_notice import probe_im_apps
     from app.reports.scheduler.delivery_adapter import probe_all_smtp_health, probe_smtp_health
 
     session = get_meta_session()
     try:
-        settings = get_settings()
-        actor_id = profile_service.resolve_actor_user_id(session, user.id, user.username)
-        im_owner = check_im_owner_sender_ready(session, actor_id)
         if email_smtp_slot:
             smtp = probe_smtp_health(session=session, slot=email_smtp_slot)
-            return {
-                **smtp,
-                "smtp": smtp,
-                "im": probe_im_apps(settings, session=session),
-                "imOwner": im_owner,
-            }
-        combined = probe_all_smtp_health(session=session)
-        return {
-            **combined,
-            "smtp": combined,
-            "im": probe_im_apps(settings, session=session),
-            "imOwner": im_owner,
-        }
+            return smtp
+        return probe_all_smtp_health(session=session)
     finally:
         session.close()
 

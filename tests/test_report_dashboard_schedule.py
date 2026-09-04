@@ -458,62 +458,6 @@ def test_empty_dashboard_export_rejected(client: TestClient):
     assert export.json()["code"] == "DASHBOARD_EXPORT_EMPTY"
 
 
-def test_execute_feishu_person_delivered(client: TestClient, monkeypatch):
-    from sqlalchemy import select
-
-    from app.auth.models import AuthUser, get_meta_session
-    from app.auth.users import im_bindings
-
-    session = get_meta_session()
-    try:
-        users = list(session.scalars(select(AuthUser)))
-        assert users, "expected seeded users for role recipient resolution"
-        for user in users:
-            im_bindings.upsert_accounts(session, user.id, {"feishu": f"ou-{user.username}"})
-        session.commit()
-    finally:
-        session.close()
-
-    monkeypatch.setattr(
-        "app.reports.scheduler.channels.work_notice.send_work_notices",
-        lambda channel, **kwargs: {
-            "channel": channel,
-            "status": "delivered",
-            "mode": "work_notice",
-            "to": kwargs.get("account_ids"),
-        },
-    )
-    dash_id = _create_dashboard_with_widget(client, name="Feishu Dash", description="feishu")
-    sched = client.post(
-        "/api/v1/reports/schedules",
-        headers=AUTH,
-        json={
-            "sourceType": "dashboard",
-            "sourceId": dash_id,
-            "cron": "0 9 * * *",
-            "recipients": [{"type": "role", "value": "admin"}],
-            "deliveryChannels": ["feishu"],
-        },
-    )
-    schedule_id = sched.json()["id"]
-    client.post(
-        f"/api/v1/reports/schedules/{schedule_id}/transition",
-        headers=AUTH,
-        json={"action": "schedule"},
-    )
-    exec_resp = client.post(
-        f"/api/v1/reports/schedules/{schedule_id}/execute",
-        headers={**AUTH, "Idempotency-Key": "feishu-1", "X-Rpt-Semi-Real": "1"},
-    )
-    assert exec_resp.status_code == 200, exec_resp.text
-    body = exec_resp.json()
-    assert body["status"] == "semi_real_succeeded"
-    feishu_step = next(s for s in body["deliverySteps"] if s["channel"] == "feishu")
-    assert feishu_step["status"] == "delivered"
-    assert feishu_step["mode"] == "work_notice"
-    assert all(s.get("mode") != "group_webhook" for s in body["deliverySteps"])
-
-
 def test_template_schedule_smtp_pdf_attachment(client: TestClient):
     """Template schedule execute → SMTP PDF attachment (RenderSpec renderer)."""
     import uuid

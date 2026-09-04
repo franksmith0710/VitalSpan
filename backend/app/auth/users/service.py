@@ -21,8 +21,6 @@ from app.auth.password.service import (
     validate_password_policy,
 )
 from app.auth.schemas import UserCreate, UserUpdate
-from app.auth.users import im_bindings
-
 
 class UserError(Exception):
     def __init__(self, code: str, message: str, status: int = 400) -> None:
@@ -220,12 +218,6 @@ def update_user(
         if had_root:
             _guard_root_admin(session)
         changes["roleIds"] = [str(r.id) for r in roles]
-    if payload.im_accounts is not None:
-        try:
-            saved = im_bindings.upsert_accounts(session, user_id, payload.im_accounts, source="admin")
-        except im_bindings.ImBindingConflictError as exc:
-            raise UserError("IM_BINDING_CONFLICT", exc.message, 409) from exc
-        changes["imAccounts"] = saved
 
     if not changes:
         raise UserError("USER_NO_CHANGES", "No user fields to update", 422)

@@ -13,19 +13,17 @@ import {
 
 export const EMAIL_ONLY_DELIVERY: Pick<
   ScheduleFormValue,
-  "deliveryChannels" | "notifyGroup" | "emailSmtpSlot"
+  "deliveryChannels" | "emailSmtpSlot"
 > = {
   deliveryChannels: ["email"],
-  notifyGroup: false,
   emailSmtpSlot: DEFAULT_EMAIL_SMTP_SLOT,
 };
 
 export function deliveryPayloadFromForm(
-  form: Pick<ScheduleFormValue, "deliveryChannels" | "notifyGroup" | "emailSmtpSlot">,
+  form: Pick<ScheduleFormValue, "deliveryChannels" | "emailSmtpSlot">,
 ) {
   return {
-    deliveryChannels: form.deliveryChannels,
-    notifyGroup: form.notifyGroup,
+    deliveryChannels: ["email"] as const,
     emailSmtpSlot: form.emailSmtpSlot,
   };
 }
@@ -57,10 +55,7 @@ export function scheduleRowToForm(schedule: ReportScheduleRow): ScheduleFormValu
     attachmentFormats: (schedule.attachmentFormats?.length
       ? schedule.attachmentFormats
       : ["pdf"]) as ScheduleFormValue["attachmentFormats"],
-    deliveryChannels: (schedule.deliveryChannels?.length
-      ? schedule.deliveryChannels
-      : ["email"]) as ScheduleFormValue["deliveryChannels"],
-    notifyGroup: schedule.notifyGroup ?? false,
+    deliveryChannels: ["email"],
     emailSmtpSlot: (schedule.emailSmtpSlot === "163" ? "163" : "qq") as EmailSmtpSlot,
   };
 }

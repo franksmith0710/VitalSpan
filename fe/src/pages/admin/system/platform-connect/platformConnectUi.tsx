@@ -11,7 +11,6 @@ import {
 
 export {
   EMAIL_SLOT_ICON,
-  IM_CHANNEL_ICON,
   channelPickerCardClass,
   channelPickerIconClass,
 } from "./channelPickerTokens";
