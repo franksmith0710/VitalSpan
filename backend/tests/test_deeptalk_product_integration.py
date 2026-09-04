@@ -91,11 +91,11 @@ def test_completion_gate_wf3_blocks_style_claim_without_upload_stdout() -> None:
     )
     result = check_completion(
         "3",
-        f"电商风格配色已改完 dashboardId={dash_id}",
+        f"已完成电商风格配色 dashboardId={dash_id}",
         stdout,
     )
     assert result.ok is False
-    assert any("upload" in r.lower() for r in result.reasons)
+    assert any("upload" in r.lower() or "delivery" in r.lower() for r in result.reasons)
 
 
 def test_completion_gate_wf3_blocks_layout_claim_without_upload_stdout() -> None:
@@ -110,11 +110,11 @@ def test_completion_gate_wf3_blocks_layout_claim_without_upload_stdout() -> None
     )
     result = check_completion(
         "3",
-        f"已优化摆放布局 dashboardId={dash_id}",
+        f"已交付优化布局 dashboardId={dash_id}",
         stdout,
     )
     assert result.ok is False
-    assert any("layout" in r.lower() or "upload" in r.lower() for r in result.reasons)
+    assert any("upload" in r.lower() or "delivery" in r.lower() for r in result.reasons)
 
 
 def test_publish_validate_only_via_tools() -> None:
@@ -130,13 +130,14 @@ def test_publish_validate_only_via_tools() -> None:
     assert "styleComplianceTier=full" in proc.stdout
 
 
-def test_agent_tools_schema_lists_twenty_one_tools() -> None:
+def test_agent_tools_schema_lists_v050_tools() -> None:
     schema_path = SPEC_ROOT / "deeptalk-product" / "agent-tools.schema.json"
     data = json.loads(schema_path.read_text(encoding="utf-8"))
     names = {t["name"] for t in data["tools"]}
     assert names == {
         "vitalspan_health_check",
         "vitalspan_get_contract_card",
+        "vitalspan_get_capability_catalog",
         "vitalspan_scaffold_artifact",
         "vitalspan_validate_artifact",
         "vitalspan_publish_artifact",
@@ -146,8 +147,12 @@ def test_agent_tools_schema_lists_twenty_one_tools() -> None:
         "vitalspan_list_artifact_dashboard_refs",
         "vitalspan_delete_dashboard",
         "vitalspan_validate_chart_config",
+        "vitalspan_validate_layout_draft",
+        "vitalspan_patch_dashboard_layout",
+        "vitalspan_apply_screen_theme",
         "vitalspan_route_request",
-        "vitalspan_list_layout_templates",
+        "vitalspan_list_layout_references",
+        "vitalspan_get_layout_reference",
         "vitalspan_list_layout_rhythms",
         "vitalspan_list_chart_types",
         "vitalspan_compose_dashboard",

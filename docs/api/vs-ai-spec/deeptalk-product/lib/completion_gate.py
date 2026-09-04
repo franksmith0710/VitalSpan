@@ -1,4 +1,4 @@
-"""Agent task completion gate — require artifactId or dashboardId."""
+"""Agent task completion gate — require artifactId or dashboardId (v0.5.0 compliance)."""
 
 from __future__ import annotations
 
@@ -27,28 +27,23 @@ DEMO_SUMMARY_RE = re.compile(
     re.IGNORECASE,
 )
 DEMO_STDOUT_MARK = "data binding: demo"
-STYLE_SUMMARY_RE = re.compile(
-    r"改色|配色|风格|边框|暖色|冷色|品牌|换肤|视觉|标题色|背景色|圆角|区分|紫金|橙金|大促风|已改.*色|统一.*色",
-    re.IGNORECASE,
-)
-LAYOUT_SUMMARY_RE = re.compile(
-    r"调整布局|优化摆放|布局已|摆放已|删.*widget|删除.*组件|改.*位置|挪.*位置|重新排",
+DELIVERY_CLAIM_RE = re.compile(
+    r"已完成|已交付|已上传|已对接|done|finished|delivered|已保存到平台",
     re.IGNORECASE,
 )
 UPLOAD_DONE_MARK = "done: layout saved via upload"
-COMPOSE_DONE_MARK = "done: compose complete"
+LAYOUT_VALIDATE_STAMP_MARK = "layout validate stamp ok"
 RHYTHM_STDOUT_RE = re.compile(r"rhythm=rhythm-[\w-]+", re.IGNORECASE)
 LEGACY_TEMPLATE_MARK = "[warn] LEGACY_TEMPLATE"
-NO_RHYTHM_MARK = "[warn] NO_RHYTHM_OR_TEMPLATE"
-TEMPLATE_DE_RE = re.compile(r"template=de-", re.IGNORECASE)
-KPI_COUNT_RE = re.compile(r"kpi=(\d+)", re.IGNORECASE)
-RHYTHM_ID_RE = re.compile(r"rhythm=(rhythm-[\w-]+)", re.IGNORECASE)
-SUMMARY_LEGACY_TEMPLATE_RE = re.compile(
-    r"de-classic-cockpit|de-sales-command|de-balanced-four|de-map-command|de-kpi-flow-wall|"
-    r"选了.*模板|销售指挥|驾驶舱模板",
+TEMPLATE_PARAM_RE = re.compile(r"template=(de-|gov-|dash-)", re.IGNORECASE)
+SUMMARY_ONE_CLICK_TEMPLATE_RE = re.compile(
+    r"list_layout_templates|template=(de-|gov-|dash-)|一键.*模板|用了.*模板一键",
     re.IGNORECASE,
 )
-VALIDATE_OK_RE = re.compile(r"validate\s+ok|dry-run ok|preflight ok", re.IGNORECASE)
+BYPASS_PATH_RE = re.compile(r"canvas_eval|tmp/dashboard\.js", re.IGNORECASE)
+KPI_COUNT_RE = re.compile(r"kpi=(\d+)", re.IGNORECASE)
+RHYTHM_ID_RE = re.compile(r"rhythm=(rhythm-[\w-]+)", re.IGNORECASE)
+VALIDATE_OK_RE = re.compile(r"validate\s+ok|dry-run ok|preflight ok|ok chartType=", re.IGNORECASE)
 TIER_FULL_RE = re.compile(r"styleComplianceTier=full", re.IGNORECASE)
 TIER_BAD_RE = re.compile(r"styleComplianceTier=(partial|visual-only)", re.IGNORECASE)
 WARNINGS_RE = re.compile(r"warnings?\s*[=:]\s*([1-9]\d*)", re.IGNORECASE)
@@ -91,9 +86,9 @@ class GateResult:
 
 def validate_workflow3_lrc_stdout(tool_stdout: str) -> list[str]:
     reasons: list[str] = []
-    if LEGACY_TEMPLATE_MARK in tool_stdout or TEMPLATE_DE_RE.search(tool_stdout):
+    if LEGACY_TEMPLATE_MARK in tool_stdout or TEMPLATE_PARAM_RE.search(tool_stdout):
         reasons.append(
-            "tool_stdout uses removed layout template — use free layout upload (create → get → write → upload)",
+            "tool_stdout uses removed layout template= — use patch/reference + upload file path",
         )
     kpi_match = KPI_COUNT_RE.search(tool_stdout)
     rhythm_match = RHYTHM_ID_RE.search(tool_stdout)
@@ -112,11 +107,11 @@ def validate_workflow3_summary_lrc(agent_summary: str, tool_stdout: str) -> list
     summary = agent_summary.strip()
     if not summary:
         return reasons
-    if SUMMARY_LEGACY_TEMPLATE_RE.search(summary):
+    if SUMMARY_ONE_CLICK_TEMPLATE_RE.search(summary):
         reasons.append(
-            "summary references removed layout templates — wf3 uses free layout (create → get → write → upload)",
+            "summary references one-click layout template delivery — use get_layout_reference + patch + upload",
         )
-    if TEMPLATE_DE_RE.search(tool_stdout):
+    if TEMPLATE_PARAM_RE.search(tool_stdout):
         reasons.append("tool_stdout uses removed template= — use upload file path")
     return reasons
 
@@ -125,14 +120,14 @@ def validate_workflow3_stdout(tool_stdout: str) -> list[str]:
     reasons: list[str] = []
     if not tool_stdout.strip():
         reasons.append(
-            "workflow 3 requires tool_stdout from vitalspan_upload_dashboard (free layout file path)",
+            "workflow 3 requires tool_stdout from vitalspan_upload_dashboard (layout file path)",
         )
         return reasons
     if not DASHBOARD_OK_RE.search(tool_stdout):
         reasons.append("tool_stdout must contain ok dashboardId=<uuid> from upload")
     if UPLOAD_DONE_MARK not in tool_stdout:
         reasons.append(
-            "wf3 v0.4.6 requires upload_dashboard stdout (done: layout saved via upload) — compose/create/get are not completion",
+            "wf3 requires upload_dashboard stdout (done: layout saved via upload) — compose/create/get are not completion",
         )
     if "next: vitalspan_upload_dashboard" in tool_stdout or "wf3 step 1/4" in tool_stdout:
         reasons.append(
@@ -160,15 +155,12 @@ def validate_workflow3_summary_semantics(agent_summary: str, tool_stdout: str) -
         return reasons
     if DEMO_SUMMARY_RE.search(summary) and DEMO_STDOUT_MARK not in tool_stdout:
         reasons.append(
-            "summary claims demo/preview but tool_stdout missing data binding: demo — compose with data_binding=demo",
+            "summary claims demo/preview but tool_stdout missing data binding: demo",
         )
-    if STYLE_SUMMARY_RE.search(summary) and UPLOAD_DONE_MARK not in tool_stdout:
+    has_upload = UPLOAD_DONE_MARK in tool_stdout
+    if DELIVERY_CLAIM_RE.search(summary) and not has_upload:
         reasons.append(
-            "summary claims style/visual changes but tool_stdout missing upload delivery — pass upload_dashboard stdout after patch",
-        )
-    if LAYOUT_SUMMARY_RE.search(summary) and UPLOAD_DONE_MARK not in tool_stdout:
-        reasons.append(
-            "summary claims layout/narrative changes but tool_stdout missing upload delivery — get → patch → upload_dashboard",
+            "summary claims delivery/completion but tool_stdout missing upload delivery — validate_layout_draft → upload_dashboard",
         )
     reasons.extend(validate_workflow3_summary_lrc(summary, tool_stdout))
     return reasons
