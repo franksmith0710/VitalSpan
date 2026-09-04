@@ -2,7 +2,7 @@
 export type DashboardPreviewProfile = "default" | "card";
 
 /** 列表卡片单图查询行数上限（仍走真实 query/execute） */
-export const CARD_PREVIEW_QUERY_LIMIT = 50;
+export const CARD_PREVIEW_QUERY_LIMIT = 20;
 
 export function isCardPreviewProfile(profile?: DashboardPreviewProfile): boolean {
   return profile === "card";

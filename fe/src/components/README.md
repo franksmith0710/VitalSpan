@@ -106,7 +106,7 @@
 | DatasetPickerPanel | `dashboard/DatasetPickerPanel.tsx` | 图表右栏 Dataset 选择与绑定 |
 | ChartFieldSlot | `dashboard/ChartFieldSlot.tsx` | 单字段槽位（虚线框 + 拖放） |
 | ChartDataSlots | `dashboard/ChartDataSlots.tsx` | 类别轴/值轴等语义槽位组 |
-| ChartResultLimitField | `dashboard/ChartResultLimitField.tsx` | 结果展示：10/20/50/100/500/1000 或自定义 N（1–1000） |
+| ChartResultLimitField | `dashboard/ChartResultLimitField.tsx` | 结果展示：10/20/50/100/500/1000 或自定义 N（1–1000）；默认 20 |
 | ChartInspectorProvider | `dashboard/ChartInspectorContext.tsx` | 图表 Inspector 共享状态 |
 | useInspectorColumns | `../hooks/useInspectorColumns.ts` | Inspector 字段探测（复用 `chartExecuteProbe`） |
 | chartExecuteProbe | `../lib/chartExecuteProbe.ts` | 图表 query execute 共享探测与字段建议 |

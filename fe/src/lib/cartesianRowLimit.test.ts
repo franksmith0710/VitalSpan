@@ -20,7 +20,7 @@ describe("cartesianRowLimit", () => {
   });
 
   it("rejects line chart above default limit", () => {
-    expect(isCartesianRowCountExceeded("line", 150)).toBe(true);
+    expect(isCartesianRowCountExceeded("line", CHART_EXECUTE_LIMIT + 1)).toBe(true);
   });
 
   it("ignores non-cartesian chart types", () => {

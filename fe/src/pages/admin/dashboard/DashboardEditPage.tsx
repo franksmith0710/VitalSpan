@@ -1783,6 +1783,7 @@ export function DashboardEditPage({ mode }: DashboardEditPageProps) {
               chartConfig={widgetActionChartConfig}
               filterParameters={widgetActionFilterParams}
               executeKey={widgetActionExecuteKey}
+              dashboardStyle={styleConfig}
             />
           )}
         {widgetActionDialog?.type === "enlarge" &&

@@ -3,6 +3,8 @@ import { useChartExecute } from "@/components/charts/useChartExecute";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
+import type { DashboardStyleConfig } from "@/components/dashboard/dashboardStyleConfig";
+import { resolveChartQueryLimit } from "@/lib/chartDeDisplay";
 import type { ChartViewConfig } from "@/lib/chartViewConfig";
 import { downloadChartTableCsv } from "./exportChartTable";
 import { WidgetDialogShell } from "./WidgetDialogShell";
@@ -14,6 +16,7 @@ type WidgetViewDataDialogProps = {
   chartConfig: ChartViewConfig;
   filterParameters?: Record<string, string>;
   executeKey?: string;
+  dashboardStyle?: DashboardStyleConfig;
 };
 
 export function WidgetViewDataDialog({
@@ -23,11 +26,13 @@ export function WidgetViewDataDialog({
   chartConfig,
   filterParameters,
   executeKey,
+  dashboardStyle,
 }: WidgetViewDataDialogProps) {
+  const queryLimit = resolveChartQueryLimit(chartConfig, dashboardStyle ?? {});
   const { columns, rows, loading, error } = useChartExecute(chartConfig, {
     filterParameters,
     executeKey,
-    limit: 500,
+    limit: queryLimit,
   });
 
   const exportCsv = (raw: boolean) => {

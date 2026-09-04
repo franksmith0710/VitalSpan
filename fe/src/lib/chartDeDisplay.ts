@@ -152,7 +152,7 @@ export function formatResultLimitSelectValue(
 ): string {
   if (isPresetResultLimit(value)) return value!;
   if (isCustomResultLimit(value)) return CHART_RESULT_LIMIT_CUSTOM;
-  return isPresetResultLimit(emptyFallback) ? emptyFallback : "1000";
+  return isPresetResultLimit(emptyFallback) ? emptyFallback : String(DEFAULT_QUERY_LIMIT);
 }
 
 export function buildCustomResultLimit(n: number): string {

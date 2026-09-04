@@ -1,4 +1,5 @@
 import { apiFetch } from "@/lib/api";
+import { DEFAULT_CHART_RESULT_LIMIT } from "@/lib/chartQueryLimitDefaults";
 import { resetChartExecuteSharedInflight } from "@/lib/chartExecuteProbe";
 import { randomId } from "@/lib/randomId";
 import type { DatasetFieldKind } from "@/components/dashboard/datasetFieldClassification";
@@ -64,7 +65,7 @@ export function buildDatasetQueryPayload(params: {
     table: params.table,
     columns: params.columns,
     conditions: { logic: "AND", conditions: [] },
-    limit: 1000,
+    limit: DEFAULT_CHART_RESULT_LIMIT,
     offset: 0,
   };
   if (params.columnKinds && Object.keys(params.columnKinds).length > 0) {

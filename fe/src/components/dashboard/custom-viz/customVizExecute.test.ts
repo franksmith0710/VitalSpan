@@ -87,7 +87,7 @@ describe("customVizExecute", () => {
       dimensions: [{ field: "region" }],
       metrics: [{ field: "amount", agg: "sum" }],
     });
-    expect(cfg.nativeBody?.deDisplay?.resultLimit).toBe("1000");
+    expect(cfg.nativeBody?.deDisplay?.resultLimit).toBe("20");
   });
 
   it("merges manifest default style with layout overrides", () => {
