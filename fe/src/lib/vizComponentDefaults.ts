@@ -39,6 +39,10 @@ export function defaultVizComponentPayload(
         customVizConfig: {
           artifactId: options?.customViz?.artifactId ?? "",
           dataBinding: { status: "manual", resultLimit: defaultChartResultLimitValue() },
+          displayStyle: {
+            title: { show: true },
+            label: { show: true },
+          },
         },
       };
     default:

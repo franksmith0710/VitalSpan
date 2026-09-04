@@ -10,6 +10,7 @@ import pytest
 
 from app.auth.im_oauth.device_code.feishu import DeviceAuthPending, DeviceAuthTokens, poll_feishu_device_token
 from app.auth.im_oauth.im_user_token import check_im_owner_sender_ready, get_user_access_token
+from app.auth.im_oauth.feishu_capability import FeishuCapabilityProbe
 from app.auth.im_oauth.service import complete_feishu_device_auth_session, start_feishu_device_auth_session
 from app.core.crypto.credentials import encrypt_credential
 from app.core.platform_config import im_service
@@ -156,11 +157,15 @@ def test_device_auth_complete_binds_user():
                     user_id="ou_bind",
                 )
                 with patch("app.auth.im_oauth.service.upsert_device_binding") as upsert:
-                    done = complete_feishu_device_auth_session(
-                        session,
-                        user_id=user_id,
-                        session_id="sess",
-                    )
+                    with patch(
+                        "app.auth.im_oauth.service.probe_feishu_user_delivery",
+                        return_value=FeishuCapabilityProbe(ready=True, message="飞书推送权限已就绪"),
+                    ):
+                        done = complete_feishu_device_auth_session(
+                            session,
+                            user_id=user_id,
+                            session_id="sess",
+                        )
     assert done.status == "success"
     upsert.assert_called_once()
     session.delete.assert_called_once_with(oauth_row)

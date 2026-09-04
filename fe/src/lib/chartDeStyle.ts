@@ -430,6 +430,14 @@ export function readChartTitleVisible(
   return globalTitleStyle?.show !== false;
 }
 
+/** 新建内置图默认写入 title/label.show，与看板 chartLabelShow / titleStyle 语义一致 */
+export function buildDefaultChartTitleLabelStyle(): Pick<ChartDeStyle, "title" | "label"> {
+  return {
+    title: { show: true },
+    label: { show: true },
+  };
+}
+
 /** 图例显隐：显式 false 隐藏；未配置或 true 时显示（含看板内嵌） */
 export function readChartLegendVisible(
   deStyle: ChartDeStyle,
@@ -805,7 +813,7 @@ export function readChartShowLabel(
   if (features && typeof features === "object" && "showLabel" in features) {
     return Boolean((features as { showLabel?: boolean }).showLabel);
   }
-  return defaults?.chartLabelShow ?? (cfg.chartType === "sankey" ? true : false);
+  return defaults?.chartLabelShow !== false;
 }
 
 export function readChartTooltipShow(

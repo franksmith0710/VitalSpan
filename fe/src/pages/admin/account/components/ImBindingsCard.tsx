@@ -44,6 +44,7 @@ const SOURCE_LABEL: Record<string, string> = {
 };
 
 const SCAN_CONTAINER_ID = "im-scan-bind-qr";
+const MAX_AUTO_REAUTH_ATTEMPTS = 3;
 
 export function ImBindingsCard() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -52,6 +53,7 @@ export function ImBindingsCard() {
   const deviceAuthPopupRef = useRef<Window | null>(null);
   const devicePollSessionRef = useRef<string | null>(null);
   const autoReauthOnceRef = useRef(false);
+  const reauthAttemptRef = useRef(0);
   const scanContainerId = useId().replace(/:/g, "");
   const [deviceSession, setDeviceSession] = useState<DeviceAuthStart | null>(null);
   const [devicePolling, setDevicePolling] = useState(false);
@@ -113,6 +115,19 @@ export function ImBindingsCard() {
     },
   });
 
+  const syncBindingState = useCallback(async () => {
+    await qc.invalidateQueries({ queryKey: queryKeys.meImBindings });
+    await qc.refetchQueries({ queryKey: queryKeys.meImBindings });
+    try {
+      const next = await fetchFeishuCapability();
+      setCapability(next);
+      return next;
+    } catch {
+      setCapability(null);
+      return null;
+    }
+  }, [qc]);
+
   const launchDeviceAuth = useCallback(
     (scope?: string | null) => {
       deviceAuthPopupRef.current = openPendingAuthTab();
@@ -121,14 +136,29 @@ export function ImBindingsCard() {
     [deviceStartMutation],
   );
 
+  const launchDeviceAuthManual = useCallback(() => {
+    reauthAttemptRef.current = 0;
+    launchDeviceAuth();
+  }, [launchDeviceAuth]);
+
+  const requestAutoReauth = useCallback(() => {
+    reauthAttemptRef.current += 1;
+    if (reauthAttemptRef.current > MAX_AUTO_REAUTH_ATTEMPTS) {
+      toast.error("自动补充授权次数过多，请稍后点击「补充授权」重试");
+      return;
+    }
+    launchDeviceAuth();
+  }, [launchDeviceAuth]);
+
   const handleAuthOutcome = useCallback(
     async (result: DeviceAuthComplete) => {
       if (result.status === "success") {
+        reauthAttemptRef.current = 0;
         toast.success(result.message ?? "飞书绑定成功");
-        await qc.invalidateQueries({ queryKey: queryKeys.meImBindings });
-        await refreshCapability();
+        await syncBindingState();
         return;
       }
+      await syncBindingState();
       if (result.status === "needs_admin" || result.needsAdmin) {
         toast.error(result.message ?? "需管理员在飞书开放平台开通权限");
         if (result.adminPortalUrl) {
@@ -138,10 +168,10 @@ export function ImBindingsCard() {
       }
       if (result.status === "needs_reauth" || result.needsReauth) {
         toast.warning(result.message ?? "还需补充飞书授权，正在打开浏览器…");
-        launchDeviceAuth();
+        requestAutoReauth();
       }
     },
-    [launchDeviceAuth, qc, refreshCapability],
+    [requestAutoReauth, syncBindingState],
   );
 
   async function pollDeviceComplete(sessionId: string, intervalMs: number) {
@@ -189,10 +219,10 @@ export function ImBindingsCard() {
         return;
       }
       if (!cap?.ready) {
-        launchDeviceAuth();
+        launchDeviceAuthManual();
       }
     })();
-  }, [feishuDelegated, launchDeviceAuth, refreshCapability, searchParams, setSearchParams]);
+  }, [feishuDelegated, launchDeviceAuthManual, refreshCapability, searchParams, setSearchParams]);
 
   useEffect(() => {
     const status = searchParams.get("status");
@@ -306,7 +336,7 @@ export function ImBindingsCard() {
 
   const startBind = (item: ImBindingItem) => {
     if (item.channel === "feishu" && item.deliveryMode === "user_delegated") {
-      launchDeviceAuth();
+      launchDeviceAuthManual();
       return;
     }
     if (item.deliveryMode === "user_delegated" && item.channel === "dingtalk") {
@@ -359,7 +389,7 @@ export function ImBindingsCard() {
                 size="sm"
                 variant="primary"
                 disabled={bindPending}
-                onClick={() => launchDeviceAuth()}
+                onClick={() => launchDeviceAuthManual()}
               >
                 在浏览器中补充授权
               </Button>
@@ -458,7 +488,7 @@ export function ImBindingsCard() {
                         variant="primary"
                         size="sm"
                         disabled={bindPending}
-                        onClick={() => launchDeviceAuth()}
+                        onClick={() => launchDeviceAuthManual()}
                       >
                         补充授权
                       </Button>

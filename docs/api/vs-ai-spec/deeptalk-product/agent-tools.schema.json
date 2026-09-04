@@ -15,10 +15,24 @@
     {
       "name": "vitalspan_get_contract_card",
       "runtime": "plugin",
-      "description": "Workflow 2: return contract_card.json (底层规范，按需调用，不写入 prompt)",
+      "description": "Workflow 2: return contract_card.json (L0 rules on demand)",
       "parameters": {
         "type": "object",
         "properties": {}
+      }
+    },
+    {
+      "name": "vitalspan_get_capability_catalog",
+      "runtime": "plugin",
+      "description": "Machine-readable capabilities for experts (chartTypes, paradigms, layout constraints, optional themes)",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "sections": {
+            "type": "string",
+            "description": "workflows|chartTypes|paradigms|layout|themes|compliance|routing|all"
+          }
+        }
       }
     },
     {
@@ -201,9 +215,50 @@
       }
     },
     {
+      "name": "vitalspan_validate_layout_draft",
+      "runtime": "plugin",
+      "description": "Workflow 3: validate layout JSON + record upload stamp (5min)",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "file": { "type": "string" },
+          "check_charts": { "type": "boolean" }
+        },
+        "required": ["file"]
+      }
+    },
+    {
+      "name": "vitalspan_patch_dashboard_layout",
+      "runtime": "plugin",
+      "description": "Workflow 3: patch layout file (merge or operations JSON)",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "file": { "type": "string" },
+          "patch_file": { "type": "string" },
+          "operations": { "type": "string" }
+        },
+        "required": ["file"]
+      }
+    },
+    {
+      "name": "vitalspan_apply_screen_theme",
+      "runtime": "plugin",
+      "description": "Workflow 3 optional: merge screen theme into styleConfig",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "file": { "type": "string" },
+          "theme": { "type": "string" },
+          "apply_chart_de_style": { "type": "boolean" }
+        },
+        "required": ["file", "theme"]
+      }
+    },
+    {
       "name": "vitalspan_route_request",
       "runtime": "plugin",
-      "description": "Rule-based wf1/wf2/wf3 routing from capability-routing.json",
+      "description": "Optional wf1/wf2/wf3 suggestion from capability-routing.json",
       "parameters": {
         "type": "object",
         "properties": {
@@ -218,21 +273,25 @@
       }
     },
     {
-      "name": "vitalspan_list_layout_templates",
+      "name": "vitalspan_list_layout_references",
       "runtime": "plugin",
-      "description": "Workflow 3 legacy: list preset layout templates (prefer list_layout_rhythms)",
+      "description": "Workflow 3: read-only index of layout reference ids (REFERENCE ONLY)",
+      "parameters": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    {
+      "name": "vitalspan_get_layout_reference",
+      "runtime": "plugin",
+      "description": "Workflow 3: export read-only layout reference JSON under workspace",
       "parameters": {
         "type": "object",
         "properties": {
-          "surface_kind": {
-            "type": "string",
-            "enum": [
-              "dashboard",
-              "data-screen"
-            ],
-            "description": "Optional filter"
-          }
-        }
+          "id": { "type": "string" },
+          "file": { "type": "string" }
+        },
+        "required": ["id"]
       }
     },
     {
@@ -256,7 +315,7 @@
     {
       "name": "vitalspan_compose_dashboard",
       "runtime": "plugin",
-      "description": "Workflow 3: create surface + save layout. Preferred: rhythm + blocks JSON (LRC). Legacy: template=.",
+      "description": "Workflow 3 optional scaffold: rhythm + blocks (topology only). Delivery via upload file.",
       "parameters": {
         "type": "object",
         "properties": {

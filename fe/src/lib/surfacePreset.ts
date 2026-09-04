@@ -73,6 +73,8 @@ const DASHBOARD_PRESET: SurfacePreset = {
     surfaceKind: "dashboard",
     colorScheme: "light",
     scaleMode: "canvas",
+    chartLabelShow: true,
+    titleStyle: { show: true },
   },
 };
 
@@ -91,6 +93,8 @@ const DATA_SCREEN_PRESET: SurfacePreset = {
     widgetStyle: { opacity: 0 },
     themeAccent: SCREEN_ACCENT,
     refreshIntervalSec: 60,
+    chartLabelShow: true,
+    titleStyle: { show: true },
   },
 };
 

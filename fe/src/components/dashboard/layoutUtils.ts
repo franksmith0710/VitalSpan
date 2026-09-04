@@ -3,7 +3,7 @@ import { randomId } from "@/lib/randomId";
 import { migrateChartViewConfig } from "@/lib/migrateChartTypes";
 import { resolveChartWidgetTitle } from "@/lib/chartTypeDisplayNames";
 import { chartInspectorCapabilities } from "@/lib/chartInspectorCapabilities";
-import { DEFAULT_CHART_LEGEND_STYLE, readChartDeStyle, type ChartDeStyle } from "@/lib/chartDeStyle";
+import { DEFAULT_CHART_LEGEND_STYLE, buildDefaultChartTitleLabelStyle, readChartDeStyle, type ChartDeStyle } from "@/lib/chartDeStyle";
 import { DEFAULT_TABLE_COLUMN_WIDTH_MODE } from "@/lib/chartDeTableStyle";
 import { isTableLikeChartType } from "@/lib/chartTableInspector";
 import { DEFAULT_MAP_3D_CHART_DE_STYLE } from "@/lib/defaultMap3dChartDeStyle";
@@ -860,6 +860,21 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
       },
     };
   };
+  const withDefaultTitleAndLabel = (cfg: ChartViewConfig): ChartViewConfig => {
+    const prev = readChartDeStyle(cfg);
+    const seed = buildDefaultChartTitleLabelStyle();
+    return {
+      ...cfg,
+      nativeBody: {
+        ...cfg.nativeBody,
+        deStyle: {
+          ...prev,
+          title: { ...seed.title, ...prev.title },
+          label: { ...seed.label, ...prev.label },
+        },
+      },
+    };
+  };
   const withDefaultResultLimit = (cfg: ChartViewConfig): ChartViewConfig => ({
     ...cfg,
     nativeBody: {
@@ -872,26 +887,31 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
   });
   if (type === "table") {
     return withDefaultResultLimit(
+      withDefaultTitleAndLabel(
       withTableColumnWidthDefault({
       chartType: "table",
       ...base,
       dimensions: [],
       metrics: [],
     }),
+    ),
     );
   }
   if (type === "kpi") {
     return withDefaultResultLimit(
+      withDefaultTitleAndLabel(
       withLegendDefault({
       chartType: "kpi",
       ...base,
       dimensions: [],
       metrics: [],
     }),
+    ),
     );
   }
   if (type === "map-3d") {
     return withDefaultResultLimit(
+      withDefaultTitleAndLabel(
       withLegendDefault({
       chartType: "map-3d",
       ...base,
@@ -903,10 +923,12 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
         },
       },
     }),
+    ),
     );
   }
   if (type === "gis-map") {
     return withDefaultResultLimit(
+      withDefaultTitleAndLabel(
       withLegendDefault({
       chartType: "gis-map",
       ...base,
@@ -916,9 +938,11 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
         ...defaultGisProjectNativeBody(),
       },
     }),
+    ),
     );
   }
   return withDefaultResultLimit(
+    withDefaultTitleAndLabel(
     withTableColumnWidthDefault(
     withLegendDefault(
       withRadarDefaultDeStyle(
@@ -931,6 +955,7 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
           }),
         ),
       ),
+    ),
     ),
     ),
   );

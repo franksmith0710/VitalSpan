@@ -350,8 +350,12 @@ describe("patchChartLabelStyle", () => {
 });
 
 describe("readChartShowLabel", () => {
-  it("defaults to false when unset", () => {
-    expect(readChartShowLabel(baseCfg)).toBe(false);
+  it("defaults to true when unset", () => {
+    expect(readChartShowLabel(baseCfg)).toBe(true);
+  });
+
+  it("respects dashboard chartLabelShow=false", () => {
+    expect(readChartShowLabel(baseCfg, { chartLabelShow: false })).toBe(false);
   });
 
   it("defaults sankey node labels to on when unset", () => {

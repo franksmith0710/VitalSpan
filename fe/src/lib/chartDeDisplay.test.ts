@@ -58,7 +58,10 @@ describe("chartDeDisplay", () => {
 
   it("T-DE-DISP-09: new chart configs seed default resultLimit", async () => {
     const { defaultChartConfig } = await import("@/components/dashboard/layoutUtils");
-    expect(defaultChartConfig("bar").nativeBody?.deDisplay?.resultLimit).toBe("20");
+    const cfg = defaultChartConfig("bar");
+    expect(cfg.nativeBody?.deDisplay?.resultLimit).toBe("20");
+    expect(cfg.nativeBody?.deStyle?.title?.show).toBe(true);
+    expect(cfg.nativeBody?.deStyle?.label?.show).toBe(true);
   });
 
   it("T-DE-DISP-08: selecting custom from a preset stays custom", () => {

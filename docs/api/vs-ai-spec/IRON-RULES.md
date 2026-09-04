@@ -76,7 +76,8 @@ DeepTalk 集成项目  ──HTTP──►  VitalSpan 平台能力
 | 插件源码 | `deeptalk-plugins/plugins/vitalspan/` → `npm run release` |
 | 桌面包 MVP | `vs-ai-spec-deeptalk-test`（`scripts/sync-vs-ai-spec-pack.ps1`） |
 | 开发备用 sync | `integrations/vitalspan/`（`scripts/sync-vs-ai-spec-to-deeptalk-repo.ps1` · `tools/*.py` · CI） |
-| 产品 Agent 提示词 | [deeptalk-product/AGENT-SYSTEM-PROMPT.md](./deeptalk-product/AGENT-SYSTEM-PROMPT.md) |
+| 产品 Agent 提示词 | [deeptalk-product/COMPLIANCE-BOOTSTRAP.md](./deeptalk-product/COMPLIANCE-BOOTSTRAP.md)（v0.5.0；专家 prompt 由 DeepTalk 配置） |
+| 旧 Agent 提示词跳转 | [deeptalk-product/AGENT-SYSTEM-PROMPT.md](./deeptalk-product/AGENT-SYSTEM-PROMPT.md) |
 | DeepTalk 提示词（简） | [DEEPTALK-AGENT-PROMPT.md](./DEEPTALK-AGENT-PROMPT.md) |
 | 仓内真源 | `docs/api/vs-ai-spec/` |
 
