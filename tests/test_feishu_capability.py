@@ -75,7 +75,7 @@ def test_probe_ready_with_open_id_only_account():
     send_text.assert_called_once_with(
         access_token="tok",
         account_id="ou_abc",
-        text="VitalSpan 连通性探测（可忽略）",
+        text="VitalSpan 连通性探测（可忽略）。若收到 PDF 附件，仅用于权限自检，可放心删除。",
     )
     assert probe.ready is True
     assert probe.needs_admin is False
@@ -96,7 +96,14 @@ def test_probe_needs_admin_for_employee_id():
     assert probe.admin_portal_url == "https://open.feishu.cn/app/cli_app/auth"
 
 
-def test_probe_suggests_full_scope_bundle_for_missing_im_resource():
+def test_probe_pdf_bytes_are_valid_minimal_pdf():
+    from app.auth.im_oauth.feishu_capability import _MIN_PROBE_PDF
+
+    assert _MIN_PROBE_PDF.startswith(b"%PDF-")
+    assert _MIN_PROBE_PDF.rstrip().endswith(b"%%EOF")
+    assert b"xref" in _MIN_PROBE_PDF
+    assert b"/Type/Page" in _MIN_PROBE_PDF
+
     with patch(
         "app.auth.im_oauth.feishu_capability.httpx.Client",
         return_value=_mock_client(),

@@ -24,7 +24,7 @@
 
 1. 管理员 `POST /api/v1/tile-services` 登记 `baseUrl` + `pmtilesPath`
 2. `gis-map` layout 只存 `tileServiceId`（禁止写 128GB 绝对路径）
-3. FE `resolveTileService()` → MapLibre `pmtiles://` 加载；失败回退离线省界
+3. FE `resolveTileService()` → MapLibre `pmtiles://` 加载；未登记或加载失败时明确报错，**禁止**回退离线中国省界
 
 ## 部署
 
@@ -37,7 +37,7 @@
 # 停止（不影响 VitalSpan 主栈）
 .\scripts\stop-pmtiles-external.ps1
 
-# 验真 Range + CORS
+# 验真 Range + CORS + 同机 glyph/sprite
 .\scripts\verify-pmtiles-external.ps1
 ```
 

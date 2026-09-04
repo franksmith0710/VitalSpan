@@ -114,9 +114,16 @@ export function placeGisGraticuleLayer(map: MapLibreMap): void {
   stackGisNightBelowGraticule(map);
 }
 
-export function maintainGisGraticuleStack(map: MapLibreMap): void {
-  if (!map.getLayer(GIS_GRATICULE_LAYER_ID)) return;
+/** style.load / setStyle 会清掉运行时图层；启用时须重建而不只是 moveLayer。 */
+export function maintainGisGraticuleStack(map: MapLibreMap, enabled = true): void {
+  if (!enabled) return;
+  if (!map.isStyleLoaded()) return;
+  if (!map.getLayer(GIS_GRATICULE_LAYER_ID)) {
+    applyGisGraticuleNow(map, true);
+    return;
+  }
   placeGisGraticuleLayer(map);
+  map.triggerRepaint();
 }
 
 function applyGisGraticuleNow(map: MapLibreMap, enabled: boolean) {
@@ -139,7 +146,8 @@ function applyGisGraticuleNow(map: MapLibreMap, enabled: boolean) {
   if (!map.getLayer(GIS_GRATICULE_LAYER_ID)) {
     map.addLayer(graticuleLayerSpec());
   }
-  maintainGisGraticuleStack(map);
+  placeGisGraticuleLayer(map);
+  map.triggerRepaint();
 }
 
 export function applyGisGraticule(map: MapLibreMap, enabled: boolean) {

@@ -19,11 +19,23 @@ if (-not (Test-Path -LiteralPath $pmtilesPath)) {
   throw "PMTiles file not found: $pmtilesPath"
 }
 
-$assetsFonts = Join-Path $dataPath (Join-Path "basemaps-assets" "fonts")
-if (-not (Test-Path -LiteralPath $assetsFonts)) {
-  $syncScript = Join-Path $repoRoot (Join-Path "scripts" "sync-pmtiles-basemaps-assets.ps1")
-  Write-Host "basemaps-assets/fonts missing; syncing next to PMTiles (no public CDN)..."
+function Test-ColocatedBasemapAssets([string]$root) {
+  $fontsDir = Join-Path $root (Join-Path "basemaps-assets" "fonts")
+  $pbf = $null
+  if (Test-Path -LiteralPath $fontsDir) {
+    $pbf = Get-ChildItem -LiteralPath $fontsDir -Recurse -Filter *.pbf -ErrorAction SilentlyContinue | Select-Object -First 1
+  }
+  $sprite = Join-Path $root (Join-Path "basemaps-assets" (Join-Path "sprites" (Join-Path "v4" "light.json")))
+  return ($null -ne $pbf) -and (Test-Path -LiteralPath $sprite)
+}
+
+$syncScript = Join-Path $repoRoot (Join-Path "scripts" "sync-pmtiles-basemaps-assets.ps1")
+if (-not (Test-ColocatedBasemapAssets $dataPath)) {
+  Write-Host "basemaps-assets incomplete (empty fonts is not ready); syncing next to PMTiles..."
   & $syncScript -DataDir $dataPath
+}
+if (-not (Test-ColocatedBasemapAssets $dataPath)) {
+  throw "basemaps-assets/fonts has no .pbf or sprites/v4/light.json is missing under $dataPath. Do not start until glyphs/sprites sit next to the PMTiles file."
 }
 
 $listeners = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue

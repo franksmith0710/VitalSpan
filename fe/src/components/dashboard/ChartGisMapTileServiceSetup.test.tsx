@@ -21,6 +21,12 @@ vi.mock("@/lib/tileServices", () => ({
   })),
 }));
 
+const probeAssets = vi.hoisted(() => vi.fn(async () => ({ ok: true as const })));
+
+vi.mock("@/lib/tileServiceAssetsHealth", () => ({
+  probeTileServiceBasemapAssets: (resolved: unknown) => probeAssets(resolved),
+}));
+
 function gisWidget(tileServiceId?: string): LayoutWidget {
   return {
     id: "w-gis",
@@ -58,7 +64,11 @@ function renderSetup(ui: ReactElement, onChange = vi.fn(), widget = gisWidget())
   };
 }
 
-afterEach(cleanup);
+afterEach(() => {
+  probeAssets.mockReset();
+  probeAssets.mockResolvedValue({ ok: true });
+  cleanup();
+});
 
 describe("ChartGisMapTileServiceSetup", () => {
   it("shows connect flow when no service is linked", async () => {
@@ -97,6 +107,7 @@ describe("ChartGisMapTileServiceSetup", () => {
   });
 
   it("shows connected status with resolved endpoint", async () => {
+    probeAssets.mockResolvedValue({ ok: true });
     renderSetup(<ChartGisMapTileServiceSetup />, vi.fn(), gisWidget("planet-z15"));
 
     await waitFor(() => {
@@ -107,5 +118,15 @@ describe("ChartGisMapTileServiceSetup", () => {
     });
 
     expect(screen.queryByRole("combobox", { name: "选择全球 PMTiles 服务" })).not.toBeInTheDocument();
+  });
+
+  it("does not show success when glyph/sprite probe fails", async () => {
+    probeAssets.mockResolvedValue({ ok: false, message: "标注资源不可用" });
+    renderSetup(<ChartGisMapTileServiceSetup />, vi.fn(), gisWidget("planet-z15"));
+
+    await waitFor(() => {
+      expect(screen.getByText("服务已登记，标注资源不可用")).toBeInTheDocument();
+    });
+    expect(screen.queryByText("已连接")).not.toBeInTheDocument();
   });
 });

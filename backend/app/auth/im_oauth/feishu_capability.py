@@ -20,8 +20,27 @@ from app.reports.scheduler.channels.im_sdk.feishu_files_http import (
 _USER_INFO_URL = "https://open.feishu.cn/open-apis/authen/v1/user_info"
 _TIMEOUT = 8.0
 _SCOPE_RE = re.compile(r"privileges?:\s*\[([^\]]+)\]", re.I)
-_MIN_PROBE_PDF = b"%PDF-1.4\n%\xe2\xe3\xcf\xd3\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF"
-_PROBE_TEXT = "VitalSpan 连通性探测（可忽略）"
+_MIN_PROBE_PDF = (
+    b"%PDF-1.4\n"
+    b"1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n"
+    b"2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n"
+    b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 300 144]/Contents 4 0 R"
+    b"/Resources<</Font<</F1 5 0 R>>>>>>endobj\n"
+    b"4 0 obj<</Length 58>>stream\n"
+    b"BT /F1 12 Tf 20 80 Td (VitalSpan connectivity probe) Tj ET\n"
+    b"endstream\nendobj\n"
+    b"5 0 obj<</Type/Font/Subtype/Type1/BaseFont/Helvetica>>endobj\n"
+    b"xref\n0 6\n"
+    b"0000000000 65535 f \n"
+    b"0000000009 00000 n \n"
+    b"0000000052 00000 n \n"
+    b"0000000101 00000 n \n"
+    b"0000000211 00000 n \n"
+    b"0000000315 00000 n \n"
+    b"trailer<</Size 6/Root 1 0 R>>\n"
+    b"startxref\n376\n%%EOF"
+)
+_PROBE_TEXT = "VitalSpan 连通性探测（可忽略）。若收到 PDF 附件，仅用于权限自检，可放心删除。"
 
 
 @dataclass(frozen=True)

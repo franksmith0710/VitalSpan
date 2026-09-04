@@ -85,6 +85,12 @@ def _person_step(
         session=session,
         owner_id=owner_id,
     )
+    if targets:
+        step = {
+            **step,
+            "recipient_usernames": [username for username, _ in targets],
+            "to": step.get("to") or [account_id for _, account_id in targets],
+        }
     if missing:
         step = {
             **step,

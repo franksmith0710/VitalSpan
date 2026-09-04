@@ -162,7 +162,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "wget -S -O /dev/null -q --header='Range: bytes=0-0' \"http://127.0.0.1:8080/$${PMTILES_HEALTH_FILE}\" 2>&1 | grep -q '206 Partial Content'",
+          "wget -S -O /dev/null -q --header='Range: bytes=0-0' \"http://127.0.0.1:8080/$${PMTILES_HEALTH_FILE}\" 2>&1 | grep -q '206 Partial Content' && wget -q -O /dev/null \"http://127.0.0.1:8080/basemaps-assets/sprites/v4/light.json\" && wget -q -O /dev/null \"http://127.0.0.1:8080/basemaps-assets/fonts/Noto%20Sans%20Regular/0-255.pbf\"",
         ]
       interval: 15s
       timeout: 10s

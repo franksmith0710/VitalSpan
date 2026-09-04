@@ -5,6 +5,7 @@ import {
   GIS_GRATICULE_LAYER_ID,
   GIS_GRATICULE_SOURCE_ID,
   GIS_SUN_NIGHT_LAYER_ID,
+  maintainGisGraticuleStack,
   placeGisGraticuleLayer,
   resolveGisGraticuleInsertBeforeId,
 } from "@/components/charts/engine/maplibre/gisGraticule";
@@ -58,6 +59,38 @@ describe("placeGisGraticuleLayer", () => {
   });
 });
 
+describe("maintainGisGraticuleStack", () => {
+  it("re-adds graticule after style reload removed the runtime layer", () => {
+    const layers = new Map<string, unknown>();
+    const addLayer = vi.fn((spec: { id: string }) => {
+      layers.set(spec.id, spec);
+    });
+    const addSource = vi.fn();
+    const moveLayer = vi.fn();
+    const map = {
+      isStyleLoaded: () => true,
+      getSource: () => undefined,
+      getLayer: (id: string) => layers.get(id),
+      getStyle: () => ({ layers: [] }),
+      addSource,
+      addLayer,
+      removeLayer: vi.fn(),
+      removeSource: vi.fn(),
+      moveLayer,
+      triggerRepaint: vi.fn(),
+    };
+
+    maintainGisGraticuleStack(map as never, true);
+
+    expect(addSource).toHaveBeenCalled();
+    expect(addLayer).toHaveBeenCalledWith(
+      expect.objectContaining({ id: GIS_GRATICULE_LAYER_ID, type: "line" }),
+    );
+    expect(moveLayer).toHaveBeenCalledWith(GIS_GRATICULE_LAYER_ID);
+    expect(map.triggerRepaint).toHaveBeenCalled();
+  });
+});
+
 describe("applyGisGraticule", () => {
   it("re-adds line layer when source exists but layer was removed", () => {
     const setData = vi.fn();
@@ -77,6 +110,7 @@ describe("applyGisGraticule", () => {
       removeLayer: vi.fn(),
       removeSource: vi.fn(),
       moveLayer,
+      triggerRepaint: vi.fn(),
     };
 
     applyGisGraticule(map as never, true);

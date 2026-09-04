@@ -21,9 +21,9 @@
 脚本会：
 
 1. 停止占用 8080 的临时进程
-2. 若缺少 `basemaps-assets/fonts`，同步到与 `.pmtiles` 同一目录
+2. 若 `basemaps-assets` 缺字体 `.pbf` 或 `sprites/v4/light.json`（空 fonts 目录不算就绪），同步到与 `.pmtiles` 同一目录
 3. `docker compose --profile pmtiles-external up -d`
-4. 等待健康检查（Range 206）
+4. 等待健康检查（Range 206 **且** sprite JSON / 抽样 `.pbf` 200）
 5. 在 VitalSpan 元库幂等登记 `planet-z15`（glyphs/sprite 指向同一 `baseUrl`）
 
 验真：

@@ -83,7 +83,7 @@ export function CanvasScaleArea({
           onValueChange={(value) => onZoomChange(Number(value))}
         >
           <SelectTrigger
-            className="h-7 w-[4.25rem] border-white/15 bg-white/5 px-2 text-[11px] text-white hover:bg-white/10"
+            className="h-7 min-w-[5.5rem] w-[5.5rem] border-white/15 bg-white/5 px-2 text-[11px] tabular-nums text-white hover:bg-white/10 [&>span]:line-clamp-none [&_svg]:size-3"
             aria-label="画布缩放比例"
           >
             <SelectValue>{formatDataScreenZoomPercent(userZoom)}</SelectValue>

@@ -27,6 +27,34 @@ describe("CanvasScaleArea", () => {
     expect(screen.getByRole("combobox", { name: "画布缩放比例" })).toHaveTextContent("60%");
   });
 
+  it("shows full percent label for 100% and 200% zoom", () => {
+    const { rerender } = renderScaleArea(
+      <CanvasScaleArea
+        userZoom={1}
+        onZoomChange={vi.fn()}
+        onZoomIn={vi.fn()}
+        onZoomOut={vi.fn()}
+        onResetViewport={vi.fn()}
+      />,
+    );
+
+    const combobox = screen.getByRole("combobox", { name: "画布缩放比例" });
+    expect(combobox).toHaveTextContent("100%");
+
+    rerender(
+      <TooltipProvider delayDuration={0}>
+        <CanvasScaleArea
+          userZoom={2}
+          onZoomChange={vi.fn()}
+          onZoomIn={vi.fn()}
+          onZoomOut={vi.fn()}
+          onResetViewport={vi.fn()}
+        />
+      </TooltipProvider>,
+    );
+    expect(combobox).toHaveTextContent("200%");
+  });
+
   it("shows design canvas size when provided", () => {
     renderScaleArea(
       <CanvasScaleArea

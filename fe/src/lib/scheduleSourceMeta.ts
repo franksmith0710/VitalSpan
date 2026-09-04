@@ -53,13 +53,25 @@ export function summarizeRecipients(
 }
 
 export function summarizeDeliveryRecipients(
-  deliverySteps?: { channel?: string; recipients?: string[]; to?: string[] }[],
+  deliverySteps?: {
+    channel?: string;
+    recipients?: string[];
+    to?: string[];
+    recipientUsernames?: string[];
+    recipient_usernames?: string[];
+  }[],
 ): string {
   if (!deliverySteps?.length) return "—";
   const parts: string[] = [];
   for (const step of deliverySteps) {
+    const usernames = step.recipientUsernames ?? step.recipient_usernames ?? [];
     if (step.channel === "email") {
       parts.push(...(step.recipients ?? []));
+      continue;
+    }
+    if (usernames.length) {
+      const label = step.channel === "feishu" ? "飞书" : step.channel === "dingtalk" ? "钉钉" : step.channel ?? "";
+      parts.push(usernames.length === 1 ? `${label} ${usernames[0]}` : `${label} ${usernames.join("、")}`);
       continue;
     }
     const targets = step.to ?? step.recipients ?? [];

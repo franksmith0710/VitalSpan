@@ -1,6 +1,7 @@
 import { AlertCircle, Download, RotateCcw } from "lucide-react";
 import { RowActions } from "@/components/layout/list-page-kit";
 import { Button } from "@/components/ui/button";
+import { rowHasDeliveryDetail } from "@/lib/scheduleDeliveryDetail";
 import { canRetryExecution, type ScheduleExecutionRow } from "../useReportSchedules";
 
 type HistoryRowActionsProps = {
@@ -27,6 +28,7 @@ export function HistoryRowActions({
   onRetry,
 }: HistoryRowActionsProps) {
   const hasError = Boolean(row.errorMessage);
+  const showDetail = hasError || rowHasDeliveryDetail(row.deliverySteps);
   const canDownload = row.artifactRef?.startsWith("storage://");
   const hasPerWidget = (row.secondaryArtifacts?.length ?? 0) > 0;
   const showRetry = !readOnly && canRetryExecution(row.status) && onRetry;
@@ -76,13 +78,13 @@ export function HistoryRowActions({
           ) : null}
         </>
       ) : null}
-      {hasError ? (
+      {showDetail ? (
         <Button
           type="button"
           variant="ghost"
           size={compact ? "icon" : "sm"}
           className={iconBtn}
-          tooltip={compact ? "查看错误详情" : undefined}
+          tooltip={compact ? (hasError ? "查看错误详情" : "查看投递详情") : undefined}
           onClick={onDetail}
         >
           {compact ? (

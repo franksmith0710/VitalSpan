@@ -33,7 +33,12 @@ import {
 import { executionErrorHeadline } from "../scheduleHistoryPresentation";
 import { localizeArtifactKind } from "@/lib/scheduleArtifactMeta";
 import { summarizeDeliveryRecipients } from "@/lib/scheduleSourceMeta";
+import { formatDeliveryStepLines } from "@/lib/scheduleDeliveryDetail";
 import { FEISHU_REAUTH_PROFILE_PATH, rowNeedsFeishuReauth } from "@/lib/feishuDeliveryErrors";
+
+function rowFeishuDelivered(steps?: ScheduleExecutionRow["deliverySteps"]): boolean {
+  return Boolean(steps?.some((s) => s.channel === "feishu" && s.status === "delivered"));
+}
 
 type ScheduleHistoryTableProps = {
   rows: ScheduleExecutionRow[];
@@ -119,6 +124,7 @@ export function ScheduleHistoryTable({
             const recipients = summarizeDeliveryRecipients(row.deliverySteps);
             const artifact = localizeArtifactKind(row.artifactKind);
             const hasError = Boolean(row.errorMessage);
+            const feishuDelivered = !hasError && rowFeishuDelivered(row.deliverySteps);
             const needsFeishuReauth = rowNeedsFeishuReauth(row.errorMessage, row.deliverySteps);
             return (
               <li
@@ -143,6 +149,11 @@ export function ScheduleHistoryTable({
                     <p className="truncate text-theme-xs text-gray-500 dark:text-gray-400">
                       收件 {recipients || "—"}
                     </p>
+                    {feishuDelivered ? (
+                      <p className="text-theme-xs leading-5 text-gray-500 dark:text-gray-400">
+                        已在飞书投递，请打开飞书「消息」搜索「VitalSpan 定时报告」；也可点右侧下载 PDF。
+                      </p>
+                    ) : null}
                     {hasError ? (
                       <div className="space-y-1">
                         <p className="flex items-start gap-1.5 text-theme-xs leading-5 text-error-600 dark:text-error-400">
@@ -190,6 +201,7 @@ export function ScheduleHistoryTable({
             <TableBody>
               {rows.map((row) => {
                 const hasError = Boolean(row.errorMessage);
+                const feishuDelivered = !hasError && rowFeishuDelivered(row.deliverySteps);
                 const needsFeishuReauth = rowNeedsFeishuReauth(row.errorMessage, row.deliverySteps);
                 const recipients = summarizeDeliveryRecipients(row.deliverySteps);
                 return (
@@ -233,6 +245,10 @@ export function ScheduleHistoryTable({
                             </Link>
                           ) : null}
                         </div>
+                      ) : feishuDelivered ? (
+                        <span className="text-gray-500 dark:text-gray-400">
+                          飞书已投递，请查消息或下载 PDF
+                        </span>
                       ) : (
                         "—"
                       )}
@@ -249,7 +265,9 @@ export function ScheduleHistoryTable({
       <Dialog open={Boolean(detailRow)} onOpenChange={(open) => !open && setDetailRow(null)}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>执行失败详情</DialogTitle>
+            <DialogTitle>
+              {detailRow?.errorMessage ? "执行失败详情" : "投递详情"}
+            </DialogTitle>
             <DialogDescription>
               {detailRow ? formatDateTime(detailRow.executedAt) : null}
             </DialogDescription>
@@ -268,8 +286,21 @@ export function ScheduleHistoryTable({
                 </Button>
               ) : null}
             </div>
+          ) : formatDeliveryStepLines(detailRow?.deliverySteps).length ? (
+            <ul className="space-y-3">
+              {formatDeliveryStepLines(detailRow?.deliverySteps).map((item) => (
+                <li key={item.title} className="space-y-1">
+                  <p className="text-theme-sm font-medium text-gray-800 dark:text-gray-200">
+                    {item.title}
+                  </p>
+                  <p className="text-theme-sm leading-6 text-gray-600 dark:text-gray-400">
+                    {item.detail}
+                  </p>
+                </li>
+              ))}
+            </ul>
           ) : (
-            <p className="text-theme-sm text-gray-600 dark:text-gray-400">无详细错误信息</p>
+            <p className="text-theme-sm text-gray-600 dark:text-gray-400">无详细投递信息</p>
           )}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setDetailRow(null)}>

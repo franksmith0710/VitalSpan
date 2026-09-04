@@ -391,7 +391,7 @@ export function ImBindingsCard() {
                 disabled={bindPending}
                 onClick={() => launchDeviceAuthManual()}
               >
-                在浏览器中补充授权
+                功能授权
               </Button>
             )}
           </div>
@@ -448,9 +448,20 @@ export function ImBindingsCard() {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-theme-sm font-medium text-gray-900 dark:text-white">{item.label}</span>
                   {item.bound ? (
-                    <Badge variant="light" color="success" size="sm">
-                      已绑定
-                    </Badge>
+                    <>
+                      <Badge variant="light" color="success" size="sm">
+                        已绑定
+                      </Badge>
+                      {item.channel === "feishu" && item.deliveryMode === "user_delegated" && capability?.ready ? (
+                        <Badge variant="light" color="success" size="sm">
+                          推送已就绪
+                        </Badge>
+                      ) : item.channel === "feishu" && item.deliveryMode === "user_delegated" && capability && !capability.ready ? (
+                        <Badge variant="light" color="warning" size="sm">
+                          待功能授权
+                        </Badge>
+                      ) : null}
+                    </>
                   ) : item.deliveryMode === "group_webhook" && item.appConfigured ? (
                     <Badge variant="light" color="success" size="sm">
                       群发已就绪
@@ -471,7 +482,13 @@ export function ImBindingsCard() {
                       ? "钉钉按群发，无需个人绑定"
                       : item.probeError || "请管理员在平台对接中粘贴群机器人 webhook"
                     : item.bound
-                      ? `账号 ${item.maskedAccount ?? "—"}${item.source ? ` · ${SOURCE_LABEL[item.source] ?? item.source}` : ""}`
+                      ? item.channel === "feishu" && item.deliveryMode === "user_delegated"
+                        ? capability?.ready
+                          ? `账号 ${item.maskedAccount ?? "—"} · 已具备发消息与文件推送权限${item.source ? ` · ${SOURCE_LABEL[item.source] ?? item.source}` : ""}`
+                          : capability
+                            ? `${capability.message}${item.source ? ` · ${SOURCE_LABEL[item.source] ?? item.source}` : ""}`
+                            : `账号 ${item.maskedAccount ?? "—"}${item.source ? ` · ${SOURCE_LABEL[item.source] ?? item.source}` : ""}`
+                      : `账号 ${item.maskedAccount ?? "—"}${item.source ? ` · ${SOURCE_LABEL[item.source] ?? item.source}` : ""}`
                       : item.appConfigured
                         ? item.deliveryMode === "user_delegated"
                           ? "点击绑定后将自动打开飞书授权页"
@@ -482,15 +499,15 @@ export function ImBindingsCard() {
               <div className="flex shrink-0 gap-2">
                 {item.deliveryMode === "group_webhook" ? null : item.bound ? (
                   <>
-                    {item.channel === "feishu" && item.deliveryMode === "user_delegated" && capability && !capability.ready ? (
+                    {item.channel === "feishu" && item.deliveryMode === "user_delegated" ? (
                       <Button
                         type="button"
-                        variant="primary"
+                        variant={capability && !capability.ready ? "primary" : "outline"}
                         size="sm"
                         disabled={bindPending}
                         onClick={() => launchDeviceAuthManual()}
                       >
-                        补充授权
+                        功能授权
                       </Button>
                     ) : null}
                     <Button

@@ -160,7 +160,23 @@ describe("classifyGisMapErrorHint", () => {
       classifyGisMapErrorHint(
         "AJAXError: Failed to fetch (0): https://protomaps.github.io/basemaps-assets/fonts/Noto Sans Regular/0-255.pbf",
       ),
-    ).toContain("字体");
+    ).toContain("同一瓦片服务");
+  });
+
+  it("maps generic fonts fetch failures to the same colocated-assets hint", () => {
+    const hint = classifyGisMapErrorHint(
+      "Failed to fetch http://127.0.0.1:8080/basemaps-assets/fonts/Noto%20Sans%20Regular/0-255.pbf",
+    );
+    expect(hint).toContain("同一瓦片服务");
+    expect(hint).not.toMatch(/网络|内网镜像/);
+  });
+
+  it("maps sprite fetch failures to the same colocated-assets hint", () => {
+    const hint = classifyGisMapErrorHint(
+      "Failed to fetch http://127.0.0.1:8080/basemaps-assets/sprites/v4/light.json",
+    );
+    expect(hint).toContain("同一瓦片服务");
+    expect(hint).not.toMatch(/网络|内网镜像/);
   });
 
   it("maps pmtiles cors failures to tile hint", () => {

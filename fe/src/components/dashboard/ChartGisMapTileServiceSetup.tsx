@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, Link2, Unlink } from "lucide-react";
+import { AlertCircle, CheckCircle2, Link2, Unlink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -16,6 +16,8 @@ import {
   InspectorFieldLabel,
 } from "./inspectorCompact";
 import { readGisProject, writeGisProject } from "@/components/charts/engine/maplibre/gisProject";
+import { withDevPmtilesArchiveUrl } from "@/components/charts/engine/maplibre/gisPmtilesUrl";
+import { probeTileServiceBasemapAssets } from "@/lib/tileServiceAssetsHealth";
 import { listTileServices, resolveTileService } from "@/lib/tileServices";
 import { cn } from "@/lib/utils";
 
@@ -76,6 +78,26 @@ export function ChartGisMapTileServiceSetup() {
     retry: false,
   });
 
+  const {
+    data: assetsProbe,
+    isLoading: assetsProbeLoading,
+    isError: assetsProbeError,
+  } = useQuery({
+    queryKey: [
+      "tile-services",
+      connectedId,
+      "assets-probe",
+      connectedResolve?.glyphsUrl,
+      connectedResolve?.spriteUrl,
+    ],
+    queryFn: () => probeTileServiceBasemapAssets(withDevPmtilesArchiveUrl(connectedResolve!)),
+    enabled: Boolean(connectedResolve) && !pickerOpen,
+    retry: false,
+  });
+
+  const assetsUnavailable = assetsProbeError || assetsProbe?.ok === false;
+  const showConnectedSuccess = assetsProbe?.ok === true;
+
   const patchTileServiceId = (tileServiceId: string | undefined) => {
     mutateChartConfig((current) => writeGisProject(current, { tileServiceId }));
     setPickerOpen(false);
@@ -108,12 +130,40 @@ export function ChartGisMapTileServiceSetup() {
           平台尚未登记 PMTiles 服务，请联系管理员完成部署与登记后再连接。
         </p>
       ) : connectedService && !pickerOpen ? (
-        <div className="space-y-2 rounded-md border border-success-500/25 bg-success-500/5 px-2 py-1.5">
+        <div
+          className={cn(
+            "space-y-2 rounded-md border px-2 py-1.5",
+            showConnectedSuccess
+              ? "border-success-500/25 bg-success-500/5"
+              : "border-amber-500/30 bg-amber-500/5",
+          )}
+        >
           <div className="flex items-start justify-between gap-2">
             <div className="flex min-w-0 items-start gap-1.5">
-              <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-success-600 dark:text-success-400" />
+              {showConnectedSuccess ? (
+                <CheckCircle2 className="mt-0.5 size-3.5 shrink-0 text-success-600 dark:text-success-400" />
+              ) : (
+                <AlertCircle className="mt-0.5 size-3.5 shrink-0 text-amber-600 dark:text-amber-400" />
+              )}
               <div className="min-w-0">
-                <p className="text-[10px] font-medium text-success-800 dark:text-success-300">已连接</p>
+                <p
+                  className={cn(
+                    "text-[10px] font-medium",
+                    showConnectedSuccess
+                      ? "text-success-800 dark:text-success-300"
+                      : "text-amber-800 dark:text-amber-300",
+                  )}
+                >
+                  {connectedResolveLoading
+                    ? "正在解析服务地址…"
+                    : assetsProbeLoading
+                      ? "正在探测标注资源…"
+                      : assetsUnavailable
+                        ? "服务已登记，标注资源不可用"
+                        : showConnectedSuccess
+                          ? "已连接"
+                          : "已登记瓦片服务"}
+                </p>
                 <p className="truncate text-[10px] text-gray-600 dark:text-gray-300">{connectedService.name}</p>
               </div>
             </div>
@@ -151,7 +201,14 @@ export function ChartGisMapTileServiceSetup() {
               服务地址解析失败，请确认登记配置或联系管理员。
             </p>
           ) : connectedResolve ? (
-            <TileServiceEndpointRow label="PMTiles 地址" value={connectedResolve.pmtilesUrl} />
+            <>
+              <TileServiceEndpointRow label="PMTiles 地址" value={connectedResolve.pmtilesUrl} />
+              {assetsUnavailable ? (
+                <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                  同机 /basemaps-assets 字体或图标探测失败，绿标仅在瓦片与标注资源都可用时显示。
+                </p>
+              ) : null}
+            </>
           ) : null}
         </div>
       ) : (

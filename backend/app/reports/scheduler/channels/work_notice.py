@@ -48,7 +48,11 @@ def probe_im_apps(
 
 def _feishu_notice_text(summary: str, artifact_ref: str, attachments: list[FeishuAttachment]) -> str:
     if attachments:
-        return summary
+        return (
+            f"{summary}\n\n"
+            "附件为 PDF 报告，请在飞书「消息」中查看本条通知；"
+            "若未收到推送，可在 VitalSpan 执行记录中下载同一份 PDF。"
+        )
     return f"{summary}\n引用：{artifact_ref}"
 
 
