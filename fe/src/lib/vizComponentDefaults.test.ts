@@ -18,6 +18,14 @@ describe("defaultVizComponentPayload", () => {
     expect(payload.filterConfig?.filterId).toBeTruthy();
   });
 
+  it("seeds customViz resultLimit from chart display defaults", () => {
+    const payload = defaultVizComponentPayload("customViz", {
+      customViz: { artifactId: "art-1" },
+    });
+    expect(payload.customVizConfig?.artifactId).toBe("art-1");
+    expect(payload.customVizConfig?.dataBinding?.resultLimit).toBe("20");
+  });
+
   it("names widgets by type", () => {
     expect(defaultVizComponentName("text")).toBe("未命名富文本");
   });

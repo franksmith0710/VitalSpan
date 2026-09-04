@@ -7,8 +7,8 @@ import {
 import { getChartTypeDisplayName } from "@/lib/chartRegistry";
 import type { ChartType } from "@/lib/chartViewConfig";
 import { randomId } from "@/lib/randomId";
+import { defaultChartResultLimitValue } from "@/lib/chartDeDisplay";
 import type { VizComponentPayload, VizWidgetType } from "./vizComponents";
-import { defaultChartResultLimitValue } from "@/lib/chartQueryLimitDefaults";
 
 export type VizComponentDefaultsOptions = {
   chartType?: ChartType;
