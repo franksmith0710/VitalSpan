@@ -101,6 +101,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const overlayFitKeyRef = useRef<string | null>(null);
   const sunEngineRef = useRef<GisSunEngine | null>(null);
   const effectsEngineRef = useRef<GisGeolibreEffectsEngine | null>(null);
+  const haloRequestPaintRef = useRef<(() => void) | null>(null);
   const mapControlsDisposeRef = useRef<(() => void) | null>(null);
   const project = useMemo(() => readGisProject(chartConfig), [chartConfig]);
   const projectRef = useRef(project);
@@ -275,6 +276,10 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     () => resolveGisRenderableBasemap(project, Boolean(pmtilesStyle)),
     [pmtilesStyle, project],
   );
+
+  const requestHaloPaint = useCallback(() => {
+    haloRequestPaintRef.current?.();
+  }, []);
 
   const ensureGisEffectsEngine = useCallback(
     (map: MapLibreMap | null = mapRef.current) => {
@@ -515,6 +520,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       resyncEffects = () => {
         if (cancelled || !map) return;
         ensureGisEffectsEngine(map);
+        requestHaloPaint();
       };
       map.on("style.load", resyncDataLayers);
       map.on("style.load", resyncSun);
@@ -563,6 +569,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         gisPaintStateRef.current = "ready";
         setGisPaintState("ready");
         ensureGisEffectsEngine(map);
+        requestHaloPaint();
         onPaintReadyRef.current?.();
       };
 
@@ -599,7 +606,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       appliedStyleKeyRef.current = null;
       syncedViewKeyRef.current = null;
     };
-  }, [applyConfiguredView, ensureGisEffectsEngine, ensureSunEngine, mapBootstrapKey, renderBasemap, resolveInitialView]);
+  }, [applyConfiguredView, ensureGisEffectsEngine, ensureSunEngine, mapBootstrapKey, renderBasemap, requestHaloPaint, resolveInitialView]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -657,6 +664,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         gisPaintStateRef.current = "ready";
         setGisPaintState("ready");
         ensureGisEffectsEngine(map);
+        requestHaloPaint();
         onPaintReadyRef.current?.();
       },
       liveCameraRef.current,
@@ -725,14 +733,24 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   useEffect(() => {
     const shell = shellRef.current;
     if (!shell) return;
-    return mountGisGlobeHaloOverlay(shell, () => mapRef.current, () => ({
+    const handle = mountGisGlobeHaloOverlay(shell, () => mapRef.current, () => ({
       preset: projectRef.current.atmospherePreset,
       projection: projectRef.current.projection,
       effects: projectRef.current.effects,
       halo: projectRef.current.halo,
       fog: projectRef.current.fog,
     }));
+    haloRequestPaintRef.current = handle.requestPaint;
+    return () => {
+      haloRequestPaintRef.current = null;
+      handle.dispose();
+    };
   }, [atmosphereKey, project.atmospherePreset, project.effects, project.fog, project.halo, project.projection]);
+
+  useEffect(() => {
+    if (gisPaintState !== "ready") return;
+    requestHaloPaint();
+  }, [gisPaintState, mapRuntimeEpoch, requestHaloPaint]);
 
   useEffect(() => {
     const map = mapRef.current;
@@ -890,6 +908,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
           resolveGisEffectsSettings(projectRef.current),
         );
         ensureGisEffectsEngine(map);
+        requestHaloPaint();
         applyGlobeAtmosphere(
           map,
           {
@@ -944,7 +963,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
       },
       getSunSettings: () => sunEngineRef.current?.getSettings() ?? null,
     });
-  }, [applyOverlayPatch, ensureGisEffectsEngine, ensureSunEngine, instanceKey, remountMapControls, syncLayersRuntime]);
+  }, [applyOverlayPatch, ensureGisEffectsEngine, ensureSunEngine, instanceKey, remountMapControls, requestHaloPaint, syncLayersRuntime]);
 
   const statusHint = pmtilesErrorHint ?? mapErrorHint;
   const dataHint = useMemo(

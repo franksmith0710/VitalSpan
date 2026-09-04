@@ -50,6 +50,12 @@ function bindMapHaloPaintSync(map: MapLibreMap | null, schedule: () => void): ()
   };
 }
 
+export type GisGlobeHaloOverlayHandle = {
+  dispose: () => void;
+  /** Map 异步就绪后须主动触发，否则 render 监听未挂上时光晕/星空不绘制。 */
+  requestPaint: () => void;
+};
+
 /**
  * 可靠光晕层：canvas-container 内 z=3（地图 z=4），全圆 + screen；地图遮挡中心。
  * 仅在 map render 时合并重绘（rAF 去抖），避免常驻 rAF 与 render 双通道闪烁/卡顿。
@@ -64,7 +70,7 @@ export function mountGisGlobeHaloOverlay(
     halo?: GisProjectHalo;
     fog?: GisProjectFog;
   },
-): () => void {
+): GisGlobeHaloOverlayHandle {
   const enabled = () => getContext().projection === "globe";
 
   const canvas = document.createElement("canvas");
@@ -221,12 +227,15 @@ export function mountGisGlobeHaloOverlay(
       : null;
   wrapperObserver?.observe(wrapper);
 
-  return () => {
-    running = false;
-    cancelAnimationFrame(paintFrameId);
-    unbindRender?.();
-    wrapperObserver?.disconnect();
-    mapResizeObserver?.disconnect();
-    canvas.remove();
+  return {
+    dispose: () => {
+      running = false;
+      cancelAnimationFrame(paintFrameId);
+      unbindRender?.();
+      wrapperObserver?.disconnect();
+      mapResizeObserver?.disconnect();
+      canvas.remove();
+    },
+    requestPaint: schedulePaint,
   };
 }

@@ -41,6 +41,7 @@ export function normalizeGisProjectEffects(input: unknown): GisEffectsSettings |
   if (raw.haloExtent != null) next.haloExtent = normalized.haloExtent;
   if (raw.haloOpacity != null) next.haloOpacity = normalized.haloOpacity;
   if (raw.spaceColor) next.spaceColor = normalized.spaceColor;
+  if (raw.enabled === true) next.enabled = true;
   if (raw.enabled === false) next.enabled = false;
   return Object.keys(next).length > 0 ? next : undefined;
 }

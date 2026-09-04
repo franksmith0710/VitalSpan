@@ -49,6 +49,7 @@ describe("gisGeolibreEffects", () => {
     expect(effectsSource).not.toContain("drawHaloLayer");
     expect(effectsSource).not.toContain("gis-effects-halo");
     expect(effectsSource).toContain("bindMapRenderSync");
+    expect(effectsSource).toContain("GIS_MAP_STARS_Z");
     expect(viewSource).toContain("mountGisGlobeHaloOverlay");
   });
 });
