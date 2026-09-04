@@ -16,9 +16,11 @@ describe("gisGlobeHalo atmosphere sync regression", () => {
     expect(haloSource).not.toContain("resolveGlobeScreenBoundsFallback");
     expect(haloSource).toContain("resolveGlobeLimbBoundsForHaloPaint");
     expect(haloSource).toContain("schedulePaint");
+    expect(haloSource).toContain("requestPaint: schedulePaint");
     expect(haloSource).toContain("bindMapHaloPaintSync");
     expect(haloSource).not.toMatch(/bootLoop\s*\(/);
     expect(haloSource).toContain("lastResolvedLimb");
+    expect(haloSource).toContain("requestPaint: schedulePaint");
     expect(haloSource).toContain('const HALO_CANVAS_Z = "3"');
     expect(haloSource).toContain("ensureGisMapControlStack");
     expect(haloSource).toContain("insertBefore(canvas, mapCanvas)");

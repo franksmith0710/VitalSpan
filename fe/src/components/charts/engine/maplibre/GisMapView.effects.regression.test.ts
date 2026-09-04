@@ -13,6 +13,8 @@ describe("GisMapView geolibre effects mount regression", () => {
     expect(source).toContain("createGisGeolibreEffectsEngine");
     expect(source).toContain("ensureGisEffectsEngine");
     expect(source).toContain("mountGisGlobeHaloOverlay");
+    expect(source).toContain("haloRequestPaintRef");
+    expect(source).toContain("requestHaloPaint");
     expect(source).toContain("gisPaintState !== \"ready\"");
     expect(source).toContain("mapRuntimeEpoch");
     expect(source).toContain("spaceBackdropForPreset");

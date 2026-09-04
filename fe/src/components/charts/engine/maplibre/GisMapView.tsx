@@ -755,8 +755,12 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    ensureGisEffectsEngine(map);
-    const onStyleLoad = () => ensureGisEffectsEngine(map);
+    const syncEffects = () => {
+      ensureGisEffectsEngine(map);
+      requestHaloPaint();
+    };
+    syncEffects();
+    const onStyleLoad = () => syncEffects();
     map.on("style.load", onStyleLoad);
     return () => {
       map.off("style.load", onStyleLoad);
@@ -771,6 +775,7 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     mapRuntimeEpoch,
     project.projection,
     renderBasemap,
+    requestHaloPaint,
   ]);
 
   useEffect(() => {
