@@ -23,6 +23,7 @@ def _export_actor() -> UserContext:
         username="export-renderer",
         roles=["admin"],
         permissions={"query:execute", "datasource:read", "dashboard:read"},
+        is_root=True,
     )
 
 

@@ -214,6 +214,18 @@ def test_render_rejects_inventory_leak(monkeypatch) -> None:
     assert exc.value.code == "DASH_EXPORT_RENDER_INVENTORY_LEAK"
 
 
+def test_export_actor_bypasses_owned_query_config_acl() -> None:
+    from types import SimpleNamespace
+
+    from app.dashboard.export_snapshot import _export_actor
+    from app.query.config_store.access import assert_config_readable
+
+    actor = _export_actor()
+    assert actor.is_root is True
+    record = SimpleNamespace(owner_id=uuid.uuid4())
+    assert_config_readable(actor, record)
+
+
 def test_export_query_requires_token(client: TestClient) -> None:
     resp = client.post(
         "/api/v1/dashboards/export-query/execute",
