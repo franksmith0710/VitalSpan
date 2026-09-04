@@ -24,18 +24,6 @@ import {
 
 const HOVER_EXPAND = VCDS.pie.hoverOffset;
 
-function resolveOutsideLabelHalo(theme: D3RenderConfig["theme"]): string {
-  const label = theme.axisLabel.toLowerCase();
-  if (label.startsWith("#") && label.length >= 7) {
-    const r = parseInt(label.slice(1, 3), 16);
-    const g = parseInt(label.slice(3, 5), 16);
-    const b = parseInt(label.slice(5, 7), 16);
-    const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-    return lum > 0.62 ? "rgba(0,0,0,0.45)" : "rgba(255,255,255,0.88)";
-  }
-  return "rgba(255,255,255,0.88)";
-}
-
 function resolvePiePadAngleRad(padAngleDeg: number | undefined): number {
   if (padAngleDeg == null || padAngleDeg <= 0) return 0;
   return (padAngleDeg * Math.PI) / 180;
@@ -98,7 +86,6 @@ function drawPieLabels(
   },
 ): void {
   const fill = resolveLabelFill(opts.theme, opts.labelColor);
-  const labelHalo = resolveOutsideLabelHalo(opts.theme);
 
   if (opts.labelOpts.position === "outside") {
     const candidates = arcs
@@ -161,10 +148,6 @@ function drawPieLabels(
         .style("dominant-baseline", "central")
         .attr("fill", fill)
         .style("font-size", `${opts.labelFontSize}px`)
-        .style("paint-order", "stroke fill")
-        .style("stroke", labelHalo)
-        .style("stroke-width", "3px")
-        .style("stroke-linejoin", "round")
         .text(layout.text);
     });
     return;

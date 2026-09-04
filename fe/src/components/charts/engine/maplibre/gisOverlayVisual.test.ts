@@ -64,10 +64,11 @@ describe("gisOverlayVisual", () => {
     expect(paint["heatmap-color"]?.[0]).toBe("interpolate");
   });
 
-  it("builds cluster count with accent text halo", () => {
+  it("builds cluster count without text halo", () => {
     const paint = buildClusterCountPaint(["#3b82f6"]);
     expect(paint["text-color"]).toBe("#ffffff");
-    expect(paint["text-halo-color"]).toBe("#3b82f6");
+    expect(paint["text-halo-color"]).toBeUndefined();
+    expect(paint["text-halo-width"]).toBeUndefined();
   });
 
   it("builds valid cluster radius step expression", () => {

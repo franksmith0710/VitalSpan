@@ -256,10 +256,6 @@ export function renderD3RadarChart(container: HTMLElement, config: D3RenderConfi
       .attr("text-anchor", "middle")
       .attr("fill", axisLabelColor)
       .style("font-size", `${labelFontSize}px`)
-      .style("paint-order", "stroke fill")
-      .style("stroke", theme.plotSurface ?? "#fff")
-      .style("stroke-width", "3px")
-      .style("stroke-linejoin", "round")
       .attr("x", (_d, i) => {
         const cos = Math.cos(angles[i]!);
         const dist = Math.hypot(points[i]![0], points[i]![1]);

@@ -536,12 +536,9 @@ export function buildClusterCountLayout(): Record<string, unknown> {
   };
 }
 
-export function buildClusterCountPaint(chartColors?: string[]): Record<string, unknown> {
-  const accent = chartColors?.[0] ?? "#38bdf8";
+export function buildClusterCountPaint(_chartColors?: string[]): Record<string, unknown> {
   return {
     "text-color": "#ffffff",
-    "text-halo-color": accent,
-    "text-halo-width": 1.6,
     "text-opacity": 0.98,
   };
 }

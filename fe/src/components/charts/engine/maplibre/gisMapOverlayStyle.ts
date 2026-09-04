@@ -57,8 +57,6 @@ function overlayLabelPaint(flavor: GisBasemapFlavor) {
   const darkBasemap = flavor === "dark" || flavor === "black";
   return {
     "text-color": darkBasemap ? "#f8fafc" : "#0f172a",
-    "text-halo-color": darkBasemap ? "rgba(15, 23, 42, 0.88)" : "rgba(255, 255, 255, 0.92)",
-    "text-halo-width": 1.25,
   };
 }
 

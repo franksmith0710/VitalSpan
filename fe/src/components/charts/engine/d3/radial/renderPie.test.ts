@@ -191,6 +191,9 @@ describe("renderD3PieChart", () => {
     expect(container.querySelectorAll("polyline").length).toBeGreaterThan(0);
     expect(container.textContent).toContain("华东");
     expect(container.textContent).toMatch(/60\.0%/);
+    const outsideLabel = container.querySelector("g.slice text");
+    expect(outsideLabel?.getAttribute("stroke")).toBeNull();
+    expect((outsideLabel as SVGTextElement | null)?.style.stroke).toBe("");
     cleanup();
   });
 
