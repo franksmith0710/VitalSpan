@@ -52,8 +52,13 @@ describe("chartDeDisplay", () => {
     expect(resultLimitCustomAmount("600")).toBe(600);
     expect(parseDeResultLimit("600")).toBe(600);
     expect(dashboardQueryLimitSelectValue(600)).toBe("custom");
-    expect(formatResultLimitSelectValue(undefined)).toBe("50");
-    expect(resolveChartQueryLimit(baseCfg, {})).toBe(50);
+    expect(formatResultLimitSelectValue(undefined)).toBe("1000");
+    expect(resolveChartQueryLimit(baseCfg, {})).toBe(1000);
+  });
+
+  it("T-DE-DISP-09: new chart configs seed default resultLimit", async () => {
+    const { defaultChartConfig } = await import("@/components/dashboard/layoutUtils");
+    expect(defaultChartConfig("bar").nativeBody?.deDisplay?.resultLimit).toBe("1000");
   });
 
   it("T-DE-DISP-08: selecting custom from a preset stays custom", () => {

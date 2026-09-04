@@ -78,6 +78,18 @@ describe("customVizExecute", () => {
     ).toBe(false);
   });
 
+  it("applies default result limit when binding omits resultLimit", () => {
+    const cfg = customVizBindingToChartConfig({
+      status: "connected",
+      dataSourceId: "ds-1",
+      datasetId: "set-1",
+      configId: "cfg-1",
+      dimensions: [{ field: "region" }],
+      metrics: [{ field: "amount", agg: "sum" }],
+    });
+    expect(cfg.nativeBody?.deDisplay?.resultLimit).toBe("1000");
+  });
+
   it("merges manifest default style with layout overrides", () => {
     expect(
       resolveCustomVizStyle({ accentColor: "#111", barHeight: 12 }, { accentColor: "#222" }),

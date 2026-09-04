@@ -10,6 +10,7 @@ import type { DashboardThemeVariants } from "./dashboardThemeVariants";
 import { getDashboardThemeTokens } from "./dashboardThemeTokens";
 import { componentGapShellStyle } from "./componentGapRuntime";
 import type { GapPreset } from "./gapPolicy";
+import { DEFAULT_CHART_RESULT_LIMIT } from "@/lib/chartQueryLimitDefaults";
 
 export type { GapPreset } from "./gapPolicy";
 export {
@@ -792,7 +793,7 @@ function resolveDecorImageStyle(
 }
 
 export const DEFAULT_SCALE_MODE: ScaleMode = "canvas";
-export const DEFAULT_QUERY_LIMIT = 50;
+export const DEFAULT_QUERY_LIMIT = DEFAULT_CHART_RESULT_LIMIT;
 export const MIN_QUERY_LIMIT = 1;
 export const MAX_QUERY_LIMIT = 10000;
 

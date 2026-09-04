@@ -1,4 +1,4 @@
-import { patchChartDeDisplay } from "@/lib/chartDeDisplay";
+import { patchChartDeDisplay, defaultChartResultLimitValue } from "@/lib/chartDeDisplay";
 import { isChartExecuteReady } from "@/lib/chartExecuteProbe";
 import type { ChartFieldRef, ChartViewConfig } from "@/lib/chartViewConfig";
 import type { CustomVizDataBinding, CustomVizMetricRef, CustomVizWidgetConfig } from "../layoutUtils";
@@ -23,10 +23,10 @@ export function customVizBindingToChartConfig(binding: CustomVizDataBinding | un
     metrics: metricsAsChartFields(binding?.metrics),
     filters: binding?.filters ?? [],
   };
-  const displayPatch: Record<string, string> = {};
+  const displayPatch: Record<string, string> = {
+    resultLimit: binding?.resultLimit?.trim() || defaultChartResultLimitValue(),
+  };
   if (binding?.refreshMode) displayPatch.refreshMode = binding.refreshMode;
-  if (binding?.resultLimit) displayPatch.resultLimit = binding.resultLimit;
-  if (Object.keys(displayPatch).length === 0) return base;
   return patchChartDeDisplay(base, displayPatch);
 }
 

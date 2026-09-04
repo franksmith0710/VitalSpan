@@ -8,6 +8,7 @@ import { getChartTypeDisplayName } from "@/lib/chartRegistry";
 import type { ChartType } from "@/lib/chartViewConfig";
 import { randomId } from "@/lib/randomId";
 import type { VizComponentPayload, VizWidgetType } from "./vizComponents";
+import { defaultChartResultLimitValue } from "@/lib/chartQueryLimitDefaults";
 
 export type VizComponentDefaultsOptions = {
   chartType?: ChartType;
@@ -37,7 +38,7 @@ export function defaultVizComponentPayload(
       return {
         customVizConfig: {
           artifactId: options?.customViz?.artifactId ?? "",
-          dataBinding: { status: "manual" },
+          dataBinding: { status: "manual", resultLimit: defaultChartResultLimitValue() },
         },
       };
     default:

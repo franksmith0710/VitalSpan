@@ -67,7 +67,7 @@ export type ChartDeTableStyle = {
   showColTotal?: boolean;
 };
 
-export const DEFAULT_TABLE_PAGE_SIZE = 20;
+export const DEFAULT_TABLE_PAGE_SIZE = 50;
 export const DEFAULT_TABLE_PAGINATION_FONT_SIZE = 14;
 export const DEFAULT_TABLE_ZEBRA_BG = "rgba(148, 163, 184, 0.12)";
 /** 对标 DataEase：新建表格类组件默认列宽「自适应」 */

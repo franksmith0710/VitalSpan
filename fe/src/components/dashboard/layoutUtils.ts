@@ -7,6 +7,7 @@ import { DEFAULT_CHART_LEGEND_STYLE, readChartDeStyle, type ChartDeStyle } from 
 import { DEFAULT_TABLE_COLUMN_WIDTH_MODE } from "@/lib/chartDeTableStyle";
 import { isTableLikeChartType } from "@/lib/chartTableInspector";
 import { DEFAULT_MAP_3D_CHART_DE_STYLE } from "@/lib/defaultMap3dChartDeStyle";
+import { buildDefaultChartDeDisplay } from "@/lib/chartDeDisplay";
 import { defaultGisProjectNativeBody } from "@/components/charts/engine/maplibre/gisProject";
 import { buildDefaultPieDeStyle, isPieChartType } from "@/lib/defaultPieChartDeStyle";
 import { buildDefaultRadarDeStyle } from "@/lib/defaultRadarChartDeStyle";
@@ -859,24 +860,39 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
       },
     };
   };
+  const withDefaultResultLimit = (cfg: ChartViewConfig): ChartViewConfig => ({
+    ...cfg,
+    nativeBody: {
+      ...cfg.nativeBody,
+      deDisplay: {
+        ...buildDefaultChartDeDisplay(),
+        ...cfg.nativeBody?.deDisplay,
+      },
+    },
+  });
   if (type === "table") {
-    return withTableColumnWidthDefault({
+    return withDefaultResultLimit(
+      withTableColumnWidthDefault({
       chartType: "table",
       ...base,
       dimensions: [],
       metrics: [],
-    });
+    }),
+    );
   }
   if (type === "kpi") {
-    return withLegendDefault({
+    return withDefaultResultLimit(
+      withLegendDefault({
       chartType: "kpi",
       ...base,
       dimensions: [],
       metrics: [],
-    });
+    }),
+    );
   }
   if (type === "map-3d") {
-    return withLegendDefault({
+    return withDefaultResultLimit(
+      withLegendDefault({
       chartType: "map-3d",
       ...base,
       dimensions: [],
@@ -886,10 +902,12 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
           ...DEFAULT_MAP_3D_CHART_DE_STYLE,
         },
       },
-    });
+    }),
+    );
   }
   if (type === "gis-map") {
-    return withLegendDefault({
+    return withDefaultResultLimit(
+      withLegendDefault({
       chartType: "gis-map",
       ...base,
       dimensions: [],
@@ -897,9 +915,11 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
       nativeBody: {
         ...defaultGisProjectNativeBody(),
       },
-    });
+    }),
+    );
   }
-  return withTableColumnWidthDefault(
+  return withDefaultResultLimit(
+    withTableColumnWidthDefault(
     withLegendDefault(
       withRadarDefaultDeStyle(
         withTreemapDefaultDeStyle(
@@ -911,6 +931,7 @@ export function defaultChartConfig(type: ChartType): ChartViewConfig {
           }),
         ),
       ),
+    ),
     ),
   );
 }

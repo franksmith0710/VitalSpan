@@ -5,11 +5,21 @@ import {
   resolveQueryLimit,
   type DashboardStyleConfig,
 } from "@/components/dashboard/dashboardStyleConfig";
+import { defaultChartResultLimitString } from "@/lib/chartQueryLimitDefaults";
 
 export type ChartDeDisplayOptions = {
   refreshMode?: string;
   resultLimit?: string;
 };
+
+export function defaultChartResultLimitValue(): string {
+  return defaultChartResultLimitString();
+}
+
+/** 新建组件默认写入 deDisplay.resultLimit，与看板 defaultQueryLimit 语义一致 */
+export function buildDefaultChartDeDisplay(): ChartDeDisplayOptions {
+  return { resultLimit: defaultChartResultLimitValue() };
+}
 
 const REFRESH_SEC: Record<string, number> = {
   "10s": 10,

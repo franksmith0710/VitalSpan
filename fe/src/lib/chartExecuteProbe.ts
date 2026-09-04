@@ -13,6 +13,7 @@ import { groupDatasetFields } from "@/components/dashboard/datasetFieldClassific
 import { nativeBodyHasLegacySqlBinding } from "@/lib/chartNativeBodyUi";
 import { isDemoPackageDataset } from "@/lib/demoPackage";
 import { CHART_EXECUTE_RESULT_CACHE_MAX, CHART_LOAD_MAX_CONCURRENCY } from "@/lib/chartLoadConcurrency";
+import { DEFAULT_CHART_RESULT_LIMIT } from "@/lib/chartQueryLimitDefaults";
 
 function activeFieldRefs(refs: ChartFieldRef[] | undefined): ChartFieldRef[] {
   return (refs ?? []).filter((r) => Boolean(r.field?.trim()));
@@ -81,7 +82,7 @@ export type ChartExecuteResult = {
   configRevision?: number;
 };
 
-export const CHART_EXECUTE_LIMIT = 50;
+export const CHART_EXECUTE_LIMIT = DEFAULT_CHART_RESULT_LIMIT;
 export const CHART_EXECUTE_MAX_CONCURRENCY = CHART_LOAD_MAX_CONCURRENCY;
 
 export type ChartExecuteProbeOptions = {
