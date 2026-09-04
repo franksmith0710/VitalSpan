@@ -176,26 +176,25 @@ def test_nfr006_dispatch_all_failed_when_disabled(monkeypatch):
 
 
 def test_nfr006_dispatch_degraded_when_dingtalk_mock_fails(monkeypatch):
-    """T-NFR-R51-006-06: 钉钉 webhook 配置 + mock 失败 → degraded。"""
+    """T-R46-006-06b: IM 推送下线后 mock 失败仍为 failed。"""
     monkeypatch.setenv("PUSH_DINGTALK_WEBHOOK", "https://example.com/dingtalk")
     monkeypatch.setenv("PUSH_MOCK_FORCE_FAIL", "dingtalk")
     get_settings.cache_clear()
     clear_push_mock_log()
     result = dispatch_push_mock({"text": "hi"})
-    assert result.status == "degraded"
-    assert result.code == PUSH_CHANNEL_DEGRADED
-    assert "dingtalk" in result.attempted_channels
+    assert result.status == "failed"
+    assert result.code == PUSH_CHANNEL_ALL_FAILED
 
 
-def test_nfr006_dispatch_delivered_when_channels_ok(monkeypatch):
-    """T-NFR-R51-006-07: 钉钉 webhook 正常 → delivered。"""
+def test_nfr006_dispatch_stays_failed_when_channels_configured(monkeypatch):
+    """T-R46-006-07: 历史 webhook 配置不再投递。"""
     monkeypatch.setenv("PUSH_DINGTALK_WEBHOOK", "https://example.com/dingtalk")
     monkeypatch.delenv("PUSH_MOCK_FORCE_FAIL", raising=False)
     get_settings.cache_clear()
     clear_push_mock_log()
     result = dispatch_push_mock({"text": "hi"})
-    assert result.status == "delivered"
-    assert result.channel == "dingtalk"
+    assert result.status == "failed"
+    assert result.code == PUSH_CHANNEL_ALL_FAILED
 
 
 def test_nfr006_dispatch_budget_smoke():

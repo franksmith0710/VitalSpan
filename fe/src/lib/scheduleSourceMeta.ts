@@ -56,29 +56,13 @@ export function summarizeDeliveryRecipients(
   deliverySteps?: {
     channel?: string;
     recipients?: string[];
-    to?: string[];
-    recipientUsernames?: string[];
-    recipient_usernames?: string[];
   }[],
 ): string {
   if (!deliverySteps?.length) return "—";
   const parts: string[] = [];
   for (const step of deliverySteps) {
-    const usernames = step.recipientUsernames ?? step.recipient_usernames ?? [];
     if (step.channel === "email") {
       parts.push(...(step.recipients ?? []));
-      continue;
-    }
-    if (usernames.length) {
-      const label = step.channel === "feishu" ? "飞书" : step.channel === "dingtalk" ? "钉钉" : step.channel ?? "";
-      parts.push(usernames.length === 1 ? `${label} ${usernames[0]}` : `${label} ${usernames.join("、")}`);
-      continue;
-    }
-    const targets = step.to ?? step.recipients ?? [];
-    if (step.channel === "feishu" && targets.length) {
-      parts.push(targets.length === 1 ? "飞书 1 人" : `飞书 ${targets.length} 人`);
-    } else if (step.channel === "dingtalk" && targets.length) {
-      parts.push(targets.length === 1 ? "钉钉 1 人" : `钉钉 ${targets.length} 人`);
     }
   }
   if (!parts.length) return "—";

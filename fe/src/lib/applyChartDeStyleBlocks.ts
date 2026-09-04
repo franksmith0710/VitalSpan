@@ -8,6 +8,7 @@ import {
   DEFAULT_GAUGE_MAX,
   DEFAULT_GAUGE_MIN,
   DEFAULT_LIQUID_SIZE,
+  defaultLiquidFixMaxFromMetric,
   DEFAULT_PIE_OUTER_RADIUS_PERCENT,
   type ChartAxisStyle,
   type ChartDeStyleBlocks,
@@ -116,15 +117,18 @@ function resolveLiquidMaxValue(
     const field = liquid.maxField?.trim();
     const rows = options.rows as unknown[][] | undefined;
     const columns = options.columns as string[] | undefined;
-    if (field && rows && columns) {
-      return Math.max(aggregateQuotaMetric(rows, columns, field), 1e-6);
+    if (field && rows && columns && columns.includes(field)) {
+      const aggregated = aggregateQuotaMetric(rows, columns, field);
+      if (aggregated > 0) {
+        return Math.max(aggregated, 1e-6);
+      }
     }
-    return Math.max(rawValue, 1e-6);
+    return defaultLiquidFixMaxFromMetric(rawValue);
   }
   if (liquid.max != null && Number.isFinite(liquid.max)) {
     return Math.max(liquid.max, 1e-6);
   }
-  return Math.max(rawValue, 1e-6);
+  return defaultLiquidFixMaxFromMetric(rawValue);
 }
 
 /** 对标 DE：labelPercent = value/max；fill 封顶 100% */

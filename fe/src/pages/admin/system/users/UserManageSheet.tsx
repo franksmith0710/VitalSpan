@@ -26,7 +26,7 @@ import { UserResetPasswordPanel } from "./UserResetPasswordPanel";
 import { UserOverrideGrantsPanel } from "./UserOverrideGrantsPanel";
 import { isUserLocked, type UserAccountFields } from "./userAccountStatus";
 
-type UserOut = { id: string; username: string; email?: string | null; imAccounts?: ImAccounts } & UserAccountFields;
+type UserOut = { id: string; username: string; email?: string | null } & UserAccountFields;
 type RoleOut = { id: string; code: string; name: string; isActive?: boolean };
 
 type UserManageSheetProps = {

@@ -307,8 +307,7 @@ def test_nfr007_assert_raises_on_non_compliant(monkeypatch):
     assert exc.value.code == XINCHUANG_NON_COMPLIANT
 
 
-from app.core.nfr.push_config import PushConfigValidationError, resolve_push_mode, validate_push_settings
-from app.core.nfr.errors import PUSH_CONFIG_INVALID
+from app.core.nfr.push_config import resolve_push_mode, validate_push_settings
 from jwt_auth import AUTH, jwt_auth_headers
 
 
@@ -322,13 +321,13 @@ def test_nfr006_default_disabled(monkeypatch):
     assert out.degraded_reason
 
 
-def test_nfr006_active_when_dingtalk(monkeypatch):
-    """T-R46-006-02: 合法钉钉 webhook → active。"""
+def test_nfr006_stays_disabled_with_legacy_env(monkeypatch):
+    """T-R46-006-02: 历史钉钉环境变量不再启用 IM 推送。"""
     monkeypatch.setenv("PUSH_DINGTALK_WEBHOOK", "https://oapi.dingtalk.com/robot/send?access_token=x")
     get_settings.cache_clear()
     out = resolve_push_mode()
-    assert out.delivery_mode == "active"
-    assert out.browser_enabled is False
+    assert out.delivery_mode == "disabled"
+    assert out.dingtalk_configured is False
 
 
 def test_nfr006_disabled_without_channels(monkeypatch):
@@ -340,14 +339,9 @@ def test_nfr006_disabled_without_channels(monkeypatch):
     assert out.delivery_mode == "disabled"
 
 
-def test_nfr006_invalid_webhook_raises():
-    """T-R46-006-04: 非 https webhook → PUSH_CONFIG_INVALID。"""
-    class _S:
-        push_dingtalk_webhook = "http://insecure.example/hook"
-
-    with pytest.raises(PushConfigValidationError) as exc:
-        validate_push_settings(_S())  # type: ignore[arg-type]
-    assert exc.value.code == PUSH_CONFIG_INVALID
+def test_nfr006_invalid_webhook_is_ignored():
+    """T-R46-006-04: IM 推送下线后不再校验 webhook。"""
+    validate_push_settings(get_settings())  # type: ignore[arg-type]
 
 
 def test_nfr005_plugin_extension_points_http(client):

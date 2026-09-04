@@ -9,6 +9,7 @@ import {
   TEMPLATE_DEMO_DATASOURCE_REF,
 } from "@/lib/templateDemoData";
 import { migrateChartConfigToDeAxes, resolveChartEncoding, deAxisRenderReady } from "@/lib/resolveChartEncoding";
+import { readChartDeStyle } from "@/lib/chartDeStyle";
 import { groupDatasetFields } from "@/components/dashboard/datasetFieldClassification";
 import { nativeBodyHasLegacySqlBinding } from "@/lib/chartNativeBodyUi";
 import { isDemoPackageDataset } from "@/lib/demoPackage";
@@ -48,6 +49,19 @@ function buildChartTimeRangeEncoding(tr?: ChartTimeRangeRef): ChartExecuteEncodi
   };
 }
 
+/** 水波图动态目标字段须参与 dataset execute，否则结果集无分母列 */
+function appendLiquidDynamicMaxMetric(
+  config: ChartViewConfig,
+  metrics: ChartExecuteEncoding["metrics"],
+): ChartExecuteEncoding["metrics"] {
+  if (config.chartType !== "liquid") return metrics;
+  const liquid = readChartDeStyle(config).liquid;
+  if (liquid?.maxType !== "dynamic") return metrics;
+  const field = liquid.maxField?.trim();
+  if (!field || metrics.some((m) => m.field === field)) return metrics;
+  return [...metrics, { field, agg: "sum" }];
+}
+
 /** 图表维/指/过滤/时间 → execute encoding（汇总前 SQL 过滤） */
 export function buildChartExecuteEncoding(config: ChartViewConfig): ChartExecuteEncoding {
   const migrated = migrateChartConfigToDeAxes(config);
@@ -66,10 +80,11 @@ export function buildChartExecuteEncoding(config: ChartViewConfig): ChartExecute
       operator: f.operator ?? "eq",
       value: f.value,
     }));
+  const metrics = encoding.metrics.map((m) => ({ field: m.field, agg: "sum" as const }));
   return {
     chartType: config.chartType,
     dimensions: [...new Set(encoding.dimensions.map((d) => d.field))],
-    metrics: encoding.metrics.map((m) => ({ field: m.field, agg: "sum" as const })),
+    metrics: appendLiquidDynamicMaxMetric(config, metrics),
     filters,
     timeRange: buildChartTimeRangeEncoding(config.timeRange),
   };

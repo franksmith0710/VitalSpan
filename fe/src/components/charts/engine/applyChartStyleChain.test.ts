@@ -157,6 +157,26 @@ describe("applyChartStyleChain", () => {
     expect(liquidNext.options.__liquidShowRatio).toBe(false);
     expect(liquidNext.options.__liquidMetricFormat).toMatchObject({ type: "auto" });
 
+    const dynamicLiquidPlan: ChartRenderPlan = {
+      kind: "d3",
+      plotType: "Liquid",
+      empty: false,
+      options: {
+        rawValue: 3836,
+        rows: [[3836, 1_000_000]],
+        columns: ["quantity", "amount"],
+      },
+    };
+    const dynamicLiquidNext = applyChartStyleChain(dynamicLiquidPlan, {
+      ...baseStyle,
+      deFeatures: {},
+      deStyle: {
+        liquid: { maxType: "dynamic", maxField: "amount" },
+      },
+    });
+    expect(dynamicLiquidNext.options.__liquidMax).toBe(1_000_000);
+    expect(dynamicLiquidNext.options.__liquidFillPercent).toBeCloseTo(3836 / 1_000_000);
+
     const radarPlan: ChartRenderPlan = { kind: "d3", plotType: "Radar", empty: false, options: {} };
     const radarNext = applyChartStyleChain(radarPlan, style);
     expect(radarNext.options.__radarShape).toBe("circle");

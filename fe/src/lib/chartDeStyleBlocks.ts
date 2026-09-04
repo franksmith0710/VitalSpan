@@ -157,6 +157,13 @@ export const PIE_INNER_RADIUS_MAX = 65;
 export const DEFAULT_GAUGE_MIN = 0;
 export const DEFAULT_GAUGE_MAX = 100;
 export const DEFAULT_LIQUID_SIZE = 80;
+/** 未配置固定目标值时：目标 = 指标 × 此倍率（水位 ≈ 66.7%） */
+export const DEFAULT_LIQUID_MAX_MULTIPLIER = 1.5;
+
+export function defaultLiquidFixMaxFromMetric(metric: number): number {
+  const value = Number.isFinite(metric) ? metric : 0;
+  return Math.max(value * DEFAULT_LIQUID_MAX_MULTIPLIER, 1e-6);
+}
 export const DEFAULT_TREEMAP_PADDING_INNER = 0;
 export const DEFAULT_TREEMAP_PADDING_OUTER = 4;
 export const DEFAULT_TREEMAP_CELL_RADIUS = 0;

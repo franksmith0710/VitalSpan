@@ -10,7 +10,11 @@ import { formatMetricValue } from "@/components/dashboard/dashboardStyleConfig";
 import { ChartDeAttrField, ChartDeSegmentField, CHART_DE_INPUT } from "../chartInspectorDeFields";
 import { INSPECTOR_SELECT, InspectorSwitchRow } from "../inspectorCompact";
 import type { ChartDeStyle } from "@/lib/chartDeStyle";
-import type { ChartLiquidStyle } from "@/lib/chartDeStyleBlocks";
+import {
+  DEFAULT_LIQUID_MAX_MULTIPLIER,
+  defaultLiquidFixMaxFromMetric,
+  type ChartLiquidStyle,
+} from "@/lib/chartDeStyleBlocks";
 import { resolveLiquidMetricFormat } from "@/lib/liquidLabelFormat";
 
 const METRIC_FORMAT_TYPES = [
@@ -53,7 +57,7 @@ export function ChartLiquidLabelFields({
   const ratioSample =
     liquid?.max != null && Number.isFinite(liquid.max) && liquid.max > 0
       ? 61930 / liquid.max
-      : 1;
+      : 61930 / defaultLiquidFixMaxFromMetric(61930);
   const ratioPreview = formatMetricValue(ratioSample, {
     type: "percent",
     decimals: label?.ratioDecimals ?? 0,
@@ -64,7 +68,9 @@ export function ChartLiquidLabelFields({
     <>
       <div className="border-b border-gray-100 pb-2 dark:border-white/[0.06]">
         <p className="py-2 text-[11px] font-medium text-gray-700 dark:text-gray-200">完成度</p>
-        <p className="mb-2 text-[10px] text-gray-400">水位与占比均 = 指标 ÷ 目标值，在此一处配置即可。</p>
+        <p className="mb-2 text-[10px] text-gray-400">
+          水位与占比均 = 指标 ÷ 目标值；固定目标留空时默认为指标的 {DEFAULT_LIQUID_MAX_MULTIPLIER} 倍。
+        </p>
         <ChartDeSegmentField
           label="目标值类型"
           value={maxType}
@@ -86,7 +92,7 @@ export function ChartLiquidLabelFields({
               min={1}
               className={CHART_DE_INPUT}
               value={liquid?.max ?? ""}
-              placeholder="必填，如 61930"
+              placeholder={`留空则默认 ×${DEFAULT_LIQUID_MAX_MULTIPLIER}`}
               onChange={(e) => {
                 const raw = e.target.value.trim();
                 patchLiquid({ max: raw ? Number(raw) : undefined });

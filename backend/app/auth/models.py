@@ -327,7 +327,6 @@ class AuthRlsColumnBinding(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
-from app.auth.im_models import UserImBinding  # noqa: F401 — register metadata
 from app.core.db.meta import get_meta_engine, get_meta_session
 
-__all__ = ["get_meta_engine", "get_meta_session", "UserImBinding"]
+__all__ = ["get_meta_engine", "get_meta_session"]

@@ -6,13 +6,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { ImChannel } from "@/lib/imChannels";
 import {
   EMAIL_SMTP_SLOTS,
   type EmailSmtpSlot,
 } from "@/lib/emailSmtpSlots";
 
-export type DeliveryChannel = "email" | ImChannel;
+export type DeliveryChannel = "email";
 
 type Props = {
   disabled?: boolean;

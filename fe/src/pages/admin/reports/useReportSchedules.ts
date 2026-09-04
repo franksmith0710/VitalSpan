@@ -16,7 +16,6 @@ export type ReportScheduleRow = {
   recipients?: ScheduleRecipient[];
   attachmentFormats?: string[];
   deliveryChannels?: string[];
-  notifyGroup?: boolean;
   emailSmtpSlot?: "qq" | "163";
   cron: string;
   timezone: string;
@@ -105,7 +104,6 @@ export function useReportScheduleMutations(filter?: ReportScheduleListFilter) {
       recipients?: ScheduleRecipient[];
       attachmentFormats?: string[];
       deliveryChannels?: string[];
-      notifyGroup?: boolean;
       emailSmtpSlot?: "qq" | "163";
     }) =>
       apiFetch<ReportScheduleRow>("/api/v1/reports/schedules", {

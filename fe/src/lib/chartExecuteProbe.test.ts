@@ -234,6 +234,23 @@ describe("chartExecuteProbe shared execute", () => {
       });
     });
 
+    it("buildChartExecuteEncoding appends liquid dynamic maxField to metrics", () => {
+      const config = {
+        ...datasetReadyConfig(),
+        chartType: "liquid" as const,
+        axes: { yAxis: [{ field: "quantity" }] },
+        nativeBody: {
+          deStyle: {
+            liquid: { maxType: "dynamic", maxField: "amount" },
+          },
+        },
+      };
+      expect(buildChartExecuteEncoding(config).metrics).toEqual([
+        { field: "quantity", agg: "sum" },
+        { field: "amount", agg: "sum" },
+      ]);
+    });
+
     it("fetchChartExecuteResult passes encoding timeRange to dataset execute", async () => {
       const config = {
         ...datasetReadyConfig(),

@@ -34,7 +34,6 @@ def _schedule_to_row(model: ReportSchedule) -> dict:
         "recipients": model.recipients or [],
         "attachment_formats": model.attachment_formats or ["pdf"],
         "delivery_channels": model.delivery_channels or ["email"],
-        "notify_group": bool(model.notify_group),
         "email_smtp_slot": model.email_smtp_slot or "qq",
         "cron": model.cron,
         "timezone": model.timezone,
@@ -181,7 +180,6 @@ class DbScheduleStore(ScheduleStore):
             model.recipients = row.get("recipients") or []
             model.attachment_formats = row.get("attachment_formats") or ["pdf"]
             model.delivery_channels = row.get("delivery_channels") or ["email"]
-            model.notify_group = bool(row.get("notify_group", False))
             model.email_smtp_slot = row.get("email_smtp_slot") or "qq"
             model.cron = row["cron"]
             model.timezone = row.get("timezone", "Asia/Shanghai")

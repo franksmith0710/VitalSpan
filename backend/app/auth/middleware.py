@@ -112,10 +112,6 @@ def _public_paths_for(settings: Settings) -> frozenset[str]:
     return PUBLIC_PATHS_BASE
 
 
-def _is_im_oauth_callback_route(path: str) -> bool:
-    return path.startswith("/api/v1/auth/im/") and path.endswith("/callback")
-
-
 def _is_public_export_route(path: str, request: Request) -> bool:
     if "/export-layout" in path and request.query_params.get("token"):
         return True
@@ -168,8 +164,6 @@ class AuthMiddleware(BaseHTTPMiddleware):
         if path.startswith("/sample-api"):
             return await call_next(request)
         if _is_public_embed_route(path, request):
-            return await call_next(request)
-        if _is_im_oauth_callback_route(path):
             return await call_next(request)
         if _is_public_export_route(path, request):
             return await call_next(request)

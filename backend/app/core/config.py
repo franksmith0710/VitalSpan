@@ -25,14 +25,6 @@ class Settings(BaseSettings):
     query_timeout_seconds: int = 30
     analytics_database_url: str | None = None
     api_openapi_version: str = "0.1.0"
-    push_dingtalk_webhook: str | None = None
-    push_dingtalk_robot_secret: str | None = None
-    push_feishu_webhook: str | None = None
-    dingtalk_app_key: str | None = None
-    dingtalk_app_secret: str | None = None
-    dingtalk_agent_id: str | None = None
-    feishu_app_id: str | None = None
-    feishu_app_secret: str | None = None
     vitalspan_dev_admin_password: str = "changeme"
     vitalspan_bootstrap_admin_username: str = "admin"
     vitalspan_bootstrap_admin_password: str | None = None
@@ -69,25 +61,6 @@ class Settings(BaseSettings):
         "1AE135607AEEB4D7722756BC8C736C79DE6E72452E1CF4DC32448C7393B290B946D1A7D2614DA4814F7AEDAEB92741DB46775298CDFE3D832AD5A44572ADD899"
     )
     _DEV_SM4_EXAMPLE: ClassVar[str] = "0123456789abcdef0123456789abcdef"
-
-    @field_validator(
-        "push_dingtalk_webhook",
-        "push_dingtalk_robot_secret",
-        "push_feishu_webhook",
-        "dingtalk_app_key",
-        "dingtalk_app_secret",
-        "dingtalk_agent_id",
-        "feishu_app_id",
-        "feishu_app_secret",
-        mode="before",
-    )
-    @classmethod
-    def normalize_optional_webhook(cls, value: Any) -> str | None:
-        if value is None:
-            return None
-        if isinstance(value, str) and not value.strip():
-            return None
-        return value
 
     @field_validator("vitalspan_bootstrap_admin_password", mode="before")
     @classmethod

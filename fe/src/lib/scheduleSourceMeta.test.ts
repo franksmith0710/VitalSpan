@@ -65,12 +65,11 @@ describe("scheduleSourceMeta", () => {
     ).toBe("/admin/reports/standard/setup?pack=equipment-overview");
   });
 
-  it("summarizes delivery recipients including feishu", () => {
+  it("summarizes delivery recipients for email", () => {
     expect(
       summarizeDeliveryRecipients([
-        { channel: "email", recipients: ["a@b.com"] },
-        { channel: "feishu", to: ["ou_abc", "ou_def"] },
+        { channel: "email", recipients: ["a@b.com", "c@d.com"] },
       ]),
-    ).toBe("a@b.com、飞书 2 人");
+    ).toBe("a@b.com、c@d.com");
   });
 });

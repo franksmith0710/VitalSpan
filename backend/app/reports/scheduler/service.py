@@ -173,7 +173,6 @@ def create_schedule(payload: ScheduleCreate, actor: UserContext) -> ScheduleStat
         "recipients": recipients,
         "attachment_formats": list(payload.attachment_formats),
         "delivery_channels": ["email"],
-        "notify_group": False,
         "email_smtp_slot": normalize_email_slot(payload.email_smtp_slot),
         "cron": payload.cron,
         "timezone": payload.timezone,

@@ -162,10 +162,11 @@ describe("resolveLiquidPercent", () => {
     expect(result.fillPercent).toBeCloseTo(238676 / 500000);
   });
 
-  it("defaults max to raw value when fix max unset", () => {
+  it("defaults max to 1.5x raw value when fix max unset", () => {
     const result = resolveLiquidPercent({ rows: [], columns: [] }, 72, { maxType: "fix" });
-    expect(result.max).toBe(72);
-    expect(result.fillPercent).toBe(1);
+    expect(result.max).toBe(108);
+    expect(result.fillPercent).toBeCloseTo(72 / 108);
+    expect(result.labelPercent).toBeCloseTo(2 / 3);
   });
 
   it("aggregates dynamic max field from rows", () => {
@@ -179,6 +180,19 @@ describe("resolveLiquidPercent", () => {
     );
     expect(result.max).toBe(150);
     expect(result.fillPercent).toBeCloseTo(0.5);
+  });
+
+  it("falls back to 1.5x metric when dynamic max column is missing", () => {
+    const result = resolveLiquidPercent(
+      {
+        rows: [[3836]],
+        columns: ["quantity"],
+      },
+      3836,
+      { maxType: "dynamic", maxField: "amount" },
+    );
+    expect(result.max).toBeCloseTo(3836 * 1.5);
+    expect(result.fillPercent).toBeCloseTo(2 / 3);
   });
 
   it("caps fill at 100% but label percent can exceed 1", () => {

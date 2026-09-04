@@ -130,7 +130,6 @@ class UserUpdate(BaseModel):
     email: str | None = Field(default=None, max_length=255)
     org_id: uuid.UUID | None = Field(default=None, alias="orgId")
     role_ids: list[uuid.UUID] | None = Field(default=None, alias="roleIds")
-    im_accounts: dict[str, str | None] | None = Field(default=None, alias="imAccounts")
 
 
 class UserOut(BaseModel):
@@ -144,7 +143,6 @@ class UserOut(BaseModel):
     failed_login_count: int = Field(default=0, serialization_alias="failedLoginCount")
     locked_until: datetime | None = Field(default=None, serialization_alias="lockedUntil")
     org_node_id: uuid.UUID | None = Field(default=None, serialization_alias="orgId")
-    im_accounts: dict[str, str] = Field(default_factory=dict, serialization_alias="imAccounts")
 
 
 class UserListItemOut(UserOut):

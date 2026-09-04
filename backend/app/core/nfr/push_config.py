@@ -3,14 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from app.core.config import Settings, get_settings
-from app.core.nfr.errors import PUSH_CONFIG_INVALID
-
-
-class PushConfigValidationError(Exception):
-    def __init__(self, code: str, message: str) -> None:
-        self.code = code
-        self.message = message
-        super().__init__(message)
 
 
 @dataclass(frozen=True)
@@ -22,35 +14,21 @@ class PushConfigOut:
     degraded_reason: str | None
 
 
-def _is_valid_webhook(url: str | None) -> bool:
-    return bool(url and url.startswith("https://"))
-
-
 def validate_push_settings(settings: Settings) -> None:
-    for label, url in (
-        ("dingtalk", settings.push_dingtalk_webhook),
-    ):
-        if url and not url.startswith("https://"):
-            raise PushConfigValidationError(
-                PUSH_CONFIG_INVALID,
-                f"{label} webhook must use https",
-            )
+    del settings
 
 
 def resolve_push_mode(settings: Settings | None = None) -> PushConfigOut:
-    settings = settings or get_settings()
-    validate_push_settings(settings)
-    wecom_ok = False
-    ding_ok = _is_valid_webhook(settings.push_dingtalk_webhook)
-    if not wecom_ok and not ding_ok:
-        return PushConfigOut(False, False, False, "disabled", "push channels not configured")
-    if wecom_ok or ding_ok:
-        return PushConfigOut(False, wecom_ok, ding_ok, "active", None)
-    return PushConfigOut(False, wecom_ok, ding_ok, "degraded", "partial push channel configuration")
+    del settings
+    return PushConfigOut(
+        False,
+        False,
+        False,
+        "disabled",
+        "第三方 IM 推送已下线，请使用邮件 SMTP 投递",
+    )
 
 
 def summarize_channel_probe(payload: dict | None = None) -> str:
-    from app.core.nfr.push_channels import dispatch_push_mock
-
-    result = dispatch_push_mock(payload or {"text": "probe"})
-    return f"{result.status}:{result.channel or 'none'}"
+    del payload
+    return "disabled:none"
