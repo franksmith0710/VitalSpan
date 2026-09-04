@@ -381,7 +381,7 @@ def test_dashboard_execute_smtp_attaches_pdf(client: TestClient, mock_playwright
         )
         assert exec_resp.status_code == 200, exec_resp.text
         body = exec_resp.json()
-        assert body.get("status") == "semi_real_succeeded"
+        assert body.get("status") == "succeeded"
         assert body.get("deliverySteps")[0]["status"] == "delivered"
         smtp_instance.send_message.assert_called_once()
         msg = smtp_instance.send_message.call_args[0][0]
@@ -528,7 +528,7 @@ def test_template_schedule_smtp_pdf_attachment(client: TestClient):
             )
         assert exec_resp.status_code == 200, exec_resp.text
         body = exec_resp.json()
-        assert body.get("status") == "semi_real_succeeded"
+        assert body.get("status") == "succeeded"
         assert body.get("artifactKind") == "template_render"
         smtp_instance.send_message.assert_called_once()
         msg = smtp_instance.send_message.call_args[0][0]
@@ -599,7 +599,7 @@ def test_recent_failures_omit_superseded_by_later_success(client: TestClient, mo
             headers={**AUTH, "Idempotency-Key": "recent-fail-retry-1"},
         )
     assert retry.status_code == 200, retry.text
-    assert retry.json()["status"] == "semi_real_succeeded"
+    assert retry.json()["status"] == "succeeded"
 
     after = client.get("/api/v1/reports/schedules/executions/recent-failures", headers=AUTH)
     assert after.status_code == 200
