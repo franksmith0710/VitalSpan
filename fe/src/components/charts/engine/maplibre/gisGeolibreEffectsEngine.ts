@@ -22,6 +22,8 @@ import {
 } from "@/components/charts/engine/maplibre/gisGlobeLayout";
 import {
   ensureGisMapControlStack,
+  GIS_MAP_COMETS_Z,
+  GIS_MAP_STARS_Z,
 } from "@/components/charts/engine/maplibre/gisMapControlStack";
 
 type MapLibreMap = import("maplibre-gl").Map;
@@ -36,10 +38,12 @@ function isGlobeProjection(map: MapLibreMap): boolean {
   }
 }
 
-function createLayerCanvas(zIndex: number): HTMLCanvasElement {
+function createLayerCanvas(
+  zIndex: number,
+  testId: "gis-effects-space" | "gis-effects-stars" | "gis-effects-comets",
+): HTMLCanvasElement {
   const canvas = document.createElement("canvas");
-  canvas.dataset.testid =
-    zIndex === 0 ? "gis-effects-space" : zIndex === 1 ? "gis-effects-stars" : "gis-effects-comets";
+  canvas.dataset.testid = testId;
   canvas.style.position = "absolute";
   canvas.style.top = "0";
   canvas.style.left = "0";
@@ -82,9 +86,9 @@ export class GisGeolibreEffectsEngine {
     this.previousSky = this.readSky();
     this.suppressMapLibreAtmosphere();
 
-    const space = createLayerCanvas(0);
-    const stars = createLayerCanvas(1);
-    const comets = createLayerCanvas(2);
+    const space = createLayerCanvas(0, "gis-effects-space");
+    const stars = createLayerCanvas(Number(GIS_MAP_STARS_Z), "gis-effects-stars");
+    const comets = createLayerCanvas(Number(GIS_MAP_COMETS_Z), "gis-effects-comets");
     const container = map.getCanvasContainer();
     container.append(space, stars, comets);
     this.spaceCtx = space.getContext("2d")!;
@@ -234,8 +238,18 @@ export class GisGeolibreEffectsEngine {
   private drawStarfield(): void {
     if (this.width <= 0 || this.height <= 0 || !this.starfield) return;
     const center = this.map.getCenter();
+    const globe = resolveGlobeScreenBounds(this.map);
+    const ctx = this.starsCtx;
+    ctx.clearRect(0, 0, this.width, this.height);
+    ctx.save();
+    if (globe) {
+      ctx.beginPath();
+      ctx.rect(0, 0, this.width, this.height);
+      ctx.arc(globe.x, globe.y, globe.radius * 0.99, 0, Math.PI * 2);
+      ctx.clip("evenodd");
+    }
     drawGeolibreStarfieldParallax(
-      this.starsCtx,
+      ctx,
       this.width,
       this.height,
       this.starfield,
@@ -243,7 +257,9 @@ export class GisGeolibreEffectsEngine {
       center.lat,
       this.starfieldOriginLng,
       this.starfieldOriginLat,
+      { skipClear: true },
     );
+    ctx.restore();
   }
 
   private isFarGlobeView(): boolean {
@@ -270,28 +286,31 @@ export class GisGeolibreEffectsEngine {
       : 1000 / 60;
     this.lastFrameTime = nextFrameTime;
 
-    this.spaceCtx.clearRect(0, 0, this.width, this.height);
-    this.cometCtx.clearRect(0, 0, this.width, this.height);
-
     if (!isGlobeProjection(this.map) || !this.settings.enabled) {
+      this.spaceCtx.clearRect(0, 0, this.width, this.height);
       this.starsCtx.clearRect(0, 0, this.width, this.height);
+      this.cometCtx.clearRect(0, 0, this.width, this.height);
       this.start();
       return;
     }
 
+    this.spaceCtx.clearRect(0, 0, this.width, this.height);
     this.drawSpaceBackground();
 
     if (!this.isFarGlobeView()) {
       this.starsCtx.clearRect(0, 0, this.width, this.height);
+      this.cometCtx.clearRect(0, 0, this.width, this.height);
       this.comets = [];
+      this.starsDirty = true;
       this.start();
       return;
     }
-    if (this.starsDirty) {
-      this.ensureStarfield();
-      this.drawStarfield();
-      this.starsDirty = false;
-    }
+
+    this.ensureStarfield();
+    this.drawStarfield();
+    this.starsDirty = false;
+
+    this.cometCtx.clearRect(0, 0, this.width, this.height);
     this.comets = drawGeolibreComets(
       this.cometCtx,
       this.width,

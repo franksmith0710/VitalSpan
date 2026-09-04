@@ -80,6 +80,7 @@ export function drawGeolibreStarfieldParallax(
   centerLat: number,
   originLng: number,
   originLat: number,
+  options?: { skipClear?: boolean },
 ): void {
   const { x: wrappedX, y: wrappedY } = resolveGeolibreStarfieldParallaxOffset(
     centerLng,
@@ -89,7 +90,9 @@ export function drawGeolibreStarfieldParallax(
     width,
     height,
   );
-  ctx.clearRect(0, 0, width, height);
+  if (!options?.skipClear) {
+    ctx.clearRect(0, 0, width, height);
+  }
   ctx.drawImage(field, wrappedX, wrappedY, width, height);
   ctx.drawImage(field, wrappedX - width, wrappedY, width, height);
   ctx.drawImage(field, wrappedX, wrappedY - height, width, height);

@@ -1,6 +1,9 @@
 type MapLibreMap = import("maplibre-gl").Map;
 
 export const GIS_MAP_CANVAS_Z = "4";
+/** 星场/流星叠在 WebGL 地图之上（球盘区裁剪），控件仍在其上。 */
+export const GIS_MAP_STARS_Z = "5";
+export const GIS_MAP_COMETS_Z = "6";
 export const GIS_MAP_CANVAS_CONTAINER_Z = "1";
 export const GIS_MAP_CONTROL_Z = "10";
 
