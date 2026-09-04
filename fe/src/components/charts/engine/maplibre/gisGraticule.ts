@@ -150,6 +150,15 @@ function applyGisGraticuleNow(map: MapLibreMap, enabled: boolean) {
   map.triggerRepaint();
 }
 
-export function applyGisGraticule(map: MapLibreMap, enabled: boolean) {
+/** 样式已就绪时同步应用，供样式栏开关即时生效。 */
+export function applyGisGraticuleImmediate(map: MapLibreMap, enabled: boolean) {
+  if (map.isStyleLoaded()) {
+    applyGisGraticuleNow(map, enabled);
+    return;
+  }
   whenGisMapStyleReady(map, () => applyGisGraticuleNow(map, enabled));
+}
+
+export function applyGisGraticule(map: MapLibreMap, enabled: boolean) {
+  applyGisGraticuleImmediate(map, enabled);
 }

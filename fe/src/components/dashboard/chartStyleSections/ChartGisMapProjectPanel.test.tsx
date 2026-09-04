@@ -202,4 +202,18 @@ describe("ChartGisMapProjectPanel map controls", () => {
       expect.objectContaining({ navigation: true }),
     );
   });
+
+  it("live-applies graticule toggle on", async () => {
+    vi.mocked(applyGisMapControls).mockClear();
+    const user = userEvent.setup();
+    renderPanel(<ChartGisMapProjectPanel />);
+
+    await user.click(screen.getByRole("button", { name: "GIS 底图" }));
+    await user.click(screen.getByRole("switch", { name: "经纬网" }));
+
+    expect(vi.mocked(applyGisMapControls)).toHaveBeenCalledWith(
+      "w-gis",
+      expect.objectContaining({ graticule: true }),
+    );
+  });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   applyGisGraticule,
+  applyGisGraticuleImmediate,
   buildGraticuleGeoJson,
   GIS_GRATICULE_LAYER_ID,
   GIS_GRATICULE_SOURCE_ID,
@@ -88,6 +89,25 @@ describe("maintainGisGraticuleStack", () => {
     );
     expect(moveLayer).toHaveBeenCalledWith(GIS_GRATICULE_LAYER_ID);
     expect(map.triggerRepaint).toHaveBeenCalled();
+  });
+});
+
+describe("applyGisGraticuleImmediate", () => {
+  it("removes graticule layer and source when disabled", () => {
+    const removeLayer = vi.fn();
+    const removeSource = vi.fn();
+    const map = {
+      isStyleLoaded: () => true,
+      getSource: () => ({}),
+      getLayer: () => ({}),
+      removeLayer,
+      removeSource,
+    };
+
+    applyGisGraticuleImmediate(map as never, false);
+
+    expect(removeLayer).toHaveBeenCalledWith(GIS_GRATICULE_LAYER_ID);
+    expect(removeSource).toHaveBeenCalledWith(GIS_GRATICULE_SOURCE_ID);
   });
 });
 

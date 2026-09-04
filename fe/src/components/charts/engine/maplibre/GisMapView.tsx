@@ -11,7 +11,10 @@ import {
   type ResolvedGisMapControls,
   type GisProjectOverlay,
 } from "@/components/charts/engine/maplibre/gisProject";
-import { applyGisGraticule } from "@/components/charts/engine/maplibre/gisGraticule";
+import {
+  applyGisGraticule,
+  applyGisGraticuleImmediate,
+} from "@/components/charts/engine/maplibre/gisGraticule";
 import { applyBasemapRuntimePatch } from "@/components/charts/engine/maplibre/gisBasemapPalette";
 import { buildPmtilesStyle } from "@/components/charts/engine/maplibre/gisMapStyle";
 import {
@@ -109,16 +112,23 @@ function GisMapViewInner(props: ChartEngineViewProps) {
   const mapControlsKey = useMemo(() => JSON.stringify(mapControls), [mapControls]);
   const mapControlsRef = useRef(mapControls);
   mapControlsRef.current = mapControls;
+  const mapControlsApplySerialRef = useRef(0);
 
   const remountMapControls = useCallback(async (controls: ResolvedGisMapControls) => {
     const map = mapRef.current;
     if (!map) return false;
+    const applySerial = ++mapControlsApplySerialRef.current;
+    mapControlsRef.current = controls;
+    applyGisGraticuleImmediate(map, controls.graticule);
     mapControlsDisposeRef.current?.();
     mapControlsDisposeRef.current = null;
+    let dispose: (() => void) | null = null;
     try {
-      mapControlsDisposeRef.current = await mountGisMapControls(map, controls);
+      dispose = await mountGisMapControls(map, controls);
     } finally {
-      applyGisGraticule(map, controls.graticule);
+      if (applySerial !== mapControlsApplySerialRef.current) return false;
+      mapControlsDisposeRef.current = dispose;
+      applyGisGraticuleImmediate(map, controls.graticule);
     }
     return true;
   }, []);
@@ -598,12 +608,8 @@ function GisMapViewInner(props: ChartEngineViewProps) {
     let cancelled = false;
 
     const syncControls = () => {
-      void remountMapControls(mapControls).then((ok) => {
-        if (cancelled && ok) {
-          mapControlsDisposeRef.current?.();
-          mapControlsDisposeRef.current = null;
-        }
-      });
+      if (cancelled) return;
+      void remountMapControls(mapControls);
     };
 
     const onStyleLoad = () => syncControls();
@@ -908,8 +914,11 @@ function GisMapViewInner(props: ChartEngineViewProps) {
         return true;
       },
       applyMapControls: (controls) => {
+        mapControlsRef.current = controls;
+        const map = mapRef.current;
+        if (map) applyGisGraticuleImmediate(map, controls.graticule);
         void remountMapControls(controls);
-        return mapRef.current != null;
+        return map != null;
       },
       syncLayers: () => {
         const map = mapRef.current;
