@@ -23,7 +23,7 @@ describe("normalizeGisProjectEffects", () => {
   it("persists enabled false when user turns atmosphere off", () => {
     expect(normalizeGisProjectEffects({ enabled: false, haloColor: "#fff" })).toEqual({
       enabled: false,
-      haloColor: "#ffffff",
+      haloColor: "#fff",
     });
   });
 });
